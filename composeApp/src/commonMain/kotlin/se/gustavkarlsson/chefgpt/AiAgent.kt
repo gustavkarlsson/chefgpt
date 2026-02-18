@@ -2,25 +2,16 @@ package se.gustavkarlsson.chefgpt
 
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.tools.ToolRegistry
-import ai.koog.agents.core.tools.reflect.tool
-import ai.koog.agents.core.tools.reflect.tools
 import ai.koog.agents.ext.tool.ExitTool
 import ai.koog.prompt.executor.clients.anthropic.AnthropicModels
 import ai.koog.prompt.executor.llms.all.simpleAnthropicExecutor
-import java.nio.file.Path
 
-fun createAiAgent(
-    conversation: ConversationService,
-    ingredientStoreFile: Path,
-    anthropicApiKey: String,
-    spoonacularApiKey: String
-): AIAgent<Unit, Unit> = AIAgent.Companion(
-    promptExecutor = simpleAnthropicExecutor(apiKey = anthropicApiKey),
+fun createAiAgent(conversation: AiSideConversation): AIAgent<Unit, Unit> = AIAgent(
+    promptExecutor = simpleAnthropicExecutor(apiKey = getAnthropicApiKey()),
     llmModel = AnthropicModels.Haiku_4_5,
-    toolRegistry = ToolRegistry.Companion {
-        tool(::getUserName)
-        tools(IngredientStore(ingredientStoreFile))
-        tools(SpoonacularClient(apiKey = spoonacularApiKey))
+    toolRegistry = ToolRegistry {
+        tools(createIngredientStore().asTools())
+        tools(SpoonacularClient(getSpoonacularApiKey()).asTools())
         tool(ExitTool)
     },
     systemPrompt = """

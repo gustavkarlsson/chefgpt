@@ -44,10 +44,6 @@ kotlin {
     }
 
     sourceSets {
-        androidMain.dependencies {
-            implementation(libs.compose.uiToolingPreview)
-            implementation(libs.androidx.activity.compose)
-        }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
@@ -57,14 +53,9 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
-        }
-        commonTest.dependencies {
-            implementation(libs.kotlin.test)
-        }
-        jvmMain.dependencies {
+            implementation(compose.materialIconsExtended)
+            implementation(libs.multiplatform.markdown.renderer.m3)
             implementation(compose.desktop.currentOs)
-            implementation(compose.materialIconsExtended) // TODO fix deprecation
-            implementation(libs.kotlinx.coroutinesSwing)
             implementation(libs.kotlinx.datetime)
             implementation(libs.koog.agents)
             implementation(libs.slf4j.simple)
@@ -73,7 +64,16 @@ kotlin {
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.kotlinx.serialization.json)
-            implementation(libs.multiplatform.markdown.renderer.m3)
+        }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+        }
+        androidMain.dependencies {
+            implementation(libs.compose.uiToolingPreview) // TODO Move to common?
+            implementation(libs.androidx.activity.compose)
+        }
+        jvmMain.dependencies {
+            implementation(libs.kotlinx.coroutinesSwing)
         }
     }
 }

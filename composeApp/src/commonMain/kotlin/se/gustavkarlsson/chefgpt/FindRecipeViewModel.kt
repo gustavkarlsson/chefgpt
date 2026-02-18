@@ -1,8 +1,8 @@
 package se.gustavkarlsson.chefgpt
 
+import ai.koog.utils.io.use
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import java.nio.file.Path
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -12,10 +12,11 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class FindRecipeViewModel(
-    private val conversation: UserSideConversation,
-) : ViewModel() {
+class FindRecipeViewModel : ViewModel() {
+    private val conversation = ConversationService()
+    private val aiAgent = createAiAgent(conversation)
 
+    // TODO Don't make inner, but make it data
     inner class ViewState(
         val messages: List<Message>,
         val userText: String,
@@ -24,7 +25,7 @@ class FindRecipeViewModel(
     ) {
         val onUserTextChanged: (String) -> Unit
             get() = { text -> _state.update { it.copy(userText = text) } }
-        val onImageAttached: (Path) -> Unit
+        val onImageAttached: (String) -> Unit
             get() = { image -> _state.update { it.copy(attachedImage = image) } }
     }
 
@@ -32,7 +33,7 @@ class FindRecipeViewModel(
         val conversationState: ConversationState,
         val messages: List<Message>,
         val userText: String,
-        val attachedImage: Path?,
+        val attachedImage: String?,
     )
 
     private val _state =
@@ -77,6 +78,9 @@ class FindRecipeViewModel(
     }
 
     init {
+        viewModelScope.launch {
+            aiAgent.use { it.run(Unit) }
+        }
         viewModelScope.launch {
             conversation.state.collect { conversationState ->
                 _state.update { it.copy(conversationState = conversationState) }

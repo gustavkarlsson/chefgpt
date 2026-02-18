@@ -1,8 +1,6 @@
 package se.gustavkarlsson.chefgpt
 
-import ai.koog.agents.core.tools.annotations.LLMDescription
-import ai.koog.agents.core.tools.annotations.Tool
-import ai.koog.agents.core.tools.reflect.ToolSet
+import ai.koog.agents.core.tools.Tool
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
@@ -13,6 +11,7 @@ import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 
 @Serializable
@@ -45,7 +44,13 @@ data class Recipe(
     val usedIngredients: List<Ingredient>
 )
 
-class SpoonacularClient(private val apiKey: String) : ToolSet, AutoCloseable {
+@Serializable
+data class FindByIngredientsArgs(
+    val ingredients: List<String>,
+    val resultCount: Int,
+)
+
+class SpoonacularClient(private val apiKey: String) : AutoCloseable {
     private val client = HttpClient(CIO) {
         install(HttpTimeout) {
             requestTimeoutMillis = 1000
@@ -58,12 +63,8 @@ class SpoonacularClient(private val apiKey: String) : ToolSet, AutoCloseable {
         }
     }
 
-    @Tool
-    @LLMDescription("Find recipes that use as many of the given ingredients as possible and require as few additional ingredients as possible.")
     suspend fun findByIngredients(
-        @LLMDescription("Ingredients that you have at home")
         ingredients: List<String>,
-        @LLMDescription("The maximum number of results to return (1-100)")
         resultCount: Int,
     ): List<Recipe> {
         return client.get("https://api.spoonacular.com/recipes/findByIngredients") {
@@ -80,3 +81,15 @@ class SpoonacularClient(private val apiKey: String) : ToolSet, AutoCloseable {
         client.close()
     }
 }
+
+fun SpoonacularClient.asTools(): List<Tool<*, *>> = listOf(
+    object : Tool<FindByIngredientsArgs, List<Recipe>>(
+        argsSerializer = FindByIngredientsArgs.serializer(),
+        resultSerializer = ListSerializer(Recipe.serializer()),
+        name = "findByIngredients",
+        description = "Find recipes that use as many of the given ingredients as possible and require as few additional ingredients as possible. ingredients: Ingredients that you have at home. resultCount: The maximum number of results to return (1-100)."
+    ) {
+        override suspend fun execute(args: FindByIngredientsArgs): List<Recipe> =
+            findByIngredients(args.ingredients, args.resultCount)
+    },
+)

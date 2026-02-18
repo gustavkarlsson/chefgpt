@@ -1,24 +1,10 @@
 package se.gustavkarlsson.chefgpt
 
-import ai.koog.utils.io.use
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
-import java.nio.file.Path
+import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.application
 
-suspend fun main() {
-    val anthropicApiKey = System.getenv("ANTHROPIC_API_KEY")
-    val spoonacularApiKey = System.getenv("SPOONACULAR_API_KEY")
-    val ingredientStoreFile = Path.of("ingredient-store.txt")
-    val conversation = ConversationService()
-    val agent = createAiAgent(conversation, ingredientStoreFile, anthropicApiKey, spoonacularApiKey)
-
-    coroutineScope {
-        launch {
-            agent.use {
-                it.run(Unit)
-            }
-        }
-
-        runApplication(conversation)
+fun main() = application(exitProcessOnExit = true) {
+    Window(::exitApplication, title = "Recipe Finder") {
+        App()
     }
 }

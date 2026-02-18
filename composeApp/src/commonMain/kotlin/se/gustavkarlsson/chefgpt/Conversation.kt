@@ -1,6 +1,5 @@
 package se.gustavkarlsson.chefgpt
 
-import java.nio.file.Path
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
@@ -35,7 +34,7 @@ enum class Subject {
 
 data class Message(val subject: Subject, val content: MessageContent)
 
-data class MessageContent(val text: String, val image: Path? = null)
+data class MessageContent(val text: String, val image: String? = null)
 
 enum class ConversationState {
     WaitingForUser, WaitingForAi, Ended,

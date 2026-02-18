@@ -7,7 +7,6 @@ import ai.koog.agents.core.dsl.extension.requestLLMMultiple
 import ai.koog.agents.core.dsl.extension.sendMultipleToolResults
 import ai.koog.agents.ext.tool.ExitTool
 import ai.koog.prompt.message.Message
-import kotlin.io.path.pathString
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.io.files.Path
@@ -40,7 +39,7 @@ fun findRecipeFunctionalStrategy(conversation: AiSideConversation): AIAgentFunct
                                     user {
                                         text(userResponse.text)
                                         userResponse.image?.let {
-                                            image(Path(it.pathString))
+                                            image(Path(it))
                                         }
                                     }
                                 }
