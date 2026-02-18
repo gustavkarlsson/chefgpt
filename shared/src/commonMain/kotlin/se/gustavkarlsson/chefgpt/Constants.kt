@@ -1,3 +1,3 @@
 package se.gustavkarlsson.chefgpt
 
-const val SERVER_PORT = 8080
+const val DEV_SERVER_PORT = 8080
