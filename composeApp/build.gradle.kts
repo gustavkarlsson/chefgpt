@@ -8,9 +8,12 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
+    alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
+    // FIXME fix deprecation
+    @Suppress("DEPRECATION")
     androidTarget {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_11)
@@ -60,7 +63,16 @@ kotlin {
         }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
+            implementation(compose.materialIconsExtended)
             implementation(libs.kotlinx.coroutinesSwing)
+            implementation("ai.koog:koog-agents:0.6.2")
+            implementation("org.slf4j:slf4j-simple:2.0.17")
+            implementation("io.ktor:ktor-client-core:3.4.0")
+            implementation("io.ktor:ktor-client-cio:3.4.0")
+            implementation("io.ktor:ktor-client-content-negotiation:3.4.0")
+            implementation("io.ktor:ktor-serialization-kotlinx-json:3.4.0")
+            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
+            implementation("com.mikepenz:multiplatform-markdown-renderer-m3:0.28.0")
         }
     }
 }
