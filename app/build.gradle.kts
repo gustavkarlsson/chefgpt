@@ -16,7 +16,7 @@ kotlin {
     @Suppress("DEPRECATION")
     androidTarget {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget.set(JvmTarget.JVM_17)
         }
     }
 
@@ -30,7 +30,11 @@ kotlin {
         }
     }
 
-    jvm()
+    jvm {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_24)
+        }
+    }
 
     js {
         browser()
@@ -54,7 +58,7 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
-            implementation(compose.materialIconsExtended)
+            implementation(compose.materialIconsExtended) // TODO specify dependency instead of compose.materialIconsExtended
             implementation(libs.multiplatform.markdown.renderer.m3)
             implementation(libs.kotlinx.datetime)
             implementation(libs.koog.agents)
