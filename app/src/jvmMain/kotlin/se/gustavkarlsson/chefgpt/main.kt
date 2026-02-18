@@ -4,7 +4,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 
 fun main() = application(exitProcessOnExit = true) {
-    Window(::exitApplication, title = "Recipe Finder") {
+    Window(::exitApplication, title = "ChefGPT") {
         App()
     }
 }
