@@ -64,7 +64,3 @@ private fun List<Message>.findExitMessageOrNull(): String? =
         .firstOrNull()
 
 private fun List<Message.Assistant>.toSingleMessage(): String = joinToString("\n") { it.content }
-
-private fun List<Message.Tool.Call>.targetsExit(): Boolean = map { it.tool } == listOf(ExitTool.name)
-
-private val List<Message.Tool.Call>.exitMessage: String get() = (first().contentJson["message"] as JsonPrimitive).content

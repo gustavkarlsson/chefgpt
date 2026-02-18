@@ -16,6 +16,7 @@ application {
 
 dependencies {
     implementation(projects.shared)
+    implementation(libs.kotlinx.coroutinesCore)
     implementation(libs.logback)
     implementation(libs.ktor.serverCore)
     implementation(libs.ktor.serverNetty)
@@ -24,7 +25,7 @@ dependencies {
     implementation(libs.ktor.client.cio)
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
-    implementation(libs.koog.ktor)
+    implementation(libs.koog.agents)
     testImplementation(libs.ktor.serverTestHost)
     testImplementation(libs.kotlin.testJunit)
 }
