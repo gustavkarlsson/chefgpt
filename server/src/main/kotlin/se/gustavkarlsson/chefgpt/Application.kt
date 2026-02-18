@@ -1,19 +1,21 @@
 package se.gustavkarlsson.chefgpt
 
-import ai.koog.agents.ext.agent.reActStrategy
 import ai.koog.ktor.Koog
-import ai.koog.ktor.aiAgent
-import ai.koog.prompt.executor.clients.openai.OpenAIModels
-import io.ktor.http.HttpStatusCode
+import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
-import io.ktor.server.request.receive
-import io.ktor.server.response.respond
-import io.ktor.server.routing.post
-import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
+import io.ktor.server.websocket.WebSockets
+import io.ktor.server.websocket.pingPeriod
+import io.ktor.server.websocket.timeout
+import io.ktor.server.websocket.webSocket
+import io.ktor.websocket.Frame
+import io.ktor.websocket.WebSocketDeflateExtension
+import io.ktor.websocket.readText
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.serialization.json.Json
 
 fun main() {
     val anthropicApiKey = System.getenv("ANTHROPIC_API_KEY")
@@ -27,6 +29,15 @@ fun main() {
 }
 
 fun Application.module(anthropicApiKey: String) {
+    install(WebSockets) {
+        pingPeriod = 30.seconds
+        timeout = 60.seconds
+        contentConverter = KotlinxWebsocketSerializationConverter(Json) // TODO configure for leniency
+        extensions {
+            install(WebSocketDeflateExtension)
+        }
+    }
+
     install(Koog) {
         llm {
             anthropic(apiKey = anthropicApiKey)
@@ -36,17 +47,14 @@ fun Application.module(anthropicApiKey: String) {
         }
     }
 
-    // FIXME set up the AI with websocket streaming
     routing {
-        route("/ai") {
-            post("/chat") {
-                val userInput = call.receive<String>()
-                val output = aiAgent(
-                    strategy = reActStrategy(),
-                    model = OpenAIModels.Chat.GPT4_1,
-                    input = userInput
-                )
-                call.respond(HttpStatusCode.OK, output)
+        webSocket("/echo") {
+            // FIXME create agent, define data models, and build the logic
+            for (frame in incoming) {
+                if (frame is Frame.Text) {
+                    val text = frame.readText()
+                    outgoing.send(Frame.Text("YOU SAID: $text"))
+                }
             }
         }
     }
