@@ -55,7 +55,6 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(compose.materialIconsExtended)
             implementation(libs.multiplatform.markdown.renderer.m3)
-            implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.datetime)
             implementation(libs.koog.agents)
             implementation(libs.slf4j.simple)
@@ -73,6 +72,7 @@ kotlin {
             implementation(libs.androidx.activity.compose)
         }
         jvmMain.dependencies {
+            implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
         }
     }
