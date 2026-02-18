@@ -94,4 +94,8 @@ class FindRecipeViewModel : ViewModel() {
         }
     }
 
+    override fun onCleared() {
+        conversation.close()
+    }
+
 }
