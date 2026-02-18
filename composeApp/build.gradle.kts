@@ -12,7 +12,7 @@ plugins {
 }
 
 kotlin {
-    // FIXME fix deprecation
+    // TODO fix deprecation
     @Suppress("DEPRECATION")
     androidTarget {
         compilerOptions {
@@ -63,8 +63,9 @@ kotlin {
         }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
-            implementation(compose.materialIconsExtended) // FIXME fix deprecation
+            implementation(compose.materialIconsExtended) // TODO fix deprecation
             implementation(libs.kotlinx.coroutinesSwing)
+            implementation(libs.kotlinx.datetime)
             implementation(libs.koog.agents)
             implementation(libs.slf4j.simple)
             implementation(libs.ktor.client.core)
