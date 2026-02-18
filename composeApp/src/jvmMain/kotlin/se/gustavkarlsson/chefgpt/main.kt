@@ -5,7 +5,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.nio.file.Path
 
-suspend fun main(args: Array<String> = emptyArray()) {
+suspend fun main() {
     val anthropicApiKey = System.getenv("ANTHROPIC_API_KEY")
     val spoonacularApiKey = System.getenv("SPOONACULAR_API_KEY")
     val ingredientStoreFile = Path.of("ingredient-store.txt")
@@ -19,10 +19,6 @@ suspend fun main(args: Array<String> = emptyArray()) {
             }
         }
 
-        if (args.any { it == "cli" }) {
-            runCli(conversation)
-        } else {
-            runApplication(conversation)
-        }
+        runApplication(conversation)
     }
 }
