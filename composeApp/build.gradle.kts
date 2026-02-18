@@ -63,16 +63,16 @@ kotlin {
         }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
-            implementation(compose.materialIconsExtended)
+            implementation(compose.materialIconsExtended) // FIXME fix deprecation
             implementation(libs.kotlinx.coroutinesSwing)
-            implementation("ai.koog:koog-agents:0.6.2")
-            implementation("org.slf4j:slf4j-simple:2.0.17")
-            implementation("io.ktor:ktor-client-core:3.4.0")
-            implementation("io.ktor:ktor-client-cio:3.4.0")
-            implementation("io.ktor:ktor-client-content-negotiation:3.4.0")
-            implementation("io.ktor:ktor-serialization-kotlinx-json:3.4.0")
-            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
-            implementation("com.mikepenz:multiplatform-markdown-renderer-m3:0.28.0")
+            implementation(libs.koog.agents)
+            implementation(libs.slf4j.simple)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.cio)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.multiplatform.markdown.renderer.m3)
         }
     }
 }
