@@ -40,12 +40,25 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil3.ImageLoader
 import coil3.compose.AsyncImage
+import coil3.compose.setSingletonImageLoaderFactory
+import coil3.key.Keyer
+import coil3.map.Mapper
 import com.mikepenz.markdown.m3.Markdown
 import kotlinx.coroutines.launch
 
 @Composable
 fun App() {
+    // TODO Extract this
+    setSingletonImageLoaderFactory { context ->
+        ImageLoader(context)
+            .newBuilder()
+            .components {
+                add(Mapper<File, String> { data, _ -> data.path })
+                add(Keyer<File> { data, _ -> data.path })
+            }.build()
+    }
     val viewModel = viewModel { FindRecipeViewModel() }
     val viewState by viewModel.viewState.collectAsState()
 
@@ -129,9 +142,9 @@ private fun MessageBubble(message: Message) {
                 },
         ) {
             Column {
-                message.content.image?.let { imageUrl ->
+                message.content.image?.let { image ->
                     AsyncImage(
-                        model = imageUrl,
+                        model = image,
                         contentDescription = null,
                         modifier =
                             Modifier
@@ -160,7 +173,7 @@ private fun MessageInput(
     userText: String,
     onUserTextChanged: (String) -> Unit,
     onClickSend: (() -> Unit)?,
-    onImageAttached: (String) -> Unit,
+    onImageAttached: (File) -> Unit,
     onImageCleared: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {

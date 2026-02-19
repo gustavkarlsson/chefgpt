@@ -5,7 +5,7 @@ import java.awt.Frame
 import kotlin.io.path.Path
 import kotlin.io.path.pathString
 
-actual suspend fun pickImageFile(): String? {
+actual suspend fun pickImageFile(): File? {
     val fileDialog = FileDialog(null as Frame?, "Select Image", FileDialog.LOAD)
     fileDialog.setFilenameFilter { _, name ->
         name.lowercase().endsWith(".png") ||
@@ -18,7 +18,8 @@ actual suspend fun pickImageFile(): String? {
     val directory = fileDialog.directory
     val file = fileDialog.file
     return if (directory != null && file != null) {
-        Path(directory, file).pathString
+        val path = Path(directory, file)
+        File(path.pathString)
     } else {
         null
     }

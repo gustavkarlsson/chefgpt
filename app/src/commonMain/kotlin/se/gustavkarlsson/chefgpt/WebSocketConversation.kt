@@ -10,6 +10,7 @@ import io.ktor.client.plugins.websocket.sendSerialized
 import io.ktor.client.plugins.websocket.webSocketSession
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
+import io.ktor.websocket.send
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.merge
 import kotlinx.serialization.json.Json
+import se.gustavkarlsson.chefgpt.api.Image
 import se.gustavkarlsson.chefgpt.api.MessageFromAi
 import se.gustavkarlsson.chefgpt.api.MessageFromUser
 
@@ -70,7 +72,15 @@ private class HttpClientConversation(
     override suspend fun sayToAi(content: MessageContent) {
         mutableState.value = ConversationState.WaitingForAi
         messagesFromUser.emit(Message(Subject.User, content))
-        session.sendSerialized(MessageFromUser(content.text))
+        val file = content.image
+        val image =
+            file?.let {
+                Image(it.name)
+            }
+        session.sendSerialized(MessageFromUser(content.text, image))
+        if (file != null) {
+            session.send(file.readBytes())
+        }
     }
 
     override fun close() {

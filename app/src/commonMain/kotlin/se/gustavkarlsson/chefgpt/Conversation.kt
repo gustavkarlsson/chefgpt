@@ -22,7 +22,7 @@ data class Message(
 
 data class MessageContent(
     val text: String,
-    val image: String? = null, // TODO Create some kind of imageRef class for coil?
+    val image: File? = null,
 )
 
 enum class ConversationState {

@@ -26,7 +26,7 @@ class FindRecipeViewModel : ViewModel() {
     ) {
         val onUserTextChanged: (String) -> Unit
             get() = { text -> state.update { it.copy(userText = text) } }
-        val onImageAttached: (String) -> Unit
+        val onImageAttached: (File) -> Unit
             get() = { image -> state.update { it.copy(attachedImage = image) } }
     }
 
@@ -34,7 +34,7 @@ class FindRecipeViewModel : ViewModel() {
         val conversationState: ConversationState,
         val messages: List<Message>,
         val userText: String,
-        val attachedImage: String?,
+        val attachedImage: File?,
     )
 
     private val state =
