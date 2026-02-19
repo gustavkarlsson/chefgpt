@@ -10,8 +10,6 @@ import io.ktor.client.plugins.websocket.sendSerialized
 import io.ktor.client.plugins.websocket.webSocketSession
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
-import io.ktor.websocket.close
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,33 +17,34 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.merge
-import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import se.gustavkarlsson.chefgpt.api.MessageFromAi
 import se.gustavkarlsson.chefgpt.api.MessageFromUser
-
-private val httpClient: HttpClient =
-    HttpClient(CIO) {
-        // FIXME configure JSON reasonably
-        val jsonConfig = Json
-        install(ContentNegotiation) {
-            json(jsonConfig)
-        }
-        install(WebSockets) {
-            contentConverter = KotlinxWebsocketSerializationConverter(jsonConfig)
-        }
-    }
 
 suspend fun startWebSocketConversation(
     host: String = "localhost",
     port: Int = DEV_SERVER_PORT,
     path: String = "/find-recipe-chat",
-): UserSideConversation {
+): Conversation {
+    val httpClient =
+        HttpClient(CIO) {
+            // FIXME configure JSON reasonably
+            val jsonConfig = Json
+            install(ContentNegotiation) {
+                json(jsonConfig)
+            }
+            install(WebSockets) {
+                contentConverter = KotlinxWebsocketSerializationConverter(jsonConfig)
+            }
+        }
     val session = httpClient.webSocketSession(host = host, port = port, path = path)
-    return HttpClientConversation(session)
+    return HttpClientConversation(httpClient, session)
 }
 
-private class HttpClientConversation(private val session: DefaultClientWebSocketSession) : UserSideConversation {
+private class HttpClientConversation(
+    private val httpClient: HttpClient,
+    private val session: DefaultClientWebSocketSession
+) : Conversation, AutoCloseable {
     private val mutableState = MutableStateFlow(ConversationState.WaitingForAi)
     override val state: StateFlow<ConversationState> = mutableState.asStateFlow()
 
@@ -76,7 +75,7 @@ private class HttpClientConversation(private val session: DefaultClientWebSocket
     override fun close() {
         // FIXME don't close with global scope
         mutableState.value = ConversationState.Ended
-        GlobalScope.launch { session.close() }
+        httpClient.close()
     }
 
 }

@@ -62,8 +62,6 @@ kotlin {
             implementation(compose.materialIconsExtended)
             implementation(libs.multiplatform.markdown.renderer.m3)
             implementation(libs.kotlinx.datetime)
-            implementation(libs.koog.agents)
-            implementation(libs.slf4j.simple)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.cio)
             implementation(libs.ktor.client.content.negotiation)
@@ -79,6 +77,7 @@ kotlin {
             implementation(libs.androidx.activity.compose)
         }
         jvmMain.dependencies {
+            implementation(libs.slf4j.simple)
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
         }
