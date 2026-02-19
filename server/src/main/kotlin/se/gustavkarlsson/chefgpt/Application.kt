@@ -16,8 +16,8 @@ import io.ktor.server.websocket.WebSockets
 import io.ktor.server.websocket.pingPeriod
 import io.ktor.server.websocket.timeout
 import io.ktor.server.websocket.webSocket
-import io.ktor.websocket.Frame
 import io.ktor.websocket.WebSocketDeflateExtension
+import io.ktor.websocket.close
 import kotlinx.serialization.json.Json
 import se.gustavkarlsson.chefgpt.tools.IngredientStore
 import se.gustavkarlsson.chefgpt.tools.SpoonacularClient
@@ -54,7 +54,6 @@ fun Application.module(
 
     routing {
         webSocket("/find-recipe-chat") {
-            val conversation = Conversation(this)
             val agent =
                 AIAgent(
                     promptExecutor = simpleAnthropicExecutor(apiKey = anthropicApiKey),
@@ -62,7 +61,7 @@ fun Application.module(
                     toolRegistry =
                         ToolRegistry {
                             tools(IngredientStore(ingredientStorePath))
-                            tools(SpoonacularClient(anthropicApiKey))
+                            tools(SpoonacularClient(spoonacularApiKey))
                             tool(ExitTool)
                         },
                     systemPrompt =
@@ -75,10 +74,10 @@ fun Application.module(
                         Present each recipe found with a super short description and URL.
                         When the used is satisfied, exit the conversation.
                         """.trimIndent(),
-                    strategy = findRecipeFunctionalStrategy(conversation),
+                    strategy = findRecipeFunctionalStrategy(::receiveMessage, ::sendMessage),
                 )
             agent.run(Unit)
-            send(Frame.Close())
+            close()
         }
     }
 }

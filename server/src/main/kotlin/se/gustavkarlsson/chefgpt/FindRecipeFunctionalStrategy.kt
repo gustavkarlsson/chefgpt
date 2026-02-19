@@ -9,18 +9,23 @@ import ai.koog.agents.ext.tool.ExitTool
 import ai.koog.prompt.message.Message
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.io.files.Path
 import kotlinx.serialization.json.JsonPrimitive
+import kotlin.io.path.pathString
 
 private const val INITIAL_USER_QUERY = "Help me figure out what to cook"
 
 // FIXME test and validate flow and conversation ending
-fun findRecipeFunctionalStrategy(conversation: Conversation): AIAgentFunctionalStrategy<Unit, Unit> =
+fun findRecipeFunctionalStrategy(
+    receiveMessage: suspend () -> MessageToAi,
+    sendMessage: suspend (MessageToUser) -> Unit
+): AIAgentFunctionalStrategy<Unit, Unit> =
     functionalStrategy("find-recipe") {
         var messages: List<Message> = requestLLMMultiple(INITIAL_USER_QUERY)
         while (messages.isNotEmpty()) {
             val exitMessage = messages.findExitMessageOrNull()
             if (exitMessage != null) {
-                conversation.send(MessageFromAi.End(exitMessage))
+                sendMessage(MessageToUser(exitMessage))
                 break
             }
             messages =
@@ -35,27 +40,21 @@ fun findRecipeFunctionalStrategy(conversation: Conversation): AIAgentFunctionalS
                         async {
                             val messageToUser = messages.filterIsInstance<Message.Assistant>().toSingleMessage()
                             if (messageToUser.isNotBlank()) {
-                                conversation.send(MessageFromAi.Content(messageToUser))
-                                when (val response = conversation.await()) {
-                                    is MessageFromUser.Content -> {
-                                        llm.writeSession {
-                                            appendPrompt {
-                                                user {
-                                                    text(response.text)
-                                                    // FIXME how do we send images?
-                                                    // userResponse.image?.let {
-                                                    //     image(Path(it))
-                                                    // }
-                                                }
+                                sendMessage(MessageToUser(messageToUser))
+                                val messageToAi = receiveMessage()
+                                llm.writeSession {
+                                    appendPrompt {
+                                        user {
+                                            messageToAi.text?.let {
+                                                text(it)
                                             }
-
-                                            requestLLMMultiple()
+                                            messageToAi.image?.let {
+                                                image(Path(it.pathString))
+                                            }
                                         }
                                     }
 
-                                    MessageFromUser.End -> {
-                                        emptyList()
-                                    }
+                                    requestLLMMultiple()
                                 }
                             } else {
                                 emptyList()

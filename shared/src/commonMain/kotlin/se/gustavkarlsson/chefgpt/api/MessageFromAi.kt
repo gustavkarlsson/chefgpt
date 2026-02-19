@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt
+package se.gustavkarlsson.chefgpt.api
 
 import kotlinx.serialization.Serializable
 
@@ -9,8 +9,4 @@ sealed interface MessageFromAi {
         val text: String,
     ) : MessageFromAi
 
-    @Serializable
-    data class End(
-        val text: String,
-    ) : MessageFromAi
 }
