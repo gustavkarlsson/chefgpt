@@ -35,10 +35,10 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinxSerializationJson)
         }
         commonTest.dependencies {
-            implementation(libs.kotlin.test)
+            implementation(libs.kotlinTest)
         }
     }
 }
@@ -46,7 +46,7 @@ kotlin {
 android {
     namespace = "se.gustavkarlsson.chefgpt.shared"
     compileSdk =
-        libs.versions.android.compileSdk
+        libs.versions.androidCompileSdk
             .get()
             .toInt()
     compileOptions {
@@ -55,7 +55,7 @@ android {
     }
     defaultConfig {
         minSdk =
-            libs.versions.android.minSdk
+            libs.versions.androidMinSdk
                 .get()
                 .toInt()
     }

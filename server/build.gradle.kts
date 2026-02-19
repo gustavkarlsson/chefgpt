@@ -16,17 +16,17 @@ application {
 
 dependencies {
     implementation(projects.shared)
-    implementation(libs.kotlinx.coroutinesCore)
+    implementation(libs.kotlinxCoroutinesCore)
     implementation(libs.logback)
-    implementation(libs.ktor.serverCore)
-    implementation(libs.ktor.serverNetty)
-    implementation(libs.ktor.serverWebsockets)
-    implementation(libs.ktor.serverContentNegotiation) // TODO do we need 'em?
-    implementation(libs.ktor.client.core)
-    implementation(libs.ktor.client.cio)
-    implementation(libs.ktor.client.content.negotiation)
-    implementation(libs.ktor.serialization.kotlinx.json)
-    implementation(libs.koog.agents)
-    testImplementation(libs.ktor.serverTestHost)
-    testImplementation(libs.kotlin.testJunit)
+    implementation(libs.ktorServerCore)
+    implementation(libs.ktorServerNetty)
+    implementation(libs.ktorServerWebsockets)
+    implementation(libs.ktorServerContentNegotiation) // TODO do we need 'em?
+    implementation(libs.ktorClientCore)
+    implementation(libs.ktorClientCio)
+    implementation(libs.ktorClientContentNegotiation)
+    implementation(libs.ktorSerializationKotlinxJson)
+    implementation(libs.koogAgents)
+    testImplementation(libs.ktorServerTestHost)
+    testImplementation(libs.kotlinTestJunit)
 }

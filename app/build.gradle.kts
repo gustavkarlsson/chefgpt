@@ -50,36 +50,36 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(projects.shared)
-            implementation(libs.compose.runtime)
-            implementation(libs.compose.foundation)
-            implementation(libs.compose.material3)
-            implementation(libs.compose.ui)
-            implementation(libs.compose.components.resources)
-            implementation(libs.compose.uiToolingPreview)
-            implementation(libs.androidx.lifecycle.viewmodelCompose)
-            implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.composeRuntime)
+            implementation(libs.composeFoundation)
+            implementation(libs.composeMaterial3)
+            implementation(libs.composeUi)
+            implementation(libs.composeComponentsResources)
+            implementation(libs.composeUiToolingPreview)
+            implementation(libs.androidxLifecycleViewmodelCompose)
+            implementation(libs.androidxLifecycleRuntimeCompose)
             // TODO specify dependency instead of compose.materialIconsExtended
             implementation(compose.materialIconsExtended)
-            implementation(libs.multiplatform.markdown.renderer.m3)
-            implementation(libs.kotlinx.datetime)
-            implementation(libs.ktor.client.core)
-            implementation(libs.ktor.client.cio)
-            implementation(libs.ktor.client.content.negotiation)
-            implementation(libs.ktor.client.websockets)
-            implementation(libs.ktor.serialization.kotlinx.json)
-            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.multiplatformMarkdownRendererM3)
+            implementation(libs.kotlinxDatetime)
+            implementation(libs.ktorClientCore)
+            implementation(libs.ktorClientCio)
+            implementation(libs.ktorClientContentNegotiation)
+            implementation(libs.ktorClientWebsockets)
+            implementation(libs.ktorSerializationKotlinxJson)
+            implementation(libs.kotlinxSerializationJson)
         }
         commonTest.dependencies {
-            implementation(libs.kotlin.test)
+            implementation(libs.kotlinTest)
         }
         androidMain.dependencies {
-            implementation(libs.compose.uiToolingPreview) // TODO Move to common?
-            implementation(libs.androidx.activity.compose)
+            implementation(libs.composeUiToolingPreview) // TODO Move to common?
+            implementation(libs.androidxActivityCompose)
         }
         jvmMain.dependencies {
-            implementation(libs.slf4j.simple)
+            implementation(libs.slf4jSimple)
             implementation(compose.desktop.currentOs)
-            implementation(libs.kotlinx.coroutinesSwing)
+            implementation(libs.kotlinxCoroutinesSwing)
         }
     }
 }
@@ -87,18 +87,18 @@ kotlin {
 android {
     namespace = "se.gustavkarlsson.chefgpt"
     compileSdk =
-        libs.versions.android.compileSdk
+        libs.versions.androidCompileSdk
             .get()
             .toInt()
 
     defaultConfig {
         applicationId = "se.gustavkarlsson.chefgpt"
         minSdk =
-            libs.versions.android.minSdk
+            libs.versions.androidMinSdk
                 .get()
                 .toInt()
         targetSdk =
-            libs.versions.android.targetSdk
+            libs.versions.androidTargetSdk
                 .get()
                 .toInt()
         versionCode = 1
@@ -121,7 +121,7 @@ android {
 }
 
 dependencies {
-    debugImplementation(libs.compose.uiTooling)
+    debugImplementation(libs.composeUiTooling)
 }
 
 compose.desktop {
