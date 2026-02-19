@@ -68,6 +68,8 @@ kotlin {
             implementation(libs.ktorClientWebsockets)
             implementation(libs.ktorSerializationKotlinxJson)
             implementation(libs.kotlinxSerializationJson)
+            implementation(libs.coilCompose)
+            implementation(libs.coilNetworkKtor)
         }
         commonTest.dependencies {
             implementation(libs.kotlinTest)

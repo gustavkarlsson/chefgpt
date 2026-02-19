@@ -1,11 +1,14 @@
 package se.gustavkarlsson.chefgpt
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -34,8 +37,10 @@ import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil3.compose.AsyncImage
 import com.mikepenz.markdown.m3.Markdown
 import kotlinx.coroutines.launch
 
@@ -103,17 +108,18 @@ private fun MessageList(
 private fun MessageBubble(message: Message) {
     val isUser = message.subject == Subject.User
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start,
-    ) {
-        val sideBasedPadding =
-            if (isUser) {
-                Modifier.padding(start = 64.dp)
-            } else {
-                Modifier.padding(end = 64.dp)
-            }
+    Box(modifier = Modifier.fillMaxWidth()) {
         Surface(
+            modifier =
+                Modifier
+                    .align(
+                        if (isUser) {
+                            Alignment.CenterEnd
+                        } else {
+                            Alignment.CenterStart
+                        },
+                    ).widthIn(max = 400.dp)
+                    .padding(4.dp),
             shape = RoundedCornerShape(12.dp),
             color =
                 if (isUser) {
@@ -121,16 +127,30 @@ private fun MessageBubble(message: Message) {
                 } else {
                     MaterialTheme.colorScheme.tertiaryContainer
                 },
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .then(sideBasedPadding)
-                    .padding(4.dp),
         ) {
-            Markdown(
-                content = message.content.text, // TODO what if it sends image?
-                modifier = Modifier.padding(12.dp),
-            )
+            Column {
+                message.content.image?.let { imageUrl ->
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = null,
+                        modifier =
+                            Modifier
+                                .align(
+                                    if (isUser) {
+                                        Alignment.End
+                                    } else {
+                                        Alignment.Start
+                                    },
+                                ).fillMaxWidth()
+                                .heightIn(max = 300.dp),
+                        contentScale = ContentScale.Crop,
+                    )
+                }
+                Markdown(
+                    content = message.content.text,
+                    modifier = Modifier.padding(12.dp),
+                )
+            }
         }
     }
 }
