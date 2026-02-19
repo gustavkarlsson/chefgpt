@@ -21,6 +21,7 @@ class FindRecipeViewModel : ViewModel() {
     inner class ViewState(
         val messages: List<Message>,
         val userText: String,
+        val attachedImage: File?,
         val onClickSend: (() -> Unit)?,
         val onImageCleared: (() -> Unit)?,
     ) {
@@ -56,6 +57,7 @@ class FindRecipeViewModel : ViewModel() {
         ViewState(
             messages = messages,
             userText = userText,
+            attachedImage = attachedImage,
             onClickSend =
                 if (conversationState == ConversationState.WaitingForUser && userText.isNotBlank()) {
                     ::sendMessage

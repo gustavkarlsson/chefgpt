@@ -1,5 +1,11 @@
 package se.gustavkarlsson.chefgpt
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,8 +22,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Camera
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -28,9 +36,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isShiftPressed
@@ -79,6 +90,7 @@ fun App() {
 
                 MessageInput(
                     userText = viewState.userText,
+                    attachedImage = viewState.attachedImage,
                     onUserTextChanged = viewState.onUserTextChanged,
                     onClickSend = viewState.onClickSend,
                     onImageAttached = viewState.onImageAttached,
@@ -171,6 +183,7 @@ private fun MessageBubble(message: Message) {
 @Composable
 private fun MessageInput(
     userText: String,
+    attachedImage: File?,
     onUserTextChanged: (String) -> Unit,
     onClickSend: (() -> Unit)?,
     onImageAttached: (File) -> Unit,
@@ -213,27 +226,54 @@ private fun MessageInput(
             )
 
             val scope = rememberCoroutineScope()
-            IconButton(
-                onClick = {
-                    scope.launch {
-                        pickImageFile()?.let { onImageAttached(it) }
+            if (attachedImage == null) {
+                IconButton(
+                    onClick = {
+                        scope.launch {
+                            pickImageFile()?.let { onImageAttached(it) }
+                        }
+                    },
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CameraAlt,
+                        contentDescription = "Take photo",
+                    )
+                }
+            } else {
+                val interactionSource = remember { MutableInteractionSource() }
+                val isHovered by interactionSource.collectIsHoveredAsState()
+                Box(
+                    modifier =
+                        Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .hoverable(interactionSource = interactionSource)
+                            .clickable { onImageCleared?.invoke() },
+                ) {
+                    AsyncImage(
+                        model = attachedImage,
+                        contentDescription = "Attached Image",
+                        modifier =
+                            Modifier
+                                .matchParentSize(),
+                        contentScale = ContentScale.Crop,
+                    )
+                    if (isHovered) {
+                        Box(
+                            modifier =
+                                Modifier
+                                    .matchParentSize()
+                                    .background(Color.Black.copy(alpha = 0.4f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Clear,
+                                contentDescription = "Clear Image",
+                                tint = Color.White,
+                            )
+                        }
                     }
-                },
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Share,
-                    contentDescription = "Attach Image",
-                )
-            }
-
-            IconButton(
-                onClick = { onImageCleared?.invoke() },
-                enabled = onImageCleared != null,
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Clear,
-                    contentDescription = "Clear Image",
-                )
+                }
             }
 
             IconButton(
