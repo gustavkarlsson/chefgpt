@@ -1,8 +1,8 @@
 package se.gustavkarlsson.chefgpt
 
-import ai.koog.utils.io.use
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -13,8 +13,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class FindRecipeViewModel : ViewModel() {
-    private val conversation = ConversationService()
-    private val aiAgent = createAiAgent(conversation)
+    private val conversation = viewModelScope.async { startWebSocketConversation() }
+
+    private suspend fun conversation() = conversation.await()
 
     // TODO Don't make inner, but make it data
     inner class ViewState(
@@ -39,7 +40,7 @@ class FindRecipeViewModel : ViewModel() {
     private val state =
         MutableStateFlow(
             State(
-                conversationState = conversation.state.value,
+                conversationState = ConversationState.WaitingForAi,
                 messages = emptyList(),
                 userText = "",
                 attachedImage = null,
@@ -75,28 +76,21 @@ class FindRecipeViewModel : ViewModel() {
                 state.getAndUpdate {
                     it.copy(userText = "", attachedImage = null)
                 }
-            conversation.sayToAi(MessageContent(lastState.userText, lastState.attachedImage))
+            conversation().sayToAi(MessageContent(lastState.userText, lastState.attachedImage))
         }
     }
 
     init {
         viewModelScope.launch {
-            aiAgent.use { it.run(Unit) }
-        }
-        viewModelScope.launch {
-            conversation.state.collect { conversationState ->
+            conversation().state.collect { conversationState ->
                 state.update { it.copy(conversationState = conversationState) }
             }
         }
 
         viewModelScope.launch {
-            conversation.messageHistory.collect { message ->
+            conversation().messageHistory.collect { message ->
                 state.update { it.copy(messages = it.messages + message) }
             }
         }
-    }
-
-    override fun onCleared() {
-        conversation.close()
     }
 }

@@ -10,12 +10,11 @@ import java.nio.file.Files
 import kotlin.io.path.writeBytes
 
 suspend fun WebSocketServerSession.receiveMessage(): MessageToAi {
-    return when (val messageFromUser = receiveDeserialized<MessageFromUser>()) {
-        is MessageFromUser.Content -> convert(messageFromUser)
-    }
+    val messageFromUser = receiveDeserialized<MessageFromUser>()
+    return convert(messageFromUser)
 }
 
-private suspend fun WebSocketServerSession.convert(content: MessageFromUser.Content): MessageToAi {
+private suspend fun WebSocketServerSession.convert(content: MessageFromUser): MessageToAi {
     val image = content.image?.let { image ->
         val frame = incoming.receive()
         require(frame is Frame.Binary) {

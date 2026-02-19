@@ -21,6 +21,7 @@ dependencies {
     implementation(libs.ktor.serverCore)
     implementation(libs.ktor.serverNetty)
     implementation(libs.ktor.serverWebsockets)
+    implementation(libs.ktor.serverContentNegotiation) // FIXME do we need 'em?
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.cio)
     implementation(libs.ktor.client.content.negotiation)

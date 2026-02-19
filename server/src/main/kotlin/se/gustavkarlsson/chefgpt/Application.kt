@@ -7,10 +7,12 @@ import ai.koog.agents.ext.tool.ExitTool
 import ai.koog.prompt.executor.clients.anthropic.AnthropicModels
 import ai.koog.prompt.executor.llms.all.simpleAnthropicExecutor
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
+import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.routing.routing
 import io.ktor.server.websocket.WebSockets
 import io.ktor.server.websocket.pingPeriod
@@ -43,10 +45,15 @@ fun Application.module(
     spoonacularApiKey: String,
     ingredientStorePath: Path,
 ) {
+    // TODO configure for leniency
+    val jsonConfig = Json
+    install(ContentNegotiation) {
+        json(jsonConfig)
+    }
     install(WebSockets) {
         pingPeriod = 30.seconds
         timeout = 60.seconds
-        contentConverter = KotlinxWebsocketSerializationConverter(Json) // TODO configure for leniency
+        contentConverter = KotlinxWebsocketSerializationConverter(jsonConfig)
         extensions {
             install(WebSocketDeflateExtension)
         }
