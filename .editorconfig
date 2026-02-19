@@ -1,0 +1,20 @@
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 4
+max_line_length = 120 # Keep in sync with spotless setting in gradle and ktfmt IDEA plugin
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[{*.kt,*.kts}]
+# ktlint_function_naming_ignore_when_annotated_with = Composable
+ktlint_standard_function-naming = disabled
+
+[*.json]
+indent_size = 2
+
+[*.bat]
+end_of_line = crlf

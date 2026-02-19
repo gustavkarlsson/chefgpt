@@ -24,40 +24,44 @@ fun findRecipeFunctionalStrategy(conversation: AiSideConversation): AIAgentFunct
                     conversation.sayToUser(MessageContent(exitMessage))
                     break
                 }
-                messages = coroutineScope {
-                    val toolEvaluationResults = async {
-                        val toolCalls = messages.filterIsInstance<Message.Tool.Call>()
-                        val toolResults = executeMultipleTools(toolCalls)
-                        sendMultipleToolResults(toolResults)
-                    }
-                    val userInteractionResults = async {
-                        val messageToUser = messages.filterIsInstance<Message.Assistant>().toSingleMessage()
-                        if (messageToUser.isNotBlank()) {
-                            val userResponse = conversation.askUser(MessageContent(messageToUser))
-                            llm.writeSession {
-                                appendPrompt {
-                                    user {
-                                        text(userResponse.text)
-                                        userResponse.image?.let {
-                                            image(Path(it))
-                                        }
-                                    }
-                                }
-
-                                requestLLMMultiple()
+                messages =
+                    coroutineScope {
+                        val toolEvaluationResults =
+                            async {
+                                val toolCalls = messages.filterIsInstance<Message.Tool.Call>()
+                                val toolResults = executeMultipleTools(toolCalls)
+                                sendMultipleToolResults(toolResults)
                             }
-                        } else {
-                            emptyList()
-                        }
+                        val userInteractionResults =
+                            async {
+                                val messageToUser = messages.filterIsInstance<Message.Assistant>().toSingleMessage()
+                                if (messageToUser.isNotBlank()) {
+                                    val userResponse = conversation.askUser(MessageContent(messageToUser))
+                                    llm.writeSession {
+                                        appendPrompt {
+                                            user {
+                                                text(userResponse.text)
+                                                userResponse.image?.let {
+                                                    image(Path(it))
+                                                }
+                                            }
+                                        }
+
+                                        requestLLMMultiple()
+                                    }
+                                } else {
+                                    emptyList()
+                                }
+                            }
+                        toolEvaluationResults.await() + userInteractionResults.await()
                     }
-                    toolEvaluationResults.await() + userInteractionResults.await()
-                }
             }
         }
     }
 
 private fun List<Message>.findExitMessageOrNull(): String? =
-    this.filterIsInstance<Message.Tool.Call>()
+    this
+        .filterIsInstance<Message.Tool.Call>()
         .filter { it.tool == ExitTool.name }
         .mapNotNull { it.contentJson["message"] as? JsonPrimitive }
         .map { it.content }

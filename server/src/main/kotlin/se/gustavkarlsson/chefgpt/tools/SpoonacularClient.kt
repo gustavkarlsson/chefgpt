@@ -28,7 +28,7 @@ data class Ingredient(
     val unit: String,
     val unitLong: String,
     val unitShort: String,
-    val extendedName: String? = null
+    val extendedName: String? = null,
 )
 
 @Serializable
@@ -42,37 +42,45 @@ data class Recipe(
     val title: String,
     val unusedIngredients: List<Ingredient>,
     val usedIngredientCount: Int,
-    val usedIngredients: List<Ingredient>
+    val usedIngredients: List<Ingredient>,
 )
 
-class SpoonacularClient(private val apiKey: String) : ToolSet, AutoCloseable {
-    private val client = HttpClient(CIO) {
-        install(HttpTimeout) {
-            requestTimeoutMillis = 1000
+class SpoonacularClient(
+    private val apiKey: String,
+) : ToolSet,
+    AutoCloseable {
+    private val client =
+        HttpClient(CIO) {
+            install(HttpTimeout) {
+                requestTimeoutMillis = 1000
+            }
+            install(ContentNegotiation) {
+                json(
+                    Json {
+                        ignoreUnknownKeys = true
+                        isLenient = true
+                    },
+                )
+            }
         }
-        install(ContentNegotiation) {
-            json(Json {
-                ignoreUnknownKeys = true
-                isLenient = true
-            })
-        }
-    }
 
     @Tool
-    @LLMDescription("Find recipes that use as many of the given ingredients as possible and require as few additional ingredients as possible. ingredients: Ingredients that you have at home. resultCount: The maximum number of results to return (1-100).")
+    @LLMDescription(
+        "Find recipes that use as many of the given ingredients as possible and require as few additional ingredients as possible. ingredients: Ingredients that you have at home. resultCount: The maximum number of results to return (1-100).",
+    )
     suspend fun findByIngredients(
         ingredients: List<String>,
         resultCount: Int,
-    ): List<Recipe> {
-        return client.get("https://api.spoonacular.com/recipes/findByIngredients") {
-            header("x-api-key", apiKey)
+    ): List<Recipe> =
+        client
+            .get("https://api.spoonacular.com/recipes/findByIngredients") {
+                header("x-api-key", apiKey)
 
-            parameter("ingredients", ingredients)
-            parameter("number", resultCount)
-            parameter("ranking", 2)
-            parameter("ignorePantry", true)
-        }.body()
-    }
+                parameter("ingredients", ingredients)
+                parameter("number", resultCount)
+                parameter("ranking", 2)
+                parameter("ignorePantry", true)
+            }.body()
 
     override fun close() {
         client.close()

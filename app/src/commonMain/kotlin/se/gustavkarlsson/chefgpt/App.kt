@@ -46,16 +46,17 @@ fun App() {
 
     MaterialTheme {
         Scaffold(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
         ) { paddingValues ->
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
             ) {
                 MessageList(
                     messages = viewState.messages,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
 
                 MessageInput(
@@ -64,7 +65,7 @@ fun App() {
                     onClickSend = viewState.onClickSend,
                     onImageAttached = viewState.onImageAttached,
                     onImageCleared = viewState.onImageCleared,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         }
@@ -72,7 +73,10 @@ fun App() {
 }
 
 @Composable
-private fun MessageList(messages: List<Message>, modifier: Modifier = Modifier) {
+private fun MessageList(
+    messages: List<Message>,
+    modifier: Modifier = Modifier,
+) {
     val listState = rememberLazyListState()
 
     LaunchedEffect(messages.size) {
@@ -83,10 +87,11 @@ private fun MessageList(messages: List<Message>, modifier: Modifier = Modifier) 
 
     LazyColumn(
         state = listState,
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(messages) { message ->
             MessageBubble(message)
@@ -100,20 +105,27 @@ private fun MessageBubble(message: Message) {
 
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
+        horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start,
     ) {
-        val sideBasedPadding = if (isUser) {
-            Modifier.padding(start = 64.dp)
-        } else {
-            Modifier.padding(end = 64.dp)
-        }
+        val sideBasedPadding =
+            if (isUser) {
+                Modifier.padding(start = 64.dp)
+            } else {
+                Modifier.padding(end = 64.dp)
+            }
         Surface(
             shape = RoundedCornerShape(12.dp),
-            color = if (isUser) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.tertiaryContainer,
-            modifier = Modifier
-                .fillMaxWidth()
-                .then(sideBasedPadding)
-                .padding(4.dp)
+            color =
+                if (isUser) {
+                    MaterialTheme.colorScheme.primaryContainer
+                } else {
+                    MaterialTheme.colorScheme.tertiaryContainer
+                },
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .then(sideBasedPadding)
+                    .padding(4.dp),
         ) {
             Markdown(
                 content = message.content.text, // TODO what if it sends image?
@@ -130,37 +142,40 @@ private fun MessageInput(
     onClickSend: (() -> Unit)?,
     onImageAttached: (String) -> Unit,
     onImageCleared: (() -> Unit)?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Surface(
         modifier = modifier,
-        shadowElevation = 8.dp
+        shadowElevation = 8.dp,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             TextField(
                 value = userText,
                 onValueChange = onUserTextChanged,
-                modifier = Modifier.weight(1f)
-                    .onPreviewKeyEvent { keyEvent ->
-                        if (keyEvent.key == Key.Enter && keyEvent.type == KeyEventType.KeyDown) {
-                            if (keyEvent.isShiftPressed) {
-                                false // Allow shift+enter to insert newline
-                            } else {
-                                if (onClickSend != null && userText.isNotBlank()) {
-                                    onClickSend.invoke()
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .onPreviewKeyEvent { keyEvent ->
+                            if (keyEvent.key == Key.Enter && keyEvent.type == KeyEventType.KeyDown) {
+                                if (keyEvent.isShiftPressed) {
+                                    false // Allow shift+enter to insert newline
+                                } else {
+                                    if (onClickSend != null && userText.isNotBlank()) {
+                                        onClickSend.invoke()
+                                    }
+                                    true
                                 }
-                                true
+                            } else {
+                                false
                             }
-                        } else {
-                            false
-                        }
-                    },
+                        },
                 placeholder = { Text("Type a message...") },
             )
 
@@ -170,31 +185,31 @@ private fun MessageInput(
                     scope.launch {
                         pickImageFile()?.let { onImageAttached(it) }
                     }
-                }
+                },
             ) {
                 Icon(
                     imageVector = Icons.Default.Share,
-                    contentDescription = "Attach Image"
+                    contentDescription = "Attach Image",
                 )
             }
 
             IconButton(
                 onClick = { onImageCleared?.invoke() },
-                enabled = onImageCleared != null
+                enabled = onImageCleared != null,
             ) {
                 Icon(
                     imageVector = Icons.Default.Clear,
-                    contentDescription = "Clear Image"
+                    contentDescription = "Clear Image",
                 )
             }
 
             IconButton(
                 onClick = { onClickSend?.invoke() },
-                enabled = onClickSend != null && userText.isNotBlank()
+                enabled = onClickSend != null && userText.isNotBlank(),
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Send,
-                    contentDescription = "Send"
+                    contentDescription = "Send",
                 )
             }
         }

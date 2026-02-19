@@ -22,7 +22,7 @@ kotlin {
 
     listOf(
         iosArm64(),
-        iosSimulatorArm64()
+        iosSimulatorArm64(),
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
             baseName = "ChefGPT"
@@ -58,7 +58,8 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
-            implementation(compose.materialIconsExtended) // TODO specify dependency instead of compose.materialIconsExtended
+            // TODO specify dependency instead of compose.materialIconsExtended
+            implementation(compose.materialIconsExtended)
             implementation(libs.multiplatform.markdown.renderer.m3)
             implementation(libs.kotlinx.datetime)
             implementation(libs.koog.agents)
@@ -85,12 +86,21 @@ kotlin {
 
 android {
     namespace = "se.gustavkarlsson.chefgpt"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
+    compileSdk =
+        libs.versions.android.compileSdk
+            .get()
+            .toInt()
 
     defaultConfig {
         applicationId = "se.gustavkarlsson.chefgpt"
-        minSdk = libs.versions.android.minSdk.get().toInt()
-        targetSdk = libs.versions.android.targetSdk.get().toInt()
+        minSdk =
+            libs.versions.android.minSdk
+                .get()
+                .toInt()
+        targetSdk =
+            libs.versions.android.targetSdk
+                .get()
+                .toInt()
         versionCode = 1
         versionName = "1.0"
     }

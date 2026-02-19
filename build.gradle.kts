@@ -1,3 +1,5 @@
+import com.diffplug.gradle.spotless.BaseKotlinExtension
+
 plugins {
     // this is necessary to avoid the plugins to be loaded multiple times
     // in each subproject's classloader
@@ -8,4 +10,30 @@ plugins {
     alias(libs.plugins.composeCompiler) apply false
     alias(libs.plugins.kotlinMultiplatform) apply false
     alias(libs.plugins.kotlinJvm) apply false
+    alias(libs.plugins.spotless)
+}
+
+allprojects {
+    apply(
+        plugin =
+            rootProject.libs.plugins.spotless
+                .get()
+                .pluginId,
+    )
+
+    spotless {
+        val commonKotlinConfig: BaseKotlinExtension.() -> Unit = {
+            ktlint(libs.versions.ktlint.get())
+        }
+        kotlin {
+            target("**/*.kt")
+            targetExclude("**/generated/**") // build directory is excluded automatically
+            commonKotlinConfig()
+        }
+        // Separate config for scripts such as build.gradle.kts files
+        kotlinGradle {
+            target("**/*.kts")
+            commonKotlinConfig()
+        }
+    }
 }

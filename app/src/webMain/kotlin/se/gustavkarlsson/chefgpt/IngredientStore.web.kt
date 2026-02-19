@@ -5,17 +5,23 @@ private const val LINE_SEPARATOR = "\n"
 
 external interface Storage {
     fun getItem(key: String): String?
-    fun setItem(key: String, value: String)
+
+    fun setItem(
+        key: String,
+        value: String,
+    )
 }
 
 external val localStorage: Storage
 
 class WebIngredientStore : IngredientStore {
-    private val ingredients: MutableSet<String> = localStorage.getItem(STORAGE_KEY)
-        ?.split(LINE_SEPARATOR)
-        ?.filterNot { it.isBlank() }
-        ?.toMutableSet()
-        ?: mutableSetOf()
+    private val ingredients: MutableSet<String> =
+        localStorage
+            .getItem(STORAGE_KEY)
+            ?.split(LINE_SEPARATOR)
+            ?.filterNot { it.isBlank() }
+            ?.toMutableSet()
+            ?: mutableSetOf()
 
     override fun getIngredients(): List<String> = ingredients.toList()
 
@@ -36,9 +42,10 @@ class WebIngredientStore : IngredientStore {
     }
 
     private fun save() {
-        val text = ingredients
-            .filterNot { it.isBlank() }
-            .joinToString(LINE_SEPARATOR)
+        val text =
+            ingredients
+                .filterNot { it.isBlank() }
+                .joinToString(LINE_SEPARATOR)
         localStorage.setItem(STORAGE_KEY, text)
     }
 }

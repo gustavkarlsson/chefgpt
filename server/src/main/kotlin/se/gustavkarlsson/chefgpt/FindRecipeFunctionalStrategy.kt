@@ -23,46 +23,52 @@ fun findRecipeFunctionalStrategy(conversation: Conversation): AIAgentFunctionalS
                 conversation.send(MessageFromAi.End(exitMessage))
                 break
             }
-            messages = coroutineScope {
-                val toolEvaluationResults = async {
-                    val toolCalls = messages.filterIsInstance<Message.Tool.Call>()
-                    val toolResults = executeMultipleTools(toolCalls)
-                    sendMultipleToolResults(toolResults)
-                }
-                val userInteractionResults = async {
-                    val messageToUser = messages.filterIsInstance<Message.Assistant>().toSingleMessage()
-                    if (messageToUser.isNotBlank()) {
-                        conversation.send(MessageFromAi.Content(messageToUser))
-                        when (val response = conversation.await()) {
-                            is MessageFromUser.Content -> {
-                                llm.writeSession {
-                                    appendPrompt {
-                                        user {
-                                            text(response.text)
-                                            // FIXME how do we send images?
-                                            // userResponse.image?.let {
-                                            //     image(Path(it))
-                                            // }
+            messages =
+                coroutineScope {
+                    val toolEvaluationResults =
+                        async {
+                            val toolCalls = messages.filterIsInstance<Message.Tool.Call>()
+                            val toolResults = executeMultipleTools(toolCalls)
+                            sendMultipleToolResults(toolResults)
+                        }
+                    val userInteractionResults =
+                        async {
+                            val messageToUser = messages.filterIsInstance<Message.Assistant>().toSingleMessage()
+                            if (messageToUser.isNotBlank()) {
+                                conversation.send(MessageFromAi.Content(messageToUser))
+                                when (val response = conversation.await()) {
+                                    is MessageFromUser.Content -> {
+                                        llm.writeSession {
+                                            appendPrompt {
+                                                user {
+                                                    text(response.text)
+                                                    // FIXME how do we send images?
+                                                    // userResponse.image?.let {
+                                                    //     image(Path(it))
+                                                    // }
+                                                }
+                                            }
+
+                                            requestLLMMultiple()
                                         }
                                     }
 
-                                    requestLLMMultiple()
+                                    MessageFromUser.End -> {
+                                        emptyList()
+                                    }
                                 }
+                            } else {
+                                emptyList()
                             }
-
-                            MessageFromUser.End -> emptyList()
                         }
-                    } else {
-                        emptyList()
-                    }
+                    toolEvaluationResults.await() + userInteractionResults.await()
                 }
-                toolEvaluationResults.await() + userInteractionResults.await()
-            }
         }
     }
 
 private fun List<Message>.findExitMessageOrNull(): String? =
-    this.filterIsInstance<Message.Tool.Call>()
+    this
+        .filterIsInstance<Message.Tool.Call>()
         .filter { it.tool == ExitTool.name }
         .mapNotNull { it.contentJson["message"] as? JsonPrimitive }
         .map { it.content }

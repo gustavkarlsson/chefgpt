@@ -7,15 +7,19 @@ import kotlin.io.path.writeText
 
 private const val LINE_SEPARATOR = "\n"
 
-class JvmIngredientStore(private val file: Path) : IngredientStore {
-    private val ingredients: MutableSet<String> = if (file.exists()) {
-        file.readText()
-            .split(LINE_SEPARATOR)
-            .filterNot { it.isBlank() }
-            .toMutableSet()
-    } else {
-        mutableSetOf()
-    }
+class JvmIngredientStore(
+    private val file: Path,
+) : IngredientStore {
+    private val ingredients: MutableSet<String> =
+        if (file.exists()) {
+            file
+                .readText()
+                .split(LINE_SEPARATOR)
+                .filterNot { it.isBlank() }
+                .toMutableSet()
+        } else {
+            mutableSetOf()
+        }
 
     override fun getIngredients(): List<String> = ingredients.toList()
 
@@ -36,9 +40,10 @@ class JvmIngredientStore(private val file: Path) : IngredientStore {
     }
 
     private fun save() {
-        val text = ingredients
-            .filterNot { it.isBlank() }
-            .joinToString(LINE_SEPARATOR)
+        val text =
+            ingredients
+                .filterNot { it.isBlank() }
+                .joinToString(LINE_SEPARATOR)
         file.writeText(text)
     }
 }

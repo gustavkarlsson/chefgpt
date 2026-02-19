@@ -16,12 +16,15 @@ import kotlinx.coroutines.sync.withLock
 interface UserSideConversation : AutoCloseable {
     val state: StateFlow<ConversationState>
     val messageHistory: Flow<Message>
+
     suspend fun sayToAi(content: MessageContent)
 }
 
 interface AiSideConversation : AutoCloseable {
     suspend fun sayToUser(content: MessageContent)
+
     suspend fun listenToUser(): MessageContent
+
     suspend fun askUser(content: MessageContent): MessageContent {
         sayToUser(content)
         return listenToUser()
@@ -29,18 +32,29 @@ interface AiSideConversation : AutoCloseable {
 }
 
 enum class Subject {
-    User, Ai,
+    User,
+    Ai,
 }
 
-data class Message(val subject: Subject, val content: MessageContent)
+data class Message(
+    val subject: Subject,
+    val content: MessageContent,
+)
 
-data class MessageContent(val text: String, val image: String? = null)
+data class MessageContent(
+    val text: String,
+    val image: String? = null,
+)
 
 enum class ConversationState {
-    WaitingForUser, WaitingForAi, Ended,
+    WaitingForUser,
+    WaitingForAi,
+    Ended,
 }
 
-class ConversationService : AiSideConversation, UserSideConversation {
+class ConversationService :
+    AiSideConversation,
+    UserSideConversation {
     private val _state = MutableStateFlow(ConversationState.WaitingForAi)
     override val state: StateFlow<ConversationState> = _state.asStateFlow()
 
@@ -68,8 +82,8 @@ class ConversationService : AiSideConversation, UserSideConversation {
         }
     }
 
-    override suspend fun listenToUser(): MessageContent {
-        return aiMutex.withLock {
+    override suspend fun listenToUser(): MessageContent =
+        aiMutex.withLock {
             coroutineScope {
                 checkNotEnded()
                 // First start listening
@@ -80,7 +94,6 @@ class ConversationService : AiSideConversation, UserSideConversation {
                 message.await()
             }
         }
-    }
 
     private fun checkNotEnded() {
         check(_state.value != ConversationState.Ended) { "Conversation has ended" }

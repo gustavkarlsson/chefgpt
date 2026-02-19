@@ -21,12 +21,12 @@ class FindRecipeViewModel : ViewModel() {
         val messages: List<Message>,
         val userText: String,
         val onClickSend: (() -> Unit)?,
-        val onImageCleared: (() -> Unit)?
+        val onImageCleared: (() -> Unit)?,
     ) {
         val onUserTextChanged: (String) -> Unit
-            get() = { text -> _state.update { it.copy(userText = text) } }
+            get() = { text -> state.update { it.copy(userText = text) } }
         val onImageAttached: (String) -> Unit
-            get() = { image -> _state.update { it.copy(attachedImage = image) } }
+            get() = { image -> state.update { it.copy(attachedImage = image) } }
     }
 
     private data class State(
@@ -36,43 +36,45 @@ class FindRecipeViewModel : ViewModel() {
         val attachedImage: String?,
     )
 
-    private val _state =
+    private val state =
         MutableStateFlow(
             State(
                 conversationState = conversation.state.value,
                 messages = emptyList(),
                 userText = "",
-                attachedImage = null
-            )
+                attachedImage = null,
+            ),
         )
 
-    val viewState: StateFlow<ViewState> = _state
-        .map { it.toViewState() }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, _state.value.toViewState())
+    val viewState: StateFlow<ViewState> =
+        state
+            .map { it.toViewState() }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, state.value.toViewState())
 
-    private fun State.toViewState(): ViewState {
-
-        return ViewState(
+    private fun State.toViewState(): ViewState =
+        ViewState(
             messages = messages,
             userText = userText,
-            onClickSend = if (conversationState == ConversationState.WaitingForUser && userText.isNotBlank()) {
-                ::sendMessage
-            } else {
-                null
-            },
-            onImageCleared = if (attachedImage != null) {
-                { _state.update { it.copy(attachedImage = null) } }
-            } else {
-                null
-            }
+            onClickSend =
+                if (conversationState == ConversationState.WaitingForUser && userText.isNotBlank()) {
+                    ::sendMessage
+                } else {
+                    null
+                },
+            onImageCleared =
+                if (attachedImage != null) {
+                    { state.update { it.copy(attachedImage = null) } }
+                } else {
+                    null
+                },
         )
-    }
 
     private fun sendMessage() {
         viewModelScope.launch {
-            val lastState = _state.getAndUpdate {
-                it.copy(userText = "", attachedImage = null)
-            }
+            val lastState =
+                state.getAndUpdate {
+                    it.copy(userText = "", attachedImage = null)
+                }
             conversation.sayToAi(MessageContent(lastState.userText, lastState.attachedImage))
         }
     }
@@ -83,13 +85,13 @@ class FindRecipeViewModel : ViewModel() {
         }
         viewModelScope.launch {
             conversation.state.collect { conversationState ->
-                _state.update { it.copy(conversationState = conversationState) }
+                state.update { it.copy(conversationState = conversationState) }
             }
         }
 
         viewModelScope.launch {
             conversation.messageHistory.collect { message ->
-                _state.update { it.copy(messages = it.messages + message) }
+                state.update { it.copy(messages = it.messages + message) }
             }
         }
     }
@@ -97,5 +99,4 @@ class FindRecipeViewModel : ViewModel() {
     override fun onCleared() {
         conversation.close()
     }
-
 }

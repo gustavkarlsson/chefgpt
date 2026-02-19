@@ -10,15 +10,19 @@ import kotlin.io.path.writeText
 
 private const val LINE_SEPARATOR = "\n"
 
-class IngredientStore(private val file: Path) : ToolSet {
-    private val ingredients: MutableSet<String> = if (file.exists()) {
-        file.readText()
-            .split(LINE_SEPARATOR)
-            .filterNot { it.isBlank() }
-            .toMutableSet()
-    } else {
-        mutableSetOf()
-    }
+class IngredientStore(
+    private val file: Path,
+) : ToolSet {
+    private val ingredients: MutableSet<String> =
+        if (file.exists()) {
+            file
+                .readText()
+                .split(LINE_SEPARATOR)
+                .filterNot { it.isBlank() }
+                .toMutableSet()
+        } else {
+            mutableSetOf()
+        }
 
     @Tool
     @LLMDescription("Get all user's stored ingredients")
@@ -47,9 +51,10 @@ class IngredientStore(private val file: Path) : ToolSet {
     }
 
     private fun save() {
-        val text = ingredients
-            .filterNot { it.isBlank() }
-            .joinToString(LINE_SEPARATOR)
+        val text =
+            ingredients
+                .filterNot { it.isBlank() }
+                .joinToString(LINE_SEPARATOR)
         file.writeText(text)
     }
 }

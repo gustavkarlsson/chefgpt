@@ -1,0 +1,40 @@
+######## SPOTLESS-GRADLE HOOK START ########
+
+# NOTE: This hook will run spotlessApply on ALL kotlin files in the project, not only files in the staging area.
+
+CHANGED_FILES="$(git --no-pager diff --name-status --no-color --cached | awk '$1 != "D" && $NF ~ /\.kts?$/ { print $NF }')"
+
+if [ -z "$CHANGED_FILES" ]; then
+    echo "No Kotlin staged files."
+    exit 0
+fi;
+
+diff=.git/unstaged-spotless-git-hook.diff
+git diff --color=never > $diff
+if [ -s $diff ]; then
+  git apply -R $diff
+fi
+
+echo "Running spotlessApply"
+
+./gradlew --quiet spotlessApply
+gradle_command_exit_code=$?
+
+echo "spotlessApply finished"
+
+echo "$CHANGED_FILES" | while read -r file; do
+    if [ -f $file ]; then
+        git add $file
+    fi
+done
+
+
+if [ -s $diff ]; then
+  git apply --ignore-whitespace $diff
+fi
+rm $diff
+unset diff
+
+echo "Completed spotless hook."
+exit $gradle_command_exit_code
+######## SPOTLESS-GRADLE HOOK END ########
