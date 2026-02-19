@@ -18,7 +18,7 @@ private const val INITIAL_USER_QUERY = "Help me figure out what to cook"
 // FIXME test and validate flow and conversation ending
 fun findRecipeFunctionalStrategy(
     receiveMessage: suspend () -> MessageToAi,
-    sendMessage: suspend (MessageToUser) -> Unit
+    sendMessage: suspend (MessageToUser) -> Unit,
 ): AIAgentFunctionalStrategy<Unit, Unit> =
     functionalStrategy("find-recipe") {
         var messages: List<Message> = requestLLMMultiple(INITIAL_USER_QUERY)

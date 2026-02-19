@@ -8,6 +8,5 @@ suspend fun WebSocketServerSession.sendMessage(message: MessageToUser) {
     sendSerialized(convert(message))
 }
 
-private suspend fun WebSocketServerSession.convert(message: MessageToUser): MessageFromAi {
-    return MessageFromAi.Content(message.text)
-}
+private suspend fun WebSocketServerSession.convert(message: MessageToUser): MessageFromAi =
+    MessageFromAi.Content(message.text)

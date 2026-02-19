@@ -8,5 +8,4 @@ sealed interface MessageFromAi {
     data class Content(
         val text: String,
     ) : MessageFromAi
-
 }

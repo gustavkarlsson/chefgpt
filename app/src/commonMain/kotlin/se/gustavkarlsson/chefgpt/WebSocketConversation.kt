@@ -43,28 +43,29 @@ suspend fun startWebSocketConversation(
 
 private class HttpClientConversation(
     private val httpClient: HttpClient,
-    private val session: DefaultClientWebSocketSession
-) : Conversation, AutoCloseable {
+    private val session: DefaultClientWebSocketSession,
+) : Conversation,
+    AutoCloseable {
     private val mutableState = MutableStateFlow(ConversationState.WaitingForAi)
     override val state: StateFlow<ConversationState> = mutableState.asStateFlow()
 
-    val messagesFromAi: Flow<Message> = flow {
-        while (true) {
-            val messageFromAi = session.receiveDeserialized<MessageFromAi>()
-            val message = Message(Subject.Ai, messageFromAi.toMessageContent())
-            emit(message)
-            mutableState.value = ConversationState.WaitingForUser
+    val messagesFromAi: Flow<Message> =
+        flow {
+            while (true) {
+                val messageFromAi = session.receiveDeserialized<MessageFromAi>()
+                val message = Message(Subject.Ai, messageFromAi.toMessageContent())
+                emit(message)
+                mutableState.value = ConversationState.WaitingForUser
+            }
         }
-    }
     val messagesFromUser = MutableSharedFlow<Message>()
 
     override val messageHistory: Flow<Message> = merge(messagesFromAi, messagesFromUser)
 
-    private fun MessageFromAi.toMessageContent(): MessageContent {
-        return when (this) {
+    private fun MessageFromAi.toMessageContent(): MessageContent =
+        when (this) {
             is MessageFromAi.Content -> MessageContent(text)
         }
-    }
 
     override suspend fun sayToAi(content: MessageContent) {
         mutableState.value = ConversationState.WaitingForAi
@@ -77,5 +78,4 @@ private class HttpClientConversation(
         mutableState.value = ConversationState.Ended
         httpClient.close()
     }
-
 }

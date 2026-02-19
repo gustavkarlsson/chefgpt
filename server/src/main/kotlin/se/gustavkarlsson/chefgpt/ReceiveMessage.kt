@@ -15,17 +15,18 @@ suspend fun WebSocketServerSession.receiveMessage(): MessageToAi {
 }
 
 private suspend fun WebSocketServerSession.convert(content: MessageFromUser): MessageToAi {
-    val image = content.image?.let { image ->
-        val frame = incoming.receive()
-        require(frame is Frame.Binary) {
-            "Expected a binary frame, got ${frame.frameType}"
-        }
-        withContext(Dispatchers.IO) {
-            val dir = Files.createTempDirectory("chefgpt-user-uploads")
-            dir.resolve(image.fileName).also {
-                it.writeBytes(frame.data)
+    val image =
+        content.image?.let { image ->
+            val frame = incoming.receive()
+            require(frame is Frame.Binary) {
+                "Expected a binary frame, got ${frame.frameType}"
+            }
+            withContext(Dispatchers.IO) {
+                val dir = Files.createTempDirectory("chefgpt-user-uploads")
+                dir.resolve(image.fileName).also {
+                    it.writeBytes(frame.data)
+                }
             }
         }
-    }
     return MessageToAi(content.text, image)
 }
