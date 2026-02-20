@@ -45,8 +45,16 @@ fun Application.module(
     spoonacularApiKey: String,
     ingredientStorePath: Path,
 ) {
-    // TODO configure for leniency
-    val jsonConfig = Json
+    // Extra lenient in production
+    val jsonConfig =
+        Json {
+            encodeDefaults = true
+            explicitNulls = false
+            ignoreUnknownKeys = !developmentMode
+            allowComments = !developmentMode
+            allowTrailingComma = !developmentMode
+            prettyPrint = developmentMode
+        }
     install(ContentNegotiation) {
         json(jsonConfig)
     }
