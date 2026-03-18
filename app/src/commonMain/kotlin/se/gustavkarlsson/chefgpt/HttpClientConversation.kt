@@ -51,38 +51,35 @@ private class HttpClientConversation(
     private val mutableState = MutableStateFlow(ConversationState.WaitingForAi)
     override val state: StateFlow<ConversationState> = mutableState.asStateFlow()
 
-    val messagesFromAi: Flow<Message> =
+    val messagesFromAi: Flow<AiMessage> =
         flow {
             while (true) {
-                val messageFromAi = session.receiveDeserialized<MessageFromAi>()
-                val message = Message(Subject.Ai, messageFromAi.toMessageContent())
+                val message =
+                    when (val messageFromAi = session.receiveDeserialized<MessageFromAi>()) {
+                        is MessageFromAi.Regular -> AiMessage.Regular(messageFromAi.text)
+                        is MessageFromAi.Reasoning -> AiMessage.Reasoning(messageFromAi.text)
+                    }
                 emit(message)
-                if (message.content.reasoning) {
-                    mutableState.value = ConversationState.WaitingForAi // Keep waiting for AI if it's reasoning
-                } else {
-                    mutableState.value = ConversationState.WaitingForUser
-                }
+                mutableState.value =
+                    when (message) {
+                        is AiMessage.Regular -> ConversationState.WaitingForUser
+                        is AiMessage.Reasoning -> ConversationState.WaitingForAi // Keep waiting if AI is reasoning
+                    }
             }
         }
-    val messagesFromUser = MutableSharedFlow<Message>()
+    val messagesFromUser = MutableSharedFlow<UserMessage>()
 
     override val messageHistory: Flow<Message> = merge(messagesFromAi, messagesFromUser)
 
-    private fun MessageFromAi.toMessageContent(): MessageContent =
-        when (this) {
-            is MessageFromAi.Regular -> MessageContent(reasoning = false, text)
-            is MessageFromAi.Reasoning -> MessageContent(reasoning = true, text)
-        }
-
-    override suspend fun sayToAi(content: MessageContent) {
+    override suspend fun sayToAi(message: UserMessage) {
         mutableState.value = ConversationState.WaitingForAi
-        messagesFromUser.emit(Message(Subject.User, content))
-        val file = content.image
+        messagesFromUser.emit(UserMessage(message.text, message.image))
+        val file = message.image
         val imageRef =
             file?.let {
                 ImageRef(it.name)
             }
-        session.sendSerialized(MessageFromUser(content.text, imageRef))
+        session.sendSerialized(MessageFromUser(message.text, imageRef))
         if (file != null) {
             session.send(file.readBytes())
         }

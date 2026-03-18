@@ -7,24 +7,34 @@ interface Conversation : AutoCloseable {
     val state: StateFlow<ConversationState>
     val messageHistory: Flow<Message>
 
-    suspend fun sayToAi(content: MessageContent)
+    suspend fun sayToAi(message: UserMessage)
 }
 
-enum class Subject {
-    User,
-    Ai,
+sealed interface Message {
+    val text: String
+    val image: File?
 }
 
-data class Message(
-    val subject: Subject,
-    val content: MessageContent,
-)
+sealed interface AiMessage : Message {
+    data class Regular(
+        override val text: String,
+    ) : AiMessage {
+        override val image: Nothing?
+            get() = null
+    }
 
-data class MessageContent(
-    val reasoning: Boolean, // TODO Make separate message type instead
-    val text: String,
-    val image: File? = null,
-)
+    data class Reasoning(
+        override val text: String,
+    ) : AiMessage {
+        override val image: Nothing?
+            get() = null
+    }
+}
+
+data class UserMessage(
+    override val text: String,
+    override val image: File? = null,
+) : Message
 
 enum class ConversationState {
     WaitingForUser,

@@ -2,7 +2,6 @@ package se.gustavkarlsson.chefgpt
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -22,7 +21,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Icon
@@ -131,8 +129,11 @@ private fun MessageList(
 
 @Composable
 private fun MessageBubble(message: Message) {
-    // FIXME render reasoning bubble separately
-    val isUser = message.subject == Subject.User
+    val isUser =
+        when (message) {
+            is AiMessage -> false
+            is UserMessage -> true
+        }
 
     Box(modifier = Modifier.fillMaxWidth()) {
         Surface(
@@ -155,7 +156,10 @@ private fun MessageBubble(message: Message) {
                 },
         ) {
             Column {
-                message.content.image?.let { image ->
+                if (message is AiMessage.Reasoning) {
+                    Text("Reasoning", style = MaterialTheme.typography.bodyMedium)
+                }
+                message.image?.let { image ->
                     AsyncImage(
                         model = image,
                         contentDescription = null,
@@ -173,7 +177,7 @@ private fun MessageBubble(message: Message) {
                     )
                 }
                 Markdown(
-                    content = message.content.text,
+                    content = message.text,
                     modifier = Modifier.padding(12.dp),
                 )
             }
