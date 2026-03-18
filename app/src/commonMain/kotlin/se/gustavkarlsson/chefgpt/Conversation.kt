@@ -21,6 +21,7 @@ data class Message(
 )
 
 data class MessageContent(
+    val reasoning: Boolean, // TODO Make separate message type instead
     val text: String,
     val image: File? = null,
 )

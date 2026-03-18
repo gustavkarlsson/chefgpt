@@ -5,10 +5,10 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class MessageFromUser(
     val text: String?,
-    val image: Image? = null,
+    val imageRef: ImageRef? = null,
 )
 
 @Serializable
-data class Image(
+data class ImageRef(
     val fileName: String,
 )

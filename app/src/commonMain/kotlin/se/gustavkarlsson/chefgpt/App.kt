@@ -131,6 +131,7 @@ private fun MessageList(
 
 @Composable
 private fun MessageBubble(message: Message) {
+    // FIXME render reasoning bubble separately
     val isUser = message.subject == Subject.User
 
     Box(modifier = Modifier.fillMaxWidth()) {

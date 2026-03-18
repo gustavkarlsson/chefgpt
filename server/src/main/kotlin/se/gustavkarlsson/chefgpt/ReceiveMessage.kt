@@ -16,7 +16,7 @@ suspend fun WebSocketServerSession.receiveMessage(): MessageToAi {
 
 private suspend fun WebSocketServerSession.convert(content: MessageFromUser): MessageToAi {
     val image =
-        content.image?.let { image ->
+        content.imageRef?.let { image ->
             val frame = incoming.receive()
             require(frame is Frame.Binary) {
                 "Expected a binary frame, got ${frame.frameType}"

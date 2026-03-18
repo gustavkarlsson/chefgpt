@@ -21,11 +21,11 @@ fun findRecipeFunctionalStrategy(
     sendMessage: suspend (MessageToUser) -> Unit,
 ): AIAgentFunctionalStrategy<Unit, Unit> =
     functionalStrategy("find-recipe") {
-        var messages: List<Message> = requestLLMMultiple(INITIAL_USER_QUERY)
+        var messages: List<Message.Response> = requestLLMMultiple(INITIAL_USER_QUERY)
         while (messages.isNotEmpty()) {
             val exitMessage = messages.findExitMessageOrNull()
             if (exitMessage != null) {
-                sendMessage(MessageToUser(exitMessage))
+                sendMessage(MessageToUser.Regular(exitMessage))
                 break
             }
             messages =
@@ -38,9 +38,13 @@ fun findRecipeFunctionalStrategy(
                         }
                     val userInteractionResults =
                         async {
-                            val messageToUser = messages.filterIsInstance<Message.Assistant>().toSingleMessage()
-                            if (messageToUser.isNotBlank()) {
-                                sendMessage(MessageToUser(messageToUser))
+                            val reasoningMessages = messages.filterIsInstance<Message.Reasoning>()
+                            for (reasoningMessage in reasoningMessages) {
+                                sendMessage(MessageToUser.Reasoning(reasoningMessage.content))
+                            }
+                            val messageToUser = messages.filterIsInstance<Message.Assistant>().toSingleMessageOrNull()
+                            if (messageToUser != null) {
+                                sendMessage(MessageToUser.Regular(messageToUser))
                                 val messageToAi = receiveMessage()
                                 llm.writeSession {
                                     appendPrompt {
@@ -73,4 +77,5 @@ private fun List<Message>.findExitMessageOrNull(): String? =
         .map { it.content }
         .firstOrNull()
 
-private fun List<Message.Assistant>.toSingleMessage(): String = joinToString("\n") { it.content }
+private fun List<Message.Assistant>.toSingleMessageOrNull(): String? =
+    joinToString("\n") { it.content }.takeIf { it.isNotBlank() }

@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.merge
 import kotlinx.serialization.json.Json
-import se.gustavkarlsson.chefgpt.api.Image
+import se.gustavkarlsson.chefgpt.api.ImageRef
 import se.gustavkarlsson.chefgpt.api.MessageFromAi
 import se.gustavkarlsson.chefgpt.api.MessageFromUser
 
@@ -57,7 +57,11 @@ private class HttpClientConversation(
                 val messageFromAi = session.receiveDeserialized<MessageFromAi>()
                 val message = Message(Subject.Ai, messageFromAi.toMessageContent())
                 emit(message)
-                mutableState.value = ConversationState.WaitingForUser
+                if (message.content.reasoning) {
+                    mutableState.value = ConversationState.WaitingForAi // Keep waiting for AI if it's reasoning
+                } else {
+                    mutableState.value = ConversationState.WaitingForUser
+                }
             }
         }
     val messagesFromUser = MutableSharedFlow<Message>()
@@ -66,25 +70,25 @@ private class HttpClientConversation(
 
     private fun MessageFromAi.toMessageContent(): MessageContent =
         when (this) {
-            is MessageFromAi.Content -> MessageContent(text)
+            is MessageFromAi.Regular -> MessageContent(reasoning = false, text)
+            is MessageFromAi.Reasoning -> MessageContent(reasoning = true, text)
         }
 
     override suspend fun sayToAi(content: MessageContent) {
         mutableState.value = ConversationState.WaitingForAi
         messagesFromUser.emit(Message(Subject.User, content))
         val file = content.image
-        val image =
+        val imageRef =
             file?.let {
-                Image(it.name)
+                ImageRef(it.name)
             }
-        session.sendSerialized(MessageFromUser(content.text, image))
+        session.sendSerialized(MessageFromUser(content.text, imageRef))
         if (file != null) {
             session.send(file.readBytes())
         }
     }
 
     override fun close() {
-        // FIXME don't close with global scope
         mutableState.value = ConversationState.Ended
         httpClient.close()
     }

@@ -78,7 +78,7 @@ class FindRecipeViewModel : ViewModel() {
                 state.getAndUpdate {
                     it.copy(userText = "", attachedImage = null)
                 }
-            conversation().sayToAi(MessageContent(lastState.userText, lastState.attachedImage))
+            conversation().sayToAi(MessageContent(reasoning = false, lastState.userText, lastState.attachedImage))
         }
     }
 

@@ -1,5 +1,13 @@
 package se.gustavkarlsson.chefgpt
 
-data class MessageToUser(
-    val text: String,
-)
+sealed interface MessageToUser {
+    val text: String
+
+    data class Regular(
+        override val text: String,
+    ) : MessageToUser
+
+    data class Reasoning(
+        override val text: String,
+    ) : MessageToUser
+}

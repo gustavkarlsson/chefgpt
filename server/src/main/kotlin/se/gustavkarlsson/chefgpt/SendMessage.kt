@@ -9,4 +9,7 @@ suspend fun WebSocketServerSession.sendMessage(message: MessageToUser) {
 }
 
 private suspend fun WebSocketServerSession.convert(message: MessageToUser): MessageFromAi =
-    MessageFromAi.Content(message.text)
+    when (message) {
+        is MessageToUser.Reasoning -> MessageFromAi.Reasoning(message.text)
+        is MessageToUser.Regular -> MessageFromAi.Regular(message.text)
+    }
