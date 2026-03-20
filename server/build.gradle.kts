@@ -20,13 +20,14 @@ dependencies {
     implementation(libs.logback)
     implementation(libs.ktorServerCore)
     implementation(libs.ktorServerNetty)
+    implementation(libs.ktorServerAuth)
     implementation(libs.ktorServerWebsockets)
     implementation(libs.ktorServerContentNegotiation) // TODO do we need 'em?
     implementation(libs.ktorClientCore)
     implementation(libs.ktorClientCio)
     implementation(libs.ktorClientContentNegotiation)
     implementation(libs.ktorSerializationKotlinxJson)
-    implementation(libs.koogAgents)
+    implementation(libs.koogKtor)
     testImplementation(libs.ktorServerTestHost)
     testImplementation(libs.kotlinTestJunit)
 }

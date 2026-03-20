@@ -2,9 +2,6 @@ package se.gustavkarlsson.chefgpt
 
 import ai.koog.agents.core.agent.AIAgentFunctionalStrategy
 import ai.koog.agents.core.agent.functionalStrategy
-import ai.koog.agents.core.dsl.extension.executeMultipleTools
-import ai.koog.agents.core.dsl.extension.requestLLMMultiple
-import ai.koog.agents.core.dsl.extension.sendMultipleToolResults
 import ai.koog.agents.ext.tool.ExitTool
 import ai.koog.prompt.message.Message
 import kotlinx.coroutines.async
