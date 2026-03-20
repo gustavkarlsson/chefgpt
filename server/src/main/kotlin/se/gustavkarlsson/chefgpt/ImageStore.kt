@@ -17,14 +17,14 @@ class ImageStore(
 ) {
     suspend fun writeFile(
         chatId: ChatId,
-        fileId: FileId,
         readChannel: ByteReadChannel,
-    ): Path =
+    ): FileId =
         withContext(Dispatchers.IO) {
+            val fileId = FileId.random()
             val file = getFilePath(chatId, fileId)
             Files.createDirectories(file.parent)
             readChannel.copyAndClose(file.toFile().writeChannel())
-            file
+            fileId
         }
 
     suspend fun getFile(
