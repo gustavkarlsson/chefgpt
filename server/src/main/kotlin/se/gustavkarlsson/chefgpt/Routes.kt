@@ -1,6 +1,5 @@
 package se.gustavkarlsson.chefgpt
 
-import ai.koog.agents.core.dsl.builder.strategy
 import ai.koog.ktor.aiAgent
 import ai.koog.prompt.executor.clients.anthropic.AnthropicModels
 import io.ktor.http.HttpStatusCode
@@ -111,10 +110,7 @@ fun Routing.routes() {
                         eventFlowManager.use(chatId) { flow ->
                             val agent =
                                 aiAgent<ApiUserMessage, Unit>(
-                                    strategy =
-                                        strategy("find-recipe") {
-                                            // FIXME implement strategy and write events to the flow
-                                        },
+                                    strategy = findRecipeStrategy(flow::emit),
                                     model = AnthropicModels.Haiku_4_5,
                                 )
                             agent.run(userMessage, chatId.value.toString())
