@@ -8,21 +8,20 @@ import ai.koog.agents.ext.tool.ExitTool
 import ai.koog.prompt.message.Message
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import kotlinx.io.files.Path
 import kotlinx.serialization.json.JsonPrimitive
-import se.gustavkarlsson.chefgpt.api.ApiUserMessage
-import se.gustavkarlsson.chefgpt.chats.AgentMessage
-import se.gustavkarlsson.chefgpt.chats.ChatEvent
-import se.gustavkarlsson.chefgpt.chats.UserMessage
+import se.gustavkarlsson.chefgpt.api.AgentMessage
+import se.gustavkarlsson.chefgpt.api.Event
+import se.gustavkarlsson.chefgpt.api.UserMessage
 
 private const val INITIAL_USER_QUERY = "Help me figure out what to cook"
 
-fun findRecipeStrategy(emitEvent: suspend (ChatEvent) -> Unit): AIAgentGraphStrategy<ApiUserMessage, Unit> =
+fun findRecipeStrategy(emitEvent: suspend (Event) -> Unit): AIAgentGraphStrategy<UserMessage, Unit> =
     strategy("find-recipe") {
         // FIXME implement strategy and write chat events to the flow
     }
 
 // FIXME Replace with above after rewritten
+
 fun findRecipeStrategy(
     receiveMessage: suspend () -> UserMessage,
     sendMessage: suspend (AgentMessage) -> Unit,
@@ -59,12 +58,12 @@ fun findRecipeStrategy(
                                 llm.writeSession {
                                     appendPrompt {
                                         user {
-                                            userMessage.text?.let {
-                                                text(it)
-                                            }
-                                            userMessage.imageId?.let {
-                                                image(TODO() as Path)
-                                            }
+                                            // userMessage.text?.let {
+                                            //     text(it)
+                                            // }
+                                            // userMessage.imageId?.let {
+                                            //     image(TODO() as Path)
+                                            // }
                                         }
                                     }
 

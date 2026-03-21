@@ -6,6 +6,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.sync.Mutex
+import se.gustavkarlsson.chefgpt.api.Event
+import se.gustavkarlsson.chefgpt.api.Message
 import java.util.concurrent.ConcurrentHashMap
 
 class EventFlowManager(
@@ -13,11 +15,11 @@ class EventFlowManager(
 ) {
     private val refCounts = ConcurrentHashMap<ChatId, Int>()
     private val mutexes = mutableMapOf<ChatId, Mutex>()
-    private val flows = mutableMapOf<ChatId, Deferred<MutableSharedFlow<ChatEvent>>>()
+    private val flows = mutableMapOf<ChatId, Deferred<MutableSharedFlow<Event>>>()
 
     suspend fun <T> use(
         chatId: ChatId,
-        use: suspend (MutableSharedFlow<ChatEvent>) -> T,
+        use: suspend (MutableSharedFlow<Event>) -> T,
     ): T =
         coroutineScope {
             try {
@@ -29,7 +31,7 @@ class EventFlowManager(
         }
 
     @Synchronized
-    private fun CoroutineScope.startUse(chatId: ChatId): Deferred<MutableSharedFlow<ChatEvent>> {
+    private fun CoroutineScope.startUse(chatId: ChatId): Deferred<MutableSharedFlow<Event>> {
         val newCount = refCounts.compute(chatId) { _, count -> (count ?: 0) + 1 }
         return if (newCount == 1) {
             // First use of this chatId. Populate maps.
@@ -49,10 +51,10 @@ class EventFlowManager(
         }
     }
 
-    private suspend fun createChatEventFlowFromHistory(chatId: ChatId): MutableSharedFlow<ChatEvent> {
-        val flow = MutableSharedFlow<ChatEvent>(replay = Int.MAX_VALUE)
+    private suspend fun createChatEventFlowFromHistory(chatId: ChatId): MutableSharedFlow<Event> {
+        val flow = MutableSharedFlow<Event>(replay = Int.MAX_VALUE)
         for (message in loadMessageHistory(chatId)) {
-            flow.emit(ChatEvent.NewMessage(message))
+            flow.emit(Event.Message(message))
         }
         return flow
     }

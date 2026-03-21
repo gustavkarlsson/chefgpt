@@ -21,7 +21,7 @@ import se.gustavkarlsson.chefgpt.auth.UserRepository
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventFlowManager
 import se.gustavkarlsson.chefgpt.chats.InMemoryChatRepository
-import se.gustavkarlsson.chefgpt.chats.toDomain
+import se.gustavkarlsson.chefgpt.chats.toMessage
 import se.gustavkarlsson.chefgpt.tools.IngredientStore
 import se.gustavkarlsson.chefgpt.tools.SpoonacularClient
 import java.nio.file.Path
@@ -90,7 +90,7 @@ fun Application.plugins(
         provide<Json> { json }
         provide<EventFlowManager> {
             EventFlowManager { chatId ->
-                chatHistoryProvider.load(chatId.value.toString()).map { it.toDomain() }
+                chatHistoryProvider.load(chatId.value.toString()).map { it.toMessage() }
             }
         }
     }

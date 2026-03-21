@@ -26,17 +26,15 @@ import io.ktor.server.util.getOrFail
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
-import se.gustavkarlsson.chefgpt.api.ApiEvent
-import se.gustavkarlsson.chefgpt.api.ApiUserMessage
+import se.gustavkarlsson.chefgpt.api.Event
 import se.gustavkarlsson.chefgpt.api.FileId
+import se.gustavkarlsson.chefgpt.api.UserMessage
 import se.gustavkarlsson.chefgpt.auth.User
 import se.gustavkarlsson.chefgpt.auth.UserRepository
-import se.gustavkarlsson.chefgpt.chats.ChatEvent
 import se.gustavkarlsson.chefgpt.chats.ChatId
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventFlowManager
 import se.gustavkarlsson.chefgpt.chats.InMemoryChatRepository
-import se.gustavkarlsson.chefgpt.chats.toApi
 import kotlin.uuid.Uuid
 
 // TODO set timeouts
@@ -94,22 +92,21 @@ fun Routing.routes() {
                         eventFlowManager.use(chatId) { flow ->
                             // TODO chunk based on time
                             flow
-                                .takeWhile { it !is ChatEvent.End }
+                                .takeWhile { it !is Event.End }
                                 .collect { event ->
-                                    val apiEvent: ApiEvent = event.toApi()
-                                    send(apiEvent)
+                                    send(event)
                                 }
-                            send(ApiEvent.End)
+                            send(Event.End)
                         }
                     }
                     // Post a message to the chat and await the response
                     post {
                         val eventFlowManager: EventFlowManager by application.dependencies
                         val chatId = call.requireValidChatId()
-                        val userMessage = call.receive<ApiUserMessage>()
+                        val userMessage = call.receive<UserMessage>()
                         eventFlowManager.use(chatId) { flow ->
                             val agent =
-                                aiAgent<ApiUserMessage, Unit>(
+                                aiAgent<UserMessage, Unit>(
                                     strategy = findRecipeStrategy(flow::emit),
                                     model = AnthropicModels.Haiku_4_5,
                                 )

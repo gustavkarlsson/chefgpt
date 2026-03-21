@@ -3,29 +3,29 @@ package se.gustavkarlsson.chefgpt.api
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed interface ApiMessage
+sealed interface Message
 
 @Serializable
-sealed interface ApiAgentMessage : ApiMessage {
+sealed interface AgentMessage : Message {
     @Serializable
     data class Regular(
         val text: String,
-    ) : ApiAgentMessage
+    ) : AgentMessage
 
     @Serializable
     data class Reasoning(
         val text: String,
-    ) : ApiAgentMessage
+    ) : AgentMessage
 }
 
 @Serializable
-sealed interface ApiUserMessage : ApiMessage {
+sealed interface UserMessage : Message {
     @Serializable
-    data object Waiting : ApiUserMessage
+    data object Waiting : UserMessage
 
     @Serializable
     data class Regular(
         val text: String?,
         val imageId: FileId? = null,
-    ) : ApiUserMessage
+    ) : UserMessage
 }
