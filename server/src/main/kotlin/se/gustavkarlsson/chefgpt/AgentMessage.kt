@@ -1,13 +1,13 @@
 package se.gustavkarlsson.chefgpt
 
-sealed interface MessageToUser {
+sealed interface AgentMessage {
     val text: String
 
     data class Regular(
         override val text: String,
-    ) : MessageToUser
+    ) : AgentMessage
 
     data class Reasoning(
         override val text: String,
-    ) : MessageToUser
+    ) : AgentMessage
 }

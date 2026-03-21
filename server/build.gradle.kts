@@ -10,8 +10,14 @@ version = "1.0.0"
 application {
     mainClass.set("se.gustavkarlsson.chefgpt.ApplicationKt")
 
-    val isDevelopment: Boolean = project.ext.has("development")
-    applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
+    val development =
+        project.ext
+            .get("development")
+            ?.toString()
+            ?.toBooleanStrictOrNull()
+    if (development != null) {
+        applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$development")
+    }
 }
 
 dependencies {

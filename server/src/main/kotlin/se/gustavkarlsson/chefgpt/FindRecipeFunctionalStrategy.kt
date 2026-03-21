@@ -14,15 +14,15 @@ private const val INITIAL_USER_QUERY = "Help me figure out what to cook"
 
 // FIXME test and validate flow and conversation ending
 fun findRecipeFunctionalStrategy(
-    receiveMessage: suspend () -> MessageToAi,
-    sendMessage: suspend (MessageToUser) -> Unit,
+    receiveMessage: suspend () -> UserMessage,
+    sendMessage: suspend (AgentMessage) -> Unit,
 ): AIAgentFunctionalStrategy<Unit, Unit> =
     functionalStrategy("find-recipe") {
         var messages: List<Message.Response> = requestLLMMultiple(INITIAL_USER_QUERY)
         while (messages.isNotEmpty()) {
             val exitMessage = messages.findExitMessageOrNull()
             if (exitMessage != null) {
-                sendMessage(MessageToUser.Regular(exitMessage))
+                sendMessage(AgentMessage.Regular(exitMessage))
                 break
             }
             messages =
@@ -37,19 +37,22 @@ fun findRecipeFunctionalStrategy(
                         async {
                             val reasoningMessages = messages.filterIsInstance<Message.Reasoning>()
                             for (reasoningMessage in reasoningMessages) {
-                                sendMessage(MessageToUser.Reasoning(reasoningMessage.content))
+                                sendMessage(AgentMessage.Reasoning(reasoningMessage.content))
                             }
-                            val messageToUser = messages.filterIsInstance<Message.Assistant>().toSingleMessageOrNull()
-                            if (messageToUser != null) {
-                                sendMessage(MessageToUser.Regular(messageToUser))
-                                val messageToAi = receiveMessage()
+                            val agentMessageText =
+                                messages
+                                    .filterIsInstance<Message.Assistant>()
+                                    .toSingleMessageOrNull()
+                            if (agentMessageText != null) {
+                                sendMessage(AgentMessage.Regular(agentMessageText))
+                                val userMessage = receiveMessage()
                                 llm.writeSession {
                                     appendPrompt {
                                         user {
-                                            messageToAi.text?.let {
+                                            userMessage.text?.let {
                                                 text(it)
                                             }
-                                            messageToAi.image?.let {
+                                            userMessage.image?.let {
                                                 image(Path(it.pathString))
                                             }
                                         }

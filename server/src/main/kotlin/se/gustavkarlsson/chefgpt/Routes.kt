@@ -22,8 +22,8 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.util.getOrFail
-import se.gustavkarlsson.chefgpt.api.MessageFromAi
-import se.gustavkarlsson.chefgpt.api.MessageFromUser
+import se.gustavkarlsson.chefgpt.api.ApiAgentMessage
+import se.gustavkarlsson.chefgpt.api.ApiUserMessage
 import se.gustavkarlsson.chefgpt.auth.User
 import se.gustavkarlsson.chefgpt.auth.UserRepository
 import se.gustavkarlsson.chefgpt.chats.ChatId
@@ -72,17 +72,17 @@ fun Routing.routes() {
                     // Post a message to the chat and await the response
                     post {
                         val chatId = call.requireValidChatId()
-                        val userMessage = call.receive<MessageFromUser>()
+                        val userMessage = call.receive<ApiUserMessage>()
                         val agent =
-                            aiAgent<MessageFromUser, MessageFromAi>(
+                            aiAgent<ApiUserMessage, ApiAgentMessage>(
                                 strategy =
                                     strategy("find-recipe") {
                                         // FIXME implement strategy
                                     },
                                 model = AnthropicModels.Haiku_4_5,
                             )
-                        val messageFromAi = agent.run(userMessage, chatId.value.toString())
-                        call.respond(HttpStatusCode.Created, messageFromAi)
+                        val apiAgentMessage = agent.run(userMessage, chatId.value.toString())
+                        call.respond(HttpStatusCode.Created, apiAgentMessage)
                     }
                 }
             }

@@ -34,22 +34,22 @@ fun Application.plugins(
         InMemoryUserRepository(
             rules =
                 listOf(
-                    UserRegistrationRule.Companion.name("Username must be at least 3 characters long") { name ->
+                    UserRegistrationRule.name("Username must be at least 3 characters long") { name ->
                         name.length < 3
                     },
-                    UserRegistrationRule.Companion.name("Username must start with a letter") { name ->
+                    UserRegistrationRule.name("Username must start with a letter") { name ->
                         name.firstOrNull()?.isLetter() ?: false
                     },
-                    UserRegistrationRule.Companion.name("Username must only contain letters and digits") { name ->
+                    UserRegistrationRule.name("Username must only contain letters and digits") { name ->
                         name.all { it.isLetterOrDigit() }
                     },
-                    UserRegistrationRule.Companion.password("Password must be at least 8 characters") { password ->
+                    UserRegistrationRule.password("Password must be at least 8 characters") { password ->
                         password.length >= 8
                     },
-                    UserRegistrationRule.Companion.password("Password must contain only valid characters") { password ->
+                    UserRegistrationRule.password("Password must contain only valid characters") { password ->
                         password.none { it.isISOControl() } && password.all { it.isDefined() }
                     },
-                    UserRegistrationRule.Companion.password(
+                    UserRegistrationRule.password(
                         "Password must contain at least three of the following: lower-case letter, upper-case letter, number, special character",
                     ) { password ->
                         // FIXME better algorithm for complexity
@@ -103,7 +103,7 @@ fun Application.plugins(
     // FIXME Setup a docker image and install  Grafana-LGTM (https://ktor.io/docs/server-opentelemetry.html#verify-telemetry-data-with-grafana-lgtm)
     // FIXME Setup a database/databases
 
-    install(Koog.Companion) {
+    install(Koog) {
         llm {
             anthropic(apiKey = anthropicApiKey)
         }
