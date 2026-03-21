@@ -26,9 +26,9 @@ import io.ktor.server.util.getOrFail
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
-import se.gustavkarlsson.chefgpt.api.Event
+import se.gustavkarlsson.chefgpt.api.End
 import se.gustavkarlsson.chefgpt.api.FileId
-import se.gustavkarlsson.chefgpt.api.UserMessage
+import se.gustavkarlsson.chefgpt.api.UserEvent
 import se.gustavkarlsson.chefgpt.auth.User
 import se.gustavkarlsson.chefgpt.auth.UserRepository
 import se.gustavkarlsson.chefgpt.chats.ChatId
@@ -92,22 +92,27 @@ fun Routing.routes() {
                         eventFlowManager.use(chatId) { flow ->
                             // TODO chunk based on time
                             flow
-                                .takeWhile { it !is Event.End }
+                                .takeWhile { it !is End }
                                 .collect { event ->
                                     send(event)
                                 }
-                            send(Event.End)
+                            send(End)
                         }
                     }
                     // Post a message to the chat and await the response
                     post {
                         val eventFlowManager: EventFlowManager by application.dependencies
+                        val imageStore: ImageStore by application.dependencies
                         val chatId = call.requireValidChatId()
-                        val userMessage = call.receive<UserMessage>()
+                        val userMessage = call.receive<UserEvent>()
                         eventFlowManager.use(chatId) { flow ->
                             val agent =
-                                aiAgent<UserMessage, Unit>(
-                                    strategy = findRecipeStrategy(flow::emit),
+                                aiAgent<UserEvent, Unit>(
+                                    strategy =
+                                        findRecipeStrategy(
+                                            getImagePath = { imageStore.getFile(chatId, it) },
+                                            emitEvent = flow::emit,
+                                        ),
                                     model = AnthropicModels.Haiku_4_5,
                                 )
                             agent.run(userMessage, chatId.value.toString())

@@ -7,11 +7,10 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.sync.Mutex
 import se.gustavkarlsson.chefgpt.api.Event
-import se.gustavkarlsson.chefgpt.api.Message
 import java.util.concurrent.ConcurrentHashMap
 
 class EventFlowManager(
-    private val loadMessageHistory: suspend (ChatId) -> List<Message>,
+    private val loadPastEvents: suspend (ChatId) -> List<Event>,
 ) {
     private val refCounts = ConcurrentHashMap<ChatId, Int>()
     private val mutexes = mutableMapOf<ChatId, Mutex>()
@@ -53,8 +52,8 @@ class EventFlowManager(
 
     private suspend fun createChatEventFlowFromHistory(chatId: ChatId): MutableSharedFlow<Event> {
         val flow = MutableSharedFlow<Event>(replay = Int.MAX_VALUE)
-        for (message in loadMessageHistory(chatId)) {
-            flow.emit(Event.Message(message))
+        for (event in loadPastEvents(chatId)) {
+            flow.emit(event)
         }
         return flow
     }

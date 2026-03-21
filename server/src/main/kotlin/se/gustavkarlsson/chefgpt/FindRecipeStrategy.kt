@@ -1,91 +1,95 @@
 package se.gustavkarlsson.chefgpt
 
-import ai.koog.agents.core.agent.AIAgentFunctionalStrategy
 import ai.koog.agents.core.agent.entity.AIAgentGraphStrategy
-import ai.koog.agents.core.agent.functionalStrategy
+import ai.koog.agents.core.dsl.builder.node
 import ai.koog.agents.core.dsl.builder.strategy
-import ai.koog.agents.ext.tool.ExitTool
+import ai.koog.agents.core.dsl.extension.nodeExecuteTool
+import ai.koog.agents.core.dsl.extension.nodeLLMSendToolResult
+import ai.koog.agents.core.dsl.extension.onAssistantMessage
+import ai.koog.agents.core.dsl.extension.onReasoningMessage
+import ai.koog.agents.core.dsl.extension.onToolCall
 import ai.koog.prompt.message.Message
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
-import kotlinx.serialization.json.JsonPrimitive
-import se.gustavkarlsson.chefgpt.api.AgentMessage
 import se.gustavkarlsson.chefgpt.api.Event
+import se.gustavkarlsson.chefgpt.api.FileId
+import se.gustavkarlsson.chefgpt.api.UserEvent
 import se.gustavkarlsson.chefgpt.api.UserMessage
-
-private const val INITIAL_USER_QUERY = "Help me figure out what to cook"
-
-fun findRecipeStrategy(emitEvent: suspend (Event) -> Unit): AIAgentGraphStrategy<UserMessage, Unit> =
-    strategy("find-recipe") {
-        // FIXME implement strategy and write chat events to the flow
-    }
-
-// FIXME Replace with above after rewritten
+import se.gustavkarlsson.chefgpt.api.UserWaiting
+import se.gustavkarlsson.chefgpt.chats.toEvent
+import java.nio.file.Path
+import kotlin.io.path.pathString
+import kotlinx.io.files.Path as KotlinXPath
 
 fun findRecipeStrategy(
-    receiveMessage: suspend () -> UserMessage,
-    sendMessage: suspend (AgentMessage) -> Unit,
-): AIAgentFunctionalStrategy<Unit, Unit> =
-    functionalStrategy("find-recipe") {
-        var messages: List<Message.Response> = requestLLMMultiple(INITIAL_USER_QUERY)
-        while (messages.isNotEmpty()) {
-            val exitMessage = messages.findExitMessageOrNull()
-            if (exitMessage != null) {
-                sendMessage(AgentMessage.Regular(exitMessage))
-                break
-            }
-            messages =
-                coroutineScope {
-                    val toolEvaluationResults =
-                        async {
-                            val toolCalls = messages.filterIsInstance<Message.Tool.Call>()
-                            val toolResults = executeMultipleTools(toolCalls)
-                            sendMultipleToolResults(toolResults)
-                        }
-                    val userInteractionResults =
-                        async {
-                            val reasoningMessages = messages.filterIsInstance<Message.Reasoning>()
-                            for (reasoningMessage in reasoningMessages) {
-                                sendMessage(AgentMessage.Reasoning(reasoningMessage.content))
-                            }
-                            val agentMessageText =
-                                messages
-                                    .filterIsInstance<Message.Assistant>()
-                                    .toSingleMessageOrNull()
-                            if (agentMessageText != null) {
-                                sendMessage(AgentMessage.Regular(agentMessageText))
-                                val userMessage = receiveMessage()
-                                llm.writeSession {
-                                    appendPrompt {
-                                        user {
-                                            // userMessage.text?.let {
-                                            //     text(it)
-                                            // }
-                                            // userMessage.imageId?.let {
-                                            //     image(TODO() as Path)
-                                            // }
-                                        }
-                                    }
+    getImagePath: suspend (FileId) -> Path?,
+    emitEvent: suspend (Event) -> Unit,
+): AIAgentGraphStrategy<UserEvent, Unit> =
+    strategy("find-recipe") {
+        val nodeEmitUserEvent by nodeEmitUserEvent(emitEvent)
+        val nodeAppendUserMessage by nodeAppendUserMessage("appendUserMessage", getImagePath)
+        val nodeLLMRequest by nodeRequestLLM("llmRequest")
+        val nodeEmitResponse by nodeEmitResponse("emitResponse", emitEvent)
+        val nodeExecuteTool by nodeExecuteTool("executeTool")
+        val nodeLLMSendToolResult by nodeLLMSendToolResult("llmSendToolResult")
 
-                                    requestLLMMultiple()
-                                }
-                            } else {
-                                emptyList()
-                            }
-                        }
-                    toolEvaluationResults.await() + userInteractionResults.await()
-                }
-        }
+        edge(nodeStart forwardTo nodeEmitUserEvent)
+        edge(nodeEmitUserEvent forwardTo nodeAppendUserMessage)
+        edge(nodeAppendUserMessage forwardTo nodeLLMRequest transformed {})
+        edge(nodeLLMRequest forwardTo nodeEmitResponse)
+
+        edge(nodeEmitResponse forwardTo nodeFinish onAssistantMessage { true } transformed {})
+        edge(nodeEmitResponse forwardTo nodeLLMRequest onReasoningMessage { true } transformed {})
+        edge(nodeEmitResponse forwardTo nodeExecuteTool onToolCall { true })
+
+        edge(nodeExecuteTool forwardTo nodeLLMSendToolResult)
+        edge(nodeLLMSendToolResult forwardTo nodeEmitResponse)
     }
 
-private fun List<Message>.findExitMessageOrNull(): String? =
-    this
-        .asSequence()
-        .filterIsInstance<Message.Tool.Call>()
-        .filter { it.tool == ExitTool.name }
-        .mapNotNull { it.contentJson["message"] as? JsonPrimitive }
-        .map { it.content }
-        .firstOrNull()
+private fun nodeEmitUserEvent(emitEvent: suspend (Event) -> Unit) =
+    node<UserEvent, UserEvent>("emitUserEvent") { event ->
+        emitEvent(event)
+        event
+    }
 
-private fun List<Message.Assistant>.toSingleMessageOrNull(): String? =
-    joinToString("\n") { it.content }.takeIf { it.isNotBlank() }
+private fun nodeAppendUserMessage(
+    name: String,
+    getImagePath: suspend (FileId) -> Path?,
+) = node<UserEvent, UserEvent>(name) { event ->
+    when (event) {
+        UserWaiting -> {
+            Unit
+        }
+
+        is UserMessage -> {
+            val imagePath =
+                event.imageId?.let { imageId ->
+                    getImagePath(imageId)?.let { path ->
+                        KotlinXPath(path.pathString)
+                    }
+                }
+            llm.writeSession {
+                appendPrompt {
+                    user {
+                        event.text?.let { text(it) }
+                        imagePath?.let { image(it) }
+                    }
+                }
+            }
+        }
+    }
+    event
+}
+
+private fun nodeEmitResponse(
+    name: String,
+    emitEvent: suspend (Event) -> Unit,
+) = node<Message.Response, Message.Response>(name) { response ->
+    emitEvent(response.toEvent())
+    response
+}
+
+private fun nodeRequestLLM(name: String) =
+    node<Unit, Message.Response>(name) {
+        llm.readSession {
+            requestLLM()
+        }
+    }
