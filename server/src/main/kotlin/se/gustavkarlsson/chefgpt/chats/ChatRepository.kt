@@ -1,7 +1,6 @@
 package se.gustavkarlsson.chefgpt.chats
 
 import se.gustavkarlsson.chefgpt.auth.UserId
-import se.gustavkarlsson.chefgpt.chats.ChatId
 
 interface ChatRepository {
     suspend fun create(userId: UserId): Chat

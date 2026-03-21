@@ -3,7 +3,6 @@ package se.gustavkarlsson.chefgpt.chats
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import se.gustavkarlsson.chefgpt.auth.UserId
-import se.gustavkarlsson.chefgpt.chats.ChatId
 
 class InMemoryChatRepository : ChatRepository {
     private val chats = mutableMapOf<UserId, List<Chat>>()
