@@ -27,9 +27,9 @@ dependencies {
     implementation(libs.ktorServerCore)
     implementation(libs.ktorServerNetty)
     implementation(libs.ktorServerAuth)
-    implementation(libs.ktorServerWebsockets)
-    implementation(libs.ktorServerContentNegotiation) // TODO do we need 'em?
-    implementation(libs.ktorServerDi) // TODO do we need 'em?
+    implementation(libs.ktorServerContentNegotiation)
+    implementation(libs.ktorServerDi)
+    implementation(libs.ktorServerSse)
     implementation(libs.ktorClientCore)
     implementation(libs.ktorClientCio)
     implementation(libs.ktorClientContentNegotiation)

@@ -6,6 +6,8 @@ import kotlin.uuid.Uuid
 value class ChatId(
     val value: Uuid,
 ) {
+    override fun toString(): String = value.toString()
+
     companion object {
         fun random(): ChatId = ChatId(Uuid.random())
     }

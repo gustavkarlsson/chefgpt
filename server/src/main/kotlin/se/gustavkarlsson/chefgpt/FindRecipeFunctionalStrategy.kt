@@ -8,7 +8,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.io.files.Path
 import kotlinx.serialization.json.JsonPrimitive
-import kotlin.io.path.pathString
+import se.gustavkarlsson.chefgpt.chats.AgentMessage
+import se.gustavkarlsson.chefgpt.chats.UserMessage
 
 private const val INITIAL_USER_QUERY = "Help me figure out what to cook"
 
@@ -52,8 +53,8 @@ fun findRecipeFunctionalStrategy(
                                             userMessage.text?.let {
                                                 text(it)
                                             }
-                                            userMessage.image?.let {
-                                                image(Path(it.pathString))
+                                            userMessage.imageId?.let {
+                                                image(TODO() as Path)
                                             }
                                         }
                                     }
@@ -71,6 +72,7 @@ fun findRecipeFunctionalStrategy(
 
 private fun List<Message>.findExitMessageOrNull(): String? =
     this
+        .asSequence()
         .filterIsInstance<Message.Tool.Call>()
         .filter { it.tool == ExitTool.name }
         .mapNotNull { it.contentJson["message"] as? JsonPrimitive }

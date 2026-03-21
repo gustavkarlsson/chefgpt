@@ -12,6 +12,7 @@ import java.nio.file.Path
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
 
+// TODO save mime types
 class ImageStore(
     private val storageDir: Path,
 ) {

@@ -61,8 +61,8 @@ ktorServerCore = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor"
 ktorServerNetty = { module = "io.ktor:ktor-server-netty-jvm", version.ref = "ktor" }
 ktorServerAuth = { module = "io.ktor:ktor-server-auth", version.ref = "ktor" }
 ktorServerTestHost = { module = "io.ktor:ktor-server-test-host-jvm", version.ref = "ktor" }
-ktorServerWebsockets = { module = "io.ktor:ktor-server-websockets-jvm", version.ref = "ktor" }
 ktorServerDi = { module = "io.ktor:ktor-server-di", version.ref = "ktor" }
+ktorServerSse = { module = "io.ktor:ktor-server-sse", version.ref = "ktor" }
 ktorServerContentNegotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
 
 # Ktor common

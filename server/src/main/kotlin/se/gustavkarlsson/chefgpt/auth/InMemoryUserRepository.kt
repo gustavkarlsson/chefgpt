@@ -4,7 +4,7 @@ import io.ktor.server.plugins.BadRequestException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-// FIXME prevent hammering
+// TODO prevent hammering
 class InMemoryUserRepository(
     private val rules: List<UserRegistrationRule> = emptyList(),
 ) : UserRepository {
@@ -21,7 +21,7 @@ class InMemoryUserRepository(
                     rule.errorMessage.takeUnless { rule.validate(name, password) }
                 }
             if (registrationError != null) {
-                throw BadRequestException(registrationError) // FIXME Don't trow. Return a result instead
+                throw BadRequestException(registrationError) // TODO Don't trow. Return a result instead
             }
             val key = name to password
             if (key !in users) {

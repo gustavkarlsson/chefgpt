@@ -13,12 +13,15 @@ import io.ktor.server.auth.authentication
 import io.ktor.server.auth.basic
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.di.dependencies
+import io.ktor.server.sse.SSE
 import kotlinx.serialization.json.Json
 import se.gustavkarlsson.chefgpt.auth.InMemoryUserRepository
 import se.gustavkarlsson.chefgpt.auth.UserRegistrationRule
 import se.gustavkarlsson.chefgpt.auth.UserRepository
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
+import se.gustavkarlsson.chefgpt.chats.EventFlowManager
 import se.gustavkarlsson.chefgpt.chats.InMemoryChatRepository
+import se.gustavkarlsson.chefgpt.chats.toDomain
 import se.gustavkarlsson.chefgpt.tools.IngredientStore
 import se.gustavkarlsson.chefgpt.tools.SpoonacularClient
 import java.nio.file.Path
@@ -52,7 +55,7 @@ fun Application.plugins(
                     UserRegistrationRule.password(
                         "Password must contain at least three of the following: lower-case letter, upper-case letter, number, special character",
                     ) { password ->
-                        // FIXME better algorithm for complexity
+                        // TODO better algorithm for complexity
                         val criteriaCount =
                             listOf<Char.() -> Boolean>(
                                 { isLowerCase() },
@@ -68,40 +71,49 @@ fun Application.plugins(
         )
     val chatRepository = InMemoryChatRepository()
     val chatHistoryProvider = InMemoryChatHistoryProvider()
-
-    dependencies {
-        provide<ChatHistoryProvider> { chatHistoryProvider }
-        provide<UserRepository> { userRepository }
-        provide<ChatRepository> { chatRepository }
-        provide<ImageStore> { imageStore }
-    }
-
     // Extra lenient in production
-    val jsonConfig =
+    val json =
         Json {
             encodeDefaults = true
+            isLenient = !developmentMode
             explicitNulls = false
             ignoreUnknownKeys = !developmentMode
             allowComments = !developmentMode
             allowTrailingComma = !developmentMode
             prettyPrint = developmentMode
         }
-    install(ContentNegotiation) {
-        json(jsonConfig)
+    dependencies {
+        provide<ChatHistoryProvider> { chatHistoryProvider }
+        provide<UserRepository> { userRepository }
+        provide<ChatRepository> { chatRepository }
+        provide<ImageStore> { imageStore }
+        provide<Json> { json }
+        provide<EventFlowManager> {
+            EventFlowManager { chatId ->
+                chatHistoryProvider.load(chatId.value.toString()).map { it.toDomain() }
+            }
+        }
     }
 
-    // FIXME Install RateLimiting
-    // FIXME Install CallLogging
-    // FIXME Install CallId
-    // FIXME Install RequestValidation to validate incoming (and outgoing?) data
-    // FIXME Install StatusPages to handle RequestValidationException
-    // FIXME Install Compression for compressed requests/responses
-    // FIXME Install DefaultHeaders to send default date headers and more
-    // FIXME Install ConditionalHeaders to not send the body of data that has not changed
-    // FIXME Install DataConversion to auto-convert data such as Uuid:s and dates
-    // FIXME Install HttpRequestLifecycle and set cancelCallOnClose = true to cancel requests that the client canceled
-    // FIXME Setup a docker image and install  Grafana-LGTM (https://ktor.io/docs/server-opentelemetry.html#verify-telemetry-data-with-grafana-lgtm)
-    // FIXME Setup a database/databases
+    install(ContentNegotiation) {
+        json(json)
+    }
+
+    // TODO Configure SSE
+    install(SSE)
+
+    // TODO Install RateLimiting
+    // TODO Install CallLogging
+    // TODO Install CallId
+    // TODO Install RequestValidation to validate incoming (and outgoing?) data
+    // TODO Install StatusPages to handle RequestValidationException
+    // TODO Install Compression for compressed requests/responses
+    // TODO Install DefaultHeaders to send default date headers and more
+    // TODO Install ConditionalHeaders to not send the body of data that has not changed
+    // TODO Install DataConversion to auto-convert data such as Uuid:s and dates
+    // TODO Install HttpRequestLifecycle and set cancelCallOnClose = true to cancel requests that the client canceled
+    // TODO Setup a docker image and install  Grafana-LGTM (https://ktor.io/docs/server-opentelemetry.html#verify-telemetry-data-with-grafana-lgtm)
+    // TODO Setup a database/databases
 
     install(Koog) {
         llm {

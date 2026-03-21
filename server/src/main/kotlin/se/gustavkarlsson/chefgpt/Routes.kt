@@ -1,6 +1,5 @@
 package se.gustavkarlsson.chefgpt
 
-import ai.koog.agents.chatMemory.feature.ChatHistoryProvider
 import ai.koog.agents.core.dsl.builder.strategy
 import ai.koog.ktor.aiAgent
 import ai.koog.prompt.executor.clients.anthropic.AnthropicModels
@@ -16,21 +15,32 @@ import io.ktor.server.plugins.di.dependencies
 import io.ktor.server.request.receive
 import io.ktor.server.request.receiveChannel
 import io.ktor.server.response.respond
+import io.ktor.server.response.respondFile
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.application
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
+import io.ktor.server.sse.send
+import io.ktor.server.sse.sse
 import io.ktor.server.util.getOrFail
-import se.gustavkarlsson.chefgpt.api.ApiAgentMessage
+import kotlinx.coroutines.flow.takeWhile
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializer
+import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserMessage
+import se.gustavkarlsson.chefgpt.api.FileId
 import se.gustavkarlsson.chefgpt.auth.User
 import se.gustavkarlsson.chefgpt.auth.UserRepository
+import se.gustavkarlsson.chefgpt.chats.ChatEvent
 import se.gustavkarlsson.chefgpt.chats.ChatId
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
+import se.gustavkarlsson.chefgpt.chats.EventFlowManager
 import se.gustavkarlsson.chefgpt.chats.InMemoryChatRepository
+import se.gustavkarlsson.chefgpt.chats.toApi
 import kotlin.uuid.Uuid
 
+// TODO set timeouts
 fun Routing.routes() {
     post("/register") {
         val userRepository: UserRepository by application.dependencies
@@ -54,35 +64,62 @@ fun Routing.routes() {
             }
             route("/{chatId}") {
                 // Upload an image to the chat and return the FileId
-                post("/images") {
-                    val imageStore: ImageStore by application.dependencies
-                    val chatId = call.requireValidChatId()
-                    val fileId = imageStore.writeFile(chatId, call.receiveChannel())
-                    call.respond(HttpStatusCode.Created, fileId.value.toString())
+                route("/images") {
+                    post {
+                        val imageStore: ImageStore by application.dependencies
+                        val chatId = call.requireValidChatId()
+                        val fileId = imageStore.writeFile(chatId, call.receiveChannel())
+                        call.respond(HttpStatusCode.Created, fileId.value.toString())
+                    }
+                    get("/{fileId}") {
+                        val imageStore: ImageStore by application.dependencies
+                        val chatId = call.requireValidChatId()
+                        val fileIdString = checkNotNull(call.pathParameters["fileId"])
+                        val fileId = FileId.parseOrNull(fileIdString) ?: throw NotFoundException()
+                        val file = imageStore.getFile(chatId, fileId) ?: throw NotFoundException()
+                        call.respondFile(file.toFile())
+                    }
                 }
 
                 route("/messages") {
                     // Get the conversation history up to this point (empty if new convo)
-                    get {
-                        val chatHistoryProvider: ChatHistoryProvider by application.dependencies
+                    sse(
+                        serialize = { typeInfo, value ->
+                            val json: Json by application.dependencies
+                            val serializer = json.serializersModule.serializer(typeInfo.kotlinType!!)
+                            json.encodeToString(serializer, value)
+                        },
+                    ) {
+                        val eventFlowManager: EventFlowManager by application.dependencies
                         val chatId = call.requireValidChatId()
-                        val messages = chatHistoryProvider.load(chatId.value.toString())
-                        call.respond(HttpStatusCode.OK, messages) // FIXME map to API messages
+                        eventFlowManager.use(chatId) { flow ->
+                            // TODO chunk based on time
+                            flow
+                                .takeWhile { it !is ChatEvent.End }
+                                .collect { event ->
+                                    val apiEvent: ApiEvent = event.toApi()
+                                    send(apiEvent)
+                                }
+                            send(ApiEvent.End)
+                        }
                     }
                     // Post a message to the chat and await the response
                     post {
+                        val eventFlowManager: EventFlowManager by application.dependencies
                         val chatId = call.requireValidChatId()
                         val userMessage = call.receive<ApiUserMessage>()
-                        val agent =
-                            aiAgent<ApiUserMessage, ApiAgentMessage>(
-                                strategy =
-                                    strategy("find-recipe") {
-                                        // FIXME implement strategy
-                                    },
-                                model = AnthropicModels.Haiku_4_5,
-                            )
-                        val apiAgentMessage = agent.run(userMessage, chatId.value.toString())
-                        call.respond(HttpStatusCode.Created, apiAgentMessage)
+                        eventFlowManager.use(chatId) { flow ->
+                            val agent =
+                                aiAgent<ApiUserMessage, Unit>(
+                                    strategy =
+                                        strategy("find-recipe") {
+                                            // FIXME implement strategy and write events to the flow
+                                        },
+                                    model = AnthropicModels.Haiku_4_5,
+                                )
+                            agent.run(userMessage, chatId.value.toString())
+                        }
+                        call.respond(HttpStatusCode.OK)
                     }
                 }
             }

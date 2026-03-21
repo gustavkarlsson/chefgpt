@@ -19,13 +19,13 @@ sealed interface ApiAgentMessage : ApiMessage {
 }
 
 @Serializable
-sealed interface ApiUserMessage {
+sealed interface ApiUserMessage : ApiMessage {
     @Serializable
     data object Waiting : ApiUserMessage
 
     @Serializable
     data class Regular(
         val text: String?,
-        val imageFileId: FileId? = null,
+        val imageId: FileId? = null,
     ) : ApiUserMessage
 }
