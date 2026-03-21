@@ -55,7 +55,7 @@ fun Application.plugins(
                     UserRegistrationRule.password(
                         "Password must contain at least three of the following: lower-case letter, upper-case letter, number, special character",
                     ) { password ->
-                        // TODO better algorithm for complexity
+                        // TODO Set a better algorithm for complexity
                         val criteriaCount =
                             listOf<Char.() -> Boolean>(
                                 { isLowerCase() },
