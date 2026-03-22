@@ -15,7 +15,6 @@ import se.gustavkarlsson.chefgpt.api.UserMessage
 import se.gustavkarlsson.chefgpt.api.UserWaiting
 import se.gustavkarlsson.chefgpt.chats.toEvent
 
-// FIXME convert to class so we can use emitEvent without passing it as argument
 fun findRecipeStrategy(emitEvent: suspend (Event) -> Unit): AIAgentGraphStrategy<UserEvent, Unit> =
     strategy("find-recipe") {
         val nodeEmitUserEvent by nodeEmitUserEvent(emitEvent)
@@ -65,6 +64,13 @@ private fun nodeAppendUserMessage(name: String) =
         event
     }
 
+private fun nodeRequestLLM(name: String) =
+    node<Unit, Message.Response>(name) {
+        llm.readSession {
+            requestLLM()
+        }
+    }
+
 private fun nodeEmitResponse(
     name: String,
     emitEvent: suspend (Event) -> Unit,
@@ -72,10 +78,3 @@ private fun nodeEmitResponse(
     emitEvent(response.toEvent())
     response
 }
-
-private fun nodeRequestLLM(name: String) =
-    node<Unit, Message.Response>(name) {
-        llm.readSession {
-            requestLLM()
-        }
-    }
