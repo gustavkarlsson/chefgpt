@@ -3,7 +3,6 @@ package se.gustavkarlsson.chefgpt
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.ktor.http.ContentType
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -13,18 +12,25 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import se.gustavkarlsson.chefgpt.api.Action
+import se.gustavkarlsson.chefgpt.api.AgentMessage
+import se.gustavkarlsson.chefgpt.api.ChatId
+import se.gustavkarlsson.chefgpt.api.Event
+import se.gustavkarlsson.chefgpt.api.UserJoinedChat
 import se.gustavkarlsson.chefgpt.api.UserMessage
+import kotlin.uuid.Uuid
 
+// TODO Fix error handling
 class FindRecipeViewModel : ViewModel() {
     private val client = ChefGptClient()
-    private val conversation =
-        viewModelScope.async {
-            client.register()
-            val chatId = client.createChat()
-            joinConversation(client, chatId)
-        }
 
-    private suspend fun conversation() = conversation.await()
+    private val joinEvent = UserJoinedChat(Uuid.random())
+
+    private data class State(
+        val chatId: ChatId?,
+        val events: List<Event>,
+        val userText: String,
+        val attachedImage: File?,
+    )
 
     // TODO Don't make inner, but make it data
     inner class ViewState(
@@ -40,18 +46,11 @@ class FindRecipeViewModel : ViewModel() {
             get() = { image -> state.update { it.copy(attachedImage = image) } }
     }
 
-    private data class State(
-        val acceptingInput: Boolean,
-        val actions: List<Action>,
-        val userText: String,
-        val attachedImage: File?,
-    )
-
     private val state =
         MutableStateFlow(
             State(
-                acceptingInput = false,
-                actions = emptyList(),
+                chatId = null,
+                events = emptyList(),
                 userText = "",
                 attachedImage = null,
             ),
@@ -64,11 +63,11 @@ class FindRecipeViewModel : ViewModel() {
 
     private fun State.toViewState(): ViewState =
         ViewState(
-            actions = actions,
+            actions = events.filterIsInstance<Action>(),
             userText = userText,
             attachedImage = attachedImage,
             onClickSend =
-                if (acceptingInput && userText.isNotBlank()) {
+                if (allowsSend() && userText.isNotBlank()) {
                     ::sendMessage
                 } else {
                     null
@@ -81,8 +80,33 @@ class FindRecipeViewModel : ViewModel() {
                 },
         )
 
+    private fun State.allowsSend(): Boolean =
+        when {
+            chatId == null -> {
+                false
+            }
+
+            // No chat yet
+            userText.isBlank() && attachedImage == null -> {
+                false
+            }
+
+            // Nothing to sent
+            joinEvent !in events -> {
+                false
+            }
+
+            // Haven't seen the join event yet
+            else -> {
+                val lastAction = events.asSequence().filterIsInstance<Action>().lastOrNull()
+                lastAction == null || lastAction is AgentMessage
+            }
+        }
+
     private fun sendMessage() {
         viewModelScope.launch {
+            // TODO what prevents the user from quickly sending two messages in a row?
+            //  Do we need to update some kind of "waiting" state?
             val lastState =
                 state.getAndUpdate {
                     it.copy(userText = "", attachedImage = null)
@@ -92,21 +116,21 @@ class FindRecipeViewModel : ViewModel() {
                     val extension = file.path.substringAfterLast(".")
                     client.uploadImage(file.readChannel(), ContentType("image", extension))
                 }
-            conversation().sendToAgent(UserMessage(lastState.userText, imageUrl))
+            client.sendEvent(lastState.chatId!!, UserMessage(lastState.userText, imageUrl))
         }
     }
 
     init {
         viewModelScope.launch {
-            conversation().acceptingInput.collect { accept ->
-                state.update { it.copy(acceptingInput = accept) }
+            client.register()
+            val chatId = client.createChat()
+            state.update { it.copy(chatId = chatId) }
+            launch {
+                client.listenToEvents(chatId).collect { event ->
+                    state.update { it.copy(events = it.events + event) }
+                }
             }
-        }
-
-        viewModelScope.launch {
-            conversation().actionHistory.collect { action ->
-                state.update { it.copy(actions = it.actions + action) }
-            }
+            client.sendEvent(chatId, joinEvent)
         }
     }
 }

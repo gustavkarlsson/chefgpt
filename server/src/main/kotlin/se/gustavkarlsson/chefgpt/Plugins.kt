@@ -3,7 +3,6 @@ package se.gustavkarlsson.chefgpt
 import ai.koog.agents.chatMemory.feature.ChatHistoryProvider
 import ai.koog.agents.chatMemory.feature.ChatMemory
 import ai.koog.agents.chatMemory.feature.InMemoryChatHistoryProvider
-import ai.koog.agents.core.tools.reflect.tools
 import ai.koog.ktor.Koog
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
@@ -123,8 +122,9 @@ fun Application.plugins(
         }
         agentConfig {
             registerTools {
-                tools(IngredientStore(ingredientStorePath))
-                tools(SpoonacularClient(spoonacularApiKey))
+                // FIXME tools are not being picked up by the agent.
+                tools(IngredientStore(ingredientStorePath).asTools())
+                tools(SpoonacularClient(spoonacularApiKey).asTools())
             }
             install(ChatMemory.Feature) {
                 this.chatHistoryProvider = chatHistoryProvider
