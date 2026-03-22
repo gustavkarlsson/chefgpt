@@ -1,5 +1,6 @@
 package se.gustavkarlsson.chefgpt.agent
 
+import ai.koog.agents.core.agent.asMermaidDiagram
 import ai.koog.agents.core.agent.entity.AIAgentGraphStrategy
 import ai.koog.agents.core.dsl.builder.node
 import ai.koog.agents.core.dsl.builder.strategy
@@ -90,4 +91,16 @@ private fun nodeSendReasoningBackToLLM(
         .writeSession {
             requestLLM()
         }.also { emitEvent(it.toEvent()) }
+}
+
+// Print a Markdown mermaid diagram of the strategy
+private fun main() {
+    val markdown =
+        buildString {
+            appendLine("```mermaid")
+            val strategy = findRecipeStrategy {}
+            appendLine(strategy.asMermaidDiagram())
+            appendLine("```")
+        }
+    println(markdown)
 }
