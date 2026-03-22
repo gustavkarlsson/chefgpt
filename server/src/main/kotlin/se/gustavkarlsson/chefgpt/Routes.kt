@@ -51,6 +51,12 @@ fun Routing.routes() {
         }
     }
     authenticate {
+        post("/images") {
+            val imageUploader: ImageUploader by application.dependencies
+            val contentType = call.request.contentType()
+            val imageUrl = imageUploader.uploadImage(call.receive(), contentType)
+            call.respond(HttpStatusCode.Created, imageUrl.value)
+        }
         route("/chats") {
             // Start a new chat and return the ChatId
             post {
@@ -60,15 +66,6 @@ fun Routing.routes() {
                 call.respond(HttpStatusCode.Created, chat.id.value.toString())
             }
             route("/{chatId}") {
-                // TODO Move out of chats.
-                post("/images") {
-                    call.requireValidChatId()
-                    val imageUploader: ImageUploader by application.dependencies
-                    val contentType = call.request.contentType()
-                    val imageUrl = imageUploader.uploadImage(call.receive(), contentType)
-                    call.respond(HttpStatusCode.Created, imageUrl.value)
-                }
-
                 // FIXME to make sure clients are caught up, let them send a request to a "/join" endpoint with a unique ID.
                 //  Then have them wait until they see that ID in a message back until they can send anything.
 
