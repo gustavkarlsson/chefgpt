@@ -56,6 +56,7 @@ import coil3.key.Keyer
 import coil3.map.Mapper
 import com.mikepenz.markdown.m3.Markdown
 import kotlinx.coroutines.launch
+import se.gustavkarlsson.chefgpt.api.ImageUrl
 
 @Composable
 fun App() {
@@ -66,6 +67,8 @@ fun App() {
             .components {
                 add(Mapper<File, String> { data, _ -> data.path })
                 add(Keyer<File> { data, _ -> data.path })
+                add(Mapper<ImageUrl, String> { data, _ -> data.value })
+                add(Keyer<ImageUrl> { data, _ -> data.value })
             }.build()
     }
     val viewModel = viewModel { FindRecipeViewModel() }
@@ -159,7 +162,7 @@ private fun MessageBubble(message: Message) {
                 if (message is AiMessage.Reasoning) {
                     Text("Reasoning", style = MaterialTheme.typography.bodyMedium)
                 }
-                message.image?.let { image ->
+                message.imageUrl?.let { image ->
                     AsyncImage(
                         model = image,
                         contentDescription = null,
@@ -176,10 +179,12 @@ private fun MessageBubble(message: Message) {
                         contentScale = ContentScale.Crop,
                     )
                 }
-                Markdown(
-                    content = message.text,
-                    modifier = Modifier.padding(12.dp),
-                )
+                message.text?.let {
+                    Markdown(
+                        content = it,
+                        modifier = Modifier.padding(12.dp),
+                    )
+                }
             }
         }
     }

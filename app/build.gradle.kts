@@ -9,6 +9,7 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.atomicfu)
 }
 
 kotlin {
@@ -65,7 +66,6 @@ kotlin {
             implementation(libs.ktorClientCore)
             implementation(libs.ktorClientCio)
             implementation(libs.ktorClientContentNegotiation)
-            implementation(libs.ktorClientSse)
             implementation(libs.ktorClientWebsockets)
             implementation(libs.ktorSerializationKotlinxJson)
             implementation(libs.kotlinxSerializationJson)

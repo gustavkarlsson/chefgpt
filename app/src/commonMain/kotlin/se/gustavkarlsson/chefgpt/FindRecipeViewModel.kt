@@ -2,6 +2,7 @@ package se.gustavkarlsson.chefgpt
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.ktor.http.ContentType
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -11,9 +12,16 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import se.gustavkarlsson.chefgpt.api.UserMessage
 
 class FindRecipeViewModel : ViewModel() {
-    private val conversation = viewModelScope.async { startWebSocketConversation() }
+    private val client = ChefGptClient()
+    private val conversation =
+        viewModelScope.async {
+            client.register()
+            val chatId = client.createChat()
+            joinConversation(client, chatId)
+        }
 
     private suspend fun conversation() = conversation.await()
 
@@ -32,7 +40,7 @@ class FindRecipeViewModel : ViewModel() {
     }
 
     private data class State(
-        val conversationState: ConversationState,
+        val acceptingInput: Boolean,
         val messages: List<Message>,
         val userText: String,
         val attachedImage: File?,
@@ -41,7 +49,7 @@ class FindRecipeViewModel : ViewModel() {
     private val state =
         MutableStateFlow(
             State(
-                conversationState = ConversationState.WaitingForAi,
+                acceptingInput = false,
                 messages = emptyList(),
                 userText = "",
                 attachedImage = null,
@@ -59,7 +67,7 @@ class FindRecipeViewModel : ViewModel() {
             userText = userText,
             attachedImage = attachedImage,
             onClickSend =
-                if (conversationState == ConversationState.WaitingForUser && userText.isNotBlank()) {
+                if (acceptingInput && userText.isNotBlank()) {
                     ::sendMessage
                 } else {
                     null
@@ -78,14 +86,19 @@ class FindRecipeViewModel : ViewModel() {
                 state.getAndUpdate {
                     it.copy(userText = "", attachedImage = null)
                 }
-            conversation().sayToAi(UserMessage(lastState.userText, lastState.attachedImage))
+            val imageUrl =
+                lastState.attachedImage?.let { file ->
+                    val extension = file.path.substringAfterLast(".")
+                    client.uploadImage(file.readChannel(), ContentType("image", extension))
+                }
+            conversation().sendToAgent(UserMessage(lastState.userText, imageUrl))
         }
     }
 
     init {
         viewModelScope.launch {
-            conversation().state.collect { conversationState ->
-                state.update { it.copy(conversationState = conversationState) }
+            conversation().acceptingInput.collect { accept ->
+                state.update { it.copy(acceptingInput = accept) }
             }
         }
 

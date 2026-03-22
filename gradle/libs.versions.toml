@@ -5,6 +5,7 @@ androidMinSdk = "24"
 androidTargetSdk = "36"
 androidxActivity = "1.12.2"
 androidxLifecycle = "2.9.6"
+atomicfu = "0.32.0"
 coil = "3.1.0"
 composeHotReload = "1.0.0"
 composeMultiplatform = "1.10.0"
@@ -54,7 +55,6 @@ kotlinxSerializationJson = { module = "org.jetbrains.kotlinx:kotlinx-serializati
 ktorClientCio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktorClientContentNegotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 ktorClientCore = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
-ktorClientSse = { module = "io.ktor:ktor-client-sse", version.ref = "ktor" }
 ktorClientWebsockets = { module = "io.ktor:ktor-client-websockets", version.ref = "ktor" }
 
 # Ktor server
@@ -89,3 +89,4 @@ kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref =
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+atomicfu = { id ="org.jetbrains.kotlinx.atomicfu", version.ref = "atomicfu" }
