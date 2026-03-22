@@ -121,6 +121,19 @@ fun Application.plugins(
             anthropic(apiKey = anthropicApiKey)
         }
         agentConfig {
+            prompt {
+                system(
+                    """
+                    You are a culinary expert specialized in suggesting meal recipes
+                    based on the user's ingredients and preferences.
+                    Start by greeting the user and listing their ingredients.
+                    Ask them if they would like to add or remove something.
+                    Then, search recipes using the ingredients.
+                    Present each recipe found with a super short description and URL.
+                    When the used is satisfied, exit the conversation.
+                    """.trimIndent(),
+                )
+            }
             registerTools {
                 // FIXME tools are not being picked up by the agent.
                 tools(IngredientStore(ingredientStorePath).asTools())
@@ -128,17 +141,6 @@ fun Application.plugins(
             }
             install(ChatMemory.Feature) {
                 this.chatHistoryProvider = chatHistoryProvider
-            }
-            prompt {
-                """
-                You are a culinary expert specialized in suggesting meal recipes
-                based on the user's ingredients and preferences.
-                Start by greeting the user and listing their ingredients.
-                Ask them if they would like to add or remove something.
-                Then, search recipes using the ingredients.
-                Present each recipe found with a super short description and URL.
-                When the used is satisfied, exit the conversation.
-                """.trimIndent()
             }
         }
     }
