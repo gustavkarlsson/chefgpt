@@ -18,9 +18,11 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.application
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
+import io.ktor.server.sse.heartbeat
 import io.ktor.server.sse.send
 import io.ktor.server.sse.sse
 import io.ktor.server.util.getOrFail
+import io.ktor.sse.ServerSentEvent
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
@@ -32,6 +34,7 @@ import se.gustavkarlsson.chefgpt.chats.ChatId
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventFlowManager
 import se.gustavkarlsson.chefgpt.images.ImageUploader
+import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
 
 // TODO set timeouts
@@ -74,10 +77,13 @@ fun Routing.routes() {
                             json.encodeToString(serializer, value)
                         },
                     ) {
+                        heartbeat {
+                            period = 1.seconds
+                            event = ServerSentEvent("heartbeat")
+                        }
                         val eventFlowManager: EventFlowManager by application.dependencies
                         val chatId = call.requireValidChatId()
                         eventFlowManager.use(chatId) { flow ->
-                            // TODO chunk based on time
                             flow
                                 .takeWhile { it !is End }
                                 .collect { event ->

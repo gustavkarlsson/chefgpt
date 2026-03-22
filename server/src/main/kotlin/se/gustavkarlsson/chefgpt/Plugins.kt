@@ -103,7 +103,6 @@ fun Application.plugins(
         json(json)
     }
 
-    // TODO Configure SSE
     install(SSE)
 
     // TODO Install RateLimiting
