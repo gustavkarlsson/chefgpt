@@ -66,26 +66,6 @@ fun Routing.routes() {
                 }
 
                 route("/messages") {
-                    // Get the conversation history up to this point (empty if new convo)
-                    sse(
-                        serialize = { typeInfo, value ->
-                            val json: Json by application.dependencies
-                            val serializer = json.serializersModule.serializer(typeInfo.kotlinType!!)
-                            json.encodeToString(serializer, value)
-                        },
-                    ) {
-                        val eventFlowManager: EventFlowManager by application.dependencies
-                        val chatId = call.requireValidChatId()
-                        eventFlowManager.use(chatId) { flow ->
-                            // TODO chunk based on time
-                            flow
-                                .takeWhile { it !is End }
-                                .collect { event ->
-                                    send(event)
-                                }
-                            send(End)
-                        }
-                    }
                     // Post a message to the chat and await the response
                     post {
                         val eventFlowManager: EventFlowManager by application.dependencies
@@ -105,6 +85,37 @@ fun Routing.routes() {
             }
         }
     }
+    // SSE can't use authenticate{} — the connection upgrade runs before the auth pipeline phase.
+    // Credentials are validated manually instead.
+    route("/chats/{chatId}/messages") {
+        // Get the conversation history up to this point (empty if new convo)
+        sse(
+            serialize = { typeInfo, value ->
+                val json: Json by application.dependencies
+                val serializer = json.serializersModule.serializer(typeInfo.kotlinType!!)
+                json.encodeToString(serializer, value)
+            },
+        ) {
+            val userRepository: UserRepository by application.dependencies
+            val credentials = call.request.basicAuthenticationCredentials()
+            val user = credentials?.let { userRepository.login(it.name, it.password) }
+            if (user == null) {
+                // FIXME can't respond with a 401, as the request has already been accepted. Route-scoped plugin?
+                return@sse
+            }
+            val eventFlowManager: EventFlowManager by application.dependencies
+            val chatId = call.requireValidChatId(user)
+            eventFlowManager.use(chatId) { flow ->
+                // TODO chunk based on time
+                flow
+                    .takeWhile { it !is End }
+                    .collect { event ->
+                        send(event)
+                    }
+                send(End)
+            }
+        }
+    }
 }
 
 private fun ApplicationCall.requireUser(): User =
@@ -112,9 +123,8 @@ private fun ApplicationCall.requireUser(): User =
         "User principal missing. Are you calling this in a non-authenticated endpoint?"
     }
 
-private suspend fun ApplicationCall.requireValidChatId(): ChatId {
+private suspend fun ApplicationCall.requireValidChatId(user: User = requireUser()): ChatId {
     val chatRepository: ChatRepository by application.dependencies
-    val user = requireUser()
     val chatId = ChatId(parameters.requireUuid("chatId"))
     if (!chatRepository.contains(user.id, chatId)) {
         throw NotFoundException("Chat not found for user")
