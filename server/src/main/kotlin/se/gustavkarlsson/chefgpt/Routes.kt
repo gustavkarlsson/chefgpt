@@ -69,8 +69,7 @@ fun Routing.routes() {
                 // FIXME to make sure clients are caught up, let them send a request to a "/join" endpoint with a unique ID.
                 //  Then have them wait until they see that ID in a message back until they can send anything.
 
-                // TODO rename to events
-                route("/messages") {
+                route("/events") {
                     // Get the conversation history up to this point (empty if new convo)
                     sse(
                         serialize = { typeInfo, value ->
