@@ -63,7 +63,7 @@ fun Routing.routes() {
                     val imageUploader: ImageUploader by application.dependencies
                     val contentType = call.request.contentType()
                     val imageUrl = imageUploader.uploadImage(call.receive(), contentType)
-                    call.respond(HttpStatusCode.Created, imageUrl)
+                    call.respond(HttpStatusCode.Created, imageUrl.value)
                 }
 
                 route("/messages") {
