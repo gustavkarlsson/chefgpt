@@ -17,7 +17,7 @@ import se.gustavkarlsson.chefgpt.chats.toEvent
 
 fun findRecipeStrategy(emitEvent: suspend (Event) -> Unit): AIAgentGraphStrategy<UserEvent, Unit> =
     strategy("find-recipe") {
-        val nodeEmitUserEvent by nodeEmitUserEvent(emitEvent)
+        val nodeEmitUserEvent by nodeEmitUserEvent("emitUserEvent", emitEvent)
         val nodeAppendUserMessage by nodeAppendUserMessage("appendUserMessage")
         val nodeLLMRequest by nodeRequestLLM("llmRequest")
         val nodeEmitResponse by nodeEmitResponse("emitResponse", emitEvent)
@@ -37,11 +37,13 @@ fun findRecipeStrategy(emitEvent: suspend (Event) -> Unit): AIAgentGraphStrategy
         edge(nodeLLMSendToolResult forwardTo nodeEmitResponse)
     }
 
-private fun nodeEmitUserEvent(emitEvent: suspend (Event) -> Unit) =
-    node<UserEvent, UserEvent>("emitUserEvent") { event ->
-        emitEvent(event)
-        event
-    }
+private fun nodeEmitUserEvent(
+    name: String,
+    emitEvent: suspend (Event) -> Unit,
+) = node<UserEvent, UserEvent>(name) { event ->
+    emitEvent(event)
+    event
+}
 
 private fun nodeAppendUserMessage(name: String) =
     node<UserEvent, UserEvent>(name) { event ->
