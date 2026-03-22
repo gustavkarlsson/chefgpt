@@ -10,18 +10,18 @@ import ai.koog.agents.core.dsl.extension.onReasoningMessage
 import ai.koog.agents.core.dsl.extension.onToolCall
 import ai.koog.agents.core.environment.result
 import ai.koog.prompt.message.Message
-import se.gustavkarlsson.chefgpt.api.Event
+import se.gustavkarlsson.chefgpt.api.Action
 import se.gustavkarlsson.chefgpt.api.UserMessage
-import se.gustavkarlsson.chefgpt.chats.toEvent
-import se.gustavkarlsson.chefgpt.chats.toEventOrNull
+import se.gustavkarlsson.chefgpt.chats.toActionOrNull
+import se.gustavkarlsson.chefgpt.chats.toAgentAction
 
-fun findRecipeStrategy(emitEvent: suspend (Event) -> Unit): AIAgentGraphStrategy<UserMessage, Unit> =
+fun findRecipeStrategy(emitAction: suspend (Action) -> Unit): AIAgentGraphStrategy<UserMessage, Unit> =
     strategy("find-recipe") {
-        val nodeSendUserMessageToLLM by nodeSendUserMessageToLLM("sendUserMessageToLLM", emitEvent)
+        val nodeSendUserMessageToLLM by nodeSendUserMessageToLLM("sendUserMessageToLLM", emitAction)
         val responses by nodeDoNothing<Message.Response>("responses")
-        val nodeCallTools by nodeCallTools("callTools", emitEvent)
-        val nodeSendToolResultToLLM by nodeSendToolResultToLLM("sendToolResultToLLM", emitEvent)
-        val nodeSendReasoningBackToLLM by nodeSendReasoningBackToLLM("sendReasoningBackToLLM", emitEvent)
+        val nodeCallTools by nodeCallTools("callTools", emitAction)
+        val nodeSendToolResultToLLM by nodeSendToolResultToLLM("sendToolResultToLLM", emitAction)
+        val nodeSendReasoningBackToLLM by nodeSendReasoningBackToLLM("sendReasoningBackToLLM", emitAction)
 
         edge(nodeStart forwardTo nodeSendUserMessageToLLM)
         edge(nodeSendUserMessageToLLM forwardTo responses)
@@ -41,9 +41,9 @@ fun findRecipeStrategy(emitEvent: suspend (Event) -> Unit): AIAgentGraphStrategy
 
 private fun nodeSendUserMessageToLLM(
     name: String,
-    emitEvent: suspend (Event) -> Unit,
+    emitAction: suspend (Action) -> Unit,
 ) = node<UserMessage, Message.Response>(name) { message ->
-    emitEvent(message)
+    emitAction(message)
     llm
         .writeSession {
             appendPrompt {
@@ -53,12 +53,12 @@ private fun nodeSendUserMessageToLLM(
                 }
             }
             requestLLM()
-        }.also { emitEvent(it.toEvent()) }
+        }.also { emitAction(it.toAgentAction()) }
 }
 
 private fun nodeCallTools(
     name: String,
-    emitEvent: suspend (Event) -> Unit,
+    emitAction: suspend (Action) -> Unit,
 ) = node<Message.Tool.Call, Message.Tool.Result>(name) { toolCall ->
     llm
         .writeSession {
@@ -70,27 +70,27 @@ private fun nodeCallTools(
                 }
             }
             result.toMessage()
-        }.also { message -> message.toEventOrNull()?.let { emitEvent(it) } }
+        }.also { message -> message.toActionOrNull()?.let { emitAction(it) } }
 }
 
 private fun nodeSendToolResultToLLM(
     name: String,
-    emitEvent: suspend (Event) -> Unit,
+    emitAction: suspend (Action) -> Unit,
 ) = node<Message.Tool.Result, Message.Response>(name) { toolResult ->
     llm
         .writeSession {
             requestLLM()
-        }.also { emitEvent(it.toEvent()) }
+        }.also { emitAction(it.toAgentAction()) }
 }
 
 private fun nodeSendReasoningBackToLLM(
     name: String,
-    emitEvent: suspend (Event) -> Unit,
+    emitAction: suspend (Action) -> Unit,
 ) = node<Message.Reasoning, Message.Response>(name) { reasoning ->
     llm
         .writeSession {
             requestLLM()
-        }.also { emitEvent(it.toEvent()) }
+        }.also { emitAction(it.toAgentAction()) }
 }
 
 // Print a Markdown mermaid diagram of the strategy

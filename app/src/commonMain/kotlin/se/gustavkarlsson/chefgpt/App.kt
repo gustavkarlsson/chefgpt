@@ -56,7 +56,12 @@ import coil3.key.Keyer
 import coil3.map.Mapper
 import com.mikepenz.markdown.m3.Markdown
 import kotlinx.coroutines.launch
+import se.gustavkarlsson.chefgpt.api.Action
+import se.gustavkarlsson.chefgpt.api.AgentAction
+import se.gustavkarlsson.chefgpt.api.AgentReasoning
 import se.gustavkarlsson.chefgpt.api.ImageUrl
+import se.gustavkarlsson.chefgpt.api.UserAction
+import se.gustavkarlsson.chefgpt.api.UserMessage
 
 @Composable
 fun App() {
@@ -85,7 +90,7 @@ fun App() {
                         .padding(paddingValues),
             ) {
                 MessageList(
-                    messages = viewState.messages,
+                    actions = viewState.actions,
                     modifier = Modifier.weight(1f),
                 )
 
@@ -105,13 +110,13 @@ fun App() {
 
 @Composable
 private fun MessageList(
-    messages: List<Message>,
+    actions: List<Action>,
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
 
-    LaunchedEffect(messages.size) {
-        if (messages.isNotEmpty()) {
+    LaunchedEffect(actions.size) {
+        if (actions.isNotEmpty()) {
             listState.animateScrollToItem(Int.MAX_VALUE)
         }
     }
@@ -124,18 +129,19 @@ private fun MessageList(
                 .padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        items(messages) { message ->
-            MessageBubble(message)
+        items(actions) { action ->
+            MessageBubble(action)
         }
     }
 }
 
+// TODO Handle different types of actions more exhaustively
 @Composable
-private fun MessageBubble(message: Message) {
+private fun MessageBubble(action: Action) {
     val isUser =
-        when (message) {
-            is AiMessage -> false
-            is UserMessage -> true
+        when (action) {
+            is UserAction -> false
+            is AgentAction -> true
         }
 
     Box(modifier = Modifier.fillMaxWidth()) {
@@ -159,27 +165,29 @@ private fun MessageBubble(message: Message) {
                 },
         ) {
             Column {
-                if (message is AiMessage.Reasoning) {
+                if (action is AgentReasoning) {
                     Text("Reasoning", style = MaterialTheme.typography.bodyMedium)
                 }
-                message.imageUrl?.let { image ->
-                    AsyncImage(
-                        model = image,
-                        contentDescription = null,
-                        modifier =
-                            Modifier
-                                .align(
-                                    if (isUser) {
-                                        Alignment.End
-                                    } else {
-                                        Alignment.Start
-                                    },
-                                ).fillMaxWidth()
-                                .heightIn(max = 300.dp),
-                        contentScale = ContentScale.Crop,
-                    )
+                if (action is UserMessage) {
+                    action.imageUrl?.let { image ->
+                        AsyncImage(
+                            model = image,
+                            contentDescription = null,
+                            modifier =
+                                Modifier
+                                    .align(
+                                        if (isUser) {
+                                            Alignment.End
+                                        } else {
+                                            Alignment.Start
+                                        },
+                                    ).fillMaxWidth()
+                                    .heightIn(max = 300.dp),
+                            contentScale = ContentScale.Crop,
+                        )
+                    }
                 }
-                message.text?.let {
+                action.text?.let {
                     Markdown(
                         content = it,
                         modifier = Modifier.padding(12.dp),

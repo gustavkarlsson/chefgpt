@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import se.gustavkarlsson.chefgpt.api.Action
 import se.gustavkarlsson.chefgpt.api.UserMessage
 
 class FindRecipeViewModel : ViewModel() {
@@ -27,7 +28,7 @@ class FindRecipeViewModel : ViewModel() {
 
     // TODO Don't make inner, but make it data
     inner class ViewState(
-        val messages: List<Message>,
+        val actions: List<Action>,
         val userText: String,
         val attachedImage: File?,
         val onClickSend: (() -> Unit)?,
@@ -41,7 +42,7 @@ class FindRecipeViewModel : ViewModel() {
 
     private data class State(
         val acceptingInput: Boolean,
-        val messages: List<Message>,
+        val actions: List<Action>,
         val userText: String,
         val attachedImage: File?,
     )
@@ -50,7 +51,7 @@ class FindRecipeViewModel : ViewModel() {
         MutableStateFlow(
             State(
                 acceptingInput = false,
-                messages = emptyList(),
+                actions = emptyList(),
                 userText = "",
                 attachedImage = null,
             ),
@@ -63,7 +64,7 @@ class FindRecipeViewModel : ViewModel() {
 
     private fun State.toViewState(): ViewState =
         ViewState(
-            messages = messages,
+            actions = actions,
             userText = userText,
             attachedImage = attachedImage,
             onClickSend =
@@ -103,8 +104,8 @@ class FindRecipeViewModel : ViewModel() {
         }
 
         viewModelScope.launch {
-            conversation().messageHistory.collect { message ->
-                state.update { it.copy(messages = it.messages + message) }
+            conversation().actionHistory.collect { action ->
+                state.update { it.copy(actions = it.actions + action) }
             }
         }
     }

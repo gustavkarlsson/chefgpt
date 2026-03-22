@@ -2,26 +2,26 @@ package se.gustavkarlsson.chefgpt.chats
 
 import ai.koog.prompt.message.AttachmentContent
 import ai.koog.prompt.message.ContentPart
-import se.gustavkarlsson.chefgpt.api.AgentEvent
+import se.gustavkarlsson.chefgpt.api.Action
+import se.gustavkarlsson.chefgpt.api.AgentAction
 import se.gustavkarlsson.chefgpt.api.AgentMessage
 import se.gustavkarlsson.chefgpt.api.AgentReasoning
-import se.gustavkarlsson.chefgpt.api.Event
+import se.gustavkarlsson.chefgpt.api.AgentToolCall
 import se.gustavkarlsson.chefgpt.api.ImageUrl
-import se.gustavkarlsson.chefgpt.api.ToolCall
 import se.gustavkarlsson.chefgpt.api.UserMessage
 import ai.koog.prompt.message.Message as KoogMessage
 
-fun KoogMessage.toEventOrNull(): Event? =
+fun KoogMessage.toActionOrNull(): Action? =
     when (this) {
+        // System prompt is hidden
         is KoogMessage.System -> null
 
-        // System prompt is hidden
+        // We're not interested in tool results
         is KoogMessage.Tool.Result -> null
 
-        // We're not interested in tool results
         is KoogMessage.User -> UserMessage(content, getImageUrl())
 
-        is KoogMessage.Response -> toEvent()
+        is KoogMessage.Response -> toAgentAction()
     }
 
 private fun KoogMessage.User.getImageUrl(): ImageUrl? {
@@ -33,9 +33,9 @@ private fun KoogMessage.User.getImageUrl(): ImageUrl? {
     return ImageUrl(content.url)
 }
 
-fun KoogMessage.Response.toEvent(): AgentEvent =
+fun KoogMessage.Response.toAgentAction(): AgentAction =
     when (this) {
         is KoogMessage.Assistant -> AgentMessage(content)
         is KoogMessage.Reasoning -> AgentReasoning(content)
-        is KoogMessage.Tool.Call -> ToolCall
+        is KoogMessage.Tool.Call -> AgentToolCall
     }

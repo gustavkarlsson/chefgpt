@@ -21,7 +21,7 @@ import se.gustavkarlsson.chefgpt.auth.UserRepository
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventFlowManager
 import se.gustavkarlsson.chefgpt.chats.InMemoryChatRepository
-import se.gustavkarlsson.chefgpt.chats.toEventOrNull
+import se.gustavkarlsson.chefgpt.chats.toActionOrNull
 import se.gustavkarlsson.chefgpt.images.CloudinaryImageUploader
 import se.gustavkarlsson.chefgpt.images.ImageUploader
 import se.gustavkarlsson.chefgpt.tools.IngredientStore
@@ -92,7 +92,7 @@ fun Application.plugins(
         provide<Json> { json }
         provide<EventFlowManager> {
             EventFlowManager { chatId ->
-                chatHistoryProvider.load(chatId.value.toString()).mapNotNull { it.toEventOrNull() }
+                chatHistoryProvider.load(chatId.value.toString()).mapNotNull { it.toActionOrNull() }
             }
         }
     }

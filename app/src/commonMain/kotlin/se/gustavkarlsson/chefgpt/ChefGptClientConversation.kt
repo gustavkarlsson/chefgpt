@@ -6,20 +6,21 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
+import se.gustavkarlsson.chefgpt.api.Action
 import se.gustavkarlsson.chefgpt.api.AgentMessage
 import se.gustavkarlsson.chefgpt.api.AgentReasoning
+import se.gustavkarlsson.chefgpt.api.AgentToolCall
 import se.gustavkarlsson.chefgpt.api.ChatId
-import se.gustavkarlsson.chefgpt.api.JoinedChat
-import se.gustavkarlsson.chefgpt.api.ToolCall
-import se.gustavkarlsson.chefgpt.api.UserEvent
+import se.gustavkarlsson.chefgpt.api.UserAction
+import se.gustavkarlsson.chefgpt.api.UserJoinedChat
 import se.gustavkarlsson.chefgpt.api.UserMessage
 import kotlin.uuid.Uuid
 
@@ -34,7 +35,7 @@ private class ChefGptClientConversation(
     private val chatId: ChatId,
 ) : Conversation {
     private val conversationState = MutableStateFlow(ConversationState())
-    private val joinEvent = JoinedChat(Uuid.random()) // TODO Add random constructor on JoinedChat
+    private val joinEvent = UserJoinedChat(Uuid.random()) // TODO Add random constructor on JoinedChat
 
     override val acceptingInput: StateFlow<Boolean> =
         conversationState
@@ -45,8 +46,7 @@ private class ChefGptClientConversation(
     private val ConversationState.isAcceptingInput: Boolean
         get() = isCaughtUp && isUsersTurn
 
-    // TODO Return only events that are relevant to the conversation
-    override val messageHistory: Flow<Message> =
+    override val actionHistory: Flow<Action> =
         client
             .listenToEvents(chatId)
             .buffer(100)
@@ -56,9 +56,9 @@ private class ChefGptClientConversation(
                         when (event) {
                             is AgentMessage -> true
                             is AgentReasoning -> false
-                            ToolCall -> false
+                            AgentToolCall -> false
                             is UserMessage -> false
-                            is JoinedChat -> state.isUsersTurn // Don't change
+                            is UserJoinedChat -> state.isUsersTurn // Don't change
                         }
                     val newIsCaughtUp =
                         if (state.isCaughtUp) {
@@ -68,34 +68,8 @@ private class ChefGptClientConversation(
                         }
                     state.copy(isUsersTurn = newIsUsersTurn, isCaughtUp = newIsCaughtUp)
                 }
-            }.mapNotNull { event ->
-                when (event) {
-                    is AgentMessage -> {
-                        AiMessage.Regular(event.text)
-                    }
-
-                    is AgentReasoning -> {
-                        AiMessage.Reasoning(event.text)
-                    }
-
-                    // TODO Map to tool call message
-                    ToolCall -> {
-                        null
-                    }
-
-                    is UserMessage -> {
-                        // TODO Rename so we can avoid FQ name
-                        se.gustavkarlsson.chefgpt.UserMessage(
-                            event.text,
-                            event.imageUrl,
-                        )
-                    }
-
-                    is JoinedChat -> {
-                        null
-                    }
-                }
-            }.shareIn(scope, SharingStarted.Eagerly, replay = Int.MAX_VALUE)
+            }.filterIsInstance<Action>()
+            .shareIn(scope, SharingStarted.Eagerly, replay = Int.MAX_VALUE)
 
     init {
         scope.launch {
@@ -107,9 +81,9 @@ private class ChefGptClientConversation(
         }
     }
 
-    override suspend fun sendToAgent(event: UserEvent) {
+    override suspend fun sendToAgent(action: UserAction) {
         conversationState.update { it.copy(isUsersTurn = false) }
-        client.sendEvent(chatId, event)
+        client.sendEvent(chatId, action)
     }
 }
 
