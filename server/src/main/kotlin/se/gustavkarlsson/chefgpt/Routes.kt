@@ -60,6 +60,7 @@ fun Routing.routes() {
                 call.respond(HttpStatusCode.Created, chat.id.value.toString())
             }
             route("/{chatId}") {
+                // TODO Move out of chats.
                 post("/images") {
                     call.requireValidChatId()
                     val imageUploader: ImageUploader by application.dependencies
@@ -68,6 +69,10 @@ fun Routing.routes() {
                     call.respond(HttpStatusCode.Created, imageUrl.value)
                 }
 
+                // FIXME to make sure clients are caught up, let them send a request to a "/join" endpoint with a unique ID.
+                //  Then have them wait until they see that ID in a message back until they can send anything.
+
+                // TODO rename to events
                 route("/messages") {
                     // Get the conversation history up to this point (empty if new convo)
                     sse(
