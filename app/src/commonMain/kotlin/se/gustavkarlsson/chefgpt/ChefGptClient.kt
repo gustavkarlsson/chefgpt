@@ -24,11 +24,10 @@ import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.Event
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.api.UserEvent
-import kotlin.uuid.Uuid
 
 class ChefGptClient(
     private val baseUrl: String = "http://localhost:8080",
-    username: String = Uuid.random().toString(),
+    username: String = (0..10).map { ('a'..'z').random() }.joinToString(""),
     password: String = "Pa55w0rd!!!!!",
     developmentMode: Boolean = false,
 ) {
