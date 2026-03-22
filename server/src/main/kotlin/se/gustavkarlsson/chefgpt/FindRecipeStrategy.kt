@@ -4,10 +4,11 @@ import ai.koog.agents.core.agent.entity.AIAgentGraphStrategy
 import ai.koog.agents.core.dsl.builder.node
 import ai.koog.agents.core.dsl.builder.strategy
 import ai.koog.agents.core.dsl.extension.nodeDoNothing
+import ai.koog.agents.core.dsl.extension.onAssistantMessage
 import ai.koog.agents.core.dsl.extension.onIsInstance
 import ai.koog.agents.core.dsl.extension.onReasoningMessage
 import ai.koog.agents.core.dsl.extension.onToolCall
-import ai.koog.agents.core.environment.ReceivedToolResult
+import ai.koog.agents.core.environment.result
 import ai.koog.prompt.message.Message
 import se.gustavkarlsson.chefgpt.api.Event
 import se.gustavkarlsson.chefgpt.api.UserEvent
@@ -24,7 +25,6 @@ fun findRecipeStrategy(emitEvent: suspend (Event) -> Unit): AIAgentGraphStrategy
         val nodeCallTools by nodeCallTools("callTools", emitEvent)
         val nodeSendToolResultToLLM by nodeSendToolResultToLLM("sendToolResultToLLM", emitEvent)
         val nodeSendReasoningBackToLLM by nodeSendReasoningBackToLLM("sendReasoningBackToLLM", emitEvent)
-        val nodeAppendFinalMessage by nodeAppendFinalMessage("appendFinalMessage", emitEvent)
 
         edge(nodeStart forwardTo nodeSendUserMessageToLLM onIsInstance UserMessage::class)
         edge(nodeStart forwardTo nodeUserWaitsForLLM onIsInstance UserWaiting::class)
@@ -41,9 +41,8 @@ fun findRecipeStrategy(emitEvent: suspend (Event) -> Unit): AIAgentGraphStrategy
         edge(nodeCallTools forwardTo nodeSendToolResultToLLM)
         edge(nodeSendToolResultToLLM forwardTo responses)
 
-        // Assistant message means we are done for now
-        edge(responses forwardTo nodeAppendFinalMessage onIsInstance Message.Assistant::class)
-        edge(nodeAppendFinalMessage forwardTo nodeFinish)
+        // Assistant message means we are done
+        edge(responses forwardTo nodeFinish onAssistantMessage { true } transformed {})
     }
 
 private fun nodeSendUserMessageToLLM(
@@ -51,15 +50,16 @@ private fun nodeSendUserMessageToLLM(
     emitEvent: suspend (Event) -> Unit,
 ) = node<UserMessage, Message.Response>(name) { message ->
     emitEvent(message)
-    llm.writeSession {
-        appendPrompt {
-            user {
-                message.text?.let { text(it) }
-                message.imageUrl?.let { image(it.value) }
+    llm
+        .writeSession {
+            appendPrompt {
+                user {
+                    message.text?.let { text(it) }
+                    message.imageUrl?.let { image(it.value) }
+                }
             }
-        }
-        requestLLM()
-    }
+            requestLLM()
+        }.also { emitEvent(it.toEvent()) }
 }
 
 private fun nodeUserWaitsForLLM(
@@ -67,59 +67,48 @@ private fun nodeUserWaitsForLLM(
     emitEvent: suspend (Event) -> Unit,
 ) = node<UserWaiting, Message.Response>(name) { waiting ->
     emitEvent(waiting)
-    llm.readSession {
-        requestLLM()
-    }
+    llm
+        .writeSession {
+            // FIXME if the prompt is empty, Claude will error.
+            //  if the prompt has not changed, Claude will error.
+            //  We can't have a wait event!
+            requestLLM()
+        }.also { emitEvent(it.toEvent()) }
 }
 
 private fun nodeCallTools(
     name: String,
     emitEvent: suspend (Event) -> Unit,
-) = node<Message.Tool.Call, ReceivedToolResult>(name) { toolCall ->
-    emitEvent(toolCall.toEvent())
-    llm.writeSession {
-        appendPrompt {
-            message(toolCall)
-        }
-        environment.executeTool(toolCall)
-    }
+) = node<Message.Tool.Call, Message.Tool.Result>(name) { toolCall ->
+    llm
+        .writeSession {
+            val result = environment.executeTool(toolCall)
+            // Tool calls don't get automatically added to the prompt. So we do it manually.
+            appendPrompt {
+                tool {
+                    result(result)
+                }
+            }
+            result.toMessage()
+        }.also { message -> message.toEventOrNull()?.let { emitEvent(it) } }
 }
 
 private fun nodeSendToolResultToLLM(
     name: String,
     emitEvent: suspend (Event) -> Unit,
-) = node<ReceivedToolResult, Message.Response>(name) { toolResult ->
-    val message = toolResult.toMessage()
-    message.toEventOrNull()?.let { emitEvent(it) }
-    llm.writeSession {
-        appendPrompt {
-            message(message)
-        }
-        requestLLM()
-    }
+) = node<Message.Tool.Result, Message.Response>(name) { toolResult ->
+    llm
+        .writeSession {
+            requestLLM()
+        }.also { emitEvent(it.toEvent()) }
 }
 
 private fun nodeSendReasoningBackToLLM(
     name: String,
     emitEvent: suspend (Event) -> Unit,
 ) = node<Message.Reasoning, Message.Response>(name) { reasoning ->
-    emitEvent(reasoning.toEvent())
-    llm.writeSession {
-        appendPrompt {
-            message(reasoning)
-        }
-        requestLLM()
-    }
-}
-
-private fun nodeAppendFinalMessage(
-    name: String,
-    emitEvent: suspend (Event) -> Unit,
-) = node<Message.Assistant, Unit>(name) { assistantMessage ->
-    emitEvent(assistantMessage.toEvent())
-    llm.writeSession {
-        appendPrompt {
-            message(assistantMessage)
-        }
-    }
+    llm
+        .writeSession {
+            requestLLM()
+        }.also { emitEvent(it.toEvent()) }
 }
