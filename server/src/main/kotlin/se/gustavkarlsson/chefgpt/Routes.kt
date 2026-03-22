@@ -1,7 +1,6 @@
 package se.gustavkarlsson.chefgpt
 
 import io.ktor.http.HttpStatusCode
-import io.ktor.http.Parameters
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.basicAuthenticationCredentials
@@ -25,18 +24,17 @@ import kotlinx.coroutines.flow.takeWhile
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import se.gustavkarlsson.chefgpt.agent.runAgent
+import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.End
 import se.gustavkarlsson.chefgpt.api.JoinedChat
 import se.gustavkarlsson.chefgpt.api.UserEvent
 import se.gustavkarlsson.chefgpt.api.UserMessage
 import se.gustavkarlsson.chefgpt.auth.User
 import se.gustavkarlsson.chefgpt.auth.UserRepository
-import se.gustavkarlsson.chefgpt.chats.ChatId
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventFlowManager
 import se.gustavkarlsson.chefgpt.images.ImageUploader
 import kotlin.time.Duration.Companion.seconds
-import kotlin.uuid.Uuid
 
 // TODO set timeouts
 fun Routing.routes() {
@@ -127,14 +125,9 @@ private fun ApplicationCall.requireUser(): User =
 private suspend fun ApplicationCall.requireValidChatId(): ChatId {
     val chatRepository: ChatRepository by application.dependencies
     val user = requireUser()
-    val chatId = ChatId(parameters.requireUuid("chatId"))
+    val chatId = ChatId.parse(parameters.getOrFail("chatId"))
     if (!chatRepository.contains(user.id, chatId)) {
         throw NotFoundException("Chat not found for user")
     }
     return chatId
-}
-
-private fun Parameters.requireUuid(name: String): Uuid {
-    val value = getOrFail<String>(name)
-    return Uuid.parseOrNull(value) ?: throw BadRequestException("Query parameter $name is not a valid UUID")
 }

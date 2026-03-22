@@ -17,10 +17,10 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.json.Json
+import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.Event
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.api.UserEvent
-import kotlin.uuid.Uuid
 
 class ChefGptClient(
     private val baseUrl: String,
@@ -59,6 +59,7 @@ class ChefGptClient(
         data: ByteArray, // TODO Use a channel or similar instead.
         contentType: ContentType,
     ): ImageUrl {
+        // TODO Accept text/plain?
         val response =
             httpClient.post("$baseUrl/images") {
                 this.contentType(contentType)
@@ -67,12 +68,13 @@ class ChefGptClient(
         return response.body()
     }
 
-    suspend fun createChat(): Uuid {
+    suspend fun createChat(): ChatId {
+        // TODO Accept text/plain?
         val response = httpClient.post("$baseUrl/chats")
-        return Uuid.parse(response.body()) // TODO Can we just take the body as-is? Will it auto-parse then?
+        return response.body() // TODO Verify that this works
     }
 
-    fun listenToEvents(chatId: Uuid): Flow<Event> =
+    fun listenToEvents(chatId: ChatId): Flow<Event> =
         flow {
             httpClient.sse(urlString = "$baseUrl/chats/$chatId/events") {
                 incoming.collect { serverSentEvent ->
@@ -85,7 +87,7 @@ class ChefGptClient(
         }
 
     suspend fun sendEvent(
-        chatId: Uuid,
+        chatId: ChatId,
         event: UserEvent,
     ) {
         httpClient.post("$baseUrl/chats/$chatId/events") {

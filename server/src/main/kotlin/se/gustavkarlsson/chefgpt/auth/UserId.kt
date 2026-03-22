@@ -10,5 +10,7 @@ value class UserId(
 
     companion object {
         fun random(): UserId = UserId(Uuid.random())
+
+        fun parse(uuidString: String): UserId = UserId(Uuid.parse(uuidString))
     }
 }
