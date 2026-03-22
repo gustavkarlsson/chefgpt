@@ -69,6 +69,7 @@ fun Routing.routes() {
             route("/{chatId}/events") {
                 // FIXME to make sure clients are caught up, let them send a request to a "/join" endpoint with a unique ID.
                 //  Then have them wait until they see that ID in a message back until they can send anything.
+                // Get a flow of chat events
                 sse(
                     serialize = { typeInfo, value ->
                         val json: Json by application.dependencies
@@ -91,13 +92,14 @@ fun Routing.routes() {
                         send(End)
                     }
                 }
+                // Send an event, some of which may be processed by an LLM
                 post {
                     val eventFlowManager: EventFlowManager by application.dependencies
                     val chatId = call.requireValidChatId()
                     val userMessage = call.receive<UserEvent>()
                     eventFlowManager.use(chatId) { flow ->
                         val agent =
-                            aiAgent<UserEvent, Unit>(
+                            aiAgent(
                                 strategy = findRecipeStrategy(flow::emit),
                                 model = AnthropicModels.Haiku_4_5,
                             )
