@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt
+package se.gustavkarlsson.chefgpt.agent
 
 import ai.koog.agents.core.agent.entity.AIAgentGraphStrategy
 import ai.koog.agents.core.dsl.builder.node

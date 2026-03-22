@@ -1,7 +1,5 @@
 package se.gustavkarlsson.chefgpt
 
-import ai.koog.ktor.aiAgent
-import ai.koog.prompt.executor.clients.anthropic.AnthropicModels
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.Parameters
 import io.ktor.server.application.ApplicationCall
@@ -26,6 +24,7 @@ import io.ktor.sse.ServerSentEvent
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
+import se.gustavkarlsson.chefgpt.agent.runAgent
 import se.gustavkarlsson.chefgpt.api.End
 import se.gustavkarlsson.chefgpt.api.UserEvent
 import se.gustavkarlsson.chefgpt.auth.User
@@ -97,15 +96,8 @@ fun Routing.routes() {
                     val eventFlowManager: EventFlowManager by application.dependencies
                     val chatId = call.requireValidChatId()
                     val userMessage = call.receive<UserEvent>()
-                    eventFlowManager.use(chatId) { flow ->
-                        val agent =
-                            aiAgent(
-                                strategy = findRecipeStrategy(flow::emit),
-                                model = AnthropicModels.Haiku_4_5,
-                            )
-                        agent.run(userMessage, chatId.value.toString())
-                    }
                     call.respond(HttpStatusCode.OK)
+                    runAgent(chatId, userMessage, eventFlowManager)
                 }
             }
         }
