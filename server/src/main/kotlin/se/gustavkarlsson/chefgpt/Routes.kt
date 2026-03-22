@@ -26,6 +26,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import se.gustavkarlsson.chefgpt.agent.runAgent
 import se.gustavkarlsson.chefgpt.api.End
+import se.gustavkarlsson.chefgpt.api.JoinedChat
 import se.gustavkarlsson.chefgpt.api.UserEvent
 import se.gustavkarlsson.chefgpt.api.UserMessage
 import se.gustavkarlsson.chefgpt.auth.User
@@ -67,8 +68,6 @@ fun Routing.routes() {
                 call.respond(HttpStatusCode.Created, chat.id.value.toString())
             }
             route("/{chatId}/events") {
-                // FIXME to make sure clients are caught up, let them send a request to a "/join" endpoint with a unique ID.
-                //  Then have them wait until they see that ID in a message back until they can send anything.
                 // Get a flow of chat events
                 sse(
                     serialize = { typeInfo, value ->
@@ -97,6 +96,16 @@ fun Routing.routes() {
                     val eventFlowManager: EventFlowManager by application.dependencies
                     val chatId = call.requireValidChatId()
                     when (val event = call.receive<UserEvent>()) {
+                        is JoinedChat -> {
+                            // Register that someone joined the chat.
+                            // The user should start listening to the events before sending this.
+                            // They can then observe this value in the event stream to tell when they have "caught up".
+                            eventFlowManager.use(chatId) { flow ->
+                                flow.emit(event)
+                            }
+                            call.respond(HttpStatusCode.OK)
+                        }
+
                         is UserMessage -> {
                             call.respond(HttpStatusCode.OK)
                             runAgent(chatId, event, eventFlowManager)

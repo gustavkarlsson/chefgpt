@@ -1,6 +1,7 @@
 package se.gustavkarlsson.chefgpt.api
 
 import kotlinx.serialization.Serializable
+import kotlin.uuid.Uuid
 
 @Serializable
 sealed interface Event
@@ -52,3 +53,8 @@ data class UserMessage(
         }
     }
 }
+
+@Serializable
+data class JoinedChat(
+    val id: Uuid,
+) : UserEvent
