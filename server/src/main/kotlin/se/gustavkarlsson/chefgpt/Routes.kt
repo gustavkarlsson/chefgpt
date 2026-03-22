@@ -15,7 +15,6 @@ import io.ktor.server.request.contentType
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Routing
-import io.ktor.server.routing.RoutingCall
 import io.ktor.server.routing.application
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
@@ -76,7 +75,7 @@ fun Routing.routes() {
                         },
                     ) {
                         val eventFlowManager: EventFlowManager by application.dependencies
-                        val chatId: ChatId = TODO("Get chat id somehow")
+                        val chatId = call.requireValidChatId()
                         eventFlowManager.use(chatId) { flow ->
                             // TODO chunk based on time
                             flow
@@ -113,10 +112,10 @@ private fun ApplicationCall.requireUser(): User =
         "User principal missing. Are you calling this in a non-authenticated endpoint?"
     }
 
-private suspend fun RoutingCall.requireValidChatId(): ChatId {
+private suspend fun ApplicationCall.requireValidChatId(): ChatId {
     val chatRepository: ChatRepository by application.dependencies
     val user = requireUser()
-    val chatId = ChatId(pathParameters.requireUuid("chatId"))
+    val chatId = ChatId(parameters.requireUuid("chatId"))
     if (!chatRepository.contains(user.id, chatId)) {
         throw NotFoundException("Chat not found for user")
     }
