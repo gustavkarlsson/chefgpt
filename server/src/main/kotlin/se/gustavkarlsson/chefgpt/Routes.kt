@@ -83,6 +83,7 @@ fun Routing.routes() {
                     val eventFlowManager: EventFlowManager by application.dependencies
                     val chatId = call.requireValidChatId()
                     eventFlowManager.use(chatId) { flow ->
+                        // TODO Batch events to improve efficiency. Maybe make a Batch event?
                         flow
                             .takeWhile { it !is End }
                             .collect { event ->
@@ -100,6 +101,7 @@ fun Routing.routes() {
                             // Register that someone joined the chat.
                             // The user should start listening to the events before sending this.
                             // They can then observe this value in the event stream to tell when they have "caught up".
+                            // TODO Make this more inefficient. It serves no purpose if nobody is subscribed, but wastes resources since it has to load the chat history.
                             eventFlowManager.use(chatId) { flow ->
                                 flow.emit(event)
                             }

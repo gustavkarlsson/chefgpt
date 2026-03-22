@@ -27,6 +27,7 @@ data class AgentReasoning(
     val text: String,
 ) : AgentEvent
 
+// TODO When should this be sent? And what happens when it does? Should we save chat history but disable the agent?
 @Serializable
 data object End : AgentEvent
 
