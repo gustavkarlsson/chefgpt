@@ -20,12 +20,10 @@ import io.ktor.server.sse.send
 import io.ktor.server.sse.sse
 import io.ktor.server.util.getOrFail
 import io.ktor.sse.ServerSentEvent
-import kotlinx.coroutines.flow.takeWhile
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import se.gustavkarlsson.chefgpt.agent.runAgent
 import se.gustavkarlsson.chefgpt.api.ChatId
-import se.gustavkarlsson.chefgpt.api.End
 import se.gustavkarlsson.chefgpt.api.JoinedChat
 import se.gustavkarlsson.chefgpt.api.UserEvent
 import se.gustavkarlsson.chefgpt.api.UserMessage
@@ -83,11 +81,9 @@ fun Routing.routes() {
                     eventFlowManager.use(chatId) { flow ->
                         // TODO Batch events to improve efficiency. Maybe make a Batch event?
                         flow
-                            .takeWhile { it !is End }
                             .collect { event ->
                                 send(event)
                             }
-                        send(End)
                     }
                 }
                 // Send an event, some of which may be processed by an LLM

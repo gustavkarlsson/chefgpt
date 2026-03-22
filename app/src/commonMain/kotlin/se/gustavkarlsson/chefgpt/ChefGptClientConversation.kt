@@ -17,7 +17,6 @@ import kotlinx.coroutines.launch
 import se.gustavkarlsson.chefgpt.api.AgentMessage
 import se.gustavkarlsson.chefgpt.api.AgentReasoning
 import se.gustavkarlsson.chefgpt.api.ChatId
-import se.gustavkarlsson.chefgpt.api.End
 import se.gustavkarlsson.chefgpt.api.JoinedChat
 import se.gustavkarlsson.chefgpt.api.ToolCall
 import se.gustavkarlsson.chefgpt.api.UserEvent
@@ -57,10 +56,9 @@ private class ChefGptClientConversation(
                         when (event) {
                             is AgentMessage -> true
                             is AgentReasoning -> false
-                            End -> false
                             ToolCall -> false
                             is UserMessage -> false
-                            is JoinedChat -> null
+                            is JoinedChat -> state.isUsersTurn // Don't change
                         }
                     val newIsCaughtUp =
                         if (state.isCaughtUp) {
@@ -68,7 +66,7 @@ private class ChefGptClientConversation(
                         } else {
                             joinEvent == event
                         }
-                    state.copy(isUsersTurn = newIsUsersTurn ?: state.isUsersTurn, isCaughtUp = newIsCaughtUp)
+                    state.copy(isUsersTurn = newIsUsersTurn, isCaughtUp = newIsCaughtUp)
                 }
             }.mapNotNull { event ->
                 when (event) {
@@ -80,23 +78,19 @@ private class ChefGptClientConversation(
                         AiMessage.Reasoning(event.text)
                     }
 
-                    End -> {
-                        null
-                    }
-
+                    // TODO Map to tool call message
                     ToolCall -> {
                         null
                     }
 
-                    // TODO Map to tool call message
                     is UserMessage -> {
+                        // TODO Rename so we can avoid FQ name
                         se.gustavkarlsson.chefgpt.UserMessage(
                             event.text,
                             event.imageUrl,
                         )
                     }
 
-                    // TODO Rename so we can avoid FQ name
                     is JoinedChat -> {
                         null
                     }
