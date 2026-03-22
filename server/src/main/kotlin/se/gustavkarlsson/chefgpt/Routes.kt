@@ -51,6 +51,7 @@ fun Routing.routes() {
         }
     }
     authenticate {
+        // Upload an image and return the URL
         post("/images") {
             val imageUploader: ImageUploader by application.dependencies
             val contentType = call.request.contentType()
@@ -65,49 +66,44 @@ fun Routing.routes() {
                 val chat = chatRepository.create(user.id)
                 call.respond(HttpStatusCode.Created, chat.id.value.toString())
             }
-            route("/{chatId}") {
+            route("/{chatId}/events") {
                 // FIXME to make sure clients are caught up, let them send a request to a "/join" endpoint with a unique ID.
                 //  Then have them wait until they see that ID in a message back until they can send anything.
-
-                route("/events") {
-                    // Get the conversation history up to this point (empty if new convo)
-                    sse(
-                        serialize = { typeInfo, value ->
-                            val json: Json by application.dependencies
-                            val serializer = json.serializersModule.serializer(typeInfo.kotlinType!!)
-                            json.encodeToString(serializer, value)
-                        },
-                    ) {
-                        heartbeat {
-                            period = 1.seconds
-                            event = ServerSentEvent("heartbeat")
-                        }
-                        val eventFlowManager: EventFlowManager by application.dependencies
-                        val chatId = call.requireValidChatId()
-                        eventFlowManager.use(chatId) { flow ->
-                            flow
-                                .takeWhile { it !is End }
-                                .collect { event ->
-                                    send(event)
-                                }
-                            send(End)
-                        }
+                sse(
+                    serialize = { typeInfo, value ->
+                        val json: Json by application.dependencies
+                        val serializer = json.serializersModule.serializer(typeInfo.kotlinType!!)
+                        json.encodeToString(serializer, value)
+                    },
+                ) {
+                    heartbeat {
+                        period = 1.seconds
+                        event = ServerSentEvent("heartbeat")
                     }
-                    // Post a message to the chat and await the response
-                    post {
-                        val eventFlowManager: EventFlowManager by application.dependencies
-                        val chatId = call.requireValidChatId()
-                        val userMessage = call.receive<UserEvent>()
-                        eventFlowManager.use(chatId) { flow ->
-                            val agent =
-                                aiAgent<UserEvent, Unit>(
-                                    strategy = findRecipeStrategy(flow::emit),
-                                    model = AnthropicModels.Haiku_4_5,
-                                )
-                            agent.run(userMessage, chatId.value.toString())
-                        }
-                        call.respond(HttpStatusCode.OK)
+                    val eventFlowManager: EventFlowManager by application.dependencies
+                    val chatId = call.requireValidChatId()
+                    eventFlowManager.use(chatId) { flow ->
+                        flow
+                            .takeWhile { it !is End }
+                            .collect { event ->
+                                send(event)
+                            }
+                        send(End)
                     }
+                }
+                post {
+                    val eventFlowManager: EventFlowManager by application.dependencies
+                    val chatId = call.requireValidChatId()
+                    val userMessage = call.receive<UserEvent>()
+                    eventFlowManager.use(chatId) { flow ->
+                        val agent =
+                            aiAgent<UserEvent, Unit>(
+                                strategy = findRecipeStrategy(flow::emit),
+                                model = AnthropicModels.Haiku_4_5,
+                            )
+                        agent.run(userMessage, chatId.value.toString())
+                    }
+                    call.respond(HttpStatusCode.OK)
                 }
             }
         }
