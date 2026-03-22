@@ -16,19 +16,15 @@ sealed interface Message : Event {
 sealed interface AgentEvent : Event
 
 @Serializable
-sealed interface AgentMessage :
-    AgentEvent,
-    Message {
-    @Serializable
-    data class Regular(
-        override val text: String,
-    ) : AgentMessage
+data class AgentMessage(
+    override val text: String,
+) : AgentEvent,
+    Message
 
-    @Serializable
-    data class Reasoning(
-        override val text: String,
-    ) : AgentMessage
-}
+@Serializable
+data class AgentReasoning(
+    val text: String,
+) : AgentEvent
 
 @Serializable
 data object End : AgentEvent

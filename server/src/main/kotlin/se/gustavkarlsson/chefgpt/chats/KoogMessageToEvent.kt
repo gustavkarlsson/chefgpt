@@ -4,6 +4,7 @@ import ai.koog.prompt.message.AttachmentContent
 import ai.koog.prompt.message.ContentPart
 import se.gustavkarlsson.chefgpt.api.AgentEvent
 import se.gustavkarlsson.chefgpt.api.AgentMessage
+import se.gustavkarlsson.chefgpt.api.AgentReasoning
 import se.gustavkarlsson.chefgpt.api.Event
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.api.ToolCall
@@ -34,7 +35,7 @@ private fun KoogMessage.User.getImageUrl(): ImageUrl? {
 
 fun KoogMessage.Response.toEvent(): AgentEvent =
     when (this) {
-        is KoogMessage.Assistant -> AgentMessage.Regular(content)
-        is KoogMessage.Reasoning -> AgentMessage.Reasoning(content)
+        is KoogMessage.Assistant -> AgentMessage(content)
+        is KoogMessage.Reasoning -> AgentReasoning(content)
         is KoogMessage.Tool.Call -> ToolCall
     }
