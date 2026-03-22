@@ -21,7 +21,9 @@ fun Application.module() {
         anthropicApiKey = System.getenv("ANTHROPIC_API_KEY"),
         spoonacularApiKey = System.getenv("SPOONACULAR_API_KEY"),
         ingredientStorePath = Paths.get("ingredient-store.txt"),
-        imghippoApiKey = System.getenv("IMGHIPPO_API_KEY"),
+        cloudinaryApiKey = System.getenv("CLOUDINARY_API_KEY"),
+        cloudinaryApiSecret = System.getenv("CLOUDINARY_API_SECRET"),
+        cloudinaryCloud = System.getenv("CLOUDINARY_CLOUD"),
     )
     routing(Routing::routes)
 }

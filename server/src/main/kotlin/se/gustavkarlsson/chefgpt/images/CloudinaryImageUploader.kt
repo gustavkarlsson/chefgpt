@@ -5,32 +5,37 @@ import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.basicAuth
 import io.ktor.client.request.forms.ChannelProvider
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.forms.submitFormWithBinaryData
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.URLProtocol
 import io.ktor.http.headers
 import io.ktor.serialization.kotlinx.json.json
+import io.ktor.server.util.url
 import io.ktor.utils.io.ByteReadChannel
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 
-class ImghippoFileUploader(
+class CloudinaryImageUploader(
     private val apiKey: String,
+    private val apiSecret: String,
+    private val cloud: String,
 ) : ImageUploader,
     AutoCloseable {
     private val client =
         HttpClient(CIO) {
             install(HttpTimeout) {
-                requestTimeoutMillis = 10000
+                requestTimeoutMillis = 10_000
             }
             install(ContentNegotiation) {
                 json(Json)
             }
+            // TODO Install logging
         }
 
     override suspend fun uploadImage(
@@ -40,10 +45,14 @@ class ImghippoFileUploader(
         val jsonObject =
             client
                 .submitFormWithBinaryData(
-                    url = "https://api.imghippo.com/v1/upload",
+                    url =
+                        url {
+                            protocol = URLProtocol.HTTPS
+                            host = "api.cloudinary.com"
+                            pathSegments = listOf("v1_1", cloud, "image", "upload")
+                        },
                     formData =
                         formData {
-                            append("api_key", apiKey)
                             append(
                                 key = "file",
                                 value = ChannelProvider { readChannel },
@@ -61,12 +70,12 @@ class ImghippoFileUploader(
                                     },
                             )
                         },
-                ).body<JsonObject>()
+                ) {
+                    basicAuth(apiKey, apiSecret)
+                }.body<JsonObject>()
         val url =
             jsonObject
-                .getValue("data")
-                .jsonObject
-                .getValue("url")
+                .getValue("secure_url")
                 .jsonPrimitive.content
         return ImageUrl(url)
     }

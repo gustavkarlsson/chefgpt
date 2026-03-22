@@ -21,6 +21,7 @@ class SpoonacularClient(
             install(HttpTimeout) {
                 requestTimeoutMillis = 5000
             }
+            // TODO Install logging
             defaultRequest {
                 header("x-api-key", apiKey)
             }

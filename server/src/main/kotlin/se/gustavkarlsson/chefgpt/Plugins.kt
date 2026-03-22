@@ -22,8 +22,8 @@ import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventFlowManager
 import se.gustavkarlsson.chefgpt.chats.InMemoryChatRepository
 import se.gustavkarlsson.chefgpt.chats.toEventOrNull
+import se.gustavkarlsson.chefgpt.images.CloudinaryImageUploader
 import se.gustavkarlsson.chefgpt.images.ImageUploader
-import se.gustavkarlsson.chefgpt.images.ImghippoFileUploader
 import se.gustavkarlsson.chefgpt.tools.IngredientStore
 import se.gustavkarlsson.chefgpt.tools.SpoonacularClient
 import java.nio.file.Path
@@ -32,7 +32,9 @@ fun Application.plugins(
     anthropicApiKey: String,
     spoonacularApiKey: String,
     ingredientStorePath: Path,
-    imghippoApiKey: String,
+    cloudinaryApiKey: String,
+    cloudinaryApiSecret: String,
+    cloudinaryCloud: String,
 ) {
     val userRepository =
         InMemoryUserRepository(
@@ -86,7 +88,7 @@ fun Application.plugins(
         provide<ChatHistoryProvider> { chatHistoryProvider }
         provide<UserRepository> { userRepository }
         provide<ChatRepository> { InMemoryChatRepository() }
-        provide<ImageUploader> { ImghippoFileUploader(imghippoApiKey) }
+        provide<ImageUploader> { CloudinaryImageUploader(cloudinaryApiKey, cloudinaryApiSecret, cloudinaryCloud) }
         provide<Json> { json }
         provide<EventFlowManager> {
             EventFlowManager { chatId ->
