@@ -65,6 +65,7 @@ kotlin {
             implementation(libs.ktorClientCore)
             implementation(libs.ktorClientCio)
             implementation(libs.ktorClientContentNegotiation)
+            implementation(libs.ktorClientSse)
             implementation(libs.ktorClientWebsockets)
             implementation(libs.ktorSerializationKotlinxJson)
             implementation(libs.kotlinxSerializationJson)
