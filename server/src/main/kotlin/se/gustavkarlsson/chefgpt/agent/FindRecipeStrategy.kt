@@ -5,32 +5,25 @@ import ai.koog.agents.core.dsl.builder.node
 import ai.koog.agents.core.dsl.builder.strategy
 import ai.koog.agents.core.dsl.extension.nodeDoNothing
 import ai.koog.agents.core.dsl.extension.onAssistantMessage
-import ai.koog.agents.core.dsl.extension.onIsInstance
 import ai.koog.agents.core.dsl.extension.onReasoningMessage
 import ai.koog.agents.core.dsl.extension.onToolCall
 import ai.koog.agents.core.environment.result
 import ai.koog.prompt.message.Message
 import se.gustavkarlsson.chefgpt.api.Event
-import se.gustavkarlsson.chefgpt.api.UserEvent
 import se.gustavkarlsson.chefgpt.api.UserMessage
-import se.gustavkarlsson.chefgpt.api.UserWaiting
 import se.gustavkarlsson.chefgpt.chats.toEvent
 import se.gustavkarlsson.chefgpt.chats.toEventOrNull
 
-fun findRecipeStrategy(emitEvent: suspend (Event) -> Unit): AIAgentGraphStrategy<UserEvent, Unit> =
+fun findRecipeStrategy(emitEvent: suspend (Event) -> Unit): AIAgentGraphStrategy<UserMessage, Unit> =
     strategy("find-recipe") {
         val nodeSendUserMessageToLLM by nodeSendUserMessageToLLM("sendUserMessageToLLM", emitEvent)
-        val nodeUserWaitsForLLM by nodeUserWaitsForLLM("userWaitsForLLM", emitEvent)
         val responses by nodeDoNothing<Message.Response>("responses")
         val nodeCallTools by nodeCallTools("callTools", emitEvent)
         val nodeSendToolResultToLLM by nodeSendToolResultToLLM("sendToolResultToLLM", emitEvent)
         val nodeSendReasoningBackToLLM by nodeSendReasoningBackToLLM("sendReasoningBackToLLM", emitEvent)
 
-        edge(nodeStart forwardTo nodeSendUserMessageToLLM onIsInstance UserMessage::class)
-        edge(nodeStart forwardTo nodeUserWaitsForLLM onIsInstance UserWaiting::class)
-
+        edge(nodeStart forwardTo nodeSendUserMessageToLLM)
         edge(nodeSendUserMessageToLLM forwardTo responses)
-        edge(nodeUserWaitsForLLM forwardTo responses)
 
         // Reasoning loops around as long as it's reasoning
         edge(responses forwardTo nodeSendReasoningBackToLLM onReasoningMessage { true })
@@ -58,20 +51,6 @@ private fun nodeSendUserMessageToLLM(
                     message.imageUrl?.let { image(it.value) }
                 }
             }
-            requestLLM()
-        }.also { emitEvent(it.toEvent()) }
-}
-
-private fun nodeUserWaitsForLLM(
-    name: String,
-    emitEvent: suspend (Event) -> Unit,
-) = node<UserWaiting, Message.Response>(name) { waiting ->
-    emitEvent(waiting)
-    llm
-        .writeSession {
-            // FIXME if the prompt is empty, Claude will error.
-            //  if the prompt has not changed, Claude will error.
-            //  We can't have a wait event!
             requestLLM()
         }.also { emitEvent(it.toEvent()) }
 }

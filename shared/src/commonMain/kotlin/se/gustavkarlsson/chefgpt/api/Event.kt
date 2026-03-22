@@ -32,7 +32,7 @@ data object End : AgentEvent
 @Serializable
 data object ToolCall : AgentEvent
 
-// Agent events
+// User events
 
 @Serializable
 sealed interface UserEvent : Event
@@ -52,6 +52,3 @@ data class UserMessage(
         }
     }
 }
-
-@Serializable
-data object UserWaiting : UserEvent

@@ -27,6 +27,7 @@ import kotlinx.serialization.serializer
 import se.gustavkarlsson.chefgpt.agent.runAgent
 import se.gustavkarlsson.chefgpt.api.End
 import se.gustavkarlsson.chefgpt.api.UserEvent
+import se.gustavkarlsson.chefgpt.api.UserMessage
 import se.gustavkarlsson.chefgpt.auth.User
 import se.gustavkarlsson.chefgpt.auth.UserRepository
 import se.gustavkarlsson.chefgpt.chats.ChatId
@@ -95,9 +96,12 @@ fun Routing.routes() {
                 post {
                     val eventFlowManager: EventFlowManager by application.dependencies
                     val chatId = call.requireValidChatId()
-                    val userMessage = call.receive<UserEvent>()
-                    call.respond(HttpStatusCode.OK)
-                    runAgent(chatId, userMessage, eventFlowManager)
+                    when (val event = call.receive<UserEvent>()) {
+                        is UserMessage -> {
+                            call.respond(HttpStatusCode.OK)
+                            runAgent(chatId, event, eventFlowManager)
+                        }
+                    }
                 }
             }
         }
