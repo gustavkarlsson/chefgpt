@@ -33,24 +33,26 @@ sealed interface AgentMessage :
 @Serializable
 data object End : AgentEvent
 
+@Serializable
+data object ToolCall : AgentEvent
+
 // Agent events
 
 @Serializable
 sealed interface UserEvent : Event
 
-@ConsistentCopyVisibility
 @Serializable
-data class UserMessage private constructor(
+data class UserMessage(
     override val text: String?,
-    val imageId: FileId?,
+    val imageUrl: ImageUrl? = null,
 ) : UserEvent,
     Message {
     init {
         require(text == null || text.isNotBlank()) {
             "Message text must not be blank"
         }
-        require(text != null || imageId != null) {
-            "Message must contain text or imageId"
+        require(text != null || imageUrl != null) {
+            "Message must contain text or imageUrl"
         }
     }
 }

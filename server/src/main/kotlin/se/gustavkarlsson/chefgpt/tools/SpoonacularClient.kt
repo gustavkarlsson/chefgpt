@@ -7,18 +7,22 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 
 class SpoonacularClient(
-    private val apiKey: String,
+    apiKey: String,
 ) : ToolSet,
     AutoCloseable {
     private val client =
         HttpClient(CIO) {
             install(HttpTimeout) {
                 requestTimeoutMillis = 5000
+            }
+            defaultRequest {
+                header("x-api-key", apiKey)
             }
         }
 
@@ -35,8 +39,6 @@ class SpoonacularClient(
     ): String =
         client
             .get("https://api.spoonacular.com/recipes/findByIngredients") {
-                header("x-api-key", apiKey)
-
                 parameter("ingredients", ingredients)
                 parameter("number", resultCount)
                 parameter("ranking", 2)
@@ -65,8 +67,6 @@ class SpoonacularClient(
     ): String =
         client
             .get("https://api.spoonacular.com/recipes/$id/information") {
-                header("x-api-key", apiKey)
-
                 parameter("includeNutrition", includeNutrition)
                 parameter("addWinePairing", addWinePairing)
                 parameter("addTasteData", addTasteData)

@@ -5,7 +5,6 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.routing
-import java.nio.file.Files
 import java.nio.file.Paths
 
 fun main() {
@@ -22,7 +21,7 @@ fun Application.module() {
         anthropicApiKey = System.getenv("ANTHROPIC_API_KEY"),
         spoonacularApiKey = System.getenv("SPOONACULAR_API_KEY"),
         ingredientStorePath = Paths.get("ingredient-store.txt"),
-        imageStorePath = Files.createTempDirectory("chefgpt-image-store"),
+        imghippoApiKey = System.getenv("IMGHIPPO_API_KEY"),
     )
     routing(Routing::routes)
 }

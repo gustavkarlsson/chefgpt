@@ -4,13 +4,13 @@ import ai.koog.agents.chatMemory.feature.ChatHistoryProvider
 import ai.koog.agents.chatMemory.feature.ChatMemory
 import ai.koog.agents.chatMemory.feature.InMemoryChatHistoryProvider
 import ai.koog.agents.core.tools.reflect.tools
-import ai.koog.agents.ext.tool.ExitTool
 import ai.koog.ktor.Koog
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.auth.authentication
 import io.ktor.server.auth.basic
+import io.ktor.server.plugins.calllogging.CallLogging
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.di.dependencies
 import io.ktor.server.sse.SSE
@@ -21,7 +21,9 @@ import se.gustavkarlsson.chefgpt.auth.UserRepository
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventFlowManager
 import se.gustavkarlsson.chefgpt.chats.InMemoryChatRepository
-import se.gustavkarlsson.chefgpt.chats.toEvent
+import se.gustavkarlsson.chefgpt.chats.toEventOrNull
+import se.gustavkarlsson.chefgpt.images.ImageUploader
+import se.gustavkarlsson.chefgpt.images.ImghippoFileUploader
 import se.gustavkarlsson.chefgpt.tools.IngredientStore
 import se.gustavkarlsson.chefgpt.tools.SpoonacularClient
 import java.nio.file.Path
@@ -30,15 +32,14 @@ fun Application.plugins(
     anthropicApiKey: String,
     spoonacularApiKey: String,
     ingredientStorePath: Path,
-    imageStorePath: Path,
+    imghippoApiKey: String,
 ) {
-    val imageStore = ImageStore(imageStorePath)
     val userRepository =
         InMemoryUserRepository(
             rules =
                 listOf(
                     UserRegistrationRule.name("Username must be at least 3 characters long") { name ->
-                        name.length < 3
+                        name.length >= 3
                     },
                     UserRegistrationRule.name("Username must start with a letter") { name ->
                         name.firstOrNull()?.isLetter() ?: false
@@ -69,7 +70,6 @@ fun Application.plugins(
                     },
                 ),
         )
-    val chatRepository = InMemoryChatRepository()
     val chatHistoryProvider = InMemoryChatHistoryProvider()
     // Extra lenient in production
     val json =
@@ -85,15 +85,17 @@ fun Application.plugins(
     dependencies {
         provide<ChatHistoryProvider> { chatHistoryProvider }
         provide<UserRepository> { userRepository }
-        provide<ChatRepository> { chatRepository }
-        provide<ImageStore> { imageStore }
+        provide<ChatRepository> { InMemoryChatRepository() }
+        provide<ImageUploader> { ImghippoFileUploader(imghippoApiKey) }
         provide<Json> { json }
         provide<EventFlowManager> {
             EventFlowManager { chatId ->
-                chatHistoryProvider.load(chatId.value.toString()).map { it.toEvent() }
+                chatHistoryProvider.load(chatId.value.toString()).mapNotNull { it.toEventOrNull() }
             }
         }
     }
+
+    install(CallLogging)
 
     install(ContentNegotiation) {
         json(json)
@@ -103,7 +105,6 @@ fun Application.plugins(
     install(SSE)
 
     // TODO Install RateLimiting
-    // TODO Install CallLogging
     // TODO Install CallId
     // TODO Install RequestValidation to validate incoming (and outgoing?) data
     // TODO Install StatusPages to handle RequestValidationException
@@ -123,7 +124,6 @@ fun Application.plugins(
             registerTools {
                 tools(IngredientStore(ingredientStorePath))
                 tools(SpoonacularClient(spoonacularApiKey))
-                tool(ExitTool)
             }
             install(ChatMemory.Feature) {
                 this.chatHistoryProvider = chatHistoryProvider

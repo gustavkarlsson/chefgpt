@@ -10,22 +10,16 @@ import ai.koog.agents.core.dsl.extension.onReasoningMessage
 import ai.koog.agents.core.dsl.extension.onToolCall
 import ai.koog.prompt.message.Message
 import se.gustavkarlsson.chefgpt.api.Event
-import se.gustavkarlsson.chefgpt.api.FileId
 import se.gustavkarlsson.chefgpt.api.UserEvent
 import se.gustavkarlsson.chefgpt.api.UserMessage
 import se.gustavkarlsson.chefgpt.api.UserWaiting
 import se.gustavkarlsson.chefgpt.chats.toEvent
-import java.nio.file.Path
-import kotlin.io.path.pathString
-import kotlinx.io.files.Path as KotlinXPath
 
-fun findRecipeStrategy(
-    getImagePath: suspend (FileId) -> Path?,
-    emitEvent: suspend (Event) -> Unit,
-): AIAgentGraphStrategy<UserEvent, Unit> =
+// FIXME convert to class so we can use emitEvent without passing it as argument
+fun findRecipeStrategy(emitEvent: suspend (Event) -> Unit): AIAgentGraphStrategy<UserEvent, Unit> =
     strategy("find-recipe") {
         val nodeEmitUserEvent by nodeEmitUserEvent(emitEvent)
-        val nodeAppendUserMessage by nodeAppendUserMessage("appendUserMessage", getImagePath)
+        val nodeAppendUserMessage by nodeAppendUserMessage("appendUserMessage")
         val nodeLLMRequest by nodeRequestLLM("llmRequest")
         val nodeEmitResponse by nodeEmitResponse("emitResponse", emitEvent)
         val nodeExecuteTool by nodeExecuteTool("executeTool")
@@ -50,34 +44,26 @@ private fun nodeEmitUserEvent(emitEvent: suspend (Event) -> Unit) =
         event
     }
 
-private fun nodeAppendUserMessage(
-    name: String,
-    getImagePath: suspend (FileId) -> Path?,
-) = node<UserEvent, UserEvent>(name) { event ->
-    when (event) {
-        UserWaiting -> {
-            Unit
-        }
+private fun nodeAppendUserMessage(name: String) =
+    node<UserEvent, UserEvent>(name) { event ->
+        when (event) {
+            UserWaiting -> {
+                Unit
+            }
 
-        is UserMessage -> {
-            val imagePath =
-                event.imageId?.let { imageId ->
-                    getImagePath(imageId)?.let { path ->
-                        KotlinXPath(path.pathString)
-                    }
-                }
-            llm.writeSession {
-                appendPrompt {
-                    user {
-                        event.text?.let { text(it) }
-                        imagePath?.let { image(it) }
+            is UserMessage -> {
+                llm.writeSession {
+                    appendPrompt {
+                        user {
+                            event.text?.let { text(it) }
+                            event.imageUrl?.let { image(it.value) }
+                        }
                     }
                 }
             }
         }
+        event
     }
-    event
-}
 
 private fun nodeEmitResponse(
     name: String,

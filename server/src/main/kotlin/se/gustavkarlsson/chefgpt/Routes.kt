@@ -11,13 +11,12 @@ import io.ktor.server.auth.principal
 import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.plugins.NotFoundException
 import io.ktor.server.plugins.di.dependencies
+import io.ktor.server.request.contentType
 import io.ktor.server.request.receive
-import io.ktor.server.request.receiveChannel
 import io.ktor.server.response.respond
-import io.ktor.server.response.respondFile
 import io.ktor.server.routing.Routing
+import io.ktor.server.routing.RoutingCall
 import io.ktor.server.routing.application
-import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.sse.send
@@ -27,14 +26,13 @@ import kotlinx.coroutines.flow.takeWhile
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import se.gustavkarlsson.chefgpt.api.End
-import se.gustavkarlsson.chefgpt.api.FileId
 import se.gustavkarlsson.chefgpt.api.UserEvent
 import se.gustavkarlsson.chefgpt.auth.User
 import se.gustavkarlsson.chefgpt.auth.UserRepository
 import se.gustavkarlsson.chefgpt.chats.ChatId
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventFlowManager
-import se.gustavkarlsson.chefgpt.chats.InMemoryChatRepository
+import se.gustavkarlsson.chefgpt.images.ImageUploader
 import kotlin.uuid.Uuid
 
 // TODO set timeouts
@@ -60,22 +58,12 @@ fun Routing.routes() {
                 call.respond(HttpStatusCode.Created, chat.id.value.toString())
             }
             route("/{chatId}") {
-                // Upload an image to the chat and return the FileId
-                route("/images") {
-                    post {
-                        val imageStore: ImageStore by application.dependencies
-                        val chatId = call.requireValidChatId()
-                        val fileId = imageStore.writeFile(chatId, call.receiveChannel())
-                        call.respond(HttpStatusCode.Created, fileId.value.toString())
-                    }
-                    get("/{fileId}") {
-                        val imageStore: ImageStore by application.dependencies
-                        val chatId = call.requireValidChatId()
-                        val fileIdString = checkNotNull(call.pathParameters["fileId"])
-                        val fileId = FileId.parseOrNull(fileIdString) ?: throw NotFoundException()
-                        val file = imageStore.getFile(chatId, fileId) ?: throw NotFoundException()
-                        call.respondFile(file.toFile())
-                    }
+                post("/images") {
+                    call.requireValidChatId()
+                    val imageUploader: ImageUploader by application.dependencies
+                    val contentType = call.request.contentType()
+                    val imageUrl = imageUploader.uploadImage(call.receive(), contentType)
+                    call.respond(HttpStatusCode.Created, imageUrl)
                 }
 
                 route("/messages") {
@@ -88,7 +76,7 @@ fun Routing.routes() {
                         },
                     ) {
                         val eventFlowManager: EventFlowManager by application.dependencies
-                        val chatId = call.requireValidChatId()
+                        val chatId: ChatId = TODO("Get chat id somehow")
                         eventFlowManager.use(chatId) { flow ->
                             // TODO chunk based on time
                             flow
@@ -102,17 +90,12 @@ fun Routing.routes() {
                     // Post a message to the chat and await the response
                     post {
                         val eventFlowManager: EventFlowManager by application.dependencies
-                        val imageStore: ImageStore by application.dependencies
                         val chatId = call.requireValidChatId()
                         val userMessage = call.receive<UserEvent>()
                         eventFlowManager.use(chatId) { flow ->
                             val agent =
                                 aiAgent<UserEvent, Unit>(
-                                    strategy =
-                                        findRecipeStrategy(
-                                            getImagePath = { imageStore.getFile(chatId, it) },
-                                            emitEvent = flow::emit,
-                                        ),
+                                    strategy = findRecipeStrategy(flow::emit),
                                     model = AnthropicModels.Haiku_4_5,
                                 )
                             agent.run(userMessage, chatId.value.toString())
@@ -130,10 +113,10 @@ private fun ApplicationCall.requireUser(): User =
         "User principal missing. Are you calling this in a non-authenticated endpoint?"
     }
 
-private suspend fun ApplicationCall.requireValidChatId(): ChatId {
-    val chatRepository: InMemoryChatRepository by application.dependencies
+private suspend fun RoutingCall.requireValidChatId(): ChatId {
+    val chatRepository: ChatRepository by application.dependencies
     val user = requireUser()
-    val chatId = ChatId(request.queryParameters.requireUuid("ChatId"))
+    val chatId = ChatId(pathParameters.requireUuid("chatId"))
     if (!chatRepository.contains(user.id, chatId)) {
         throw NotFoundException("Chat not found for user")
     }

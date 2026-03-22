@@ -30,6 +30,7 @@ dependencies {
     implementation(libs.ktorServerContentNegotiation)
     implementation(libs.ktorServerDi)
     implementation(libs.ktorServerSse)
+    implementation(libs.ktorServerCallLogging)
     implementation(libs.ktorClientCore)
     implementation(libs.ktorClientCio)
     implementation(libs.ktorClientContentNegotiation)
