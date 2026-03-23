@@ -62,7 +62,6 @@ kotlin {
             // TODO specify dependency instead of compose.materialIconsExtended
             implementation(compose.materialIconsExtended)
             implementation(libs.multiplatformMarkdownRendererM3)
-            implementation(libs.kotlinxDatetime)
             implementation(libs.ktorClientCore)
             implementation(libs.ktorClientCio)
             implementation(libs.ktorClientContentNegotiation)
@@ -80,7 +79,7 @@ kotlin {
             implementation(libs.androidxActivityCompose)
         }
         jvmMain.dependencies {
-            implementation(libs.slf4jSimple)
+            implementation(libs.slf4jApi)
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinxCoroutinesSwing)
         }
