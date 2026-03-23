@@ -83,6 +83,8 @@ fun Application.plugins(
             allowTrailingComma = !developmentMode
             prettyPrint = developmentMode
         }
+    val ingredientStore = IngredientStore(ingredientStorePath)
+    val spoonacularClient = SpoonacularClient(spoonacularApiKey)
     dependencies {
         provide<ChatHistoryProvider> { chatHistoryProvider }
         provide<UserRepository> { userRepository }
@@ -94,6 +96,8 @@ fun Application.plugins(
                 chatHistoryProvider.load(chatId.value.toString()).mapNotNull { it.toActionOrNull() }
             }
         }
+        provide<IngredientStore> { ingredientStore }
+        provide<SpoonacularClient> { spoonacularClient }
     }
 
     install(CallLogging)
@@ -133,11 +137,6 @@ fun Application.plugins(
                     When the used is satisfied, exit the conversation.
                     """.trimIndent(),
                 )
-            }
-            registerTools {
-                // FIXME tools are not being picked up by the agent.
-                tools(IngredientStore(ingredientStorePath).asTools())
-                tools(SpoonacularClient(spoonacularApiKey).asTools())
             }
             install(ChatMemory.Feature) {
                 this.chatHistoryProvider = chatHistoryProvider
