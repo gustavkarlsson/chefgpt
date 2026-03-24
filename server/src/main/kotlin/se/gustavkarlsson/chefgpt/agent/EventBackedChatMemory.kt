@@ -1,6 +1,8 @@
 package se.gustavkarlsson.chefgpt.agent
 
 import ai.koog.agents.core.agent.config.AIAgentConfig
+import ai.koog.agents.core.agent.context.AIAgentContext
+import ai.koog.agents.core.agent.context.AIAgentGraphContextBase
 import ai.koog.agents.core.agent.entity.AIAgentStorageKey
 import ai.koog.agents.core.feature.AIAgentGraphFeature
 import ai.koog.agents.core.feature.config.FeatureConfig
@@ -38,34 +40,54 @@ class EventBackedChatMemory {
             chatRepository: ChatRepository,
             pipeline: AIAgentGraphPipeline,
         ) {
-            val lastMessage = AtomicReference<Message?>(null)
+            val lastMessageHolder = AtomicReference<Message?>(null)
 
-            pipeline.interceptStrategyStarting(this) { stragegyStarting ->
-                val chat = chatRepository.requireChat(stragegyStarting.context.runId)
-                stragegyStarting.context.llm.writeSession {
-                    for (event in chat.events().replayCache.filterIsInstance<Event.Message>()) {
-                        appendPrompt {
-                            message(event.message)
-                        }
-                        lastMessage.set(event.message)
-                    }
-                }
+            pipeline.interceptStrategyStarting(this) {
+                it.context.writeOldChatMessagesToPrompt(chatRepository, lastMessageHolder)
             }
 
-            pipeline.interceptNodeExecutionCompleted(this) { executionCompleted ->
-                val messagesSinceLast =
-                    executionCompleted.context.llm.prompt.messages
-                        .takeLastWhile { it != lastMessage.get() }
-                if (messagesSinceLast.isNotEmpty()) {
-                    val chat = chatRepository.requireChat(executionCompleted.context.runId)
-                    for (message in messagesSinceLast) {
-                        val event = Event.Message(Uuid.random(), message)
-                        chat.append(event)
-                        lastMessage.set(message)
-                    }
-                }
+            // TODO It takes quite a while for the user message to land. Should we send it manually somewhere else and remove this?
+            pipeline.interceptNodeExecutionStarting(this) {
+                it.context.writeNewPromptMessagesToChat(chatRepository, lastMessageHolder)
+            }
+
+            pipeline.interceptNodeExecutionCompleted(this) {
+                it.context.writeNewPromptMessagesToChat(chatRepository, lastMessageHolder)
             }
             // TODO do we need to intercept failed nodes too?
+        }
+
+        private suspend fun AIAgentContext.writeOldChatMessagesToPrompt(
+            chatRepository: ChatRepository,
+            lastMessageHolder: AtomicReference<Message?>,
+        ) {
+            val chat = chatRepository.requireChat(runId)
+            llm.writeSession {
+                for (event in chat.events().replayCache.filterIsInstance<Event.Message>()) {
+                    appendPrompt {
+                        message(event.message)
+                    }
+                    lastMessageHolder.set(event.message)
+                }
+            }
+        }
+
+        private suspend fun AIAgentGraphContextBase.writeNewPromptMessagesToChat(
+            chatRepository: ChatRepository,
+            lastMessageHolder: AtomicReference<Message?>,
+        ) {
+            val lastMessage = lastMessageHolder.get()
+            val messagesSinceLast =
+                llm.prompt.messages
+                    .takeLastWhile { it != lastMessage }
+            if (messagesSinceLast.isNotEmpty()) {
+                val chat = chatRepository.requireChat(runId)
+                for (message in messagesSinceLast) {
+                    val event = Event.Message(Uuid.random(), message)
+                    chat.append(event)
+                    lastMessageHolder.set(message)
+                }
+            }
         }
     }
 }
