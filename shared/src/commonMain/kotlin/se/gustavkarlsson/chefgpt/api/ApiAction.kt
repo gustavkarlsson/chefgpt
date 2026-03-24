@@ -6,6 +6,7 @@ import kotlin.uuid.Uuid
 /**
  * An action is something that the user has done to update the chat. It will often lead to an [ApiEvent].
  */
+@Serializable
 sealed interface ApiAction
 
 @Serializable
