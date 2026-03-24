@@ -69,9 +69,10 @@ fun Routing.routes() {
                 val chat = chatRepository.create(user.id)
                 call.respond(HttpStatusCode.Created, chat.id.value.toString())
             }
-            route("/{chatId}/events") {
+            route("/{chatId}") {
                 // Get a flow of chat events
                 sse(
+                    "/events",
                     serialize = { typeInfo, value ->
                         val json: Json by application.dependencies
                         val serializer = json.serializersModule.serializer(typeInfo.kotlinType!!)
@@ -89,7 +90,7 @@ fun Routing.routes() {
                     }
                 }
                 // Send an event, some of which may be processed by an LLM
-                post {
+                post("/actions") {
                     val chat = call.requireChat()
                     when (val action = call.receive<ApiAction>()) {
                         is ApiUserJoinedChat -> {
