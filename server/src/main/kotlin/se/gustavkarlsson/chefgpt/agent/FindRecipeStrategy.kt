@@ -12,6 +12,7 @@ import ai.koog.agents.core.environment.result
 import ai.koog.prompt.message.Message
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 
+// TODO() Can this be simplified now that it doesn't need to manually send events anymore?
 fun findRecipeStrategy(): AIAgentGraphStrategy<ApiUserSendsMessage, Unit> =
     strategy("find-recipe") {
         val nodeSendUserMessageToLLM by nodeSendUserMessageToLLM("sendUserMessageToLLM")

@@ -58,6 +58,13 @@ data class ApiAgentReasoning(
 }
 
 @Serializable
+data class ApiUserJoined(
+    override val id: Uuid,
+    override val timestamp: Instant,
+    val joinId: Uuid,
+) : ApiSystemEvent
+
+@Serializable
 data class ApiUserMessage(
     override val id: Uuid,
     override val timestamp: Instant,

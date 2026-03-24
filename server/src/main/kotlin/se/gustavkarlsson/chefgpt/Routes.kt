@@ -20,10 +20,12 @@ import io.ktor.server.sse.send
 import io.ktor.server.sse.sse
 import io.ktor.server.util.getOrFail
 import io.ktor.sse.ServerSentEvent
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import se.gustavkarlsson.chefgpt.agent.runAgent
 import se.gustavkarlsson.chefgpt.api.ApiAction
+import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.ChatId
@@ -31,10 +33,12 @@ import se.gustavkarlsson.chefgpt.auth.User
 import se.gustavkarlsson.chefgpt.auth.UserRepository
 import se.gustavkarlsson.chefgpt.chats.Chat
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
-import se.gustavkarlsson.chefgpt.chats.toApi
-import se.gustavkarlsson.chefgpt.chats.toEvent
+import se.gustavkarlsson.chefgpt.chats.Event
+import se.gustavkarlsson.chefgpt.chats.toApiOrNull
 import se.gustavkarlsson.chefgpt.images.ImageUploader
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
+import kotlin.uuid.Uuid
 
 // TODO set timeouts
 fun Routing.routes() {
@@ -79,9 +83,9 @@ fun Routing.routes() {
                         event = ServerSentEvent("heartbeat")
                     }
                     val chat = call.requireChat()
-                    chat.events().collect { event ->
+                    chat.events().mapNotNull { it.toApiOrNull() }.collect { apiEvent: ApiEvent ->
                         // TODO Batch events to improve efficiency. Maybe make a Batch event?
-                        send(event.toApi())
+                        send(apiEvent)
                     }
                 }
                 // Send an event, some of which may be processed by an LLM
@@ -92,7 +96,8 @@ fun Routing.routes() {
                             // Register that someone joined the chat.
                             // The user should start listening to the events before sending this.
                             // They can then observe this value in the event stream to tell when they have "caught up".
-                            chat.append(action.toEvent())
+                            val event = Event.UserJoined(Uuid.random(), Clock.System.now(), action.joinId)
+                            chat.append(event)
                             call.respond(HttpStatusCode.OK)
                         }
 

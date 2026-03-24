@@ -11,6 +11,7 @@ import se.gustavkarlsson.chefgpt.chats.Chat
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.Event
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.uuid.Uuid
 
 class EventBackedChatMemory {
     companion object Feature :
@@ -58,7 +59,8 @@ class EventBackedChatMemory {
                 if (messagesSinceLast.isNotEmpty()) {
                     val chat = chatRepository.requireChat(executionCompleted.context.runId)
                     for (message in messagesSinceLast) {
-                        chat.append(Event.Message(message))
+                        val event = Event.Message(Uuid.random(), message)
+                        chat.append(event)
                     }
                 }
             }
