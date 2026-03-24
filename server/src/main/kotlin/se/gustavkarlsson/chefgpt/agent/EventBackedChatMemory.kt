@@ -61,6 +61,7 @@ class EventBackedChatMemory {
                     for (message in messagesSinceLast) {
                         val event = Event.Message(Uuid.random(), message)
                         chat.append(event)
+                        lastMessage.set(message)
                     }
                 }
             }
