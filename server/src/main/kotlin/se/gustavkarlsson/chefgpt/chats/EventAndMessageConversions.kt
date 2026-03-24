@@ -2,8 +2,8 @@ package se.gustavkarlsson.chefgpt.chats
 
 import ai.koog.prompt.message.AttachmentContent
 import ai.koog.prompt.message.ContentPart
-import se.gustavkarlsson.chefgpt.api.ApiAction
 import se.gustavkarlsson.chefgpt.api.ApiEvent
+import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import ai.koog.prompt.message.Message as KoogMessage
 
@@ -20,6 +20,4 @@ fun Event.toApi(): ApiEvent {
     TODO()
 }
 
-fun ApiAction.toEvent(): Event {
-    TODO()
-}
+fun ApiUserJoinedChat.toEvent(): Event.UserJoined = Event.UserJoined(joinId)

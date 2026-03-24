@@ -98,6 +98,7 @@ fun Routing.routes() {
 
                         is ApiUserSendsMessage -> {
                             call.respond(HttpStatusCode.OK)
+                            // Will be converted to events after it
                             runAgent(chat.id, action)
                         }
                     }
