@@ -6,12 +6,11 @@ import ai.koog.agents.core.feature.AIAgentGraphFeature
 import ai.koog.agents.core.feature.config.FeatureConfig
 import ai.koog.agents.core.feature.pipeline.AIAgentGraphPipeline
 import ai.koog.prompt.message.Message
-import kotlinx.atomicfu.atomic
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.chats.Chat
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
-import se.gustavkarlsson.chefgpt.chats.toEventOrNull
-import se.gustavkarlsson.chefgpt.chats.toKoogMessageOrNull
+import se.gustavkarlsson.chefgpt.chats.Event
+import java.util.concurrent.atomic.AtomicReference
 
 class EventBackedChatMemory {
     companion object Feature :
@@ -38,16 +37,16 @@ class EventBackedChatMemory {
             chatRepository: ChatRepository,
             pipeline: AIAgentGraphPipeline,
         ) {
-            val lastMessage = atomic<Message?>(null)
+            val lastMessage = AtomicReference<Message?>(null)
+
             pipeline.interceptStrategyStarting(this) { stragegyStarting ->
                 val chat = chatRepository.requireChat(stragegyStarting.context.runId)
                 stragegyStarting.context.llm.writeSession {
-                    for (event in chat.events().replayCache) {
-                        val message = event.toKoogMessageOrNull() ?: continue
+                    for (event in chat.events().replayCache.filterIsInstance<Event.Message>()) {
                         appendPrompt {
-                            message(message)
+                            message(event.message)
                         }
-                        lastMessage.value = message
+                        lastMessage.set(event.message)
                     }
                 }
             }
@@ -55,12 +54,11 @@ class EventBackedChatMemory {
             pipeline.interceptNodeExecutionCompleted(this) { executionCompleted ->
                 val messagesSinceLast =
                     executionCompleted.context.llm.prompt.messages
-                        .takeLastWhile { it != lastMessage }
+                        .takeLastWhile { it != lastMessage.get() }
                 if (messagesSinceLast.isNotEmpty()) {
                     val chat = chatRepository.requireChat(executionCompleted.context.runId)
                     for (message in messagesSinceLast) {
-                        val event = message.toEventOrNull() ?: continue
-                        chat.append(event)
+                        chat.append(Event.Message(message))
                     }
                 }
             }

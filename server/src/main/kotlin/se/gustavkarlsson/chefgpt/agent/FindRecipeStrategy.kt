@@ -10,9 +10,9 @@ import ai.koog.agents.core.dsl.extension.onReasoningMessage
 import ai.koog.agents.core.dsl.extension.onToolCall
 import ai.koog.agents.core.environment.result
 import ai.koog.prompt.message.Message
-import se.gustavkarlsson.chefgpt.api.UserMessage
+import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 
-fun findRecipeStrategy(): AIAgentGraphStrategy<UserMessage, Unit> =
+fun findRecipeStrategy(): AIAgentGraphStrategy<ApiUserSendsMessage, Unit> =
     strategy("find-recipe") {
         val nodeSendUserMessageToLLM by nodeSendUserMessageToLLM("sendUserMessageToLLM")
         val responses by nodeDoNothing<Message.Response>("responses")
@@ -37,7 +37,7 @@ fun findRecipeStrategy(): AIAgentGraphStrategy<UserMessage, Unit> =
     }
 
 private fun nodeSendUserMessageToLLM(name: String) =
-    node<UserMessage, Message.Response>(name) { message ->
+    node<ApiUserSendsMessage, Message.Response>(name) { message ->
         llm
             .writeSession {
                 appendPrompt {

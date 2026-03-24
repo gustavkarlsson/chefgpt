@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import se.gustavkarlsson.chefgpt.api.ChatId
-import se.gustavkarlsson.chefgpt.api.Event
 import se.gustavkarlsson.chefgpt.auth.UserId
 
 class InMemoryChatRepository : ChatRepository {

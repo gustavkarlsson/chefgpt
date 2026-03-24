@@ -20,8 +20,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
+import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ChatId
-import se.gustavkarlsson.chefgpt.api.Event
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.api.UserEvent
 
@@ -82,7 +82,7 @@ class ChefGptClient(
         return ChatId.parse(uuidString)
     }
 
-    fun listenToEvents(chatId: ChatId): Flow<Event> =
+    fun listenToEvents(chatId: ChatId): Flow<ApiEvent> =
         flow {
             httpClient.sse(
                 urlString = "$baseUrl/chats/$chatId/events",
@@ -94,7 +94,7 @@ class ChefGptClient(
                 incoming.collect { serverSentEvent ->
                     val data = serverSentEvent.data ?: return@collect
                     if (data == "heartbeat") return@collect
-                    val event = json.decodeFromString<Event>(data)
+                    val event = json.decodeFromString<ApiEvent>(data)
                     emit(event)
                 }
             }

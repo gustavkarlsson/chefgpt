@@ -2,27 +2,10 @@ package se.gustavkarlsson.chefgpt.chats
 
 import ai.koog.prompt.message.AttachmentContent
 import ai.koog.prompt.message.ContentPart
-import se.gustavkarlsson.chefgpt.api.AgentAction
-import se.gustavkarlsson.chefgpt.api.AgentMessage
-import se.gustavkarlsson.chefgpt.api.AgentReasoning
-import se.gustavkarlsson.chefgpt.api.AgentToolCall
-import se.gustavkarlsson.chefgpt.api.Event
+import se.gustavkarlsson.chefgpt.api.ApiAction
+import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ImageUrl
-import se.gustavkarlsson.chefgpt.api.UserMessage
 import ai.koog.prompt.message.Message as KoogMessage
-
-fun KoogMessage.toEventOrNull(): Event? =
-    when (this) {
-        // System prompt is hidden
-        is KoogMessage.System -> TODO()
-
-        // We're not interested in tool results
-        is KoogMessage.Tool.Result -> TODO()
-
-        is KoogMessage.User -> UserMessage(content, getImageUrl())
-
-        is KoogMessage.Response -> toAgentAction()
-    }
 
 private fun KoogMessage.User.getImageUrl(): ImageUrl? {
     val imagePart = parts.filterIsInstance<ContentPart.Image>().firstOrNull() ?: return null
@@ -33,13 +16,10 @@ private fun KoogMessage.User.getImageUrl(): ImageUrl? {
     return ImageUrl(content.url)
 }
 
-fun KoogMessage.Response.toAgentAction(): AgentAction =
-    when (this) {
-        is KoogMessage.Assistant -> AgentMessage(content)
-        is KoogMessage.Reasoning -> AgentReasoning(content)
-        is KoogMessage.Tool.Call -> AgentToolCall
-    }
+fun Event.toApi(): ApiEvent {
+    TODO()
+}
 
-fun Event.toKoogMessageOrNull(): KoogMessage? {
+fun ApiAction.toEvent(): Event {
     TODO()
 }

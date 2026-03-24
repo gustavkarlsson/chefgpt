@@ -11,30 +11,30 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import se.gustavkarlsson.chefgpt.api.Action
-import se.gustavkarlsson.chefgpt.api.AgentMessage
+import se.gustavkarlsson.chefgpt.api.ApiAction
+import se.gustavkarlsson.chefgpt.api.ApiAgentMessage
+import se.gustavkarlsson.chefgpt.api.ApiEvent
+import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
+import se.gustavkarlsson.chefgpt.api.ApiUserMessage
 import se.gustavkarlsson.chefgpt.api.ChatId
-import se.gustavkarlsson.chefgpt.api.Event
-import se.gustavkarlsson.chefgpt.api.UserJoinedChat
-import se.gustavkarlsson.chefgpt.api.UserMessage
 import kotlin.uuid.Uuid
 
 // TODO Fix error handling
 class FindRecipeViewModel : ViewModel() {
     private val client = ChefGptClient()
 
-    private val joinEvent = UserJoinedChat(Uuid.random())
+    private val joinEvent = ApiUserJoinedChat(Uuid.random())
 
     private data class State(
         val chatId: ChatId?,
-        val events: List<Event>,
+        val events: List<ApiEvent>,
         val userText: String,
         val attachedImage: File?,
     )
 
     // TODO Don't make inner, but make it data
     inner class ViewState(
-        val actions: List<Action>,
+        val actions: List<ApiAction>,
         val userText: String,
         val attachedImage: File?,
         val onClickSend: (() -> Unit)?,
@@ -63,7 +63,7 @@ class FindRecipeViewModel : ViewModel() {
 
     private fun State.toViewState(): ViewState =
         ViewState(
-            actions = events.filterIsInstance<Action>(),
+            actions = events.filterIsInstance<ApiAction>(),
             userText = userText,
             attachedImage = attachedImage,
             onClickSend =
@@ -98,8 +98,8 @@ class FindRecipeViewModel : ViewModel() {
 
             // Haven't seen the join event yet
             else -> {
-                val lastAction = events.asSequence().filterIsInstance<Action>().lastOrNull()
-                lastAction == null || lastAction is AgentMessage
+                val lastAction = events.asSequence().filterIsInstance<ApiAction>().lastOrNull()
+                lastAction == null || lastAction is ApiAgentMessage
             }
         }
 
@@ -116,7 +116,7 @@ class FindRecipeViewModel : ViewModel() {
                     val extension = file.path.substringAfterLast(".")
                     client.uploadImage(file.readChannel(), ContentType("image", extension))
                 }
-            client.sendEvent(lastState.chatId!!, UserMessage(lastState.userText, imageUrl))
+            client.sendEvent(lastState.chatId!!, ApiUserMessage(lastState.userText, imageUrl))
         }
     }
 

@@ -23,14 +23,16 @@ import io.ktor.sse.ServerSentEvent
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import se.gustavkarlsson.chefgpt.agent.runAgent
+import se.gustavkarlsson.chefgpt.api.ApiAction
+import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
+import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.ChatId
-import se.gustavkarlsson.chefgpt.api.UserEvent
-import se.gustavkarlsson.chefgpt.api.UserJoinedChat
-import se.gustavkarlsson.chefgpt.api.UserMessage
 import se.gustavkarlsson.chefgpt.auth.User
 import se.gustavkarlsson.chefgpt.auth.UserRepository
 import se.gustavkarlsson.chefgpt.chats.Chat
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
+import se.gustavkarlsson.chefgpt.chats.toApi
+import se.gustavkarlsson.chefgpt.chats.toEvent
 import se.gustavkarlsson.chefgpt.images.ImageUploader
 import kotlin.time.Duration.Companion.seconds
 
@@ -79,24 +81,24 @@ fun Routing.routes() {
                     val chat = call.requireChat()
                     chat.events().collect { event ->
                         // TODO Batch events to improve efficiency. Maybe make a Batch event?
-                        send(event)
+                        send(event.toApi())
                     }
                 }
                 // Send an event, some of which may be processed by an LLM
                 post {
                     val chat = call.requireChat()
-                    when (val event = call.receive<UserEvent>()) {
-                        is UserJoinedChat -> {
+                    when (val action = call.receive<ApiAction>()) {
+                        is ApiUserJoinedChat -> {
                             // Register that someone joined the chat.
                             // The user should start listening to the events before sending this.
                             // They can then observe this value in the event stream to tell when they have "caught up".
-                            chat.append(event)
+                            chat.append(action.toEvent())
                             call.respond(HttpStatusCode.OK)
                         }
 
-                        is UserMessage -> {
+                        is ApiUserSendsMessage -> {
                             call.respond(HttpStatusCode.OK)
-                            runAgent(chat.id, event)
+                            runAgent(chat.id, action)
                         }
                     }
                 }

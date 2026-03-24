@@ -56,12 +56,12 @@ import coil3.key.Keyer
 import coil3.map.Mapper
 import com.mikepenz.markdown.m3.Markdown
 import kotlinx.coroutines.launch
-import se.gustavkarlsson.chefgpt.api.Action
 import se.gustavkarlsson.chefgpt.api.AgentAction
-import se.gustavkarlsson.chefgpt.api.AgentReasoning
+import se.gustavkarlsson.chefgpt.api.ApiAction
+import se.gustavkarlsson.chefgpt.api.ApiAgentReasoning
+import se.gustavkarlsson.chefgpt.api.ApiUserMessage
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.api.UserAction
-import se.gustavkarlsson.chefgpt.api.UserMessage
 
 @Composable
 fun App() {
@@ -110,7 +110,7 @@ fun App() {
 
 @Composable
 private fun MessageList(
-    actions: List<Action>,
+    actions: List<ApiAction>,
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
@@ -137,7 +137,7 @@ private fun MessageList(
 
 // TODO Handle different types of actions more exhaustively
 @Composable
-private fun MessageBubble(action: Action) {
+private fun MessageBubble(action: ApiAction) {
     val isUser =
         when (action) {
             is UserAction -> false
@@ -165,10 +165,10 @@ private fun MessageBubble(action: Action) {
                 },
         ) {
             Column {
-                if (action is AgentReasoning) {
+                if (action is ApiAgentReasoning) {
                     Text("Reasoning", style = MaterialTheme.typography.bodyMedium)
                 }
-                if (action is UserMessage) {
+                if (action is ApiUserMessage) {
                     action.imageUrl?.let { image ->
                         AsyncImage(
                             model = image,
