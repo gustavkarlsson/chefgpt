@@ -16,10 +16,12 @@ interface ChatRepository {
     suspend operator fun get(
         userId: UserId,
         chatId: ChatId,
-    ): Chat? = getAll(userId).find { it.id == chatId }
+    ): Chat?
+
+    suspend operator fun get(chatId: ChatId): Chat?
 
     suspend fun contains(
         userId: UserId,
         chatId: ChatId,
-    ): Boolean = chatId in getAll(userId).map(Chat::id)
+    ): Boolean
 }

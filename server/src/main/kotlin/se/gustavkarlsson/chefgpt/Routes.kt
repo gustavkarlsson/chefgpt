@@ -29,8 +29,8 @@ import se.gustavkarlsson.chefgpt.api.UserJoinedChat
 import se.gustavkarlsson.chefgpt.api.UserMessage
 import se.gustavkarlsson.chefgpt.auth.User
 import se.gustavkarlsson.chefgpt.auth.UserRepository
+import se.gustavkarlsson.chefgpt.chats.Chat
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
-import se.gustavkarlsson.chefgpt.chats.EventFlowManager
 import se.gustavkarlsson.chefgpt.images.ImageUploader
 import kotlin.time.Duration.Companion.seconds
 
@@ -76,35 +76,27 @@ fun Routing.routes() {
                         period = 1.seconds
                         event = ServerSentEvent("heartbeat")
                     }
-                    val eventFlowManager: EventFlowManager by application.dependencies
-                    val chatId = call.requireValidChatId()
-                    eventFlowManager.use(chatId) { flow ->
+                    val chat = call.requireChat()
+                    chat.events().collect { event ->
                         // TODO Batch events to improve efficiency. Maybe make a Batch event?
-                        flow
-                            .collect { event ->
-                                send(event)
-                            }
+                        send(event)
                     }
                 }
                 // Send an event, some of which may be processed by an LLM
                 post {
-                    val eventFlowManager: EventFlowManager by application.dependencies
-                    val chatId = call.requireValidChatId()
+                    val chat = call.requireChat()
                     when (val event = call.receive<UserEvent>()) {
                         is UserJoinedChat -> {
                             // Register that someone joined the chat.
                             // The user should start listening to the events before sending this.
                             // They can then observe this value in the event stream to tell when they have "caught up".
-                            // TODO Make this more inefficient. It serves no purpose if nobody is subscribed, but wastes resources since it has to load the chat history.
-                            eventFlowManager.use(chatId) { flow ->
-                                flow.emit(event)
-                            }
+                            chat.append(event)
                             call.respond(HttpStatusCode.OK)
                         }
 
                         is UserMessage -> {
                             call.respond(HttpStatusCode.OK)
-                            runAgent(chatId, event, eventFlowManager)
+                            runAgent(chat.id, event)
                         }
                     }
                 }
@@ -118,12 +110,11 @@ private fun ApplicationCall.requireUser(): User =
         "User principal missing. Are you calling this in a non-authenticated endpoint?"
     }
 
-private suspend fun ApplicationCall.requireValidChatId(): ChatId {
+private suspend fun ApplicationCall.requireChat(): Chat {
     val chatRepository: ChatRepository by application.dependencies
     val user = requireUser()
-    val chatId = ChatId.parse(parameters.getOrFail("chatId"))
-    if (!chatRepository.contains(user.id, chatId)) {
-        throw NotFoundException("Chat not found for user")
-    }
-    return chatId
+    val chatId = requireChatId()
+    return chatRepository[user.id, chatId] ?: throw NotFoundException("Chat not found for user")
 }
+
+private fun ApplicationCall.requireChatId(): ChatId = ChatId.parse(parameters.getOrFail("chatId"))

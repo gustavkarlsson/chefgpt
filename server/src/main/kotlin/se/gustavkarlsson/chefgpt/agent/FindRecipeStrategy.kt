@@ -10,18 +10,15 @@ import ai.koog.agents.core.dsl.extension.onReasoningMessage
 import ai.koog.agents.core.dsl.extension.onToolCall
 import ai.koog.agents.core.environment.result
 import ai.koog.prompt.message.Message
-import se.gustavkarlsson.chefgpt.api.Action
 import se.gustavkarlsson.chefgpt.api.UserMessage
-import se.gustavkarlsson.chefgpt.chats.toActionOrNull
-import se.gustavkarlsson.chefgpt.chats.toAgentAction
 
-fun findRecipeStrategy(emitAction: suspend (Action) -> Unit): AIAgentGraphStrategy<UserMessage, Unit> =
+fun findRecipeStrategy(): AIAgentGraphStrategy<UserMessage, Unit> =
     strategy("find-recipe") {
-        val nodeSendUserMessageToLLM by nodeSendUserMessageToLLM("sendUserMessageToLLM", emitAction)
+        val nodeSendUserMessageToLLM by nodeSendUserMessageToLLM("sendUserMessageToLLM")
         val responses by nodeDoNothing<Message.Response>("responses")
-        val nodeCallTools by nodeCallTools("callTools", emitAction)
-        val nodeSendToolResultToLLM by nodeSendToolResultToLLM("sendToolResultToLLM", emitAction)
-        val nodeSendReasoningBackToLLM by nodeSendReasoningBackToLLM("sendReasoningBackToLLM", emitAction)
+        val nodeCallTools by nodeCallTools("callTools")
+        val nodeSendToolResultToLLM by nodeSendToolResultToLLM("sendToolResultToLLM")
+        val nodeSendReasoningBackToLLM by nodeSendReasoningBackToLLM("sendReasoningBackToLLM")
 
         edge(nodeStart forwardTo nodeSendUserMessageToLLM)
         edge(nodeSendUserMessageToLLM forwardTo responses)
@@ -39,66 +36,57 @@ fun findRecipeStrategy(emitAction: suspend (Action) -> Unit): AIAgentGraphStrate
         edge(responses forwardTo nodeFinish onAssistantMessage { true } transformed {})
     }
 
-private fun nodeSendUserMessageToLLM(
-    name: String,
-    emitAction: suspend (Action) -> Unit,
-) = node<UserMessage, Message.Response>(name) { message ->
-    emitAction(message)
-    llm
-        .writeSession {
-            appendPrompt {
-                user {
-                    message.text?.let { text(it) }
-                    message.imageUrl?.let { image(it.value) }
+private fun nodeSendUserMessageToLLM(name: String) =
+    node<UserMessage, Message.Response>(name) { message ->
+        llm
+            .writeSession {
+                appendPrompt {
+                    user {
+                        message.text?.let { text(it) }
+                        message.imageUrl?.let { image(it.value) }
+                    }
                 }
+                requestLLM()
             }
-            requestLLM()
-        }.also { emitAction(it.toAgentAction()) }
-}
+    }
 
-private fun nodeCallTools(
-    name: String,
-    emitAction: suspend (Action) -> Unit,
-) = node<Message.Tool.Call, Message.Tool.Result>(name) { toolCall ->
-    llm
-        .writeSession {
-            val result = environment.executeTool(toolCall)
-            // Tool calls don't get automatically added to the prompt. So we do it manually.
-            appendPrompt {
-                tool {
-                    result(result)
+private fun nodeCallTools(name: String) =
+    node<Message.Tool.Call, Message.Tool.Result>(name) { toolCall ->
+        llm
+            .writeSession {
+                val result = environment.executeTool(toolCall)
+                // Tool calls don't get automatically added to the prompt. So we do it manually.
+                appendPrompt {
+                    tool {
+                        result(result)
+                    }
                 }
+                result.toMessage()
             }
-            result.toMessage()
-        }.also { message -> message.toActionOrNull()?.let { emitAction(it) } }
-}
+    }
 
-private fun nodeSendToolResultToLLM(
-    name: String,
-    emitAction: suspend (Action) -> Unit,
-) = node<Message.Tool.Result, Message.Response>(name) { toolResult ->
-    llm
-        .writeSession {
-            requestLLM()
-        }.also { emitAction(it.toAgentAction()) }
-}
+private fun nodeSendToolResultToLLM(name: String) =
+    node<Message.Tool.Result, Message.Response>(name) { toolResult ->
+        llm
+            .writeSession {
+                requestLLM()
+            }
+    }
 
-private fun nodeSendReasoningBackToLLM(
-    name: String,
-    emitAction: suspend (Action) -> Unit,
-) = node<Message.Reasoning, Message.Response>(name) { reasoning ->
-    llm
-        .writeSession {
-            requestLLM()
-        }.also { emitAction(it.toAgentAction()) }
-}
+private fun nodeSendReasoningBackToLLM(name: String) =
+    node<Message.Reasoning, Message.Response>(name) { reasoning ->
+        llm
+            .writeSession {
+                requestLLM()
+            }
+    }
 
 // Print a Markdown mermaid diagram of the strategy
 private fun main() {
     val markdown =
         buildString {
             appendLine("```mermaid")
-            val strategy = findRecipeStrategy {}
+            val strategy = findRecipeStrategy()
             appendLine(strategy.asMermaidDiagram())
             appendLine("```")
         }

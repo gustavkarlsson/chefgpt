@@ -1,8 +1,5 @@
 package se.gustavkarlsson.chefgpt
 
-import ai.koog.agents.chatMemory.feature.ChatHistoryProvider
-import ai.koog.agents.chatMemory.feature.ChatMemory
-import ai.koog.agents.chatMemory.feature.InMemoryChatHistoryProvider
 import ai.koog.ktor.Koog
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
@@ -14,13 +11,12 @@ import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.di.dependencies
 import io.ktor.server.sse.SSE
 import kotlinx.serialization.json.Json
+import se.gustavkarlsson.chefgpt.agent.EventBackedChatMemory
 import se.gustavkarlsson.chefgpt.auth.InMemoryUserRepository
 import se.gustavkarlsson.chefgpt.auth.UserRegistrationRule
 import se.gustavkarlsson.chefgpt.auth.UserRepository
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
-import se.gustavkarlsson.chefgpt.chats.EventFlowManager
 import se.gustavkarlsson.chefgpt.chats.InMemoryChatRepository
-import se.gustavkarlsson.chefgpt.chats.toActionOrNull
 import se.gustavkarlsson.chefgpt.images.CloudinaryImageUploader
 import se.gustavkarlsson.chefgpt.images.ImageUploader
 import se.gustavkarlsson.chefgpt.tools.IngredientStore
@@ -71,7 +67,6 @@ fun Application.plugins(
                     },
                 ),
         )
-    val chatHistoryProvider = InMemoryChatHistoryProvider()
     // Extra lenient in production
     val json =
         Json {
@@ -85,17 +80,12 @@ fun Application.plugins(
         }
     val ingredientStore = IngredientStore(ingredientStorePath)
     val spoonacularClient = SpoonacularClient(spoonacularApiKey)
+    val chatRepository = InMemoryChatRepository()
     dependencies {
-        provide<ChatHistoryProvider> { chatHistoryProvider }
         provide<UserRepository> { userRepository }
-        provide<ChatRepository> { InMemoryChatRepository() }
+        provide<ChatRepository> { chatRepository }
         provide<ImageUploader> { CloudinaryImageUploader(cloudinaryApiKey, cloudinaryApiSecret, cloudinaryCloud) }
         provide<Json> { json }
-        provide<EventFlowManager> {
-            EventFlowManager { chatId ->
-                chatHistoryProvider.load(chatId.value.toString()).mapNotNull { it.toActionOrNull() }
-            }
-        }
         provide<IngredientStore> { ingredientStore }
         provide<SpoonacularClient> { spoonacularClient }
     }
@@ -147,9 +137,8 @@ fun Application.plugins(
                     """.trimIndent(),
                 )
             }
-            install(ChatMemory.Feature) {
-                // TODO Implement event store and also let also handle chat history, that way
-                this.chatHistoryProvider = chatHistoryProvider
+            install(EventBackedChatMemory) {
+                this.chatRepository = chatRepository
             }
         }
     }
