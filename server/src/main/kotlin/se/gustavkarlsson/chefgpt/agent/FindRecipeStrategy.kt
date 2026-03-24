@@ -10,19 +10,18 @@ import ai.koog.agents.core.dsl.extension.onReasoningMessage
 import ai.koog.agents.core.dsl.extension.onToolCall
 import ai.koog.agents.core.environment.result
 import ai.koog.prompt.message.Message
-import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 
 // TODO() Can this be simplified now that it doesn't need to manually send events anymore?
-fun findRecipeStrategy(): AIAgentGraphStrategy<ApiUserSendsMessage, Unit> =
+fun findRecipeStrategy(): AIAgentGraphStrategy<Unit, Unit> =
     strategy("find-recipe") {
-        val nodeSendUserMessageToLLM by nodeSendUserMessageToLLM("sendUserMessageToLLM")
+        val nodeExecuteLLM by nodeExecuteLLM("executeLLM")
         val responses by nodeDoNothing<Message.Response>("responses")
         val nodeCallTools by nodeCallTools("callTools")
         val nodeSendToolResultToLLM by nodeSendToolResultToLLM("sendToolResultToLLM")
         val nodeSendReasoningBackToLLM by nodeSendReasoningBackToLLM("sendReasoningBackToLLM")
 
-        edge(nodeStart forwardTo nodeSendUserMessageToLLM)
-        edge(nodeSendUserMessageToLLM forwardTo responses)
+        edge(nodeStart forwardTo nodeExecuteLLM)
+        edge(nodeExecuteLLM forwardTo responses)
 
         // Reasoning loops around as long as it's reasoning
         edge(responses forwardTo nodeSendReasoningBackToLLM onReasoningMessage { true })
@@ -37,16 +36,10 @@ fun findRecipeStrategy(): AIAgentGraphStrategy<ApiUserSendsMessage, Unit> =
         edge(responses forwardTo nodeFinish onAssistantMessage { true } transformed {})
     }
 
-private fun nodeSendUserMessageToLLM(name: String) =
-    node<ApiUserSendsMessage, Message.Response>(name) { message ->
+private fun nodeExecuteLLM(name: String) =
+    node<Unit, Message.Response>(name) { message ->
         llm
             .writeSession {
-                appendPrompt {
-                    user {
-                        message.text?.let { text(it) }
-                        message.imageUrl?.let { image(it.value) }
-                    }
-                }
                 requestLLM()
             }
     }

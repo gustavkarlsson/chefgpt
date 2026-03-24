@@ -2,12 +2,18 @@ package se.gustavkarlsson.chefgpt.chats
 
 import ai.koog.prompt.message.AttachmentContent
 import ai.koog.prompt.message.ContentPart
+import ai.koog.prompt.message.Message
+import ai.koog.prompt.message.RequestMetaInfo
+import se.gustavkarlsson.chefgpt.api.ApiAction
 import se.gustavkarlsson.chefgpt.api.ApiAgentMessage
 import se.gustavkarlsson.chefgpt.api.ApiAgentReasoning
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserJoined
+import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserMessage
+import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.ImageUrl
+import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
 import ai.koog.prompt.message.Message as KoogMessage
@@ -74,3 +80,27 @@ private fun KoogMessage.User.imageUrlOrNull(): ImageUrl? {
     }
     return ImageUrl(content.url)
 }
+
+fun ApiAction.createEvent(): Event =
+    when (this) {
+        is ApiUserJoinedChat -> {
+            Event.UserJoined(Uuid.random(), Clock.System.now(), joinId)
+        }
+
+        is ApiUserSendsMessage -> {
+            val parts =
+                buildList {
+                    text?.let { add(ContentPart.Text(it)) }
+                    imageUrl?.let { imageUrl ->
+                        val format =
+                            imageUrl.value
+                                .substringAfterLast('.')
+                                .substringBefore('?')
+                                .ifEmpty { "jpeg" }
+                        add(ContentPart.Image(AttachmentContent.URL(imageUrl.value), format))
+                    }
+                }
+            val koogMessage = Message.User(parts, RequestMetaInfo(Clock.System.now()))
+            Event.Message(Uuid.random(), koogMessage)
+        }
+    }

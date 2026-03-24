@@ -5,15 +5,11 @@ import ai.koog.ktor.aiAgent
 import ai.koog.prompt.executor.clients.anthropic.AnthropicModels
 import io.ktor.server.plugins.di.dependencies
 import io.ktor.server.routing.RoutingContext
-import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.tools.IngredientStore
 import se.gustavkarlsson.chefgpt.tools.SpoonacularClient
 
-suspend fun RoutingContext.runAgent(
-    chatId: ChatId,
-    userMessage: ApiUserSendsMessage,
-) {
+suspend fun RoutingContext.runAgent(chatId: ChatId) {
     val ingredientStore: IngredientStore by call.application.dependencies
     val spoonacularClient: SpoonacularClient by call.application.dependencies
     val agent =
@@ -27,5 +23,5 @@ suspend fun RoutingContext.runAgent(
                     tools(spoonacularClient.asTools())
                 },
         )
-    agent.run(userMessage, chatId.value.toString())
+    agent.run(Unit, chatId.value.toString())
 }

@@ -33,12 +33,10 @@ import se.gustavkarlsson.chefgpt.auth.User
 import se.gustavkarlsson.chefgpt.auth.UserRepository
 import se.gustavkarlsson.chefgpt.chats.Chat
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
-import se.gustavkarlsson.chefgpt.chats.Event
+import se.gustavkarlsson.chefgpt.chats.createEvent
 import se.gustavkarlsson.chefgpt.chats.toApiOrNull
 import se.gustavkarlsson.chefgpt.images.ImageUploader
-import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
-import kotlin.uuid.Uuid
 
 // TODO set timeouts
 fun Routing.routes() {
@@ -92,20 +90,16 @@ fun Routing.routes() {
                 // Send an event, some of which may be processed by an LLM
                 post("/actions") {
                     val chat = call.requireChat()
-                    when (val action = call.receive<ApiAction>()) {
+                    val action = call.receive<ApiAction>()
+                    chat.append(action.createEvent())
+                    when (action) {
                         is ApiUserJoinedChat -> {
-                            // Register that someone joined the chat.
-                            // The user should start listening to the events before sending this.
-                            // They can then observe this value in the event stream to tell when they have "caught up".
-                            val event = Event.UserJoined(Uuid.random(), Clock.System.now(), action.joinId)
-                            chat.append(event)
                             call.respond(HttpStatusCode.OK)
                         }
 
                         is ApiUserSendsMessage -> {
+                            runAgent(chat.id)
                             call.respond(HttpStatusCode.OK)
-                            // Will be converted to events after it
-                            runAgent(chat.id, action)
                         }
                     }
                 }

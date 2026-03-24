@@ -46,11 +46,6 @@ class EventBackedChatMemory {
                 it.context.writeOldChatMessagesToPrompt(chatRepository, lastMessageHolder)
             }
 
-            // TODO It takes quite a while for the user message to land. Should we send it manually somewhere else and remove this?
-            pipeline.interceptNodeExecutionStarting(this) {
-                it.context.writeNewPromptMessagesToChat(chatRepository, lastMessageHolder)
-            }
-
             pipeline.interceptNodeExecutionCompleted(this) {
                 it.context.writeNewPromptMessagesToChat(chatRepository, lastMessageHolder)
             }
