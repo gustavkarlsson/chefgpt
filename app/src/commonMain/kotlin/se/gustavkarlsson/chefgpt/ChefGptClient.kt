@@ -20,10 +20,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
+import se.gustavkarlsson.chefgpt.api.ApiAction
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.ImageUrl
-import se.gustavkarlsson.chefgpt.api.UserEvent
 
 class ChefGptClient(
     private val baseUrl: String = "http://localhost:8080",
@@ -100,13 +100,13 @@ class ChefGptClient(
             }
         }
 
-    suspend fun sendEvent(
+    suspend fun sendAction(
         chatId: ChatId,
-        event: UserEvent,
+        action: ApiAction,
     ) {
-        httpClient.post("$baseUrl/chats/$chatId/events") {
+        httpClient.post("$baseUrl/chats/$chatId/actions") {
             contentType(ContentType.Application.Json)
-            setBody(event)
+            setBody(action)
         }
     }
 }

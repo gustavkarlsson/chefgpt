@@ -11,11 +11,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import se.gustavkarlsson.chefgpt.api.ApiAction
-import se.gustavkarlsson.chefgpt.api.ApiAgentMessage
 import se.gustavkarlsson.chefgpt.api.ApiEvent
+import se.gustavkarlsson.chefgpt.api.ApiUserJoined
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
-import se.gustavkarlsson.chefgpt.api.ApiUserMessage
+import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.ChatId
 import kotlin.uuid.Uuid
 
@@ -23,7 +22,7 @@ import kotlin.uuid.Uuid
 class FindRecipeViewModel : ViewModel() {
     private val client = ChefGptClient()
 
-    private val joinEvent = ApiUserJoinedChat(Uuid.random())
+    private val joinAction = ApiUserJoinedChat(Uuid.random())
 
     private data class State(
         val chatId: ChatId?,
@@ -34,7 +33,7 @@ class FindRecipeViewModel : ViewModel() {
 
     // TODO Don't make inner, but make it data
     inner class ViewState(
-        val actions: List<ApiAction>,
+        val events: List<ApiEvent>,
         val userText: String,
         val attachedImage: File?,
         val onClickSend: (() -> Unit)?,
@@ -63,7 +62,7 @@ class FindRecipeViewModel : ViewModel() {
 
     private fun State.toViewState(): ViewState =
         ViewState(
-            actions = events.filterIsInstance<ApiAction>(),
+            events = events,
             userText = userText,
             attachedImage = attachedImage,
             onClickSend =
@@ -82,25 +81,14 @@ class FindRecipeViewModel : ViewModel() {
 
     private fun State.allowsSend(): Boolean =
         when {
-            chatId == null -> {
-                false
-            }
-
             // No chat yet
-            userText.isBlank() && attachedImage == null -> {
-                false
-            }
+            chatId == null -> false
 
             // Nothing to sent
-            joinEvent !in events -> {
-                false
-            }
+            userText.isBlank() && attachedImage == null -> false
 
-            // Haven't seen the join event yet
-            else -> {
-                val lastAction = events.asSequence().filterIsInstance<ApiAction>().lastOrNull()
-                lastAction == null || lastAction is ApiAgentMessage
-            }
+            // Has the join ID been received?
+            else -> joinAction.joinId in events.filterIsInstance<ApiUserJoined>().map { it.joinId }
         }
 
     private fun sendMessage() {
@@ -116,7 +104,7 @@ class FindRecipeViewModel : ViewModel() {
                     val extension = file.path.substringAfterLast(".")
                     client.uploadImage(file.readChannel(), ContentType("image", extension))
                 }
-            client.sendEvent(lastState.chatId!!, ApiUserMessage(lastState.userText, imageUrl))
+            client.sendAction(lastState.chatId!!, ApiUserSendsMessage(lastState.userText, imageUrl))
         }
     }
 
@@ -130,7 +118,7 @@ class FindRecipeViewModel : ViewModel() {
                     state.update { it.copy(events = it.events + event) }
                 }
             }
-            client.sendEvent(chatId, joinEvent)
+            client.sendAction(chatId, joinAction)
         }
     }
 }

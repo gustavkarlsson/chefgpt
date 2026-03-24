@@ -56,12 +56,14 @@ import coil3.key.Keyer
 import coil3.map.Mapper
 import com.mikepenz.markdown.m3.Markdown
 import kotlinx.coroutines.launch
-import se.gustavkarlsson.chefgpt.api.AgentAction
-import se.gustavkarlsson.chefgpt.api.ApiAction
+import se.gustavkarlsson.chefgpt.api.ApiAgentEvent
+import se.gustavkarlsson.chefgpt.api.ApiAgentMessage
 import se.gustavkarlsson.chefgpt.api.ApiAgentReasoning
+import se.gustavkarlsson.chefgpt.api.ApiEvent
+import se.gustavkarlsson.chefgpt.api.ApiSystemEvent
+import se.gustavkarlsson.chefgpt.api.ApiUserEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserMessage
 import se.gustavkarlsson.chefgpt.api.ImageUrl
-import se.gustavkarlsson.chefgpt.api.UserAction
 
 @Composable
 fun App() {
@@ -90,7 +92,7 @@ fun App() {
                         .padding(paddingValues),
             ) {
                 MessageList(
-                    actions = viewState.actions,
+                    events = viewState.events,
                     modifier = Modifier.weight(1f),
                 )
 
@@ -110,13 +112,13 @@ fun App() {
 
 @Composable
 private fun MessageList(
-    actions: List<ApiAction>,
+    events: List<ApiEvent>,
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
 
-    LaunchedEffect(actions.size) {
-        if (actions.isNotEmpty()) {
+    LaunchedEffect(events.size) {
+        if (events.isNotEmpty()) {
             listState.animateScrollToItem(Int.MAX_VALUE)
         }
     }
@@ -129,19 +131,20 @@ private fun MessageList(
                 .padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        items(actions) { action ->
-            MessageBubble(action)
+        items(events) { event ->
+            MessageBubble(event)
         }
     }
 }
 
 // TODO Handle different types of actions more exhaustively
 @Composable
-private fun MessageBubble(action: ApiAction) {
+private fun MessageBubble(event: ApiEvent) {
     val isUser =
-        when (action) {
-            is UserAction -> false
-            is AgentAction -> true
+        when (event) {
+            is ApiSystemEvent -> return
+            is ApiAgentEvent -> true
+            is ApiUserEvent -> false
         }
 
     Box(modifier = Modifier.fillMaxWidth()) {
@@ -165,11 +168,11 @@ private fun MessageBubble(action: ApiAction) {
                 },
         ) {
             Column {
-                if (action is ApiAgentReasoning) {
+                if (event is ApiAgentReasoning) {
                     Text("Reasoning", style = MaterialTheme.typography.bodyMedium)
                 }
-                if (action is ApiUserMessage) {
-                    action.imageUrl?.let { image ->
+                if (event is ApiUserMessage) {
+                    event.imageUrl?.let { image ->
                         AsyncImage(
                             model = image,
                             contentDescription = null,
@@ -187,7 +190,13 @@ private fun MessageBubble(action: ApiAction) {
                         )
                     }
                 }
-                action.text?.let {
+                val text =
+                    when (event) {
+                        is ApiAgentMessage -> event.text
+                        is ApiAgentReasoning -> event.text
+                        is ApiUserMessage -> event.text
+                    }
+                text?.let {
                     Markdown(
                         content = it,
                         modifier = Modifier.padding(12.dp),
