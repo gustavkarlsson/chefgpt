@@ -83,7 +83,13 @@ private class InMemoryChat(
             val truncatedParts =
                 message.parts.map { part ->
                     if (part is ContentPart.Text) {
-                        part.copy(text = part.text.take(50))
+                        val truncatedText =
+                            if (part.text.length > 50) {
+                                part.text.take(47) + "..."
+                            } else {
+                                part.text
+                            }
+                        part.copy(text = truncatedText)
                     } else {
                         part
                     }
