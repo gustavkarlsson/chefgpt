@@ -30,7 +30,7 @@ class ChefGptClient(
     username: String = (0..10).map { ('a'..'z').random() }.joinToString(""),
     password: String = "Pa55w0rd!!!!!",
     developmentMode: Boolean = false,
-) {
+) : AutoCloseable {
     private val json =
         Json {
             encodeDefaults = true
@@ -108,5 +108,9 @@ class ChefGptClient(
             contentType(ContentType.Application.Json)
             setBody(action)
         }
+    }
+
+    override fun close() {
+        httpClient.close()
     }
 }

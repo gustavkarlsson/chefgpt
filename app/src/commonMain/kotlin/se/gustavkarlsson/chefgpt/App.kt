@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -85,26 +86,34 @@ fun App() {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
         ) { paddingValues ->
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-            ) {
-                MessageList(
-                    events = viewState.events,
-                    modifier = Modifier.weight(1f),
-                )
+            Box {
+                Surface(
+                    color = if (viewState.connected) Color.Green else Color.Red,
+                    shape = CircleShape,
+                    modifier = Modifier.align(Alignment.TopStart).padding(8.dp).size(16.dp),
+                ) {
+                }
+                Column(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues),
+                ) {
+                    MessageList(
+                        events = viewState.events,
+                        modifier = Modifier.weight(1f),
+                    )
 
-                MessageInput(
-                    userText = viewState.userText,
-                    attachedImage = viewState.attachedImage,
-                    onUserTextChanged = viewState.onUserTextChanged,
-                    onClickSend = viewState.onClickSend,
-                    onImageAttached = viewState.onImageAttached,
-                    onImageCleared = viewState.onImageCleared,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                    MessageInput(
+                        userText = viewState.userText,
+                        attachedImage = viewState.attachedImage,
+                        onUserTextChanged = viewState.onUserTextChanged,
+                        onClickSend = viewState.onClickSend,
+                        onImageAttached = viewState.onImageAttached,
+                        onImageCleared = viewState.onImageCleared,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
         }
     }
@@ -143,8 +152,8 @@ private fun MessageBubble(event: ApiEvent) {
     val isUser =
         when (event) {
             is ApiSystemEvent -> return
-            is ApiAgentEvent -> true
-            is ApiUserEvent -> false
+            is ApiAgentEvent -> false
+            is ApiUserEvent -> true
         }
 
     Box(modifier = Modifier.fillMaxWidth()) {
