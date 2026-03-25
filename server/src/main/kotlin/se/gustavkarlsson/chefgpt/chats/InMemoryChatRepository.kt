@@ -90,8 +90,8 @@ private class InMemoryChat(
                 }
             val message =
                 when (val message = message) {
-                    is Message.User -> message
-                    is Message.Assistant -> message
+                    is Message.User -> message.copy(parts = truncatedParts)
+                    is Message.Assistant -> message.copy(parts = truncatedParts)
                     is Message.System -> message.copy(parts = truncatedParts.filterIsInstance<ContentPart.Text>())
                     is Message.Tool.Result -> message.copy(parts = truncatedParts.filterIsInstance<ContentPart.Text>())
                     is Message.Reasoning -> message.copy(parts = truncatedParts.filterIsInstance<ContentPart.Text>())
