@@ -1,29 +1,24 @@
 package se.gustavkarlsson.chefgpt
 
 import io.ktor.server.application.Application
-import io.ktor.server.engine.embeddedServer
-import io.ktor.server.netty.Netty
+import io.ktor.server.netty.EngineMain
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.routing
 import java.nio.file.Paths
 
-fun main() {
-    val port = System.getenv("PORT")?.toInt() ?: DEV_SERVER_PORT
-    embeddedServer(
-        factory = Netty,
-        port = port,
-        module = Application::module,
-    ).start(wait = true)
-}
+fun main(args: Array<String>) = EngineMain.main(args)
 
 fun Application.module() {
-    plugins(
-        anthropicApiKey = System.getenv("ANTHROPIC_API_KEY"),
-        spoonacularApiKey = System.getenv("SPOONACULAR_API_KEY"),
-        ingredientStorePath = Paths.get("ingredient-store.txt"),
-        cloudinaryApiKey = System.getenv("CLOUDINARY_API_KEY"),
-        cloudinaryApiSecret = System.getenv("CLOUDINARY_API_SECRET"),
-        cloudinaryCloud = System.getenv("CLOUDINARY_CLOUD"),
-    )
+    with(environment.config) {
+        plugins(
+            anthropicApiKey = property("chefgpt.anthropicApiKey").getString(),
+            spoonacularApiKey = property("chefgpt.spoonacularApiKey").getString(),
+            ingredientStorePath = Paths.get(property("chefgpt.ingredientStorePath").getString()),
+            cloudinaryApiKey = property("chefgpt.cloudinary.apiKey").getString(),
+            cloudinaryApiSecret = property("chefgpt.cloudinary.apiSecret").getString(),
+            cloudinaryCloud = property("chefgpt.cloudinary.cloud").getString(),
+        )
+    }
+
     routing(Routing::routes)
 }
