@@ -8,21 +8,18 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain(24)
-    androidTarget {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
-        }
-    }
+    jvmToolchain(
+        libs.versions.jvmToolchain
+            .get()
+            .toInt(),
+    )
+
+    androidTarget()
 
     iosArm64()
     iosSimulatorArm64()
 
-    jvm {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_21)
-        }
-    }
+    jvm()
 
     js {
         browser()
@@ -49,10 +46,7 @@ android {
         libs.versions.androidCompileSdk
             .get()
             .toInt()
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
+
     defaultConfig {
         minSdk =
             libs.versions.androidMinSdk

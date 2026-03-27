@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.kotlinJvm)
     alias(libs.plugins.ktor)
@@ -8,6 +10,15 @@ plugins {
 
 group = "se.gustavkarlsson.chefgpt"
 version = "1.0.0"
+
+kotlin {
+    jvmToolchain(
+        libs.versions.jvmToolchain
+            .get()
+            .toInt(),
+    )
+}
+
 application {
     mainClass.set("se.gustavkarlsson.chefgpt.ApplicationKt")
 
@@ -52,4 +63,53 @@ dependencies {
     // Test
     testImplementation(libs.ktorServerTestHost)
     testImplementation(libs.kotlinTestJunit)
+}
+
+tasks.register("runWithDocker") {
+    group = "application"
+    description = "Ensures the chefgpt postgres container is running, then runs the server"
+
+    doFirst {
+        fun run(vararg cmd: String): Pair<Int, String> {
+            val proc = ProcessBuilder(*cmd).redirectErrorStream(true).start()
+            val out =
+                proc.inputStream
+                    .bufferedReader()
+                    .readText()
+                    .trim()
+            return proc.waitFor() to out
+        }
+
+        val (exitCode, output) = run("docker", "inspect", "-f", "{{.State.Running}}", "chefgpt")
+        when {
+            exitCode != 0 -> {
+                logger.lifecycle("Creating and starting chefgpt container...")
+                run(
+                    "docker",
+                    "run",
+                    "--name",
+                    "chefgpt",
+                    "--detach",
+                    "--publish",
+                    "127.0.0.1:5432:5432",
+                    "--env",
+                    "POSTGRES_PASSWORD=password",
+                    "--env",
+                    "POSTGRES_DB=chefgpt",
+                    "postgres:18.3",
+                )
+            }
+
+            output != "true" -> {
+                logger.lifecycle("Starting existing chefgpt container...")
+                run("docker", "start", "chefgpt")
+            }
+
+            else -> {
+                logger.lifecycle("chefgpt container is already running.")
+            }
+        }
+    }
+
+    finalizedBy("run")
 }
