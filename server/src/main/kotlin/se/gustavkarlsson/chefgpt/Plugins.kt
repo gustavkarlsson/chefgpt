@@ -23,8 +23,6 @@ import se.gustavkarlsson.chefgpt.chats.InMemoryChatRepository
 import se.gustavkarlsson.chefgpt.db.createHikariDataSource
 import se.gustavkarlsson.chefgpt.db.migrateDatabase
 import se.gustavkarlsson.chefgpt.images.createCloudinaryImageUploader
-import se.gustavkarlsson.chefgpt.tools.IngredientStore
-import se.gustavkarlsson.chefgpt.tools.PostgresIngredientStore
 import se.gustavkarlsson.chefgpt.tools.SpoonacularClient
 import javax.sql.DataSource
 
@@ -56,8 +54,6 @@ fun Application.plugins(config: ApplicationConfig) {
         provide<ChatRepository> { chatRepository }
         provide { createCloudinaryImageUploader(config.config("chefgpt.cloudinary")) }
         provide { json }
-        provide(PostgresIngredientStore::class)
-        provide<IngredientStore> { resolve<PostgresIngredientStore>() }
         provide { SpoonacularClient(config.property("chefgpt.spoonacularApiKey").getString()) }
     }
 

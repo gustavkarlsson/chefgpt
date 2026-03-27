@@ -89,6 +89,7 @@ fun Routing.routes() {
                 }
                 // Send an event, some of which may be processed by an LLM
                 post("/actions") {
+                    val user = call.requireUser()
                     val chat = call.requireChat()
                     val action = call.receive<ApiAction>()
                     chat.append(action.createEvent())
@@ -98,7 +99,7 @@ fun Routing.routes() {
                         }
 
                         is ApiUserSendsMessage -> {
-                            runAgent(chat.id)
+                            runAgent(user.id, chat.id)
                             call.respond(HttpStatusCode.OK)
                         }
                     }
