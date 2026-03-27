@@ -1,4 +1,5 @@
 import com.diffplug.gradle.spotless.BaseKotlinExtension
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -22,10 +23,10 @@ allprojects {
                 .pluginId,
     )
 
-    tasks.withType<KotlinCompile> {
+    tasks.withType<KotlinCompilationTask<*>> {
         compilerOptions {
-            freeCompilerArgs.add("-opt-in=kotlin.uuid.ExperimentalUuidApi")
-            freeCompilerArgs.add("-opt-in=kotlinx.serialization.ExperimentalSerializationApi")
+            optIn.add("kotlin.uuid.ExperimentalUuidApi")
+            optIn.add("kotlinx.serialization.ExperimentalSerializationApi")
         }
     }
 
