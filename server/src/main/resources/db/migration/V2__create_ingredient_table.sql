@@ -1,0 +1,7 @@
+CREATE EXTENSION IF NOT EXISTS citext;
+
+CREATE TABLE ingredient
+(
+    id   UUID   NOT NULL PRIMARY KEY,
+    name CITEXT NOT NULL UNIQUE
+);

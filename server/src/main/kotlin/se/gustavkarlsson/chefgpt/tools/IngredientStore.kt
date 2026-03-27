@@ -3,58 +3,25 @@ package se.gustavkarlsson.chefgpt.tools
 import ai.koog.agents.core.tools.annotations.LLMDescription
 import ai.koog.agents.core.tools.annotations.Tool
 import ai.koog.agents.core.tools.reflect.ToolSet
-import java.nio.file.Path
-import kotlin.io.path.exists
-import kotlin.io.path.readText
-import kotlin.io.path.writeText
 
-private const val LINE_SEPARATOR = "\n"
-
-class IngredientStore(
-    private val file: Path,
-) : ToolSet {
-    private val ingredients: MutableSet<String> =
-        if (file.exists()) {
-            file
-                .readText()
-                .split(LINE_SEPARATOR)
-                .filterNot { it.isBlank() }
-                .toMutableSet()
-        } else {
-            mutableSetOf()
-        }
-
+interface IngredientStore : ToolSet {
     @Tool
     @LLMDescription("Get all user's stored ingredients")
-    fun getIngredients(): List<String> = ingredients.toList()
+    suspend fun getIngredients(): List<String>
 
     @Tool
-    @LLMDescription("Add the given ingredients to the user's store")
-    fun addIngredients(ingredients: List<String>) {
-        // Sanitize ingredients on storage
-        this.ingredients += ingredients.map { it.trim().lowercase() }
-        save()
-    }
+    @LLMDescription(
+        "Add the given ingredients to the user's store. Returns the ingredients that were actually added, excluding any that already existed",
+    )
+    suspend fun addIngredients(ingredients: List<String>): List<String>
 
     @Tool
-    @LLMDescription("Remove the given ingredients from the user's store")
-    fun removeIngredients(ingredients: List<String>) {
-        this.ingredients -= ingredients
-        save()
-    }
+    @LLMDescription(
+        "Remove the given ingredients from the user's store. Returns the ingredients that were actually removed, excluding any that did not exist",
+    )
+    suspend fun removeIngredients(ingredients: List<String>): List<String>
 
     @Tool
-    @LLMDescription("Clear all ingredients from the user's store")
-    fun clearIngredients() {
-        this.ingredients.clear()
-        save()
-    }
-
-    private fun save() {
-        val text =
-            ingredients
-                .filterNot { it.isBlank() }
-                .joinToString(LINE_SEPARATOR)
-        file.writeText(text)
-    }
+    @LLMDescription("Clear all ingredients from the user's store. Returns the ingredients that were removed")
+    suspend fun clearIngredients(): List<String>
 }
