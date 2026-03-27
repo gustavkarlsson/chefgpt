@@ -75,7 +75,6 @@ fun Application.plugins(config: ApplicationConfig) {
     // TODO Install DataConversion to auto-convert data such as Uuid:s and dates
     // TODO Install HttpRequestLifecycle and set cancelCallOnClose = true to cancel requests that the client canceled
     // TODO Setup a docker image and install  Grafana-LGTM (https://ktor.io/docs/server-opentelemetry.html#verify-telemetry-data-with-grafana-lgtm)
-    // TODO Setup a database/databases
 
     install(Koog) {
         llm {

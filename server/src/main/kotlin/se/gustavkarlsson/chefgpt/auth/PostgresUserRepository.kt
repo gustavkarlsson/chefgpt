@@ -1,8 +1,6 @@
 package se.gustavkarlsson.chefgpt.auth
 
 import io.ktor.server.plugins.BadRequestException
-import kotlinx.io.bytestring.ByteString
-import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.UuidTable
 import org.jetbrains.exposed.v1.core.eq
@@ -11,11 +9,15 @@ import org.jetbrains.exposed.v1.dao.UuidEntityClass
 import org.jetbrains.exposed.v1.jdbc.Database
 import se.gustavkarlsson.chefgpt.db.withTransaction
 import java.security.MessageDigest
+import java.security.SecureRandom
 import kotlin.uuid.Uuid
+
+private const val SALT_BYTE_COUNT = 16
 
 private object UserTable : UuidTable("user") {
     val username = text("username")
-    val passwordHash = binary("password_md5_hash", 16)
+    val passwordHash = binary("password_md5_hash")
+    val passwordSalt = binary("password_salt")
 }
 
 class UserDao(
@@ -25,6 +27,7 @@ class UserDao(
 
     var username by UserTable.username
     var passwordHash by UserTable.passwordHash
+    var passwordSalt by UserTable.passwordSalt
 }
 
 // TODO prevent hammering
@@ -33,6 +36,7 @@ class PostgresUserRepository(
     private val rules: List<UserRegistrationRule> = emptyList(),
 ) : UserRepository {
     private val md5 = MessageDigest.getInstance("MD5")
+    private val secureRandom = SecureRandom()
 
     override suspend fun register(
         name: String,
@@ -49,10 +53,12 @@ class PostgresUserRepository(
 
             val exists = UserDao.find { UserTable.username eq name }.limit(1).any()
             if (!exists) {
+                val salt = generateSalt()
                 val userDao =
                     UserDao.new {
                         username = name
-                        passwordHash = hash(password).toByteArray()
+                        passwordSalt = salt
+                        passwordHash = hash(password, salt)
                     }
                 userDao.toUser()
             } else {
@@ -65,16 +71,18 @@ class PostgresUserRepository(
         password: String,
     ): User? =
         db.withTransaction {
-            UserDao
-                .find {
-                    (UserTable.username eq name) and (UserTable.passwordHash eq hash(password).toByteArray())
-                }.limit(1)
-                .firstOrNull()
-                ?.toUser()
+            val userDao =
+                UserDao.find { UserTable.username eq name }.limit(1).firstOrNull() ?: return@withTransaction null
+            val expectedHash = hash(password, userDao.passwordSalt)
+            if (userDao.passwordHash.contentEquals(expectedHash)) userDao.toUser() else null
         }
 
-    // Not the safest way to do this, but it's fine for now
-    private fun hash(password: String) = ByteString(md5.digest(password.encodeToByteArray()))
+    private fun generateSalt(): ByteArray = ByteArray(SALT_BYTE_COUNT).also { secureRandom.nextBytes(it) }
+
+    private fun hash(
+        password: String,
+        salt: ByteArray,
+    ): ByteArray = md5.digest(password.encodeToByteArray() + salt)
 }
 
 private fun UserDao.toUser(): User = User(id = UserId(id.value), name = username)
