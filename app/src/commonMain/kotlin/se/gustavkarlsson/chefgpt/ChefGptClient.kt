@@ -18,6 +18,9 @@ import io.ktor.serialization.kotlinx.json.json
 import io.ktor.utils.io.ByteReadChannel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.io.buffered
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import se.gustavkarlsson.chefgpt.api.ApiAction
@@ -59,14 +62,14 @@ class ChefGptClient(
     }
 
     suspend fun uploadImage(
-        data: ByteReadChannel,
+        data: Path,
         contentType: ContentType,
     ): ImageUrl {
         val response =
             httpClient.post("$baseUrl/images") {
                 this.contentType(contentType)
                 accept(ContentType.Text.Plain)
-                setBody(data)
+                setBody(data.byteReadChannel())
             }
         val urlString = response.bodyAsText()
         return ImageUrl(urlString)
@@ -113,4 +116,9 @@ class ChefGptClient(
     override fun close() {
         httpClient.close()
     }
+}
+
+private fun Path.byteReadChannel(): ByteReadChannel {
+    val source = SystemFileSystem.source(this)
+    return ByteReadChannel(source.buffered())
 }

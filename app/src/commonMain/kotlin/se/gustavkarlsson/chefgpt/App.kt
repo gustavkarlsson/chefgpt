@@ -57,6 +57,7 @@ import coil3.key.Keyer
 import coil3.map.Mapper
 import com.mikepenz.markdown.m3.Markdown
 import kotlinx.coroutines.launch
+import kotlinx.io.files.Path
 import se.gustavkarlsson.chefgpt.api.ApiAgentEvent
 import se.gustavkarlsson.chefgpt.api.ApiAgentMessage
 import se.gustavkarlsson.chefgpt.api.ApiAgentReasoning
@@ -73,8 +74,8 @@ fun App() {
         ImageLoader(context)
             .newBuilder()
             .components {
-                add(Mapper<File, String> { data, _ -> data.path })
-                add(Keyer<File> { data, _ -> data.path })
+                add(Mapper<Path, String> { data, _ -> data.toString() })
+                add(Keyer<Path> { data, _ -> data.toString() })
                 add(Mapper<ImageUrl, String> { data, _ -> data.value })
                 add(Keyer<ImageUrl> { data, _ -> data.value })
             }.build()
@@ -219,10 +220,10 @@ private fun MessageBubble(event: ApiEvent) {
 @Composable
 private fun MessageInput(
     userText: String,
-    attachedImage: File?,
+    attachedImage: Path?,
     onUserTextChanged: (String) -> Unit,
     onClickSend: (() -> Unit)?,
-    onImageAttached: (File) -> Unit,
+    onImageAttached: (Path) -> Unit,
     onImageCleared: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {

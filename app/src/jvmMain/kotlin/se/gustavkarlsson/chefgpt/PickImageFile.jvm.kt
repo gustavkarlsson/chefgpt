@@ -1,11 +1,10 @@
 package se.gustavkarlsson.chefgpt
 
+import kotlinx.io.files.Path
 import java.awt.FileDialog
 import java.awt.Frame
-import kotlin.io.path.Path
-import kotlin.io.path.pathString
 
-actual suspend fun pickImageFile(): File? {
+actual suspend fun pickImageFile(): Path? {
     val fileDialog = FileDialog(null as Frame?, "Select Image", FileDialog.LOAD)
     fileDialog.setFilenameFilter { _, name ->
         name.lowercase().endsWith(".png") ||
@@ -18,8 +17,7 @@ actual suspend fun pickImageFile(): File? {
     val directory = fileDialog.directory
     val file = fileDialog.file
     return if (directory != null && file != null) {
-        val path = Path(directory, file)
-        File(path.pathString)
+        Path(directory, file)
     } else {
         null
     }

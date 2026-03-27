@@ -1,3 +1,5 @@
 package se.gustavkarlsson.chefgpt
 
-expect suspend fun pickImageFile(): File?
+import kotlinx.io.files.Path
+
+expect suspend fun pickImageFile(): Path?

@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserJoined
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
@@ -30,7 +32,7 @@ class FindRecipeViewModel : ViewModel() {
         val joinId: Uuid? = null,
         val events: List<ApiEvent> = emptyList(),
         val userText: String = "",
-        val attachedImage: File? = null,
+        val attachedImage: Path? = null,
     )
 
     // TODO Don't make inner, but make it data
@@ -38,13 +40,13 @@ class FindRecipeViewModel : ViewModel() {
         val connected: Boolean,
         val events: List<ApiEvent>,
         val userText: String,
-        val attachedImage: File?,
+        val attachedImage: Path?,
         val onClickSend: (() -> Unit)?,
         val onImageCleared: (() -> Unit)?,
     ) {
         val onUserTextChanged: (String) -> Unit
             get() = { text -> state.update { it.copy(userText = text) } }
-        val onImageAttached: (File) -> Unit
+        val onImageAttached: (Path) -> Unit
             get() = { image -> state.update { it.copy(attachedImage = image) } }
     }
 
@@ -120,9 +122,9 @@ class FindRecipeViewModel : ViewModel() {
                 return@launch
             }
             val imageUrl =
-                lastState.attachedImage?.let { file ->
-                    val extension = file.path.substringAfterLast(".")
-                    lastState.client.uploadImage(file.readChannel(), ContentType("image", extension))
+                lastState.attachedImage?.let { path ->
+                    val extension = path.toString().substringAfterLast(".")
+                    lastState.client.uploadImage(path, ContentType("image", extension))
                 }
             lastState.client.sendAction(lastState.chatId, ApiUserSendsMessage(lastState.userText, imageUrl))
         }
