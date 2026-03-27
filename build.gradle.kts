@@ -1,6 +1,5 @@
 import com.diffplug.gradle.spotless.BaseKotlinExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     // this is necessary to avoid the plugins to be loaded multiple times
@@ -27,6 +26,7 @@ allprojects {
         compilerOptions {
             optIn.add("kotlin.uuid.ExperimentalUuidApi")
             optIn.add("kotlinx.serialization.ExperimentalSerializationApi")
+            freeCompilerArgs.add("-Xexpect-actual-classes")
         }
     }
 
