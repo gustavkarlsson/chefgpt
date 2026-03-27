@@ -53,7 +53,6 @@ kotlinxSerializationJson = { module = "org.jetbrains.kotlinx:kotlinx-serializati
 ktorClientCio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktorClientContentNegotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 ktorClientCore = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
-ktorClientWebsockets = { module = "io.ktor:ktor-client-websockets", version.ref = "ktor" }
 
 # Ktor server
 ktorServerCore = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor" }

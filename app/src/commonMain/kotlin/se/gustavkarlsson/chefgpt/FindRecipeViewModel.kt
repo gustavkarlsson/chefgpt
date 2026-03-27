@@ -63,7 +63,10 @@ class FindRecipeViewModel : ViewModel() {
                 } catch (e: CancellationException) {
                     // For good coroutine hygiene
                     throw e
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    // TODO Logging
+                    println(e.message)
+                    e.printStackTrace()
                     // Boo-hoo, session died
                 } finally {
                     runCatching { stopSession() }
