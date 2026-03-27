@@ -45,7 +45,9 @@ dependencies {
     implementation(libs.postgresDriver)
     implementation(libs.exposedCore)
     implementation(libs.exposedJdbc)
+    implementation(libs.exposedDao)
     implementation(libs.flyway)
+    implementation(libs.flywayPostgres)
 
     // Test
     testImplementation(libs.ktorServerTestHost)

@@ -73,7 +73,9 @@ hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
 postgresDriver = { module = "org.postgresql:postgresql", version.ref = "postgresDriver" }
 exposedCore = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
 exposedJdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+exposedDao = { module = "org.jetbrains.exposed:exposed-dao", version.ref = "exposed" }
 flyway = { module= "org.flywaydb:flyway-core", version.ref = "flyway" }
+flywayPostgres = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
 
 # Ktor common
 ktorSerializationKotlinxJson = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }

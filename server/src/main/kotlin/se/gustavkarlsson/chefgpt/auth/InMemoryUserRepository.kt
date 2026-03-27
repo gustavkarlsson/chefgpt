@@ -20,10 +20,10 @@ class InMemoryUserRepository(
                 rule.errorMessage.takeUnless { rule.validate(name, password) }
             }
         if (registrationError != null) {
-            throw BadRequestException(registrationError) // TODO Don't trow. Return a result instead
+            throw BadRequestException(registrationError) // TODO Don't throw. Return a result instead
         }
 
-        val user = User(UserId.random())
+        val user = User(id = UserId.random(), name = name)
         val alreadyRegistered = users.putIfAbsent(name, UserData(user, hash(password)))
         return if (alreadyRegistered == null) {
             user

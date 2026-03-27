@@ -1,8 +1,6 @@
 package se.gustavkarlsson.chefgpt
 
 import ai.koog.ktor.Koog
-import com.zaxxer.hikari.HikariConfig
-import com.zaxxer.hikari.HikariDataSource
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
@@ -14,57 +12,23 @@ import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.di.dependencies
 import io.ktor.server.sse.SSE
 import kotlinx.serialization.json.Json
+import org.jetbrains.exposed.v1.jdbc.Database
 import se.gustavkarlsson.chefgpt.agent.EventBackedChatMemory
 import se.gustavkarlsson.chefgpt.auth.InMemoryUserRepository
-import se.gustavkarlsson.chefgpt.auth.UserRegistrationRule
+import se.gustavkarlsson.chefgpt.auth.PostgresUserRepository
 import se.gustavkarlsson.chefgpt.auth.UserRepository
+import se.gustavkarlsson.chefgpt.auth.registrationRules
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.InMemoryChatRepository
-import se.gustavkarlsson.chefgpt.images.CloudinaryImageUploader
-import se.gustavkarlsson.chefgpt.images.ImageUploader
+import se.gustavkarlsson.chefgpt.db.createHikariDataSource
+import se.gustavkarlsson.chefgpt.db.migrateDatabase
+import se.gustavkarlsson.chefgpt.images.createCloudinaryImageUploader
 import se.gustavkarlsson.chefgpt.tools.IngredientStore
 import se.gustavkarlsson.chefgpt.tools.SpoonacularClient
 import java.nio.file.Paths
-import java.util.Properties
 import javax.sql.DataSource
 
 fun Application.plugins(config: ApplicationConfig) {
-    val userRepository =
-        InMemoryUserRepository(
-            rules =
-                listOf(
-                    UserRegistrationRule.name("Username must be at least 3 characters long") { name ->
-                        name.length >= 3
-                    },
-                    UserRegistrationRule.name("Username must start with a letter") { name ->
-                        name.firstOrNull()?.isLetter() ?: false
-                    },
-                    UserRegistrationRule.name("Username must only contain letters and digits") { name ->
-                        name.all { it.isLetterOrDigit() }
-                    },
-                    UserRegistrationRule.password("Password must be at least 8 characters") { password ->
-                        password.length >= 8
-                    },
-                    UserRegistrationRule.password("Password must contain only valid characters") { password ->
-                        password.none { it.isISOControl() } && password.all { it.isDefined() }
-                    },
-                    UserRegistrationRule.password(
-                        "Password must contain at least three of the following: lower-case letter, upper-case letter, number, special character",
-                    ) { password ->
-                        // TODO Set a better algorithm for complexity
-                        val criteriaCount =
-                            listOf<Char.() -> Boolean>(
-                                { isLowerCase() },
-                                { isUpperCase() },
-                                { isDigit() },
-                                { !isLetterOrDigit() },
-                            ).count { isCharCriteria ->
-                                password.any(isCharCriteria)
-                            }
-                        criteriaCount >= 3
-                    },
-                ),
-        )
     // Extra lenient in production
     val json =
         Json {
@@ -76,28 +40,27 @@ fun Application.plugins(config: ApplicationConfig) {
             allowTrailingComma = !developmentMode
             prettyPrint = developmentMode
         }
-    val ingredientStore = IngredientStore(Paths.get(config.property("chefgpt.ingredientStorePath").getString()))
-    val spoonacularClient = SpoonacularClient(config.property("chefgpt.spoonacularApiKey").getString())
     val chatRepository = InMemoryChatRepository()
     dependencies {
-        provide<DataSource> {
-            val rawConfig = config.config("hikari")
-            val propertiesConfig = rawConfig.toHikariConfig()
-            val hikariConfig = HikariConfig(propertiesConfig)
-            HikariDataSource(hikariConfig)
+        provide { registrationRules }
+        provide<DataSource> { createHikariDataSource(config.config("hikari")) }
+        provide(InMemoryUserRepository::class)
+        provide {
+            val dataSource = resolve<DataSource>()
+            migrateDatabase(dataSource) // Migrate before creating the database wrapper
+            Database.connect(dataSource)
         }
-        provide<UserRepository> { userRepository }
+        provide(PostgresUserRepository::class)
+        provide<UserRepository> { resolve<PostgresUserRepository>() }
+
         provide<ChatRepository> { chatRepository }
-        provide<ImageUploader> {
-            CloudinaryImageUploader(
-                apiKey = config.property("chefgpt.cloudinary.apiKey").getString(),
-                apiSecret = config.property("chefgpt.cloudinary.apiSecret").getString(),
-                cloud = config.property("chefgpt.cloudinary.cloud").getString(),
-            )
+        provide { createCloudinaryImageUploader(config.config("chefgpt.cloudinary")) }
+        provide { json }
+        provide {
+            val file = Paths.get(config.property("chefgpt.ingredientStorePath").getString())
+            IngredientStore(file)
         }
-        provide<Json> { json }
-        provide<IngredientStore> { ingredientStore }
-        provide<SpoonacularClient> { spoonacularClient }
+        provide { SpoonacularClient(config.property("chefgpt.spoonacularApiKey").getString()) }
     }
 
     install(CallLogging)
@@ -156,27 +119,9 @@ fun Application.plugins(config: ApplicationConfig) {
     authentication {
         basic {
             validate { credentials ->
+                val userRepository: UserRepository by application.dependencies
                 userRepository.login(credentials.name, credentials.password)
             }
         }
     }
 }
-
-// TODO Move this
-private fun ApplicationConfig.toHikariConfig(): Properties {
-    val properties = Properties()
-    val propertyMap = toMap().toPropertyList()
-    for ((key, value) in propertyMap) {
-        properties[key] = value
-    }
-    return properties
-}
-
-private fun Map<String, Any?>.toPropertyList(): List<Pair<String, String>> =
-    this.flatMap { (key, value) ->
-        when (value) {
-            is Map<*, *> -> value.mapKeys { (subKey, _) -> "$key.$subKey" }.toPropertyList()
-            is List<*> -> error("List value cannot be converted to property value: $key=$value")
-            else -> listOf(key to value.toString())
-        }
-    }
