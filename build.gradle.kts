@@ -14,6 +14,65 @@ plugins {
     alias(libs.plugins.spotless)
 }
 
+tasks.register("buildSupported") {
+    group = "build"
+    description = "Builds all supported targets (server, JVM, web WASM, web JS, and conditionally Android and iOS)"
+
+    // Always-available targets
+    dependsOn(
+        ":server:shadowJar",
+        ":app:jvmJar",
+        ":app:wasmJsBrowserDistribution",
+        ":app:jsBrowserDistribution",
+    )
+
+    // Android: only if Android build tools are available
+    val hasAndroid =
+        try {
+            val result =
+                providers
+                    .exec {
+                        commandLine("which", "adb")
+                        isIgnoreExitValue = true
+                    }.result
+                    .get()
+            result.exitValue == 0
+        } catch (_: Exception) {
+            false
+        }
+
+    if (hasAndroid) {
+        dependsOn(":app:assembleDebug")
+    } else {
+        doFirst {
+            logger.warn("WARNING: Android tools (adb) not found — skipping Android build")
+        }
+    }
+
+    // iOS: only if Xcode tools are available
+    val hasXcode =
+        try {
+            val result =
+                providers
+                    .exec {
+                        commandLine("which", "xcodebuild")
+                        isIgnoreExitValue = true
+                    }.result
+                    .get()
+            result.exitValue == 0
+        } catch (_: Exception) {
+            false
+        }
+
+    if (hasXcode) {
+        dependsOn(":app:linkDebugFrameworkIosSimulatorArm64")
+    } else {
+        doFirst {
+            logger.warn("WARNING: Xcode tools (xcodebuild) not found — skipping iOS build")
+        }
+    }
+}
+
 allprojects {
     apply(
         plugin =
