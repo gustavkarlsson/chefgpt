@@ -36,7 +36,18 @@ dependencies {
     implementation(libs.ktorClientCio)
     implementation(libs.ktorClientContentNegotiation)
     implementation(libs.ktorSerializationKotlinxJson)
+
+    // Koog
     implementation(libs.koogKtor)
+
+    // Database
+    implementation(libs.hikari)
+    implementation(libs.postgresDriver)
+    implementation(libs.exposedCore)
+    implementation(libs.exposedJdbc)
+    implementation(libs.flyway)
+
+    // Test
     testImplementation(libs.ktorServerTestHost)
     testImplementation(libs.kotlinTestJunit)
 }

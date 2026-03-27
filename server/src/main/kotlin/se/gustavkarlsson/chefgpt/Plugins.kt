@@ -1,11 +1,14 @@
 package se.gustavkarlsson.chefgpt
 
 import ai.koog.ktor.Koog
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.auth.authentication
 import io.ktor.server.auth.basic
+import io.ktor.server.config.ApplicationConfig
 import io.ktor.server.plugins.calllogging.CallLogging
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.di.dependencies
@@ -21,16 +24,11 @@ import se.gustavkarlsson.chefgpt.images.CloudinaryImageUploader
 import se.gustavkarlsson.chefgpt.images.ImageUploader
 import se.gustavkarlsson.chefgpt.tools.IngredientStore
 import se.gustavkarlsson.chefgpt.tools.SpoonacularClient
-import java.nio.file.Path
+import java.nio.file.Paths
+import java.util.Properties
+import javax.sql.DataSource
 
-fun Application.plugins(
-    anthropicApiKey: String,
-    spoonacularApiKey: String,
-    ingredientStorePath: Path,
-    cloudinaryApiKey: String,
-    cloudinaryApiSecret: String,
-    cloudinaryCloud: String,
-) {
+fun Application.plugins(config: ApplicationConfig) {
     val userRepository =
         InMemoryUserRepository(
             rules =
@@ -78,13 +76,25 @@ fun Application.plugins(
             allowTrailingComma = !developmentMode
             prettyPrint = developmentMode
         }
-    val ingredientStore = IngredientStore(ingredientStorePath)
-    val spoonacularClient = SpoonacularClient(spoonacularApiKey)
+    val ingredientStore = IngredientStore(Paths.get(config.property("chefgpt.ingredientStorePath").getString()))
+    val spoonacularClient = SpoonacularClient(config.property("chefgpt.spoonacularApiKey").getString())
     val chatRepository = InMemoryChatRepository()
     dependencies {
+        provide<DataSource> {
+            val rawConfig = config.config("hikari")
+            val propertiesConfig = rawConfig.toHikariConfig()
+            val hikariConfig = HikariConfig(propertiesConfig)
+            HikariDataSource(hikariConfig)
+        }
         provide<UserRepository> { userRepository }
         provide<ChatRepository> { chatRepository }
-        provide<ImageUploader> { CloudinaryImageUploader(cloudinaryApiKey, cloudinaryApiSecret, cloudinaryCloud) }
+        provide<ImageUploader> {
+            CloudinaryImageUploader(
+                apiKey = config.property("chefgpt.cloudinary.apiKey").getString(),
+                apiSecret = config.property("chefgpt.cloudinary.apiSecret").getString(),
+                cloud = config.property("chefgpt.cloudinary.cloud").getString(),
+            )
+        }
         provide<Json> { json }
         provide<IngredientStore> { ingredientStore }
         provide<SpoonacularClient> { spoonacularClient }
@@ -112,7 +122,7 @@ fun Application.plugins(
 
     install(Koog) {
         llm {
-            anthropic(apiKey = anthropicApiKey)
+            anthropic(apiKey = config.property("chefgpt.anthropicApiKey").getString())
         }
         agentConfig {
             prompt {
@@ -151,3 +161,22 @@ fun Application.plugins(
         }
     }
 }
+
+// TODO Move this
+private fun ApplicationConfig.toHikariConfig(): Properties {
+    val properties = Properties()
+    val propertyMap = toMap().toPropertyList()
+    for ((key, value) in propertyMap) {
+        properties[key] = value
+    }
+    return properties
+}
+
+private fun Map<String, Any?>.toPropertyList(): List<Pair<String, String>> =
+    this.flatMap { (key, value) ->
+        when (value) {
+            is Map<*, *> -> value.mapKeys { (subKey, _) -> "$key.$subKey" }.toPropertyList()
+            is List<*> -> error("List value cannot be converted to property value: $key=$value")
+            else -> listOf(key to value.toString())
+        }
+    }

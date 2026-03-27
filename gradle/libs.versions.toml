@@ -9,6 +9,9 @@ atomicfu = "0.32.0"
 coil = "3.1.0"
 composeHotReload = "1.0.0"
 composeMultiplatform = "1.10.0"
+exposed = "1.1.1"
+flyway = "12.2.0"
+hikari = "7.0.2"
 koog = "0.7.2"
 kotlin = "2.3.20"
 kotlinxCoroutines = "1.10.2"
@@ -18,6 +21,7 @@ ktor = "3.4.1"
 logback = "1.5.32"
 material3 = "1.10.0-alpha05"
 multiplatformMarkdownRendererM3 = "0.39.2"
+postgresDriver = "42.7.10"
 slf4jSimple = "2.0.17"
 spotless = "8.2.1"
 
@@ -63,6 +67,13 @@ ktorServerDi = { module = "io.ktor:ktor-server-di", version.ref = "ktor" }
 ktorServerSse = { module = "io.ktor:ktor-server-sse", version.ref = "ktor" }
 ktorServerContentNegotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
 ktorServerCallLogging = { module = "io.ktor:ktor-server-call-logging", version.ref = "ktor" }
+
+# Database
+hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
+postgresDriver = { module = "org.postgresql:postgresql", version.ref = "postgresDriver" }
+exposedCore = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
+exposedJdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+flyway = { module= "org.flywaydb:flyway-core", version.ref = "flyway" }
 
 # Ktor common
 ktorSerializationKotlinxJson = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
