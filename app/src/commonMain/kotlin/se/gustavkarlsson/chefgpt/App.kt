@@ -35,8 +35,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,14 +53,26 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.ui.NavDisplay
+import androidx.savedstate.serialization.SavedStateConfiguration
+import androidx.savedstate.serialization.serializers.MutableStateFlowSerializer
+import androidx.savedstate.serialization.serializers.SavedStateSerializer
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.key.Keyer
 import coil3.map.Mapper
 import com.mikepenz.markdown.m3.Markdown
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.contextual
+import kotlinx.serialization.modules.polymorphic
 import se.gustavkarlsson.chefgpt.api.ApiAgentEvent
 import se.gustavkarlsson.chefgpt.api.ApiAgentMessage
 import se.gustavkarlsson.chefgpt.api.ApiAgentReasoning
@@ -68,54 +83,95 @@ import se.gustavkarlsson.chefgpt.api.ApiUserMessage
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.theme.ChefGptTheme
 
+@Serializable
+sealed interface Route : NavKey
+
+@Serializable
+data object Chat : Route
+
 @Composable
 fun App() {
     // TODO Extract this
-    setSingletonImageLoaderFactory { context ->
-        ImageLoader(context)
-            .newBuilder()
-            .components {
-                add(Mapper<Path, String> { data, _ -> data.toString() })
-                add(Keyer<Path> { data, _ -> data.toString() })
-                add(Mapper<ImageUrl, String> { data, _ -> data.value })
-                add(Keyer<ImageUrl> { data, _ -> data.value })
-            }.build()
+    var initializedImageLoader by rememberSaveable { mutableStateOf(false) }
+    if (!initializedImageLoader) {
+        setSingletonImageLoaderFactory { context ->
+            ImageLoader(context)
+                .newBuilder()
+                .components {
+                    add(Mapper<Path, String> { data, _ -> data.toString() })
+                    add(Keyer<Path> { data, _ -> data.toString() })
+                    add(Mapper<ImageUrl, String> { data, _ -> data.value })
+                    add(Keyer<ImageUrl> { data, _ -> data.value })
+                }.build()
+        }
+        initializedImageLoader = true
     }
+
+    val backStack =
+        rememberNavBackStack(
+            SavedStateConfiguration {
+                serializersModule =
+                    SerializersModule {
+                        contextual(SavedStateSerializer)
+                        contextual(MutableStateFlow::class) { elementSerializers ->
+                            MutableStateFlowSerializer(elementSerializers.first())
+                        }
+
+                        polymorphic(NavKey::class) {
+                            subclassesOfSealed<Route>()
+                        }
+                    }
+            },
+            Chat,
+        )
+
+    ChefGptTheme {
+        NavDisplay(
+            backStack = backStack,
+            onBack = { backStack.removeLastOrNull() },
+            entryProvider =
+                entryProvider {
+                    entry<Chat> { ChatScreen() }
+                },
+        )
+    }
+}
+
+@Composable
+private fun ChatScreen() {
     val viewModel = viewModel { FindRecipeViewModel() }
     val viewState by viewModel.viewState.collectAsState()
 
-    ChefGptTheme {
-        Scaffold(
-            modifier = Modifier.fillMaxSize(),
-        ) { paddingValues ->
-            Box {
-                Surface(
-                    color = if (viewState.connected) Color.Green else Color.Red,
-                    shape = CircleShape,
-                    modifier = Modifier.align(Alignment.TopStart).padding(8.dp).size(16.dp),
-                ) {
-                }
-                Column(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .padding(paddingValues),
-                ) {
-                    MessageList(
-                        events = viewState.events,
-                        modifier = Modifier.weight(1f),
-                    )
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+    ) { paddingValues ->
+        Box {
+            Surface(
+                color = if (viewState.connected) Color.Green else Color.Red,
+                shape = CircleShape,
+                modifier = Modifier.align(Alignment.TopStart).padding(8.dp).size(16.dp),
+            ) {
+            }
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+            ) {
+                MessageList(
+                    events = viewState.events,
+                    modifier = Modifier.weight(1f),
+                )
 
-                    MessageInput(
-                        userText = viewState.userText,
-                        attachedImage = viewState.attachedImage,
-                        onUserTextChanged = viewState.onUserTextChanged,
-                        onClickSend = viewState.onClickSend,
-                        onImageAttached = viewState.onImageAttached,
-                        onImageCleared = viewState.onImageCleared,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
+                MessageInput(
+                    userText = viewState.userText,
+                    attachedImage = viewState.attachedImage,
+                    onUserTextChanged = viewState.onUserTextChanged,
+                    onClickSend = viewState.onClickSend,
+                    onImageAttached = viewState.onImageAttached,
+                    onImageCleared = viewState.onImageCleared,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
     }

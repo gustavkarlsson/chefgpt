@@ -71,6 +71,7 @@ kotlin {
             implementation(libs.kotlinxSerializationJson)
             implementation(libs.coilCompose)
             implementation(libs.coilNetworkKtor)
+            implementation(libs.navigation3Ui)
         }
         commonTest.dependencies {
             implementation(libs.kotlinTest)

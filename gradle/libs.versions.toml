@@ -22,6 +22,7 @@ ktor = "3.4.1"
 logback = "1.5.32"
 material3 = "1.10.0-alpha05"
 multiplatformMarkdownRendererM3 = "0.39.2"
+navigation3 = "1.0.0-alpha06"
 postgresDriver = "42.7.10"
 slf4jSimple = "2.0.17"
 spotless = "8.2.1"
@@ -42,6 +43,7 @@ composeUi = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMult
 composeUiTooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref = "composeMultiplatform" }
 composeUiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "composeMultiplatform" }
 multiplatformMarkdownRendererM3 = { module = "com.mikepenz:multiplatform-markdown-renderer-m3", version.ref = "multiplatformMarkdownRendererM3" }
+navigation3Ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
 
 # Koog
 koogAgents = { module = "ai.koog:koog-agents", version.ref = "koog" }
