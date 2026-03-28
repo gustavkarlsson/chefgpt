@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt
+package se.gustavkarlsson.chefgpt.screens.chat
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
+import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserJoined
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
@@ -24,7 +25,7 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
 
 // TODO Fix error handling
-class FindRecipeViewModel : ViewModel() {
+class ChatViewModel : ViewModel() {
     private data class State(
         val client: ChefGptClient? = null,
         val chatId: ChatId? = null,
