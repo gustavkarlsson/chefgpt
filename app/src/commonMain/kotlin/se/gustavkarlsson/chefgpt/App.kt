@@ -66,6 +66,7 @@ import se.gustavkarlsson.chefgpt.api.ApiSystemEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserMessage
 import se.gustavkarlsson.chefgpt.api.ImageUrl
+import se.gustavkarlsson.chefgpt.theme.ChefGptTheme
 
 @Composable
 fun App() {
@@ -83,7 +84,7 @@ fun App() {
     val viewModel = viewModel { FindRecipeViewModel() }
     val viewState by viewModel.viewState.collectAsState()
 
-    MaterialTheme {
+    ChefGptTheme {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
         ) { paddingValues ->
