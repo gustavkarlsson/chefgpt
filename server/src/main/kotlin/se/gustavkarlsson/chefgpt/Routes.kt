@@ -15,6 +15,8 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.application
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
+import io.ktor.server.sessions.sessions
+import io.ktor.server.sessions.set
 import io.ktor.server.sse.heartbeat
 import io.ktor.server.sse.send
 import io.ktor.server.sse.sse
@@ -29,9 +31,10 @@ import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.ChatId
-import se.gustavkarlsson.chefgpt.auth.SessionStore
+import se.gustavkarlsson.chefgpt.api.SessionId
 import se.gustavkarlsson.chefgpt.auth.User
 import se.gustavkarlsson.chefgpt.auth.UserRepository
+import se.gustavkarlsson.chefgpt.auth.UserSession
 import se.gustavkarlsson.chefgpt.chats.Chat
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.createEvent
@@ -43,26 +46,26 @@ import kotlin.time.Duration.Companion.seconds
 fun Routing.routes() {
     post("/register") {
         val userRepository: UserRepository by application.dependencies
-        val sessionStore: SessionStore by application.dependencies
         val credentials =
             call.request.basicAuthenticationCredentials() ?: throw BadRequestException("Invalid Credentials")
         val user = userRepository.register(credentials.name, credentials.password)
         if (user != null) {
-            val sessionId = sessionStore.create(user)
-            call.respond(HttpStatusCode.Created, sessionId.value.toString())
+            val sessionId = SessionId.random()
+            call.sessions.set(UserSession(sessionId, user))
+            call.respond(HttpStatusCode.Created, sessionId.toString())
         } else {
             call.respond(HttpStatusCode.Unauthorized)
         }
     }
     post("/login") {
         val userRepository: UserRepository by application.dependencies
-        val sessionStore: SessionStore by application.dependencies
         val credentials =
             call.request.basicAuthenticationCredentials() ?: throw BadRequestException("Invalid Credentials")
         val user = userRepository.login(credentials.name, credentials.password)
         if (user != null) {
-            val sessionId = sessionStore.create(user)
-            call.respond(HttpStatusCode.OK, sessionId.value.toString())
+            val sessionId = SessionId.random()
+            call.sessions.set(UserSession(sessionId, user))
+            call.respond(HttpStatusCode.OK, sessionId.toString())
         } else {
             call.respond(HttpStatusCode.Unauthorized)
         }
@@ -126,9 +129,9 @@ fun Routing.routes() {
 }
 
 private fun ApplicationCall.requireUser(): User =
-    checkNotNull(principal<User>()) {
+    checkNotNull(principal<UserSession>()) {
         "User principal missing. Are you calling this in a non-authenticated endpoint?"
-    }
+    }.user
 
 private suspend fun ApplicationCall.requireChat(): Chat {
     val chatRepository: ChatRepository by application.dependencies
