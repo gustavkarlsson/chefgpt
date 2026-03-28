@@ -3,6 +3,7 @@ package se.gustavkarlsson.chefgpt.di
 import kotlinx.io.files.Path
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
+import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.SessionRepository
 import se.gustavkarlsson.chefgpt.screens.chat.ChatViewModel
 import se.gustavkarlsson.chefgpt.screens.start.StartViewModel
@@ -12,6 +13,10 @@ val AppModule =
         single {
             // TODO Get path depending on platform
             SessionRepository(Path("sessions.txt"))
+        }
+        single {
+            // TODO Set base url and dev mode based on config
+            ChefGptClient()
         }
         viewModelOf(::ChatViewModel)
         viewModelOf(::StartViewModel)

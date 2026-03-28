@@ -7,10 +7,12 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.SessionRepository
 
 class StartViewModel(
     private val sessionRepository: SessionRepository,
+    private val client: ChefGptClient,
 ) : ViewModel() {
     private data class State(
         val username: String? = null,

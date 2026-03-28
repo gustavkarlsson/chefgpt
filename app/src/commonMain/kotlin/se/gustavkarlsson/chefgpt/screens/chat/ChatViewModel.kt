@@ -29,9 +29,9 @@ import kotlin.uuid.Uuid
 // TODO Fix error handling
 class ChatViewModel(
     private val sessionRepository: SessionRepository,
+    private val client: ChefGptClient,
 ) : ViewModel() {
     private data class State(
-        val client: ChefGptClient? = null,
         val sessionId: SessionId? = null,
         val chatId: ChatId? = null,
         val joinId: Uuid? = null,
@@ -121,15 +121,15 @@ class ChatViewModel(
                 innerState.getAndUpdate {
                     it.copy(userText = "", attachedImage = null)
                 }
-            if (lastState.client == null || lastState.sessionId == null || lastState.chatId == null) {
+            if (lastState.sessionId == null || lastState.chatId == null) {
                 return@launch
             }
             val imageUrl =
                 lastState.attachedImage?.let { path ->
                     val extension = path.toString().substringAfterLast(".")
-                    lastState.client.uploadImage(lastState.sessionId, path, ContentType("image", extension))
+                    client.uploadImage(lastState.sessionId, path, ContentType("image", extension))
                 }
-            lastState.client.sendAction(
+            client.sendAction(
                 lastState.sessionId,
                 lastState.chatId,
                 ApiUserSendsMessage(lastState.userText, imageUrl),
@@ -138,8 +138,6 @@ class ChatViewModel(
     }
 
     private suspend fun CoroutineScope.runSession() {
-        val client = ChefGptClient()
-        innerState.update { it.copy(client = client) }
         // FIXME Handle missing session gracefully (e.g. navigate to login screen)
         val sessionId = checkNotNull(sessionRepository.load()) { "No session found" }.sessionId
         innerState.update { it.copy(sessionId = sessionId) }
@@ -160,8 +158,7 @@ class ChatViewModel(
 
     private fun stopSession() {
         innerState.update {
-            it.client?.close()
-            it.copy(client = null, sessionId = null, chatId = null, joinId = null)
+            it.copy(sessionId = null, chatId = null, joinId = null)
         }
     }
 }
