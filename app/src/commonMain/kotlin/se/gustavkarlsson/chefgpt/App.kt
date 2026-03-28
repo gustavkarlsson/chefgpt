@@ -71,7 +71,7 @@ fun App() {
         val backStack =
             rememberNavBackStack(
                 SavedStateConfiguration { serializersModule = routeSerializersModule },
-                Chat,
+                Start,
             )
 
         ChefGptTheme {

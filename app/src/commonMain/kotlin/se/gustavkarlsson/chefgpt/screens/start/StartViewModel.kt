@@ -15,11 +15,17 @@ class StartViewModel(
     private data class State(
         val loggedIn: Boolean = false,
         val userName: String? = null,
+        val inputUsername: String = "",
+        val inputPassword: String = "",
     )
 
     sealed interface ViewState {
         data class LoggedOut(
-            val onClickLogin: () -> Unit,
+            val username: String,
+            val password: String,
+            val onUsernameChange: (String) -> Unit,
+            val onPasswordChange: (String) -> Unit,
+            val onClickLogin: (() -> Unit)?,
         ) : ViewState
 
         data class LoggedIn(
@@ -52,9 +58,18 @@ class StartViewModel(
             )
         } else {
             ViewState.LoggedOut(
-                onClickLogin = {
-                    // TODO Implement login
-                },
+                username = inputUsername,
+                password = inputPassword,
+                onUsernameChange = { innerState.value = innerState.value.copy(inputUsername = it) },
+                onPasswordChange = { innerState.value = innerState.value.copy(inputPassword = it) },
+                onClickLogin =
+                    if (inputUsername.isNotBlank() && inputPassword.isNotBlank()) {
+                        {
+                            // TODO Implement login
+                        }
+                    } else {
+                        null
+                    },
             )
         }
 }

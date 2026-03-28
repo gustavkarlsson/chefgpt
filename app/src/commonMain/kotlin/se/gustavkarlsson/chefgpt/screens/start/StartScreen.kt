@@ -6,12 +6,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import org.koin.compose.viewmodel.koinViewModel
 import se.gustavkarlsson.chefgpt.screens.start.StartViewModel.ViewState
@@ -32,7 +38,13 @@ private fun Content(viewState: ViewState) {
     ) {
         when (viewState) {
             is ViewState.LoggedOut -> {
-                LoggedOutContent(onClickLogin = viewState.onClickLogin)
+                LoggedOutContent(
+                    username = viewState.username,
+                    password = viewState.password,
+                    onUsernameChange = viewState.onUsernameChange,
+                    onPasswordChange = viewState.onPasswordChange,
+                    onClickLogin = viewState.onClickLogin,
+                )
             }
 
             is ViewState.LoggedIn -> {
@@ -46,7 +58,13 @@ private fun Content(viewState: ViewState) {
 }
 
 @Composable
-private fun LoggedOutContent(onClickLogin: () -> Unit) {
+private fun LoggedOutContent(
+    username: String,
+    password: String,
+    onUsernameChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onClickLogin: (() -> Unit)?,
+) {
     Text(
         text = "Welcome to ChefGPT",
         style = MaterialTheme.typography.headlineMedium,
@@ -57,7 +75,24 @@ private fun LoggedOutContent(onClickLogin: () -> Unit) {
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = 8.dp, bottom = 24.dp),
     )
-    Button(onClick = onClickLogin) {
+    val usernameFocusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) { usernameFocusRequester.requestFocus() }
+    OutlinedTextField(
+        value = username,
+        onValueChange = onUsernameChange,
+        label = { Text("Username") },
+        singleLine = true,
+        modifier = Modifier.focusRequester(usernameFocusRequester),
+    )
+    OutlinedTextField(
+        value = password,
+        onValueChange = onPasswordChange,
+        label = { Text("Password") },
+        singleLine = true,
+        visualTransformation = PasswordVisualTransformation(),
+        modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
+    )
+    Button(onClick = { onClickLogin?.invoke() }, enabled = onClickLogin != null) {
         Text("Sign in")
     }
 }
