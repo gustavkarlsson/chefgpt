@@ -24,19 +24,22 @@ import kotlinx.serialization.modules.contextual
 import kotlinx.serialization.modules.polymorphic
 import org.koin.compose.KoinApplication
 import se.gustavkarlsson.chefgpt.api.ImageUrl
+import se.gustavkarlsson.chefgpt.api.SessionId
 import se.gustavkarlsson.chefgpt.di.AppModule
 import se.gustavkarlsson.chefgpt.screens.chat.ChatScreen
 import se.gustavkarlsson.chefgpt.screens.start.StartScreen
 import se.gustavkarlsson.chefgpt.theme.ChefGptTheme
 
 @Serializable
-sealed interface Route : NavKey
+sealed interface Route : NavKey {
+    @Serializable
+    data object Start : Route
 
-@Serializable
-data object Start : Route
-
-@Serializable
-data object Chat : Route
+    @Serializable
+    data class Chat(
+        val sessionId: SessionId,
+    ) : Route
+}
 
 private val routeSerializersModule =
     SerializersModule {
@@ -71,7 +74,7 @@ fun App() {
         val backStack =
             rememberNavBackStack(
                 SavedStateConfiguration { serializersModule = routeSerializersModule },
-                Start,
+                Route.Start,
             )
 
         ChefGptTheme {
@@ -80,8 +83,8 @@ fun App() {
                 onBack = { backStack.removeLastOrNull() },
                 entryProvider =
                     entryProvider {
-                        entry<Start> { StartScreen() }
-                        entry<Chat> { ChatScreen() }
+                        entry<Route.Start> { StartScreen() }
+                        entry<Route.Chat> { key -> ChatScreen(key.sessionId) }
                     },
             )
         }

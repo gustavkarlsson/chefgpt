@@ -16,7 +16,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
 import se.gustavkarlsson.chefgpt.ChefGptClient
-import se.gustavkarlsson.chefgpt.SessionRepository
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserJoined
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
@@ -28,11 +27,10 @@ import kotlin.uuid.Uuid
 
 // TODO Fix error handling
 class ChatViewModel(
-    private val sessionRepository: SessionRepository,
     private val client: ChefGptClient,
+    private val sessionId: SessionId,
 ) : ViewModel() {
     private data class State(
-        val sessionId: SessionId? = null,
         val chatId: ChatId? = null,
         val joinId: Uuid? = null,
         val events: List<ApiEvent> = emptyList(),
@@ -83,7 +81,7 @@ class ChatViewModel(
 
     private fun State.toViewState(): ViewState =
         ViewState(
-            connected = client != null && sessionId != null && chatId != null && joinId != null,
+            connected = chatId != null && joinId != null,
             events = events,
             userText = userText,
             attachedImage = attachedImage,
@@ -121,16 +119,16 @@ class ChatViewModel(
                 innerState.getAndUpdate {
                     it.copy(userText = "", attachedImage = null)
                 }
-            if (lastState.sessionId == null || lastState.chatId == null) {
+            if (lastState.chatId == null) {
                 return@launch
             }
             val imageUrl =
                 lastState.attachedImage?.let { path ->
                     val extension = path.toString().substringAfterLast(".")
-                    client.uploadImage(lastState.sessionId, path, ContentType("image", extension))
+                    client.uploadImage(sessionId, path, ContentType("image", extension))
                 }
             client.sendAction(
-                lastState.sessionId,
+                sessionId,
                 lastState.chatId,
                 ApiUserSendsMessage(lastState.userText, imageUrl),
             )
@@ -138,9 +136,6 @@ class ChatViewModel(
     }
 
     private suspend fun CoroutineScope.runSession() {
-        // FIXME Handle missing session gracefully (e.g. navigate to login screen)
-        val sessionId = checkNotNull(sessionRepository.load()) { "No session found" }.sessionId
-        innerState.update { it.copy(sessionId = sessionId) }
         val joinId = Uuid.random()
         innerState.update { it.copy(joinId = joinId) }
         // TODO Add ability to resume chat
@@ -158,7 +153,7 @@ class ChatViewModel(
 
     private fun stopSession() {
         innerState.update {
-            it.copy(sessionId = null, chatId = null, joinId = null)
+            it.copy(chatId = null, joinId = null)
         }
     }
 }

@@ -30,9 +30,9 @@ class SessionRepository(
         clear()
         val sink = SystemFileSystem.sink(file).buffered()
         sink.use {
-            it.writeString(credentials.username + "\n")
+            it.writeString(credentials.username)
             it.writeString("\n")
-            it.writeString(credentials.sessionId.toString() + "\n")
+            it.writeString(credentials.sessionId.toString())
         }
     }
 
