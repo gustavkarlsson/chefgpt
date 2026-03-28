@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
-import kotlinx.io.files.SystemFileSystem
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserJoined
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
@@ -68,8 +67,6 @@ class FindRecipeViewModel : ViewModel() {
                 } catch (e: Exception) {
                     // TODO Logging
                     println(e.message)
-                    e.printStackTrace()
-                    // Boo-hoo, session died
                 } finally {
                     runCatching { stopSession() }
                     delay(1.seconds)

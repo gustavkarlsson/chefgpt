@@ -33,7 +33,11 @@ kotlin {
         }
     }
 
-    jvm()
+    jvm {
+        mainRun {
+            mainClass = "se.gustavkarlsson.chefgpt.MainKt"
+        }
+    }
 
     js {
         browser()
