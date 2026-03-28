@@ -9,15 +9,20 @@ import io.ktor.server.auth.authentication
 import io.ktor.server.auth.session
 import io.ktor.server.config.ApplicationConfig
 import io.ktor.server.plugins.calllogging.CallLogging
+import io.ktor.server.plugins.calllogging.processingTimeMillis
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.di.dependencies
+import io.ktor.server.request.httpMethod
+import io.ktor.server.request.path
 import io.ktor.server.response.respond
 import io.ktor.server.sessions.SessionStorageMemory
 import io.ktor.server.sessions.Sessions
 import io.ktor.server.sessions.header
 import io.ktor.server.sse.SSE
+import io.ktor.util.toMap
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.v1.jdbc.Database
+import org.slf4j.event.Level
 import se.gustavkarlsson.chefgpt.agent.EventBackedChatMemory
 import se.gustavkarlsson.chefgpt.auth.InMemoryUserRepository
 import se.gustavkarlsson.chefgpt.auth.PostgresUserRepository
@@ -63,7 +68,41 @@ fun Application.plugins(config: ApplicationConfig) {
         provide { SpoonacularClient(config.property("chefgpt.spoonacularApiKey").getString()) }
     }
 
-    install(CallLogging)
+    install(CallLogging) {
+        val callConfig = config.config("logging.calls")
+        val configLevelString = callConfig.propertyOrNull("level")?.getString()?.uppercase()
+        val configLevel = Level.entries.find { it.name == configLevelString }
+        level = configLevel ?: Level.INFO
+
+        val requestHeaders = callConfig.propertyOrNull("request.headers")?.getString().toBoolean()
+        if (requestHeaders) {
+            mdc("request.headers") { call ->
+                call.request.headers
+                    .toMap()
+                    .toString()
+            }
+        }
+
+        val responseHeaders = callConfig.propertyOrNull("response.headers")?.getString().toBoolean()
+        if (responseHeaders) {
+            mdc("response.headers") { call ->
+                call.response.headers
+                    .allValues()
+                    .toMap()
+                    .toString()
+            }
+        }
+
+        format { call ->
+            buildString {
+                append("${call.response.status()}: ")
+                append(call.request.httpMethod)
+                append(" ")
+                append(call.request.path())
+                append(" in ${call.processingTimeMillis()}ms")
+            }
+        }
+    }
 
     install(ContentNegotiation) {
         json(json)
