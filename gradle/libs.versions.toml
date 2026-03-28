@@ -13,6 +13,7 @@ exposed = "1.1.1"
 flyway = "12.2.0"
 hikari = "7.0.2"
 jvmToolchain = "21" # Jetbrains Hot-Reload needs this
+koin = "4.1.1"
 koog = "0.7.2"
 kotlin = "2.3.20"
 kotlinxCoroutines = "1.10.2"
@@ -44,6 +45,11 @@ composeUiTooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref
 composeUiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "composeMultiplatform" }
 multiplatformMarkdownRendererM3 = { module = "com.mikepenz:multiplatform-markdown-renderer-m3", version.ref = "multiplatformMarkdownRendererM3" }
 navigation3Ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
+
+# Koin
+koinCore = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+koinCompose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
+koinComposeViewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
 
 # Koog
 koogAgents = { module = "ai.koog:koog-agents", version.ref = "koog" }

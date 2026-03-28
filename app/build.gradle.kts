@@ -72,6 +72,9 @@ kotlin {
             implementation(libs.coilCompose)
             implementation(libs.coilNetworkKtor)
             implementation(libs.navigation3Ui)
+            implementation(libs.koinCore)
+            implementation(libs.koinCompose)
+            implementation(libs.koinComposeViewmodel)
         }
         commonTest.dependencies {
             implementation(libs.kotlinTest)
