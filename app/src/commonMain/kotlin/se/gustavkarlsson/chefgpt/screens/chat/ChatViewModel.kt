@@ -141,10 +141,11 @@ class ChatViewModel(
         val client = ChefGptClient()
         innerState.update { it.copy(client = client) }
         // FIXME Handle missing session gracefully (e.g. navigate to login screen)
-        val sessionId = checkNotNull(sessionRepository.load()) { "No session found" }
+        val sessionId = checkNotNull(sessionRepository.load()) { "No session found" }.sessionId
         innerState.update { it.copy(sessionId = sessionId) }
         val joinId = Uuid.random()
         innerState.update { it.copy(joinId = joinId) }
+        // TODO Add ability to resume chat
         val chatId = client.createChat(sessionId)
         innerState.update { it.copy(chatId = chatId, events = emptyList()) }
         val listenJob =

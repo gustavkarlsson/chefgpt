@@ -25,19 +25,19 @@ class SessionRepositoryTest {
     }
 
     @Test
-    fun `save and load round-trips session id`() {
-        val sessionId = SessionId.random()
+    fun `save and load round-trips credentials`() {
+        val credentials = SessionCredentials("alice", SessionId.random())
 
-        repository.save(sessionId)
+        repository.save(credentials)
         val loaded = repository.load()
 
-        assertEquals(sessionId, loaded)
+        assertEquals(credentials, loaded)
     }
 
     @Test
-    fun `save overwrites previous session id`() {
-        repository.save(SessionId.random())
-        val second = SessionId.random()
+    fun `save overwrites previous credentials`() {
+        repository.save(SessionCredentials("alice", SessionId.random()))
+        val second = SessionCredentials("bob", SessionId.random())
         repository.save(second)
 
         val loaded = repository.load()
@@ -47,7 +47,7 @@ class SessionRepositoryTest {
 
     @Test
     fun `clear removes the file`() {
-        repository.save(SessionId.random())
+        repository.save(SessionCredentials("alice", SessionId.random()))
 
         repository.clear()
 

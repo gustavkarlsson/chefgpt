@@ -49,6 +49,7 @@ private fun Content(viewState: ViewState) {
 
             is ViewState.LoggedIn -> {
                 LoggedInContent(
+                    username = viewState.username,
                     onClickStartChatting = viewState.onClickStartChatting,
                 )
             }
@@ -97,9 +98,12 @@ private fun LoggedOutContent(
 }
 
 @Composable
-private fun LoggedInContent(onClickStartChatting: () -> Unit) {
+private fun LoggedInContent(
+    username: String,
+    onClickStartChatting: () -> Unit,
+) {
     Text(
-        text = "Welcome back",
+        text = "Welcome back, $username!",
         style = MaterialTheme.typography.headlineMedium,
     )
     Text(

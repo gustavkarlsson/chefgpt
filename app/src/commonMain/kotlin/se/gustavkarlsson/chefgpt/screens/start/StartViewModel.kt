@@ -13,7 +13,7 @@ class StartViewModel(
     private val sessionRepository: SessionRepository,
 ) : ViewModel() {
     private data class State(
-        val loggedIn: Boolean = false,
+        val username: String? = null,
         val inputUsername: String = "",
         val inputPassword: String = "",
     )
@@ -28,6 +28,7 @@ class StartViewModel(
         ) : ViewState
 
         data class LoggedIn(
+            val username: String,
             val onClickStartChatting: () -> Unit,
         ) : ViewState
     }
@@ -40,15 +41,16 @@ class StartViewModel(
             .stateIn(viewModelScope, SharingStarted.Eagerly, innerState.value.toViewState())
 
     init {
-        val sessionId = sessionRepository.load()
-        if (sessionId != null) {
-            innerState.value = State(loggedIn = true)
+        val credentials = sessionRepository.load()
+        if (credentials != null) {
+            innerState.value = State(username = credentials.username)
         }
     }
 
     private fun State.toViewState(): ViewState =
-        if (loggedIn) {
+        if (username != null) {
             ViewState.LoggedIn(
+                username = username,
                 onClickStartChatting = {
                     // TODO Navigate to chat
                 },
