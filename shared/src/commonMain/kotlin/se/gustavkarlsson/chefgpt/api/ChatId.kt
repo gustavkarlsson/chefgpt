@@ -21,6 +21,8 @@ value class ChatId(
         fun random(): ChatId = ChatId(Uuid.random())
 
         fun parse(uuidString: String): ChatId = ChatId(Uuid.parse(uuidString))
+
+        fun parseOrNull(uuidString: String): ChatId? = Uuid.parseOrNull(uuidString)?.let(::ChatId)
     }
 }
 

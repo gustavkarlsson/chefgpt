@@ -21,6 +21,8 @@ value class SessionId(
         fun random(): SessionId = SessionId(Uuid.random())
 
         fun parse(uuidString: String): SessionId = SessionId(Uuid.parse(uuidString))
+
+        fun parseOrNull(uuidString: String): SessionId? = Uuid.parseOrNull(uuidString)?.let(::SessionId)
     }
 }
 

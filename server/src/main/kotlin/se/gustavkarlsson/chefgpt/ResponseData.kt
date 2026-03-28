@@ -6,10 +6,14 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respond
 
-data class ResponseData<out T : Any>(
+data class ResponseData<out T>(
     val status: HttpStatusCode,
-    val body: T? = null,
-)
+    val body: T,
+) {
+    companion object {
+        operator fun invoke(status: HttpStatusCode) = ResponseData(status, null)
+    }
+}
 
 suspend fun Result<ResponseData<*>, ResponseData<*>>.respond(call: ApplicationCall) {
     val responseData = merge()

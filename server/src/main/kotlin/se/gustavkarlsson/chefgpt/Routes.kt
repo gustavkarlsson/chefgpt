@@ -4,8 +4,10 @@ import com.github.michaelbull.result.Result
 import com.github.michaelbull.result.flatMap
 import com.github.michaelbull.result.map
 import com.github.michaelbull.result.mapError
+import com.github.michaelbull.result.onOk
 import com.github.michaelbull.result.runCatching
 import com.github.michaelbull.result.toErrorIfNull
+import com.github.michaelbull.result.toResultOr
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.auth.UserPasswordCredential
@@ -13,7 +15,6 @@ import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.basicAuthenticationCredentials
 import io.ktor.server.auth.principal
 import io.ktor.server.plugins.BadRequestException
-import io.ktor.server.plugins.NotFoundException
 import io.ktor.server.plugins.di.dependencies
 import io.ktor.server.request.contentType
 import io.ktor.server.request.receive
@@ -80,9 +81,14 @@ fun Routing.routes() {
                     }
                 }
             }.map { user ->
-                val sessionId = SessionId.random()
-                call.sessions.set(Session(sessionId, user))
-                ResponseData(HttpStatusCode.Created, sessionId.toString())
+                Session(SessionId.random(), user)
+            }.onOk { session ->
+                call.sessions.set(session)
+            }.map { session ->
+                ResponseData(
+                    status = HttpStatusCode.Created,
+                    body = session.sessionId.toString(),
+                )
             }.respond(call)
     }
     post("/login") {
@@ -101,9 +107,14 @@ fun Routing.routes() {
                     }
                 }
             }.map { user ->
-                val sessionId = SessionId.random()
-                call.sessions.set(Session(sessionId, user))
-                ResponseData(HttpStatusCode.OK, sessionId.toString())
+                Session(SessionId.random(), user)
+            }.onOk { session ->
+                call.sessions.set(session)
+            }.map { session ->
+                ResponseData(
+                    status = HttpStatusCode.OK,
+                    body = session.sessionId.toString(),
+                )
             }.respond(call)
     }
     authenticate {
@@ -136,35 +147,43 @@ fun Routing.routes() {
                         period = 1.seconds
                         event = ServerSentEvent("heartbeat")
                     }
-                    val chat = call.requireChat()
-                    chat.events().mapNotNull { it.toApiOrNull() }.collect { apiEvent: ApiEvent ->
-                        // TODO Batch events to improve efficiency. Maybe make a Batch event?
-                        send(apiEvent)
+                    call.getChat().onOk { chat ->
+                        chat
+                            .events()
+                            .mapNotNull { it.toApiOrNull() }
+                            .collect { apiEvent: ApiEvent ->
+                                // TODO Batch events to improve efficiency. Maybe make a Batch event?
+                                send(apiEvent)
+                            }
                     }
                 }
                 // Send an event, some of which may be processed by an LLM
                 post("/actions") {
                     val session = call.requireSession()
-                    val chat = call.requireChat()
-                    val action = call.receive<ApiAction>()
-                    chat.append(action.createEvent())
-                    when (action) {
-                        is ApiUserJoinedChat -> {
-                            call.respond(HttpStatusCode.OK)
-                        }
+                    call
+                        .getChat()
+                        .onOk { chat ->
+                            val action = call.receive<ApiAction>()
+                            chat.append(action.createEvent())
+                            when (action) {
+                                is ApiUserJoinedChat -> {
+                                    Unit
+                                }
 
-                        is ApiUserSendsMessage -> {
-                            runAgent(session.user.id, chat.id)
-                            call.respond(HttpStatusCode.OK)
-                        }
-                    }
+                                is ApiUserSendsMessage -> {
+                                    runAgent(session.user.id, chat.id)
+                                }
+                            }
+                        }.map {
+                            ResponseData(HttpStatusCode.OK)
+                        }.respond(call)
                 }
             }
         }
     }
 }
 
-private fun ApplicationCall.getCredentials(): Result<UserPasswordCredential, ResponseData<ApiError>> =
+private fun ApplicationCall.getCredentials(): Result<UserPasswordCredential, ResponseData<ApiError?>> =
     runCatching { request.basicAuthenticationCredentials() }
         .mapError { throwable ->
             when (throwable) {
@@ -191,12 +210,23 @@ private fun ApplicationCall.requireSession(): Session =
         "User principal missing. Are we calling this in a non-authenticated endpoint?"
     }
 
-// FIXME return result instead, as this might be a user error
-private suspend fun ApplicationCall.requireChat(): Chat {
-    val chatRepository: ChatRepository by application.dependencies
-    val session = requireSession()
-    val chatId = requireChatId()
-    return chatRepository[session.user.id, chatId] ?: throw NotFoundException("Chat not found for user")
+private suspend fun ApplicationCall.getChat(): Result<Chat, ResponseData<ApiError>> {
+    val rawChatId = parameters.getOrFail("chatId")
+    return ChatId
+        .parseOrNull(rawChatId)
+        .toResultOr {
+            ResponseData(
+                status = HttpStatusCode.BadRequest,
+                body = ApiError("invalid-chat-id", "Invalid chat ID"),
+            )
+        }.map { chatId ->
+            val chatRepository: ChatRepository by application.dependencies
+            val session = requireSession()
+            chatRepository[session.user.id, chatId]
+        }.toErrorIfNull {
+            ResponseData(
+                status = HttpStatusCode.NotFound,
+                body = ApiError("chat-not-found", "Chat not found"),
+            )
+        }
 }
-
-private fun ApplicationCall.requireChatId(): ChatId = ChatId.parse(parameters.getOrFail("chatId"))

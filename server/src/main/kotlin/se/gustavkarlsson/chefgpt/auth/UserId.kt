@@ -7,6 +7,7 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import se.gustavkarlsson.chefgpt.api.ChatId
 import kotlin.uuid.Uuid
 
 @Serializable(with = UserIdSerializer::class)
@@ -20,6 +21,8 @@ value class UserId(
         fun random(): UserId = UserId(Uuid.random())
 
         fun parse(uuidString: String): UserId = UserId(Uuid.parse(uuidString))
+
+        fun parseOrNull(uuidString: String): UserId? = Uuid.parseOrNull(uuidString)?.let(::UserId)
     }
 }
 
