@@ -5,9 +5,10 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.sse.SSE
 import io.ktor.client.plugins.sse.sse
+import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.accept
 import io.ktor.client.request.basicAuth
-import io.ktor.client.request.bearerAuth
+import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
@@ -83,8 +84,8 @@ class ChefGptClient(
     ): ImageUrl {
         val response =
             httpClient.post("$baseUrl/images") {
-                bearerAuth(sessionId.toString())
-                this.contentType(contentType)
+                sessionIdHeader(sessionId)
+                contentType(contentType)
                 accept(ContentType.Text.Plain)
                 setBody(data.byteReadChannel())
             }
@@ -95,7 +96,7 @@ class ChefGptClient(
     suspend fun createChat(sessionId: SessionId): ChatId {
         val response =
             httpClient.post("$baseUrl/chats") {
-                bearerAuth(sessionId.toString())
+                sessionIdHeader(sessionId)
                 accept(ContentType.Text.Plain)
             }
         val uuidString = response.bodyAsText()
@@ -114,7 +115,7 @@ class ChefGptClient(
                     json.decodeFromString(serializer, text)
                 },
                 request = {
-                    bearerAuth(sessionId.toString())
+                    sessionIdHeader(sessionId)
                 },
             ) {
                 incoming.collect { serverSentEvent ->
@@ -132,7 +133,7 @@ class ChefGptClient(
         action: ApiAction,
     ) {
         httpClient.post("$baseUrl/chats/$chatId/actions") {
-            bearerAuth(sessionId.toString())
+            sessionIdHeader(sessionId)
             contentType(ContentType.Application.Json)
             setBody(action)
         }
@@ -141,6 +142,10 @@ class ChefGptClient(
     override fun close() {
         httpClient.close()
     }
+}
+
+private fun HttpRequestBuilder.sessionIdHeader(sessionId: SessionId) {
+    header("Session-Id", sessionId.value.toString())
 }
 
 private fun Path.byteReadChannel(): ByteReadChannel {
