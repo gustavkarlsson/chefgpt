@@ -121,7 +121,10 @@ fun Application.plugins(config: ApplicationConfig) {
 
     authentication {
         session<UserSession> {
-            validate { session -> session }
+            validate { session ->
+                val userRepository: UserRepository by application.dependencies
+                session.takeIf { it.user.id in userRepository }
+            }
             challenge { call.respond(HttpStatusCode.Unauthorized) }
         }
     }

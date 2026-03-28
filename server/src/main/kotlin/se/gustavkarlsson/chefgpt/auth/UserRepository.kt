@@ -10,4 +10,6 @@ interface UserRepository {
         name: String,
         password: String,
     ): User?
+
+    suspend operator fun contains(userId: UserId): Boolean
 }
