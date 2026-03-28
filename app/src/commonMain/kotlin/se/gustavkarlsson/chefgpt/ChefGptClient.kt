@@ -1,6 +1,12 @@
 package se.gustavkarlsson.chefgpt
 
+import com.github.michaelbull.result.Err
+import com.github.michaelbull.result.Result
+import com.github.michaelbull.result.flatMapEither
+import com.github.michaelbull.result.mapError
+import com.github.michaelbull.result.runCatching
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.sse.SSE
@@ -11,8 +17,10 @@ import io.ktor.client.request.basicAuth
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
@@ -25,6 +33,7 @@ import kotlinx.io.files.SystemFileSystem
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import se.gustavkarlsson.chefgpt.api.ApiAction
+import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.ImageUrl
@@ -56,32 +65,34 @@ class ChefGptClient(
     suspend fun register(
         username: String,
         password: String,
-    ): SessionId {
+    ): Result<SessionId, ErrorResponse> {
         val response =
             httpClient.post("$baseUrl/register") {
                 basicAuth(username, password)
             }
-        check(response.status.isSuccess()) { "Registration failed" }
-        return SessionId.parse(response.bodyAsText())
+        return response.toResultSafe {
+            SessionId.parse(bodyAsText())
+        }
     }
 
     suspend fun login(
         username: String,
         password: String,
-    ): SessionId {
+    ): Result<SessionId, ErrorResponse> {
         val response =
             httpClient.post("$baseUrl/login") {
                 basicAuth(username, password)
             }
-        check(response.status.isSuccess()) { "Login failed" }
-        return SessionId.parse(response.bodyAsText())
+        return response.toResultSafe {
+            SessionId.parse(bodyAsText())
+        }
     }
 
     suspend fun uploadImage(
         sessionId: SessionId,
         data: Path,
         contentType: ContentType,
-    ): ImageUrl {
+    ): Result<ImageUrl, ErrorResponse> {
         val response =
             httpClient.post("$baseUrl/images") {
                 sessionIdHeader(sessionId)
@@ -89,18 +100,22 @@ class ChefGptClient(
                 accept(ContentType.Text.Plain)
                 setBody(data.byteReadChannel())
             }
-        val urlString = response.bodyAsText()
-        return ImageUrl(urlString)
+        return response.toResultSafe {
+            val urlString = response.bodyAsText()
+            ImageUrl(urlString)
+        }
     }
 
-    suspend fun createChat(sessionId: SessionId): ChatId {
+    suspend fun createChat(sessionId: SessionId): Result<ChatId, ErrorResponse> {
         val response =
             httpClient.post("$baseUrl/chats") {
                 sessionIdHeader(sessionId)
                 accept(ContentType.Text.Plain)
             }
-        val uuidString = response.bodyAsText()
-        return ChatId.parse(uuidString)
+        return response.toResultSafe {
+            val uuidString = response.bodyAsText()
+            ChatId.parse(uuidString)
+        }
     }
 
     fun listenToEvents(
@@ -131,18 +146,34 @@ class ChefGptClient(
         sessionId: SessionId,
         chatId: ChatId,
         action: ApiAction,
-    ) {
-        httpClient.post("$baseUrl/chats/$chatId/actions") {
-            sessionIdHeader(sessionId)
-            contentType(ContentType.Application.Json)
-            setBody(action)
-        }
+    ): Result<Nothing?, ErrorResponse> {
+        val response =
+            httpClient.post("$baseUrl/chats/$chatId/actions") {
+                sessionIdHeader(sessionId)
+                contentType(ContentType.Application.Json)
+                setBody(action)
+            }
+        return response.toResultSafe { null }
     }
 
     override fun close() {
         httpClient.close()
     }
 }
+
+private suspend fun <T> HttpResponse.toResultSafe(
+    readSuccessBodySafe: suspend HttpResponse.() -> T,
+): Result<T, ErrorResponse> =
+    if (status.isSuccess()) {
+        runCatching { readSuccessBodySafe() }.mapError { null }
+    } else {
+        runCatching { body<ApiError?>() }.flatMapEither(
+            success = { Err(it) }, // ApiError becomes the failure case
+            failure = { Err(null) }, // Throwables become null failure data
+        )
+    }.mapError { body ->
+        ErrorResponse(status, body)
+    }
 
 private fun HttpRequestBuilder.sessionIdHeader(sessionId: SessionId) {
     header("Session-Id", sessionId.value.toString())
@@ -152,3 +183,8 @@ private fun Path.byteReadChannel(): ByteReadChannel {
     val source = SystemFileSystem.source(this)
     return ByteReadChannel(source.buffered())
 }
+
+data class ErrorResponse(
+    val status: HttpStatusCode,
+    val errorBody: ApiError? = null,
+)

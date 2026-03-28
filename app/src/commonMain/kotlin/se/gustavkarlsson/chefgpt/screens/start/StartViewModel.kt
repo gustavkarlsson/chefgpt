@@ -2,6 +2,8 @@ package se.gustavkarlsson.chefgpt.screens.start
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.michaelbull.result.onErr
+import com.github.michaelbull.result.onOk
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -71,14 +73,15 @@ class StartViewModel(
                     if (inputUsername.isNotBlank() && inputPassword.isNotBlank()) {
                         {
                             viewModelScope.launch {
-                                val sessionId =
-                                    runCatching { client.register(inputUsername, inputPassword) }.getOrNull()
-                                if (sessionId != null) {
-                                    sessionRepository.save(SessionCredentials(inputUsername, sessionId))
-                                    innerState.update { it.copy(username = inputUsername) }
-                                } else {
-                                    // TODO what if failure?
-                                }
+                                client
+                                    .register(inputUsername, inputPassword)
+                                    .onOk { sessionId ->
+                                        sessionRepository.save(SessionCredentials(inputUsername, sessionId))
+                                        innerState.update { it.copy(username = inputUsername) }
+                                    }.onErr { errorResponse ->
+                                        // TODO Show message?
+                                        //  Modify state?
+                                    }
                             }
                         }
                     } else {
@@ -88,13 +91,15 @@ class StartViewModel(
                     if (inputUsername.isNotBlank() && inputPassword.isNotBlank()) {
                         {
                             viewModelScope.launch {
-                                val sessionId = runCatching { client.login(inputUsername, inputPassword) }.getOrNull()
-                                if (sessionId != null) {
-                                    sessionRepository.save(SessionCredentials(inputUsername, sessionId))
-                                    innerState.update { it.copy(username = inputUsername) }
-                                } else {
-                                    // TODO what if failure?
-                                }
+                                client
+                                    .login(inputUsername, inputPassword)
+                                    .onOk { sessionId ->
+                                        sessionRepository.save(SessionCredentials(inputUsername, sessionId))
+                                        innerState.update { it.copy(username = inputUsername) }
+                                    }.onErr { errorResponse ->
+                                        // TODO Show message?
+                                        //  Modify state?
+                                    }
                             }
                         }
                     } else {

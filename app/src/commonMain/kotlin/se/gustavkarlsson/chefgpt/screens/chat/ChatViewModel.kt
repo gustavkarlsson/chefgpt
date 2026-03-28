@@ -2,9 +2,15 @@ package se.gustavkarlsson.chefgpt.screens.chat
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.michaelbull.result.Ok
+import com.github.michaelbull.result.map
+import com.github.michaelbull.result.onErr
+import com.github.michaelbull.result.onOk
 import io.ktor.http.ContentType
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -122,34 +128,48 @@ class ChatViewModel(
             if (lastState.chatId == null) {
                 return@launch
             }
+
             val imageUrl =
-                lastState.attachedImage?.let { path ->
-                    val extension = path.toString().substringAfterLast(".")
-                    client.uploadImage(sessionId, path, ContentType("image", extension))
+                if (lastState.attachedImage != null) {
+                    val extension = lastState.attachedImage.toString().substringAfterLast(".")
+                    client.uploadImage(sessionId, lastState.attachedImage, ContentType("image", extension))
+                } else {
+                    Ok(null)
+                }.map { imageUrl ->
+                    client.sendAction(sessionId, lastState.chatId, ApiUserSendsMessage(lastState.userText, imageUrl))
+                }.onErr {
+                    // TODO Show message?
+                    //  Modify state?
                 }
-            client.sendAction(
-                sessionId,
-                lastState.chatId,
-                ApiUserSendsMessage(lastState.userText, imageUrl),
-            )
         }
     }
 
-    private suspend fun CoroutineScope.runSession() {
-        val joinId = Uuid.random()
-        innerState.update { it.copy(joinId = joinId) }
-        // TODO Add ability to resume chat
-        val chatId = client.createChat(sessionId)
-        innerState.update { it.copy(chatId = chatId, events = emptyList()) }
-        val listenJob =
-            launch {
-                client.listenToEvents(sessionId, chatId).collect { event ->
-                    innerState.update { it.copy(events = it.events + event) }
+    private suspend fun runSession() =
+        coroutineScope {
+            val joinId = Uuid.random()
+            innerState.update { it.copy(joinId = joinId) }
+            // TODO Add ability to resume chat
+            var job: Job? = null
+            client
+                .createChat(sessionId)
+                .onOk { chatId ->
+                    innerState.update { it.copy(chatId = chatId, events = emptyList()) }
+                    job =
+                        launch {
+                            // TODO Handle errors
+                            client.listenToEvents(sessionId, chatId).collect { event ->
+                                innerState.update { it.copy(events = it.events + event) }
+                            }
+                        }
+                }.map { chatId ->
+                    client.sendAction(sessionId, chatId, ApiUserJoinedChat(joinId))
+                }.onErr {
+                    // TODO Show message?
+                    //  Modify state?
+                    job?.cancel("Failed to run session")
                 }
-            }
-        client.sendAction(sessionId, chatId, ApiUserJoinedChat(joinId))
-        listenJob.join()
-    }
+            job?.join()
+        }
 
     private fun stopSession() {
         innerState.update {
