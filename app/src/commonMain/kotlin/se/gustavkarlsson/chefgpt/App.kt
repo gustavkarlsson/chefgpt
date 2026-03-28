@@ -1,8 +1,10 @@
 package se.gustavkarlsson.chefgpt
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.navigation3.runtime.NavKey
@@ -77,16 +79,19 @@ fun App() {
                 Route.Start,
             )
 
-        ChefGptTheme {
-            NavDisplay(
-                backStack = backStack,
-                onBack = { backStack.removeLastOrNull() },
-                entryProvider =
-                    entryProvider {
-                        entry<Route.Start> { StartScreen() }
-                        entry<Route.Chat> { key -> ChatScreen(key.sessionId) }
-                    },
-            )
+        val navigator = remember(backStack) { Navigator(backStack) }
+        CompositionLocalProvider(LocalNavigator provides navigator) {
+            ChefGptTheme {
+                NavDisplay(
+                    backStack = backStack,
+                    onBack = { backStack.removeLastOrNull() },
+                    entryProvider =
+                        entryProvider {
+                            entry<Route.Start> { StartScreen() }
+                            entry<Route.Chat> { key -> ChatScreen(key.sessionId) }
+                        },
+                )
+            }
         }
     }
 }

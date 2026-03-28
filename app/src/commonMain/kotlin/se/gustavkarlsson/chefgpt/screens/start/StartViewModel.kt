@@ -12,8 +12,11 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import se.gustavkarlsson.chefgpt.ChefGptClient
+import se.gustavkarlsson.chefgpt.Navigator
+import se.gustavkarlsson.chefgpt.Route
 import se.gustavkarlsson.chefgpt.SessionCredentials
 import se.gustavkarlsson.chefgpt.SessionRepository
+import se.gustavkarlsson.chefgpt.api.SessionId
 
 class StartViewModel(
     private val sessionRepository: SessionRepository,
@@ -21,6 +24,7 @@ class StartViewModel(
 ) : ViewModel() {
     private data class State(
         val username: String? = null,
+        val sessionId: SessionId? = null,
         val inputUsername: String = "",
         val inputPassword: String = "",
     )
@@ -37,7 +41,7 @@ class StartViewModel(
 
         data class LoggedIn(
             val username: String,
-            val onClickStartChatting: () -> Unit,
+            val onClickStartChatting: (Navigator) -> Unit,
         ) : ViewState
     }
 
@@ -51,17 +55,15 @@ class StartViewModel(
     init {
         val credentials = sessionRepository.load()
         if (credentials != null) {
-            innerState.value = State(username = credentials.username)
+            innerState.value = State(username = credentials.username, sessionId = credentials.sessionId)
         }
     }
 
     private fun State.toViewState(): ViewState =
-        if (username != null) {
+        if (username != null && sessionId != null) {
             ViewState.LoggedIn(
                 username = username,
-                onClickStartChatting = {
-                    // TODO Navigate to chat
-                },
+                onClickStartChatting = { navigator -> navigator.replace(Route.Chat(sessionId)) },
             )
         } else {
             ViewState.LoggedOut(
@@ -77,7 +79,7 @@ class StartViewModel(
                                     .register(inputUsername, inputPassword)
                                     .onOk { sessionId ->
                                         sessionRepository.save(SessionCredentials(inputUsername, sessionId))
-                                        innerState.update { it.copy(username = inputUsername) }
+                                        innerState.update { it.copy(username = inputUsername, sessionId = sessionId) }
                                     }.onErr { errorResponse ->
                                         // TODO Show message?
                                         //  Modify state?
@@ -95,7 +97,7 @@ class StartViewModel(
                                     .login(inputUsername, inputPassword)
                                     .onOk { sessionId ->
                                         sessionRepository.save(SessionCredentials(inputUsername, sessionId))
-                                        innerState.update { it.copy(username = inputUsername) }
+                                        innerState.update { it.copy(username = inputUsername, sessionId = sessionId) }
                                     }.onErr { errorResponse ->
                                         // TODO Show message?
                                         //  Modify state?
