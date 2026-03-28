@@ -29,6 +29,7 @@ import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.ChatId
+import se.gustavkarlsson.chefgpt.auth.SessionStore
 import se.gustavkarlsson.chefgpt.auth.User
 import se.gustavkarlsson.chefgpt.auth.UserRepository
 import se.gustavkarlsson.chefgpt.chats.Chat
@@ -42,11 +43,26 @@ import kotlin.time.Duration.Companion.seconds
 fun Routing.routes() {
     post("/register") {
         val userRepository: UserRepository by application.dependencies
+        val sessionStore: SessionStore by application.dependencies
         val credentials =
             call.request.basicAuthenticationCredentials() ?: throw BadRequestException("Invalid Credentials")
         val user = userRepository.register(credentials.name, credentials.password)
         if (user != null) {
-            call.respond(HttpStatusCode.Created)
+            val sessionId = sessionStore.create(user)
+            call.respond(HttpStatusCode.Created, sessionId.value.toString())
+        } else {
+            call.respond(HttpStatusCode.Unauthorized)
+        }
+    }
+    post("/login") {
+        val userRepository: UserRepository by application.dependencies
+        val sessionStore: SessionStore by application.dependencies
+        val credentials =
+            call.request.basicAuthenticationCredentials() ?: throw BadRequestException("Invalid Credentials")
+        val user = userRepository.login(credentials.name, credentials.password)
+        if (user != null) {
+            val sessionId = sessionStore.create(user)
+            call.respond(HttpStatusCode.OK, sessionId.value.toString())
         } else {
             call.respond(HttpStatusCode.Unauthorized)
         }

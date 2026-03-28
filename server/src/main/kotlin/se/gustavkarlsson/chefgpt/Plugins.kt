@@ -5,7 +5,7 @@ import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.auth.authentication
-import io.ktor.server.auth.basic
+import io.ktor.server.auth.bearer
 import io.ktor.server.config.ApplicationConfig
 import io.ktor.server.plugins.calllogging.CallLogging
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
@@ -14,8 +14,11 @@ import io.ktor.server.sse.SSE
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.v1.jdbc.Database
 import se.gustavkarlsson.chefgpt.agent.EventBackedChatMemory
+import se.gustavkarlsson.chefgpt.api.SessionId
+import se.gustavkarlsson.chefgpt.auth.InMemorySessionStore
 import se.gustavkarlsson.chefgpt.auth.InMemoryUserRepository
 import se.gustavkarlsson.chefgpt.auth.PostgresUserRepository
+import se.gustavkarlsson.chefgpt.auth.SessionStore
 import se.gustavkarlsson.chefgpt.auth.UserRepository
 import se.gustavkarlsson.chefgpt.auth.registrationRules
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
@@ -50,6 +53,8 @@ fun Application.plugins(config: ApplicationConfig) {
         }
         provide(PostgresUserRepository::class)
         provide<UserRepository> { resolve<PostgresUserRepository>() }
+
+        provide<SessionStore> { InMemorySessionStore() }
 
         provide<ChatRepository> { chatRepository }
         provide { createCloudinaryImageUploader(config.config("chefgpt.cloudinary")) }
@@ -110,10 +115,13 @@ fun Application.plugins(config: ApplicationConfig) {
     }
 
     authentication {
-        basic {
-            validate { credentials ->
-                val userRepository: UserRepository by application.dependencies
-                userRepository.login(credentials.name, credentials.password)
+        bearer {
+            authenticate { credential ->
+                val sessionStore: SessionStore by application.dependencies
+                val sessionId =
+                    runCatching { SessionId.parse(credential.token) }.getOrNull()
+                        ?: return@authenticate null
+                sessionStore.get(sessionId)
             }
         }
     }
