@@ -1,18 +1,21 @@
 package se.gustavkarlsson.chefgpt.auth
 
 class UserRegistrationRule(
-    val errorMessage: String,
-    val validate: (name: String, password: String) -> Boolean,
+    val validate: (name: String, password: String) -> RegistrationError?,
 ) {
     companion object {
         fun name(
             errorMessage: String,
             validate: (name: String) -> Boolean,
-        ) = UserRegistrationRule(errorMessage) { name, _ -> validate(name) }
+        ) = UserRegistrationRule { name, _ ->
+            if (validate(name)) null else RegistrationError.InvalidUserName(errorMessage)
+        }
 
         fun password(
             errorMessage: String,
             validate: (password: String) -> Boolean,
-        ) = UserRegistrationRule(errorMessage) { _, password -> validate(password) }
+        ) = UserRegistrationRule { _, password ->
+            if (validate(password)) null else RegistrationError.InvalidPassword(errorMessage)
+        }
     }
 }

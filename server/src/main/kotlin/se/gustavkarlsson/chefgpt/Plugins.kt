@@ -21,8 +21,8 @@ import org.jetbrains.exposed.v1.jdbc.Database
 import se.gustavkarlsson.chefgpt.agent.EventBackedChatMemory
 import se.gustavkarlsson.chefgpt.auth.InMemoryUserRepository
 import se.gustavkarlsson.chefgpt.auth.PostgresUserRepository
+import se.gustavkarlsson.chefgpt.auth.Session
 import se.gustavkarlsson.chefgpt.auth.UserRepository
-import se.gustavkarlsson.chefgpt.auth.UserSession
 import se.gustavkarlsson.chefgpt.auth.registrationRules
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.InMemoryChatRepository
@@ -116,11 +116,11 @@ fun Application.plugins(config: ApplicationConfig) {
     }
 
     install(Sessions) {
-        header<UserSession>("Session-Id", SessionStorageMemory())
+        header<Session>("Session-Id", SessionStorageMemory())
     }
 
     authentication {
-        session<UserSession> {
+        session<Session> {
             validate { session ->
                 val userRepository: UserRepository by application.dependencies
                 session.takeIf { it.user.name in userRepository }

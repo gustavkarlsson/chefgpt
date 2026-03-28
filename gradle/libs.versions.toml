@@ -16,6 +16,7 @@ jvmToolchain = "21" # Jetbrains Hot-Reload needs this
 koin = "4.1.1"
 koog = "0.7.2"
 kotlin = "2.3.20"
+kotlinResult = "2.3.1"
 kotlinxCoroutines = "1.10.2"
 kotlinxSerializationJson = "1.10.0"
 ktlint = "1.8.0"
@@ -97,6 +98,9 @@ slf4jApi = { module = "org.slf4j:slf4j-api", version.ref = "slf4jSimple" }
 # Coil
 coilCompose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 coilNetworkKtor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
+
+# Misc
+kotlinResult = { module = "com.michael-bull.kotlin-result:kotlin-result", version.ref = "kotlinResult" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

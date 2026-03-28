@@ -1,7 +1,14 @@
 package se.gustavkarlsson.chefgpt
 
+import com.github.michaelbull.result.Result
+import com.github.michaelbull.result.flatMap
+import com.github.michaelbull.result.map
+import com.github.michaelbull.result.mapError
+import com.github.michaelbull.result.runCatching
+import com.github.michaelbull.result.toErrorIfNull
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
+import io.ktor.server.auth.UserPasswordCredential
 import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.basicAuthenticationCredentials
 import io.ktor.server.auth.principal
@@ -27,14 +34,16 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import se.gustavkarlsson.chefgpt.agent.runAgent
 import se.gustavkarlsson.chefgpt.api.ApiAction
+import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.SessionId
-import se.gustavkarlsson.chefgpt.auth.User
+import se.gustavkarlsson.chefgpt.auth.LoginError
+import se.gustavkarlsson.chefgpt.auth.RegistrationError
+import se.gustavkarlsson.chefgpt.auth.Session
 import se.gustavkarlsson.chefgpt.auth.UserRepository
-import se.gustavkarlsson.chefgpt.auth.UserSession
 import se.gustavkarlsson.chefgpt.chats.Chat
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.createEvent
@@ -45,30 +54,57 @@ import kotlin.time.Duration.Companion.seconds
 // TODO set timeouts
 fun Routing.routes() {
     post("/register") {
-        val userRepository: UserRepository by application.dependencies
-        val credentials =
-            call.request.basicAuthenticationCredentials() ?: throw BadRequestException("Invalid Credentials")
-        val user = userRepository.register(credentials.name, credentials.password)
-        if (user != null) {
-            val sessionId = SessionId.random()
-            call.sessions.set(UserSession(sessionId, user))
-            call.respond(HttpStatusCode.Created, sessionId.toString())
-        } else {
-            call.respond(HttpStatusCode.Unauthorized)
-        }
+        call
+            .getCredentials()
+            .flatMap { credentials ->
+                val userRepository: UserRepository by application.dependencies
+                userRepository.register(credentials.name, credentials.password).mapError { registrationError ->
+                    when (registrationError) {
+                        is RegistrationError.InvalidUserName -> {
+                            ResponseData(
+                                status = HttpStatusCode.BadRequest,
+                                body = ApiError("invalid-username", registrationError.message),
+                            )
+                        }
+
+                        is RegistrationError.InvalidPassword -> {
+                            ResponseData(
+                                status = HttpStatusCode.BadRequest,
+                                body = ApiError("invalid-password", registrationError.message),
+                            )
+                        }
+
+                        RegistrationError.UsernameTaken -> {
+                            ResponseData(HttpStatusCode.Conflict)
+                        }
+                    }
+                }
+            }.map { user ->
+                val sessionId = SessionId.random()
+                call.sessions.set(Session(sessionId, user))
+                ResponseData(HttpStatusCode.Created, sessionId.toString())
+            }.respond(call)
     }
     post("/login") {
-        val userRepository: UserRepository by application.dependencies
-        val credentials =
-            call.request.basicAuthenticationCredentials() ?: throw BadRequestException("Invalid Credentials")
-        val user = userRepository.login(credentials.name, credentials.password)
-        if (user != null) {
-            val sessionId = SessionId.random()
-            call.sessions.set(UserSession(sessionId, user))
-            call.respond(HttpStatusCode.OK, sessionId.toString())
-        } else {
-            call.respond(HttpStatusCode.Unauthorized)
-        }
+        call
+            .getCredentials()
+            .flatMap { credentials ->
+                val userRepository: UserRepository by application.dependencies
+                userRepository.login(credentials.name, credentials.password).mapError { loginError ->
+                    when (loginError) {
+                        LoginError.WrongCredentials -> {
+                            ResponseData(
+                                status = HttpStatusCode.Unauthorized,
+                                body = ApiError("wrong-credentials", "Wrong credentials"),
+                            )
+                        }
+                    }
+                }
+            }.map { user ->
+                val sessionId = SessionId.random()
+                call.sessions.set(Session(sessionId, user))
+                ResponseData(HttpStatusCode.OK, sessionId.toString())
+            }.respond(call)
     }
     authenticate {
         // Upload an image and return the URL
@@ -82,8 +118,8 @@ fun Routing.routes() {
             // Start a new chat and return the ChatId
             post {
                 val chatRepository: ChatRepository by application.dependencies
-                val user = call.requireUser()
-                val chat = chatRepository.create(user.id)
+                val session = call.requireSession()
+                val chat = chatRepository.create(session.user.id)
                 call.respond(HttpStatusCode.Created, chat.id.value.toString())
             }
             route("/{chatId}") {
@@ -108,7 +144,7 @@ fun Routing.routes() {
                 }
                 // Send an event, some of which may be processed by an LLM
                 post("/actions") {
-                    val user = call.requireUser()
+                    val session = call.requireSession()
                     val chat = call.requireChat()
                     val action = call.receive<ApiAction>()
                     chat.append(action.createEvent())
@@ -118,7 +154,7 @@ fun Routing.routes() {
                         }
 
                         is ApiUserSendsMessage -> {
-                            runAgent(user.id, chat.id)
+                            runAgent(session.user.id, chat.id)
                             call.respond(HttpStatusCode.OK)
                         }
                     }
@@ -128,16 +164,39 @@ fun Routing.routes() {
     }
 }
 
-private fun ApplicationCall.requireUser(): User =
-    checkNotNull(principal<UserSession>()) {
-        "User principal missing. Are you calling this in a non-authenticated endpoint?"
-    }.user
+private fun ApplicationCall.getCredentials(): Result<UserPasswordCredential, ResponseData<ApiError>> =
+    runCatching { request.basicAuthenticationCredentials() }
+        .mapError { throwable ->
+            when (throwable) {
+                is BadRequestException -> {
+                    ResponseData(
+                        status = HttpStatusCode.BadRequest,
+                        body = ApiError("invalid-credentials", "Invalid credentials"),
+                    )
+                }
 
+                else -> {
+                    ResponseData(HttpStatusCode.InternalServerError)
+                }
+            }
+        }.toErrorIfNull {
+            ResponseData(
+                status = HttpStatusCode.BadRequest,
+                body = ApiError("missing-credentials", "Missing credentials"),
+            )
+        }
+
+private fun ApplicationCall.requireSession(): Session =
+    checkNotNull(principal<Session>()) {
+        "User principal missing. Are we calling this in a non-authenticated endpoint?"
+    }
+
+// FIXME return result instead, as this might be a user error
 private suspend fun ApplicationCall.requireChat(): Chat {
     val chatRepository: ChatRepository by application.dependencies
-    val user = requireUser()
+    val session = requireSession()
     val chatId = requireChatId()
-    return chatRepository[user.id, chatId] ?: throw NotFoundException("Chat not found for user")
+    return chatRepository[session.user.id, chatId] ?: throw NotFoundException("Chat not found for user")
 }
 
 private fun ApplicationCall.requireChatId(): ChatId = ChatId.parse(parameters.getOrFail("chatId"))

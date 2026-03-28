@@ -49,6 +49,9 @@ dependencies {
     implementation(libs.ktorClientContentNegotiation)
     implementation(libs.ktorSerializationKotlinxJson)
 
+    // Misc
+    implementation(libs.kotlinResult)
+
     // Koog
     implementation(libs.koogKtor)
 

@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 import se.gustavkarlsson.chefgpt.api.SessionId
 
 @Serializable
-data class UserSession(
+data class Session(
     val sessionId: SessionId,
     val user: User,
 )

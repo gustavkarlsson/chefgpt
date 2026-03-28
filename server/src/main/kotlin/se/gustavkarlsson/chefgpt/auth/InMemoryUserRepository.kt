@@ -1,6 +1,8 @@
 package se.gustavkarlsson.chefgpt.auth
 
-import io.ktor.server.plugins.BadRequestException
+import com.github.michaelbull.result.Err
+import com.github.michaelbull.result.Ok
+import com.github.michaelbull.result.Result
 import kotlinx.io.bytestring.ByteString
 import java.security.MessageDigest
 
@@ -14,33 +16,33 @@ class InMemoryUserRepository(
     override suspend fun register(
         name: String,
         password: String,
-    ): User? {
+    ): Result<User, RegistrationError> {
         val registrationError =
             rules.firstNotNullOfOrNull { rule ->
-                rule.errorMessage.takeUnless { rule.validate(name, password) }
+                rule.validate(name, password)
             }
         if (registrationError != null) {
-            throw BadRequestException(registrationError) // TODO Don't throw. Return a result instead
+            return Err(registrationError)
         }
 
         val user = User(id = UserId.random(), name = name)
         val alreadyRegistered = users.putIfAbsent(name, UserData(user, hash(password)))
         return if (alreadyRegistered == null) {
-            user
+            Ok(user)
         } else {
-            null
+            Err(RegistrationError.UsernameTaken)
         }
     }
 
     override suspend fun login(
         name: String,
         password: String,
-    ): User? {
-        val userData = users[name] ?: return null
+    ): Result<User, LoginError> {
+        val userData = users[name] ?: return Err(LoginError.WrongCredentials)
         return if (userData.passwordHash == hash(password)) {
-            userData.user
+            Ok(userData.user)
         } else {
-            null
+            Err(LoginError.WrongCredentials)
         }
     }
 

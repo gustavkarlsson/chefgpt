@@ -1,6 +1,8 @@
 package se.gustavkarlsson.chefgpt.auth
 
-import io.ktor.server.plugins.BadRequestException
+import com.github.michaelbull.result.Err
+import com.github.michaelbull.result.Ok
+import com.github.michaelbull.result.Result
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.UuidTable
 import org.jetbrains.exposed.v1.core.eq
@@ -41,14 +43,14 @@ class PostgresUserRepository(
     override suspend fun register(
         name: String,
         password: String,
-    ): User? =
+    ): Result<User, RegistrationError> =
         db.withTransaction {
             val registrationError =
                 rules.firstNotNullOfOrNull { rule ->
-                    rule.errorMessage.takeUnless { rule.validate(name, password) }
+                    rule.validate(name, password)
                 }
             if (registrationError != null) {
-                throw BadRequestException(registrationError) // TODO Don't throw. Return a result instead
+                return@withTransaction Err(registrationError)
             }
 
             val exists = UserDao.find { UserTable.username eq name }.limit(1).any()
@@ -60,21 +62,27 @@ class PostgresUserRepository(
                         passwordSalt = salt
                         passwordHash = hash(password, salt)
                     }
-                userDao.toUser()
+                Ok(userDao.toUser())
             } else {
-                null
+                Err(RegistrationError.UsernameTaken)
             }
         }
 
     override suspend fun login(
         name: String,
         password: String,
-    ): User? =
+    ): Result<User, LoginError> =
         db.withTransaction {
             val userDao =
-                UserDao.find { UserTable.username eq name }.limit(1).firstOrNull() ?: return@withTransaction null
+                UserDao.find { UserTable.username eq name }.limit(1).firstOrNull() ?: return@withTransaction Err(
+                    LoginError.WrongCredentials,
+                )
             val expectedHash = hash(password, userDao.passwordSalt)
-            if (userDao.passwordHash.contentEquals(expectedHash)) userDao.toUser() else null
+            if (userDao.passwordHash.contentEquals(expectedHash)) {
+                Ok(userDao.toUser())
+            } else {
+                Err(LoginError.WrongCredentials)
+            }
         }
 
     override suspend operator fun contains(name: String): Boolean =
