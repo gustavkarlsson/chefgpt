@@ -66,6 +66,7 @@ dependencies {
     testImplementation(libs.kotlinTestJunit)
 }
 
+// FIXME does this run even if we just do ./gradlew run?
 tasks.register("runWithDocker") {
     group = "application"
     description = "Ensures the chefgpt postgres container is running, then runs the server"

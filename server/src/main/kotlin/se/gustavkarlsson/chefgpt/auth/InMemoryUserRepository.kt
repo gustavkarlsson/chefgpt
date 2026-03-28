@@ -44,6 +44,8 @@ class InMemoryUserRepository(
         }
     }
 
+    override suspend operator fun contains(name: String): Boolean = name in users
+
     // Not the safest way to do this, but it's fine for now
     private fun hash(password: String) = ByteString(md5.digest(password.encodeToByteArray()))
 }

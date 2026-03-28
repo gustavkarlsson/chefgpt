@@ -77,6 +77,13 @@ class PostgresUserRepository(
             if (userDao.passwordHash.contentEquals(expectedHash)) userDao.toUser() else null
         }
 
+    override suspend operator fun contains(name: String): Boolean =
+        db.withTransaction {
+            val userDao =
+                UserDao.find { UserTable.username eq name }.limit(1).firstOrNull()
+            userDao != null
+        }
+
     private fun generateSalt(): ByteArray = ByteArray(SALT_BYTE_COUNT).also { secureRandom.nextBytes(it) }
 
     private fun hash(

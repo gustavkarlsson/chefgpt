@@ -123,7 +123,7 @@ fun Application.plugins(config: ApplicationConfig) {
         session<UserSession> {
             validate { session ->
                 val userRepository: UserRepository by application.dependencies
-                session.takeIf { it.user.id in userRepository }
+                session.takeIf { it.user.name in userRepository }
             }
             challenge { call.respond(HttpStatusCode.Unauthorized) }
         }

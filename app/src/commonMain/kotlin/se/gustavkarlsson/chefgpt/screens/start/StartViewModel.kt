@@ -7,7 +7,10 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import se.gustavkarlsson.chefgpt.ChefGptClient
+import se.gustavkarlsson.chefgpt.SessionCredentials
 import se.gustavkarlsson.chefgpt.SessionRepository
 
 class StartViewModel(
@@ -26,6 +29,7 @@ class StartViewModel(
             val password: String,
             val onUsernameChange: (String) -> Unit,
             val onPasswordChange: (String) -> Unit,
+            val onClickRegister: (() -> Unit)?,
             val onClickLogin: (() -> Unit)?,
         ) : ViewState
 
@@ -63,10 +67,35 @@ class StartViewModel(
                 password = inputPassword,
                 onUsernameChange = { innerState.value = innerState.value.copy(inputUsername = it) },
                 onPasswordChange = { innerState.value = innerState.value.copy(inputPassword = it) },
+                onClickRegister =
+                    if (inputUsername.isNotBlank() && inputPassword.isNotBlank()) {
+                        {
+                            viewModelScope.launch {
+                                val sessionId =
+                                    runCatching { client.register(inputUsername, inputPassword) }.getOrNull()
+                                if (sessionId != null) {
+                                    sessionRepository.save(SessionCredentials(inputUsername, sessionId))
+                                    innerState.update { it.copy(username = inputUsername) }
+                                } else {
+                                    // TODO what if failure?
+                                }
+                            }
+                        }
+                    } else {
+                        null
+                    },
                 onClickLogin =
                     if (inputUsername.isNotBlank() && inputPassword.isNotBlank()) {
                         {
-                            // TODO Implement login
+                            viewModelScope.launch {
+                                val sessionId = runCatching { client.login(inputUsername, inputPassword) }.getOrNull()
+                                if (sessionId != null) {
+                                    sessionRepository.save(SessionCredentials(inputUsername, sessionId))
+                                    innerState.update { it.copy(username = inputUsername) }
+                                } else {
+                                    // TODO what if failure?
+                                }
+                            }
                         }
                     } else {
                         null

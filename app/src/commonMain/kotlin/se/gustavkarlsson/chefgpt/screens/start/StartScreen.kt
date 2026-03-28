@@ -43,6 +43,7 @@ private fun Content(viewState: ViewState) {
                     password = viewState.password,
                     onUsernameChange = viewState.onUsernameChange,
                     onPasswordChange = viewState.onPasswordChange,
+                    onClickRegister = viewState.onClickRegister,
                     onClickLogin = viewState.onClickLogin,
                 )
             }
@@ -63,6 +64,7 @@ private fun LoggedOutContent(
     password: String,
     onUsernameChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
+    onClickRegister: (() -> Unit)?,
     onClickLogin: (() -> Unit)?,
 ) {
     Text(
@@ -92,6 +94,9 @@ private fun LoggedOutContent(
         visualTransformation = PasswordVisualTransformation(),
         modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
     )
+    Button(onClick = { onClickRegister?.invoke() }, enabled = onClickRegister != null) {
+        Text("Register")
+    }
     Button(onClick = { onClickLogin?.invoke() }, enabled = onClickLogin != null) {
         Text("Sign in")
     }
