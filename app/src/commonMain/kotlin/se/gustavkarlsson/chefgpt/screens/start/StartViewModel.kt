@@ -7,14 +7,13 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import se.gustavkarlsson.chefgpt.LoginRepository
+import se.gustavkarlsson.chefgpt.SessionRepository
 
 class StartViewModel(
-    private val loginRepository: LoginRepository,
+    private val sessionRepository: SessionRepository,
 ) : ViewModel() {
     private data class State(
         val loggedIn: Boolean = false,
-        val userName: String? = null,
         val inputUsername: String = "",
         val inputPassword: String = "",
     )
@@ -29,7 +28,6 @@ class StartViewModel(
         ) : ViewState
 
         data class LoggedIn(
-            val userName: String,
             val onClickStartChatting: () -> Unit,
         ) : ViewState
     }
@@ -42,16 +40,15 @@ class StartViewModel(
             .stateIn(viewModelScope, SharingStarted.Eagerly, innerState.value.toViewState())
 
     init {
-        val credentials = loginRepository.load()
-        if (credentials != null) {
-            innerState.value = State(loggedIn = true, userName = credentials.username)
+        val sessionId = sessionRepository.load()
+        if (sessionId != null) {
+            innerState.value = State(loggedIn = true)
         }
     }
 
     private fun State.toViewState(): ViewState =
-        if (loggedIn && userName != null) {
+        if (loggedIn) {
             ViewState.LoggedIn(
-                userName = userName,
                 onClickStartChatting = {
                     // TODO Navigate to chat
                 },

@@ -16,21 +16,23 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
 import se.gustavkarlsson.chefgpt.ChefGptClient
-import se.gustavkarlsson.chefgpt.LoginRepository
+import se.gustavkarlsson.chefgpt.SessionRepository
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserJoined
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.ChatId
+import se.gustavkarlsson.chefgpt.api.SessionId
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
 
 // TODO Fix error handling
 class ChatViewModel(
-    private val loginRepository: LoginRepository,
+    private val sessionRepository: SessionRepository,
 ) : ViewModel() {
     private data class State(
         val client: ChefGptClient? = null,
+        val sessionId: SessionId? = null,
         val chatId: ChatId? = null,
         val joinId: Uuid? = null,
         val events: List<ApiEvent> = emptyList(),
@@ -81,7 +83,7 @@ class ChatViewModel(
 
     private fun State.toViewState(): ViewState =
         ViewState(
-            connected = client != null && chatId != null && joinId != null,
+            connected = client != null && sessionId != null && chatId != null && joinId != null,
             events = events,
             userText = userText,
             attachedImage = attachedImage,
@@ -119,44 +121,46 @@ class ChatViewModel(
                 innerState.getAndUpdate {
                     it.copy(userText = "", attachedImage = null)
                 }
-            if (lastState.client == null || lastState.chatId == null) {
+            if (lastState.client == null || lastState.sessionId == null || lastState.chatId == null) {
                 return@launch
             }
             val imageUrl =
                 lastState.attachedImage?.let { path ->
                     val extension = path.toString().substringAfterLast(".")
-                    lastState.client.uploadImage(path, ContentType("image", extension))
+                    lastState.client.uploadImage(lastState.sessionId, path, ContentType("image", extension))
                 }
-            lastState.client.sendAction(lastState.chatId, ApiUserSendsMessage(lastState.userText, imageUrl))
+            lastState.client.sendAction(
+                lastState.sessionId,
+                lastState.chatId,
+                ApiUserSendsMessage(lastState.userText, imageUrl),
+            )
         }
     }
 
     private suspend fun CoroutineScope.runSession() {
-        // TODO Handle missing credentials gracefully instead of crashing
-        val credentials = loginRepository.load() ?: error("No credentials found")
-        val client = ChefGptClient(username = credentials.username, password = credentials.password)
+        val client = ChefGptClient()
         innerState.update { it.copy(client = client) }
-        check(client.register()) {
-            "Registration failed"
-        }
+        // FIXME Handle missing session gracefully (e.g. navigate to login screen)
+        val sessionId = checkNotNull(sessionRepository.load()) { "No session found" }
+        innerState.update { it.copy(sessionId = sessionId) }
         val joinId = Uuid.random()
         innerState.update { it.copy(joinId = joinId) }
-        val chatId = client.createChat()
+        val chatId = client.createChat(sessionId)
         innerState.update { it.copy(chatId = chatId, events = emptyList()) }
         val listenJob =
             launch {
-                client.listenToEvents(chatId).collect { event ->
+                client.listenToEvents(sessionId, chatId).collect { event ->
                     innerState.update { it.copy(events = it.events + event) }
                 }
             }
-        client.sendAction(chatId, ApiUserJoinedChat(joinId))
+        client.sendAction(sessionId, chatId, ApiUserJoinedChat(joinId))
         listenJob.join()
     }
 
     private fun stopSession() {
         innerState.update {
             it.client?.close()
-            it.copy(client = null, chatId = null, joinId = null)
+            it.copy(client = null, sessionId = null, chatId = null, joinId = null)
         }
     }
 }
