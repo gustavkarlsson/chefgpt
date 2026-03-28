@@ -49,11 +49,11 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import com.mikepenz.markdown.m3.Markdown
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
+import org.koin.compose.viewmodel.koinViewModel
 import se.gustavkarlsson.chefgpt.api.ApiAgentEvent
 import se.gustavkarlsson.chefgpt.api.ApiAgentMessage
 import se.gustavkarlsson.chefgpt.api.ApiAgentReasoning
@@ -66,7 +66,7 @@ import se.gustavkarlsson.chefgpt.screens.chat.ChatViewModel.ViewState
 
 @Composable
 fun ChatScreen() {
-    val viewModel = viewModel { ChatViewModel() }
+    val viewModel = koinViewModel<ChatViewModel>()
     val viewState by viewModel.viewState.collectAsState()
     Content(viewState)
 }

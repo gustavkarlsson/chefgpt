@@ -30,8 +30,8 @@ import se.gustavkarlsson.chefgpt.api.ImageUrl
 
 class ChefGptClient(
     private val baseUrl: String = "http://localhost:8080",
-    username: String = (0..10).map { ('a'..'z').random() }.joinToString(""),
-    password: String = "Pa55w0rd!!!!!",
+    username: String,
+    password: String,
     developmentMode: Boolean = false,
 ) : AutoCloseable {
     private val json =

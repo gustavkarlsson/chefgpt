@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
 import se.gustavkarlsson.chefgpt.ChefGptClient
+import se.gustavkarlsson.chefgpt.LoginRepository
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserJoined
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
@@ -25,7 +26,9 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
 
 // TODO Fix error handling
-class ChatViewModel : ViewModel() {
+class ChatViewModel(
+    private val loginRepository: LoginRepository,
+) : ViewModel() {
     private data class State(
         val client: ChefGptClient? = null,
         val chatId: ChatId? = null,
@@ -129,7 +132,9 @@ class ChatViewModel : ViewModel() {
     }
 
     private suspend fun CoroutineScope.runSession() {
-        val client = ChefGptClient()
+        // TODO Handle missing credentials gracefully instead of crashing
+        val credentials = loginRepository.load() ?: error("No credentials found")
+        val client = ChefGptClient(username = credentials.username, password = credentials.password)
         innerState.update { it.copy(client = client) }
         check(client.register()) {
             "Registration failed"
