@@ -62,12 +62,17 @@ import se.gustavkarlsson.chefgpt.api.ApiSystemEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserMessage
 import se.gustavkarlsson.chefgpt.pickImageFile
+import se.gustavkarlsson.chefgpt.screens.chat.ChatViewModel.ViewState
 
 @Composable
-internal fun ChatScreen() {
+fun ChatScreen() {
     val viewModel = viewModel { ChatViewModel() }
     val viewState by viewModel.viewState.collectAsState()
+    Content(viewState)
+}
 
+@Composable
+private fun Content(viewState: ViewState) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
     ) { paddingValues ->

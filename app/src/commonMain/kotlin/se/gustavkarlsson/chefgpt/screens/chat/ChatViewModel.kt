@@ -45,17 +45,17 @@ class ChatViewModel : ViewModel() {
         val onImageCleared: (() -> Unit)?,
     ) {
         val onUserTextChanged: (String) -> Unit
-            get() = { text -> state.update { it.copy(userText = text) } }
+            get() = { text -> innerState.update { it.copy(userText = text) } }
         val onImageAttached: (Path) -> Unit
-            get() = { image -> state.update { it.copy(attachedImage = image) } }
+            get() = { image -> innerState.update { it.copy(attachedImage = image) } }
     }
 
-    private val state = MutableStateFlow(State())
+    private val innerState = MutableStateFlow(State())
 
     val viewState: StateFlow<ViewState> =
-        state
+        innerState
             .map { it.toViewState() }
-            .stateIn(viewModelScope, SharingStarted.Eagerly, state.value.toViewState())
+            .stateIn(viewModelScope, SharingStarted.Eagerly, innerState.value.toViewState())
 
     init {
         viewModelScope.launch {
@@ -90,7 +90,7 @@ class ChatViewModel : ViewModel() {
                 },
             onImageCleared =
                 if (attachedImage != null) {
-                    { state.update { it.copy(attachedImage = null) } }
+                    { innerState.update { it.copy(attachedImage = null) } }
                 } else {
                     null
                 },
@@ -113,7 +113,7 @@ class ChatViewModel : ViewModel() {
             // TODO what prevents the user from quickly sending two messages in a row?
             //  Do we need to update some kind of "waiting" state?
             val lastState =
-                state.getAndUpdate {
+                innerState.getAndUpdate {
                     it.copy(userText = "", attachedImage = null)
                 }
             if (lastState.client == null || lastState.chatId == null) {
@@ -130,18 +130,18 @@ class ChatViewModel : ViewModel() {
 
     private suspend fun CoroutineScope.runSession() {
         val client = ChefGptClient()
-        state.update { it.copy(client = client) }
+        innerState.update { it.copy(client = client) }
         check(client.register()) {
             "Registration failed"
         }
         val joinId = Uuid.random()
-        state.update { it.copy(joinId = joinId) }
+        innerState.update { it.copy(joinId = joinId) }
         val chatId = client.createChat()
-        state.update { it.copy(chatId = chatId, events = emptyList()) }
+        innerState.update { it.copy(chatId = chatId, events = emptyList()) }
         val listenJob =
             launch {
                 client.listenToEvents(chatId).collect { event ->
-                    state.update { it.copy(events = it.events + event) }
+                    innerState.update { it.copy(events = it.events + event) }
                 }
             }
         client.sendAction(chatId, ApiUserJoinedChat(joinId))
@@ -149,7 +149,7 @@ class ChatViewModel : ViewModel() {
     }
 
     private fun stopSession() {
-        state.update {
+        innerState.update {
             it.client?.close()
             it.copy(client = null, chatId = null, joinId = null)
         }

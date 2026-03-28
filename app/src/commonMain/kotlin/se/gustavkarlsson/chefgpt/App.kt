@@ -24,10 +24,14 @@ import kotlinx.serialization.modules.contextual
 import kotlinx.serialization.modules.polymorphic
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.screens.chat.ChatScreen
+import se.gustavkarlsson.chefgpt.screens.start.StartScreen
 import se.gustavkarlsson.chefgpt.theme.ChefGptTheme
 
 @Serializable
 sealed interface Route : NavKey
+
+@Serializable
+data object Start : Route
 
 @Serializable
 data object Chat : Route
@@ -74,6 +78,7 @@ fun App() {
             onBack = { backStack.removeLastOrNull() },
             entryProvider =
                 entryProvider {
+                    entry<Start> { StartScreen() }
                     entry<Chat> { ChatScreen() }
                 },
         )
