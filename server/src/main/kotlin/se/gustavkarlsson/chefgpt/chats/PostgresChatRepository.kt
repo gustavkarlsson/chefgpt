@@ -37,7 +37,7 @@ class PostgresChatRepository(
         chatId: ChatId,
     ): Boolean =
         db.withTransaction {
-            Table.deleteWhere { Table.id eq chatId.value } > 0
+            Table.deleteWhere { id eq chatId.value } > 0
         }
 
     override suspend fun getAll(userId: UserId): List<Chat> =

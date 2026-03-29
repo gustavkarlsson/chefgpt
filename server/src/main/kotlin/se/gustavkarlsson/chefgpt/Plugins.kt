@@ -15,7 +15,6 @@ import io.ktor.server.plugins.di.dependencies
 import io.ktor.server.request.httpMethod
 import io.ktor.server.request.path
 import io.ktor.server.response.respond
-import io.ktor.server.sessions.SessionStorageMemory
 import io.ktor.server.sessions.Sessions
 import io.ktor.server.sessions.header
 import io.ktor.server.sse.SSE
@@ -24,6 +23,7 @@ import kotlinx.serialization.json.Json
 import org.slf4j.event.Level
 import se.gustavkarlsson.chefgpt.agent.EventBackedChatMemory
 import se.gustavkarlsson.chefgpt.auth.InMemoryUserRepository
+import se.gustavkarlsson.chefgpt.auth.PostgresSessionStorage
 import se.gustavkarlsson.chefgpt.auth.PostgresUserRepository
 import se.gustavkarlsson.chefgpt.auth.Session
 import se.gustavkarlsson.chefgpt.auth.UserRepository
@@ -50,14 +50,17 @@ fun Application.plugins(config: ApplicationConfig) {
             prettyPrint = developmentMode
         }
     val eventRepository = InMemoryEventRepository()
+
+    // TODO Clean up this mess!
+    val databaseConfig = config.config("database")
+    migrateDatabase(databaseConfig) // TODO This is ugly AF
+    val r2dbcDatabase = connectR2dbcDatabase(databaseConfig)
+    val postgresSessionStorage = PostgresSessionStorage(r2dbcDatabase)
+
     dependencies {
         provide { registrationRules }
         provide(InMemoryUserRepository::class)
-        provide {
-            val databaseConfig = config.config("database")
-            migrateDatabase(databaseConfig)
-            connectR2dbcDatabase(databaseConfig)
-        }
+        provide { r2dbcDatabase }
         provide(PostgresUserRepository::class)
         provide<UserRepository> { resolve<PostgresUserRepository>() }
 
@@ -155,7 +158,7 @@ fun Application.plugins(config: ApplicationConfig) {
     }
 
     install(Sessions) {
-        header<Session>("Session-Id", SessionStorageMemory())
+        header<Session>("Session-Id", postgresSessionStorage)
     }
 
     authentication {
