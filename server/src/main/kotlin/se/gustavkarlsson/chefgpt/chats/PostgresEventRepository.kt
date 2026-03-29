@@ -60,6 +60,6 @@ class PostgresEventRepository(
                 }
             }.map { it[EventTable.json] }
             .onCompletion {
-                error("Flow completed unexpectedly")
+                error("Flow completed unexpectedly") // FIXME fix this bug
             }
 }
