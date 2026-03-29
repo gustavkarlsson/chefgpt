@@ -1,17 +1,9 @@
 package se.gustavkarlsson.chefgpt.chats
 
-import ai.koog.prompt.message.ContentPart
-import ai.koog.prompt.message.Message
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import org.slf4j.LoggerFactory
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.auth.UserId
-
-private val logger = LoggerFactory.getLogger(ChatRepository::class.java)
 
 class InMemoryChatRepository : ChatRepository {
     private val chatIdsByUserId = mutableMapOf<UserId, MutableList<ChatId>>()
@@ -47,7 +39,7 @@ class InMemoryChatRepository : ChatRepository {
 
     override suspend fun create(userId: UserId): Chat =
         mutex.withLock {
-            val chat = InMemoryChat(ChatId.random())
+            val chat = Chat(ChatId.random())
             chatIdsByUserId.getOrPut(userId) { mutableListOf() }.add(chat.id)
             chatsByChatId[chat.id] = chat
             chat
@@ -66,47 +58,4 @@ class InMemoryChatRepository : ChatRepository {
         val userChatIds = chatIdsByUserId[userId].orEmpty()
         return chatsByChatId.filterKeys(userChatIds::contains).values.toList()
     }
-}
-
-private class InMemoryChat(
-    override val id: ChatId,
-) : Chat {
-    private val flow = MutableSharedFlow<Event>(replay = Int.MAX_VALUE)
-
-    override suspend fun append(event: Event) {
-        logger.info("Event: {}", event.truncate())
-        flow.emit(event)
-    }
-
-    private fun Event.truncate(): Event =
-        if (this is Event.Message) {
-            val truncatedParts =
-                message.parts.map { part ->
-                    if (part is ContentPart.Text) {
-                        val truncatedText =
-                            if (part.text.length > 50) {
-                                part.text.take(47) + "..."
-                            } else {
-                                part.text
-                            }
-                        part.copy(text = truncatedText)
-                    } else {
-                        part
-                    }
-                }
-            val message =
-                when (val message = message) {
-                    is Message.User -> message.copy(parts = truncatedParts)
-                    is Message.Assistant -> message.copy(parts = truncatedParts)
-                    is Message.System -> message.copy(parts = truncatedParts.filterIsInstance<ContentPart.Text>())
-                    is Message.Tool.Result -> message.copy(parts = truncatedParts.filterIsInstance<ContentPart.Text>())
-                    is Message.Reasoning -> message.copy(parts = truncatedParts.filterIsInstance<ContentPart.Text>())
-                    is Message.Tool.Call -> message.copy(parts = truncatedParts.filterIsInstance<ContentPart.Text>())
-                }
-            this.copy(message = message)
-        } else {
-            this
-        }
-
-    override suspend fun events(): SharedFlow<Event> = flow.asSharedFlow()
 }
