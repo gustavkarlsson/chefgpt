@@ -1,8 +1,8 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="app [js]" type="GradleRunConfiguration" factoryName="Gradle">
+  <configuration default="false" name="server [postgres run]" type="GradleRunConfiguration" factoryName="Gradle">
     <ExternalSystemSettings>
       <option name="executionName" />
-      <option name="externalProjectPath" value="$PROJECT_DIR$/app" />
+      <option name="externalProjectPath" value="$PROJECT_DIR$/server" />
       <option name="externalSystemIdString" value="GRADLE" />
       <option name="scriptParameters" value="" />
       <option name="taskDescriptions">
@@ -10,7 +10,8 @@
       </option>
       <option name="taskNames">
         <list>
-          <option value="jsBrowserDevelopmentRun" />
+          <option value="postgres" />
+          <option value="run" />
         </list>
       </option>
       <option name="vmOptions" />
@@ -20,8 +21,8 @@
     <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
     <DebugAllEnabled>false</DebugAllEnabled>
     <RunAsTest>false</RunAsTest>
-    <GradleProfilingDisabled>true</GradleProfilingDisabled>
-    <GradleCoverageDisabled>true</GradleCoverageDisabled>
+    <GradleProfilingDisabled>false</GradleProfilingDisabled>
+    <GradleCoverageDisabled>false</GradleCoverageDisabled>
     <method v="2" />
   </configuration>
 </component>

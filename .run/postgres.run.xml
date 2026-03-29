@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="postgres-chefgpt" type="docker-deploy" factoryName="docker-image" server-name="Docker">
+  <configuration default="false" name="postgres" type="docker-deploy" factoryName="docker-image" server-name="Docker">
     <deployment type="docker-image">
       <settings>
         <option name="imageTag" value="postgres:18.3" />
