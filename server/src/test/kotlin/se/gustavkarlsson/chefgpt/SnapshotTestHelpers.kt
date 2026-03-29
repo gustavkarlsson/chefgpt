@@ -8,7 +8,6 @@ import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.testing.testApplication
-import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.TestInfo
 import se.gustavkarlsson.slapshot.core.Serializer
 import se.gustavkarlsson.slapshot.core.SnapshotAction
@@ -35,7 +34,7 @@ fun snapshotTestApplication(
     application(applicationConfig)
     val client =
         createClient {
-            install(ContentNegotiation) { json(Json) }
+            install(ContentNegotiation) { json() }
             install(SnapshotTesting(snapshotContext.sanitizing()))
             clientConfig()
         }
@@ -66,8 +65,11 @@ private class SanitizingSnapshotContext(
                 overrideSnapshotFileResolver,
                 overrideAction,
             )
-        @Suppress("UNCHECKED_CAST")
         return SanitizingSnapshotter(realSnapshotter) { data ->
+            check(data is String) {
+                "SanitizingSnapshotter only works with String. Not ${data?.javaClass?.simpleName}"
+            }
+            @Suppress("UNCHECKED_CAST")
             sanitize(data as String) as T
         }
     }

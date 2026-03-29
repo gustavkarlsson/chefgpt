@@ -10,12 +10,12 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import se.gustavkarlsson.chefgpt.api.ApiAction
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
+import se.gustavkarlsson.chefgpt.api.JoinId
 import se.gustavkarlsson.slapshot.junit5.JUnit5SnapshotContext
 import se.gustavkarlsson.slapshot.junit5.SnapshotExtension
-import kotlin.uuid.Uuid
 
-private val FAKE_CHAT_ID = Uuid.parse("11111111-1111-1111-1111-111111111111")
-private val FAKE_JOIN_ID = Uuid.parse("22222222-2222-2222-2222-222222222222")
+private val FAKE_CHAT_ID = JoinId.parse("11111111-1111-1111-1111-111111111111")
+private val FAKE_JOIN_ID = JoinId.parse("22222222-2222-2222-2222-222222222222")
 
 @ExtendWith(SnapshotExtension::class)
 class ActionsSnapshotTest {
@@ -27,7 +27,7 @@ class ActionsSnapshotTest {
     }
 
     @Test
-    fun `unauthenticated`() =
+    fun unauthenticated() =
         snapshotTestApplication(snapshotContext) { client ->
             client.post("/chats/$FAKE_CHAT_ID/actions")
         }

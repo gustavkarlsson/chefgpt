@@ -19,6 +19,10 @@ value class JoinId(
 
     companion object {
         fun random(): JoinId = JoinId(Uuid.random())
+
+        fun parse(uuidString: String): JoinId = JoinId(Uuid.parse(uuidString))
+
+        fun parseOrNull(uuidString: String): JoinId? = Uuid.parseOrNull(uuidString)?.let(::JoinId)
     }
 }
 
