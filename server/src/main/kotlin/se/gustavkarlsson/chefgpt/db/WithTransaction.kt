@@ -1,12 +1,8 @@
 package se.gustavkarlsson.chefgpt.db
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import org.jetbrains.exposed.v1.jdbc.Database
-import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
-import org.jetbrains.exposed.v1.jdbc.transactions.inTopLevelSuspendTransaction
+import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
+import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
+import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 
-suspend fun <T> Database.withTransaction(block: suspend JdbcTransaction.() -> T): T =
-    withContext(Dispatchers.IO) {
-        inTopLevelSuspendTransaction(this@withTransaction) { block() }
-    }
+suspend fun <T> R2dbcDatabase.withTransaction(block: suspend R2dbcTransaction.() -> T): T =
+    suspendTransaction(this, statement = block)

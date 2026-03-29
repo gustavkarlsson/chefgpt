@@ -54,12 +54,12 @@ dependencies {
     // Koog
     implementation(libs.koogKtor)
 
-    // Database
-    implementation(libs.hikari)
-    implementation(libs.postgresDriver)
+    // Database (R2DBC for application, JDBC for Flyway migrations)
     implementation(libs.exposedCore)
-    implementation(libs.exposedJdbc)
-    implementation(libs.exposedDao)
+    implementation(libs.exposedR2dbc)
+    implementation(libs.r2dbcPostgres)
+    implementation(libs.r2dbcPool)
+    implementation(libs.postgresDriver)
     implementation(libs.flyway)
     implementation(libs.flywayPostgres)
 

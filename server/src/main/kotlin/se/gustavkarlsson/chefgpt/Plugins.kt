@@ -21,7 +21,7 @@ import io.ktor.server.sessions.header
 import io.ktor.server.sse.SSE
 import io.ktor.util.toMap
 import kotlinx.serialization.json.Json
-import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.slf4j.event.Level
 import se.gustavkarlsson.chefgpt.agent.EventBackedChatMemory
 import se.gustavkarlsson.chefgpt.auth.InMemoryUserRepository
@@ -33,7 +33,8 @@ import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventRepository
 import se.gustavkarlsson.chefgpt.chats.InMemoryChatRepository
 import se.gustavkarlsson.chefgpt.chats.InMemoryEventRepository
-import se.gustavkarlsson.chefgpt.db.createHikariDataSource
+import se.gustavkarlsson.chefgpt.db.connectR2dbcDatabase
+import se.gustavkarlsson.chefgpt.db.createSimpleDataSource
 import se.gustavkarlsson.chefgpt.db.migrateDatabase
 import se.gustavkarlsson.chefgpt.images.createCloudinaryImageUploader
 import se.gustavkarlsson.chefgpt.tools.SpoonacularClient
@@ -55,12 +56,12 @@ fun Application.plugins(config: ApplicationConfig) {
     val eventRepository = InMemoryEventRepository()
     dependencies {
         provide { registrationRules }
-        provide<DataSource> { createHikariDataSource(config.config("hikari")) }
+        provide<DataSource> { createSimpleDataSource(config.config("database")) }
         provide(InMemoryUserRepository::class)
         provide {
             val dataSource = resolve<DataSource>()
-            migrateDatabase(dataSource) // Migrate before creating the database wrapper
-            Database.connect(dataSource)
+            migrateDatabase(dataSource)
+            connectR2dbcDatabase(config.config("database"))
         }
         provide(PostgresUserRepository::class)
         provide<UserRepository> { resolve<PostgresUserRepository>() }

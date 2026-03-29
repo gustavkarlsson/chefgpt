@@ -1,12 +1,14 @@
 package se.gustavkarlsson.chefgpt.tools
 
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.dao.id.UuidTable
 import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.jdbc.Database
-import org.jetbrains.exposed.v1.jdbc.deleteWhere
-import org.jetbrains.exposed.v1.jdbc.insertIgnore
-import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
+import org.jetbrains.exposed.v1.r2dbc.deleteWhere
+import org.jetbrains.exposed.v1.r2dbc.insertIgnore
+import org.jetbrains.exposed.v1.r2dbc.selectAll
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.db.withTransaction
 
@@ -16,7 +18,7 @@ private object IngredientTable : UuidTable("ingredient") {
 }
 
 class PostgresIngredientStore(
-    private val db: Database,
+    private val db: R2dbcDatabase,
     private val ownerUserId: UserId,
 ) : IngredientStore {
     override suspend fun getIngredients(): List<String> =
@@ -25,6 +27,7 @@ class PostgresIngredientStore(
                 .selectAll()
                 .where { IngredientTable.userId eq ownerUserId.value }
                 .map { it[IngredientTable.name] }
+                .toList()
         }
 
     override suspend fun addIngredients(ingredients: List<String>): List<String> =
@@ -56,6 +59,7 @@ class PostgresIngredientStore(
                     .selectAll()
                     .where { IngredientTable.userId eq ownerUserId.value }
                     .map { it[IngredientTable.name] }
+                    .toList()
             IngredientTable.deleteWhere { userId eq ownerUserId.value }
             removed
         }

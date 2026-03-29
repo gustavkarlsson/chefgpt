@@ -5,7 +5,7 @@ import ai.koog.ktor.aiAgent
 import ai.koog.prompt.executor.clients.anthropic.AnthropicModels
 import io.ktor.server.plugins.di.dependencies
 import io.ktor.server.routing.RoutingContext
-import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.tools.PostgresIngredientStore
@@ -15,7 +15,7 @@ suspend fun RoutingContext.runAgent(
     userId: UserId,
     chatId: ChatId,
 ) {
-    val db: Database by call.application.dependencies
+    val db: R2dbcDatabase by call.application.dependencies
     val spoonacularClient: SpoonacularClient by call.application.dependencies
     val agent =
         aiAgent(
