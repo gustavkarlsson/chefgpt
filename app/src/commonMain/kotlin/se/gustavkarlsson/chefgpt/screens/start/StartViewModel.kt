@@ -15,8 +15,8 @@ import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.Navigator
 import se.gustavkarlsson.chefgpt.Route
 import se.gustavkarlsson.chefgpt.SessionCredentials
+import se.gustavkarlsson.chefgpt.SessionId
 import se.gustavkarlsson.chefgpt.SessionRepository
-import se.gustavkarlsson.chefgpt.api.SessionId
 
 class StartViewModel(
     private val sessionRepository: SessionRepository,

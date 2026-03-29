@@ -26,7 +26,6 @@ import kotlinx.serialization.modules.contextual
 import kotlinx.serialization.modules.polymorphic
 import org.koin.compose.KoinApplication
 import se.gustavkarlsson.chefgpt.api.ImageUrl
-import se.gustavkarlsson.chefgpt.api.SessionId
 import se.gustavkarlsson.chefgpt.di.AppModule
 import se.gustavkarlsson.chefgpt.screens.chat.ChatScreen
 import se.gustavkarlsson.chefgpt.screens.start.StartScreen

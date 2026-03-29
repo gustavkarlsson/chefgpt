@@ -55,6 +55,7 @@ import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import se.gustavkarlsson.chefgpt.SessionId
 import se.gustavkarlsson.chefgpt.api.ApiAgentEvent
 import se.gustavkarlsson.chefgpt.api.ApiAgentMessage
 import se.gustavkarlsson.chefgpt.api.ApiAgentReasoning
@@ -62,7 +63,6 @@ import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiSystemEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserMessage
-import se.gustavkarlsson.chefgpt.api.SessionId
 import se.gustavkarlsson.chefgpt.pickImageFile
 import se.gustavkarlsson.chefgpt.screens.chat.ChatViewModel.ViewState
 

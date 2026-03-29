@@ -5,7 +5,6 @@ import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.readLine
 import kotlinx.io.writeString
-import se.gustavkarlsson.chefgpt.api.SessionId
 
 data class SessionCredentials(
     val username: String,
@@ -22,7 +21,7 @@ class SessionRepository(
             val username = it.readLine() ?: return null
             val sessionIdText = it.readLine() ?: return null
             if (sessionIdText.isEmpty() || username.isEmpty()) return null
-            SessionCredentials(username, SessionId.parse(sessionIdText))
+            SessionCredentials(username, SessionId(sessionIdText))
         }
     }
 

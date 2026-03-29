@@ -5,8 +5,8 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 import se.gustavkarlsson.chefgpt.ChefGptClient
+import se.gustavkarlsson.chefgpt.SessionId
 import se.gustavkarlsson.chefgpt.SessionRepository
-import se.gustavkarlsson.chefgpt.api.SessionId
 import se.gustavkarlsson.chefgpt.screens.chat.ChatViewModel
 import se.gustavkarlsson.chefgpt.screens.start.StartViewModel
 

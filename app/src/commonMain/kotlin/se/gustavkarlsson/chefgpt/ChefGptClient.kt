@@ -9,6 +9,8 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.sse.SSE
 import io.ktor.client.plugins.sse.sse
 import io.ktor.client.request.HttpRequestBuilder
@@ -37,7 +39,6 @@ import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.ImageUrl
-import se.gustavkarlsson.chefgpt.api.SessionId
 
 class ChefGptClient(
     private val baseUrl: String = "http://localhost:8080",
@@ -60,6 +61,11 @@ class ChefGptClient(
                 json(json)
             }
             install(SSE)
+
+            install(Logging) {
+                // FIXME Add some loggin framework to get logs
+                level = LogLevel.HEADERS // TODO Disable header logging
+            }
         }
 
     suspend fun register(
@@ -71,7 +77,7 @@ class ChefGptClient(
                 basicAuth(username, password)
             }
         return response.toResultSafe {
-            SessionId.parse(bodyAsText())
+            SessionId(response.headers["Session-Id"]!!)
         }
     }
 
@@ -84,7 +90,7 @@ class ChefGptClient(
                 basicAuth(username, password)
             }
         return response.toResultSafe {
-            SessionId.parse(bodyAsText())
+            SessionId(response.headers["Session-Id"]!!)
         }
     }
 
@@ -161,11 +167,9 @@ class ChefGptClient(
     }
 }
 
-private suspend fun <T> HttpResponse.toResultSafe(
-    readSuccessBodySafe: suspend HttpResponse.() -> T,
-): Result<T, ErrorResponse> =
+private suspend fun <T> HttpResponse.toResultSafe(readSafe: suspend HttpResponse.() -> T): Result<T, ErrorResponse> =
     if (status.isSuccess()) {
-        runCatching { readSuccessBodySafe() }.mapError { null }
+        runCatching { readSafe() }.mapError { null }
     } else {
         runCatching { body<ApiError?>() }.flatMapEither(
             success = { Err(it) }, // ApiError becomes the failure case

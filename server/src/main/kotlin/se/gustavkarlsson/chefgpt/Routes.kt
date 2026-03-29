@@ -40,7 +40,6 @@ import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.ChatId
-import se.gustavkarlsson.chefgpt.api.SessionId
 import se.gustavkarlsson.chefgpt.auth.LoginError
 import se.gustavkarlsson.chefgpt.auth.RegistrationError
 import se.gustavkarlsson.chefgpt.auth.Session
@@ -81,14 +80,11 @@ fun Routing.routes() {
                     }
                 }
             }.map { user ->
-                Session(SessionId.random(), user)
+                Session(user)
             }.onOk { session ->
                 call.sessions.set(session)
-            }.map { session ->
-                ResponseData(
-                    status = HttpStatusCode.Created,
-                    body = session.sessionId.toString(),
-                )
+            }.map {
+                ResponseData(status = HttpStatusCode.Created)
             }.respond(call)
     }
     post("/login") {
@@ -107,14 +103,11 @@ fun Routing.routes() {
                     }
                 }
             }.map { user ->
-                Session(SessionId.random(), user)
+                Session(user)
             }.onOk { session ->
                 call.sessions.set(session)
-            }.map { session ->
-                ResponseData(
-                    status = HttpStatusCode.OK,
-                    body = session.sessionId.toString(),
-                )
+            }.map {
+                ResponseData(status = HttpStatusCode.OK)
             }.respond(call)
     }
     authenticate {

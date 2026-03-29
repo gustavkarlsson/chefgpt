@@ -2,7 +2,6 @@ package se.gustavkarlsson.chefgpt
 
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
-import se.gustavkarlsson.chefgpt.api.SessionId
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -26,7 +25,7 @@ class SessionRepositoryTest {
 
     @Test
     fun `save and load round-trips credentials`() {
-        val credentials = SessionCredentials("alice", SessionId.random())
+        val credentials = SessionCredentials("alice", SessionId(Uuid.random().toString()))
 
         repository.save(credentials)
         val loaded = repository.load()
@@ -36,8 +35,8 @@ class SessionRepositoryTest {
 
     @Test
     fun `save overwrites previous credentials`() {
-        repository.save(SessionCredentials("alice", SessionId.random()))
-        val second = SessionCredentials("bob", SessionId.random())
+        repository.save(SessionCredentials("alice", SessionId(Uuid.random().toString())))
+        val second = SessionCredentials("bob", SessionId(Uuid.random().toString()))
         repository.save(second)
 
         val loaded = repository.load()
@@ -47,7 +46,7 @@ class SessionRepositoryTest {
 
     @Test
     fun `clear removes the file`() {
-        repository.save(SessionCredentials("alice", SessionId.random()))
+        repository.save(SessionCredentials("alice", SessionId(Uuid.random().toString())))
 
         repository.clear()
 
