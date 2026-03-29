@@ -8,8 +8,8 @@ val registrationRules =
         UserRegistrationRule.name("Username must start with a letter") { name ->
             name.firstOrNull()?.isLetter() ?: false
         },
-        UserRegistrationRule.name("Username must only contain letters and digits") { name ->
-            name.all { it.isLetterOrDigit() }
+        UserRegistrationRule.name("Username must only contain letters, digits, '-', and '_'") { name ->
+            name.all { it.isLetterOrDigit() || it == '-' || it == '_' }
         },
         UserRegistrationRule.password("Password must be at least 8 characters") { password ->
             password.length >= 8
