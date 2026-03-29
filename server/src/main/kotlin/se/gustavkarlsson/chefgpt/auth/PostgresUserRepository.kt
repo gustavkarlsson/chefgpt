@@ -29,6 +29,7 @@ class PostgresUserRepository(
     private val md5 = MessageDigest.getInstance("MD5")
     private val secureRandom = SecureRandom()
 
+    // TODO Make more efficient
     override suspend fun register(
         name: String,
         password: String,
@@ -84,6 +85,7 @@ class PostgresUserRepository(
             }
         }
 
+    // TODO Make more efficient
     override suspend operator fun contains(name: String): Boolean =
         db.withTransaction {
             UserTable

@@ -21,7 +21,6 @@ import io.ktor.server.sessions.header
 import io.ktor.server.sse.SSE
 import io.ktor.util.toMap
 import kotlinx.serialization.json.Json
-import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.slf4j.event.Level
 import se.gustavkarlsson.chefgpt.agent.EventBackedChatMemory
 import se.gustavkarlsson.chefgpt.auth.InMemoryUserRepository

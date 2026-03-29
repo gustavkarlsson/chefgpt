@@ -21,6 +21,7 @@ class PostgresIngredientStore(
     private val db: R2dbcDatabase,
     private val ownerUserId: UserId,
 ) : IngredientStore {
+    // TODO Make more efficient
     override suspend fun getIngredients(): List<String> =
         db.withTransaction {
             IngredientTable
@@ -30,6 +31,7 @@ class PostgresIngredientStore(
                 .toList()
         }
 
+    // TODO Make mroe efficient
     override suspend fun addIngredients(ingredients: List<String>): List<String> =
         db.withTransaction {
             ingredients
@@ -43,6 +45,7 @@ class PostgresIngredientStore(
                 }
         }
 
+    // TODO Make more efficient
     override suspend fun removeIngredients(ingredients: List<String>): List<String> =
         db.withTransaction {
             ingredients.filter { ingredient ->
@@ -52,6 +55,7 @@ class PostgresIngredientStore(
             }
         }
 
+    // TODO Make more efficient
     override suspend fun clearIngredients(): List<String> =
         db.withTransaction {
             val removed =
