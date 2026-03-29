@@ -14,7 +14,6 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.URLProtocol
 import io.ktor.http.headers
 import io.ktor.serialization.kotlinx.json.json
-import io.ktor.server.config.ApplicationConfig
 import io.ktor.server.util.url
 import io.ktor.utils.io.ByteReadChannel
 import kotlinx.serialization.json.Json
@@ -85,10 +84,3 @@ class CloudinaryImageUploader(
         client.close()
     }
 }
-
-fun createCloudinaryImageUploader(config: ApplicationConfig): ImageUploader =
-    CloudinaryImageUploader(
-        apiKey = config.property("apiKey").getString(),
-        apiSecret = config.property("apiSecret").getString(),
-        cloud = config.property("cloud").getString(),
-    )
