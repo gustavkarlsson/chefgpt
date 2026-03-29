@@ -44,7 +44,7 @@ expect {
 ### Snapshot testing (server)
 The server uses [slapshot](https://github.com/gustavkarlsson/slapshot) with the ktor3 integration for snapshot testing HTTP routes. Snapshots are stored in `server/src/test/snapshots/`.
 
-Use `RoutesSnapshotTest` as a reference for writing new snapshot tests. The pattern is:
+Each endpoint has its own snapshot test file (e.g. `RegisterSnapshotTest`). Use an existing one as a reference. The pattern is:
 1. Set up the test class with `@ExtendWith(SnapshotExtension::class)` and store `snapshotContext` via `@BeforeEach`.
 2. In each test, call `testApplication` with the shared `testModule()` setup.
 3. Create a client with `install(SnapshotTesting(snapshotContext))` and make HTTP requests. Slapshot automatically snapshots each request/response pair.
