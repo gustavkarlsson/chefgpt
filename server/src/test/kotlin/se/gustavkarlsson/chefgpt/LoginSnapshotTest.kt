@@ -9,7 +9,7 @@ import se.gustavkarlsson.slapshot.junit5.JUnit5SnapshotContext
 import se.gustavkarlsson.slapshot.junit5.SnapshotExtension
 
 @ExtendWith(SnapshotExtension::class)
-class RegisterSnapshotTest {
+class LoginSnapshotTest {
     private lateinit var snapshotContext: JUnit5SnapshotContext
 
     @BeforeEach
@@ -20,55 +20,35 @@ class RegisterSnapshotTest {
     @Test
     fun `credentials missing`() =
         snapshotTestApplication(snapshotContext) { client ->
-            client.post("/register")
+            client.post("/login")
         }
 
     @Test
-    fun `username too short`() =
-        snapshotTestApplication(snapshotContext) { client ->
-            client.post("/register") {
-                basicAuth("ab", VALID_PASSWORD)
-            }
-        }
-
-    @Test
-    fun `username starts with digit`() =
-        snapshotTestApplication(snapshotContext) { client ->
-            client.post("/register") {
-                basicAuth("1user", VALID_PASSWORD)
-            }
-        }
-
-    @Test
-    fun `password too short`() =
-        snapshotTestApplication(snapshotContext) { client ->
-            client.post("/register") {
-                basicAuth(VALID_USERNAME, "Ab1!")
-            }
-        }
-
-    @Test
-    fun `password not complex enough`() =
-        snapshotTestApplication(snapshotContext) { client ->
-            client.post("/register") {
-                basicAuth(VALID_USERNAME, "alllowercase")
-            }
-        }
-
-    @Test
-    fun `successful registration`() =
-        snapshotTestApplication(snapshotContext) { client ->
-            client.post("/register") {
-                basicAuth(VALID_USERNAME, VALID_PASSWORD)
-            }
-        }
-
-    @Test
-    fun `username taken`() =
+    fun `wrong username`() =
         snapshotTestApplication(snapshotContext) { client ->
             registerUser()
 
-            client.post("/register") {
+            client.post("/login") {
+                basicAuth("wronguser", VALID_PASSWORD)
+            }
+        }
+
+    @Test
+    fun `wrong password`() =
+        snapshotTestApplication(snapshotContext) { client ->
+            registerUser()
+
+            client.post("/login") {
+                basicAuth(VALID_USERNAME, "WrongPass1!")
+            }
+        }
+
+    @Test
+    fun `successful login`() =
+        snapshotTestApplication(snapshotContext) { client ->
+            registerUser()
+
+            client.post("/login") {
                 basicAuth(VALID_USERNAME, VALID_PASSWORD)
             }
         }

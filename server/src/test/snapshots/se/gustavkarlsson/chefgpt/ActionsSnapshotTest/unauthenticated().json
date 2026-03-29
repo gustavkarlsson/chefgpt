@@ -1,0 +1,16 @@
+{
+    "request": {
+        "method": "POST",
+        "url": "http://localhost/chats/00000000-0000-0000-0000-000000000000/actions",
+        "headers": {
+            "Accept": "application/json",
+            "Content-Length": "0"
+        }
+    },
+    "response": {
+        "status": 401,
+        "headers": {
+            "Content-Length": "0"
+        }
+    }
+}

@@ -3,6 +3,7 @@
         "method": "POST",
         "url": "http://localhost/register",
         "headers": {
+            "Authorization": "Basic YWI6VGVzdDEyMyE=",
             "Accept": "application/json",
             "Content-Length": "0"
         }
@@ -10,14 +11,14 @@
     "response": {
         "status": 400,
         "headers": {
-            "Content-Length": "81",
+            "Content-Length": "102",
             "Content-Type": "application/json"
         },
         "body": {
             "type": "json",
             "data": {
-                "type": "missing-credentials",
-                "message": "Missing credentials",
+                "type": "invalid-username",
+                "message": "Username must be at least 3 characters long",
                 "userMessage": null
             }
         }

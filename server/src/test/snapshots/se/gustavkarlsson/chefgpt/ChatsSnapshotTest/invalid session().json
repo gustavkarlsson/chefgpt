@@ -1,0 +1,17 @@
+{
+    "request": {
+        "method": "POST",
+        "url": "http://localhost/chats",
+        "headers": {
+            "Session-Id": "invalid-session-id",
+            "Accept": "application/json",
+            "Content-Length": "0"
+        }
+    },
+    "response": {
+        "status": 401,
+        "headers": {
+            "Content-Length": "0"
+        }
+    }
+}

@@ -18,6 +18,10 @@ import se.gustavkarlsson.chefgpt.auth.InMemoryUserRepository
 import se.gustavkarlsson.chefgpt.auth.Session
 import se.gustavkarlsson.chefgpt.auth.UserRepository
 import se.gustavkarlsson.chefgpt.auth.registrationRules
+import se.gustavkarlsson.chefgpt.chats.ChatRepository
+import se.gustavkarlsson.chefgpt.chats.EventRepository
+import se.gustavkarlsson.chefgpt.chats.InMemoryChatRepository
+import se.gustavkarlsson.chefgpt.chats.InMemoryEventRepository
 
 fun Application.testModule() {
     install(ContentNegotiation) { json() }
@@ -36,6 +40,8 @@ fun Application.testModule() {
     }
     dependencies {
         provide<UserRepository> { InMemoryUserRepository(registrationRules) }
+        provide<ChatRepository> { InMemoryChatRepository() }
+        provide<EventRepository> { InMemoryEventRepository() }
     }
     routing { routes() }
 }
