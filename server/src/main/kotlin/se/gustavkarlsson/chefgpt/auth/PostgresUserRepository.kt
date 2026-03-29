@@ -53,14 +53,15 @@ class PostgresUserRepository(
                     .not()
             if (!exists) {
                 val salt = generateSalt()
-                val newId = UserId.random()
-                Table.insert {
-                    it[id] = newId.value // TODO Let postgres generate the ID?
-                    it[username] = name
-                    it[passwordHash] = hash(password, salt)
-                    it[passwordSalt] = salt
-                }
-                Ok(User(newId, name))
+                val id =
+                    Table
+                        .insert {
+                            it[username] = name
+                            it[passwordHash] = hash(password, salt)
+                            it[passwordSalt] = salt
+                        }.get(Table.id)
+                        .value
+                Ok(User(UserId(id), name))
             } else {
                 Err(RegistrationError.UsernameTaken)
             }
