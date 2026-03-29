@@ -2,6 +2,7 @@ package se.gustavkarlsson.chefgpt.screens.chat
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.map
 import com.github.michaelbull.result.onErr
@@ -30,6 +31,8 @@ import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.ChatId
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
+
+private val log = Logger.withTag("${ChatViewModel::class.simpleName}")
 
 // TODO Fix error handling
 class ChatViewModel(
@@ -75,8 +78,7 @@ class ChatViewModel(
                     // For good coroutine hygiene
                     throw e
                 } catch (e: Exception) {
-                    // TODO Logging
-                    println(e.message)
+                    log.i(e) { "Session interrupted" }
                 } finally {
                     runCatching { stopSession() }
                     delay(1.seconds)
@@ -128,6 +130,7 @@ class ChatViewModel(
             if (lastState.chatId == null) {
                 return@launch
             }
+            log.i { "Sending message to chat ${lastState.chatId}" }
 
             val imageUrl =
                 if (lastState.attachedImage != null) {
@@ -137,9 +140,10 @@ class ChatViewModel(
                     Ok(null)
                 }.map { imageUrl ->
                     client.sendAction(sessionId, lastState.chatId, ApiUserSendsMessage(lastState.userText, imageUrl))
-                }.onErr {
+                }.onErr { errorResponse ->
                     // TODO Show message?
                     //  Modify state?
+                    log.i { "Failed to send message: ${errorResponse.errorBody}" }
                 }
         }
     }
@@ -153,6 +157,7 @@ class ChatViewModel(
             client
                 .createChat(sessionId)
                 .onOk { chatId ->
+                    log.i { "Chat created: $chatId" }
                     innerState.update { it.copy(chatId = chatId, events = emptyList()) }
                     job =
                         launch {
@@ -163,9 +168,10 @@ class ChatViewModel(
                         }
                 }.map { chatId ->
                     client.sendAction(sessionId, chatId, ApiUserJoinedChat(joinId))
-                }.onErr {
+                }.onErr { errorResponse ->
                     // TODO Show message?
                     //  Modify state?
+                    log.i { "Failed to run session: ${errorResponse.errorBody}" }
                     job?.cancel("Failed to run session")
                 }
             job?.join()

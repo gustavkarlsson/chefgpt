@@ -1,5 +1,6 @@
 package se.gustavkarlsson.chefgpt
 
+import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Result
 import com.github.michaelbull.result.flatMapEither
@@ -39,6 +40,7 @@ import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.ImageUrl
+import io.ktor.client.plugins.logging.Logger as KtorLogger
 
 class ChefGptClient(
     private val baseUrl: String = "http://localhost:8080",
@@ -63,8 +65,16 @@ class ChefGptClient(
             install(SSE)
 
             install(Logging) {
-                // FIXME Add some loggin framework to get logs
-                level = LogLevel.HEADERS // TODO Disable header logging
+                logger =
+                    object : KtorLogger {
+                        private val log = Logger.withTag("${ChefGptClient::class.simpleName}-Calls")
+
+                        override fun log(message: String) {
+                            log.i { message }
+                        }
+                    }
+                // TODO Make level configurable
+                level = LogLevel.HEADERS
             }
         }
 

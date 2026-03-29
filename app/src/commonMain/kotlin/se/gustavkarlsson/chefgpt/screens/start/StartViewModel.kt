@@ -2,6 +2,7 @@ package se.gustavkarlsson.chefgpt.screens.start
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.onErr
 import com.github.michaelbull.result.onOk
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +18,8 @@ import se.gustavkarlsson.chefgpt.Route
 import se.gustavkarlsson.chefgpt.SessionCredentials
 import se.gustavkarlsson.chefgpt.SessionId
 import se.gustavkarlsson.chefgpt.SessionRepository
+
+private val log = Logger.withTag("${StartViewModel::class.simpleName}")
 
 class StartViewModel(
     private val sessionRepository: SessionRepository,
@@ -55,6 +58,7 @@ class StartViewModel(
     init {
         val credentials = sessionRepository.load()
         if (credentials != null) {
+            log.i { "Restored session for '${credentials.username}'" }
             innerState.value = State(username = credentials.username, sessionId = credentials.sessionId)
         }
     }
@@ -78,11 +82,15 @@ class StartViewModel(
                                 client
                                     .register(inputUsername, inputPassword)
                                     .onOk { sessionId ->
+                                        log.i { "Registered as '$inputUsername'" }
                                         sessionRepository.save(SessionCredentials(inputUsername, sessionId))
                                         innerState.update { it.copy(username = inputUsername, sessionId = sessionId) }
                                     }.onErr { errorResponse ->
                                         // TODO Show message?
                                         //  Modify state?
+                                        log.i {
+                                            "Registration failed for '$inputUsername': ${errorResponse.errorBody}"
+                                        }
                                     }
                             }
                         }
@@ -96,11 +104,13 @@ class StartViewModel(
                                 client
                                     .login(inputUsername, inputPassword)
                                     .onOk { sessionId ->
+                                        log.i { "Logged in as '$inputUsername'" }
                                         sessionRepository.save(SessionCredentials(inputUsername, sessionId))
                                         innerState.update { it.copy(username = inputUsername, sessionId = sessionId) }
                                     }.onErr { errorResponse ->
                                         // TODO Show message?
                                         //  Modify state?
+                                        log.i { "Login failed for '$inputUsername': ${errorResponse.errorBody}" }
                                     }
                             }
                         }
