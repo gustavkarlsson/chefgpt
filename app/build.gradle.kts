@@ -77,6 +77,7 @@ kotlin {
             implementation(libs.koinComposeViewmodel)
             implementation(libs.kotlinResult)
             implementation(libs.ktorClientLogging)
+            implementation(libs.kermit)
         }
         commonTest.dependencies {
             implementation(libs.kotlinTest)
