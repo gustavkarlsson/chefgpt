@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -32,29 +33,31 @@ fun StartScreen() {
 
 @Composable
 private fun Content(viewState: ViewState) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        when (viewState) {
-            is ViewState.LoggedOut -> {
-                LoggedOutContent(
-                    username = viewState.username,
-                    password = viewState.password,
-                    onUsernameChange = viewState.onUsernameChange,
-                    onPasswordChange = viewState.onPasswordChange,
-                    onClickRegister = viewState.onClickRegister,
-                    onClickLogin = viewState.onClickLogin,
-                )
-            }
+    Scaffold { innerPadding ->
+        Column(
+            modifier = Modifier.fillMaxSize().padding(innerPadding),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            when (viewState) {
+                is ViewState.LoggedOut -> {
+                    LoggedOutContent(
+                        username = viewState.username,
+                        password = viewState.password,
+                        onUsernameChange = viewState.onUsernameChange,
+                        onPasswordChange = viewState.onPasswordChange,
+                        onClickRegister = viewState.onClickRegister,
+                        onClickLogin = viewState.onClickLogin,
+                    )
+                }
 
-            is ViewState.LoggedIn -> {
-                val navigator = LocalNavigator.current
-                LoggedInContent(
-                    username = viewState.username,
-                    onClickStartChatting = { viewState.onClickStartChatting(navigator) },
-                )
+                is ViewState.LoggedIn -> {
+                    val navigator = LocalNavigator.current
+                    LoggedInContent(
+                        username = viewState.username,
+                        onClickStartChatting = { viewState.onClickStartChatting(navigator) },
+                    )
+                }
             }
         }
     }
