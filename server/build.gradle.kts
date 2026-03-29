@@ -57,6 +57,7 @@ dependencies {
     // Database (R2DBC for application, JDBC for Flyway migrations)
     implementation(libs.exposedCore)
     implementation(libs.exposedR2dbc)
+    implementation(libs.exposedJson)
     implementation(libs.r2dbcPostgres)
     implementation(libs.r2dbcPool)
     implementation(libs.postgresDriver)

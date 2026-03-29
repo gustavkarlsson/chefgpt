@@ -30,8 +30,8 @@ import se.gustavkarlsson.chefgpt.auth.UserRepository
 import se.gustavkarlsson.chefgpt.auth.registrationRules
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventRepository
-import se.gustavkarlsson.chefgpt.chats.InMemoryEventRepository
 import se.gustavkarlsson.chefgpt.chats.PostgresChatRepository
+import se.gustavkarlsson.chefgpt.chats.PostgresEventRepository
 import se.gustavkarlsson.chefgpt.db.connectR2dbcDatabase
 import se.gustavkarlsson.chefgpt.db.migrateDatabase
 import se.gustavkarlsson.chefgpt.images.createCloudinaryImageUploader
@@ -49,13 +49,13 @@ fun Application.plugins(config: ApplicationConfig) {
             allowTrailingComma = !developmentMode
             prettyPrint = developmentMode
         }
-    val eventRepository = InMemoryEventRepository()
 
     // TODO Clean up this mess!
     val databaseConfig = config.config("database")
     migrateDatabase(databaseConfig) // TODO This is ugly AF
     val r2dbcDatabase = connectR2dbcDatabase(databaseConfig)
     val postgresSessionStorage = PostgresSessionStorage(r2dbcDatabase)
+    val eventRepository = PostgresEventRepository(r2dbcDatabase)
 
     dependencies {
         provide { registrationRules }

@@ -88,6 +88,7 @@ ktorServerSessions = { module = "io.ktor:ktor-server-sessions", version.ref = "k
 postgresDriver = { module = "org.postgresql:postgresql", version.ref = "postgresDriver" }
 exposedCore = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
 exposedR2dbc = { module = "org.jetbrains.exposed:exposed-r2dbc", version.ref = "exposed" }
+exposedJson = { module = "org.jetbrains.exposed:exposed-json", version.ref = "exposed" }
 r2dbcPostgres = { module = "org.postgresql:r2dbc-postgresql", version.ref = "r2dbcPostgres" }
 r2dbcPool = { module = "io.r2dbc:r2dbc-pool", version.ref = "r2dbcPool" }
 flyway = { module= "org.flywaydb:flyway-core", version.ref = "flyway" }
