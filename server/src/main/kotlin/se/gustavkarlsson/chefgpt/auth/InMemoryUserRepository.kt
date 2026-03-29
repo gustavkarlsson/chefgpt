@@ -8,7 +8,7 @@ import java.security.MessageDigest
 
 // TODO prevent hammering
 class InMemoryUserRepository(
-    private val rules: List<UserRegistrationRule> = emptyList(),
+    private val rules: List<RegistrationRule> = emptyList(),
 ) : UserRepository {
     private val users = mutableMapOf<String, UserData>()
     private val md5 = MessageDigest.getInstance("MD5")

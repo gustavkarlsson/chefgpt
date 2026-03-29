@@ -35,7 +35,7 @@ class UserDao(
 // TODO prevent hammering
 class PostgresUserRepository(
     private val db: Database,
-    private val rules: List<UserRegistrationRule> = emptyList(),
+    private val rules: List<RegistrationRule> = emptyList(),
 ) : UserRepository {
     private val md5 = MessageDigest.getInstance("MD5")
     private val secureRandom = SecureRandom()
