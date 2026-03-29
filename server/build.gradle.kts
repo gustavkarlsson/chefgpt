@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
     alias(libs.plugins.kotlinJvm)
     alias(libs.plugins.ktor)
@@ -69,10 +67,9 @@ dependencies {
     testImplementation(libs.kotlinTestJunit)
 }
 
-// TODO Make this not suck
-tasks.register("runWithPostgres") {
+tasks.register("postgres") {
     group = "application"
-    description = "Ensures the chefgpt postgres container is running, then runs the server"
+    description = "Ensures the chefgpt postgres docker container is running"
 
     doFirst {
         fun run(vararg cmd: String): Pair<Int, String> {
@@ -85,11 +82,18 @@ tasks.register("runWithPostgres") {
             return proc.waitFor() to out
         }
 
+        fun runOrThrow(vararg cmd: String) {
+            val (exitCode, output) = run(*cmd)
+            if (exitCode != 0) {
+                throw GradleException("Command failed (exit $exitCode): ${cmd.joinToString(" ")}\n$output")
+            }
+        }
+
         val (exitCode, output) = run("docker", "inspect", "-f", "{{.State.Running}}", "chefgpt")
         when {
             exitCode != 0 -> {
                 logger.lifecycle("Creating and starting chefgpt container...")
-                run(
+                runOrThrow(
                     "docker",
                     "run",
                     "--name",
@@ -107,7 +111,7 @@ tasks.register("runWithPostgres") {
 
             output != "true" -> {
                 logger.lifecycle("Starting existing chefgpt container...")
-                run("docker", "start", "chefgpt")
+                runOrThrow("docker", "start", "chefgpt")
             }
 
             else -> {
@@ -115,6 +119,8 @@ tasks.register("runWithPostgres") {
             }
         }
     }
+}
 
-    finalizedBy("run")
+tasks.named("run") {
+    mustRunAfter("postgres")
 }
