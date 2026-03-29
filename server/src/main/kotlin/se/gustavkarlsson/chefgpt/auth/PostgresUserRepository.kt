@@ -12,7 +12,6 @@ import org.jetbrains.exposed.v1.r2dbc.selectAll
 import se.gustavkarlsson.chefgpt.db.withTransaction
 import java.security.MessageDigest
 import java.security.SecureRandom
-import kotlin.uuid.Uuid
 
 private const val SALT_BYTE_COUNT = 16
 
@@ -48,17 +47,18 @@ class PostgresUserRepository(
                     .selectAll()
                     .where { UserTable.username eq name }
                     .limit(1)
-                    .firstOrNull() != null
+                    .empty()
+                    .not()
             if (!exists) {
                 val salt = generateSalt()
-                val id = Uuid.random()
+                val newId = UserId.random()
                 UserTable.insert {
-                    it[UserTable.id] = id
+                    it[id] = newId.value // TODO Let postgres generate the ID?
                     it[username] = name
                     it[passwordSalt] = salt
                     it[passwordHash] = hash(password, salt)
                 }
-                Ok(User(id = UserId(id), name = name))
+                Ok(User(newId, name))
             } else {
                 Err(RegistrationError.UsernameTaken)
             }
@@ -69,6 +69,7 @@ class PostgresUserRepository(
         password: String,
     ): Result<User, LoginError> =
         db.withTransaction {
+            // TODO Make more functional?
             val row =
                 UserTable
                     .selectAll()
@@ -89,7 +90,8 @@ class PostgresUserRepository(
                 .selectAll()
                 .where { UserTable.username eq name }
                 .limit(1)
-                .firstOrNull() != null
+                .empty()
+                .not()
         }
 
     private fun generateSalt(): ByteArray = ByteArray(SALT_BYTE_COUNT).also { secureRandom.nextBytes(it) }

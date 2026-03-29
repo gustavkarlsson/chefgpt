@@ -24,6 +24,7 @@ suspend fun RoutingContext.runAgent(
             tools =
                 ToolRegistry {
                     // TODO Tools should really be set in the plugin config, but it's broken due to https://github.com/JetBrains/koog/issues/1705
+                    // TODO Pass a factory or lambda for the store instead
                     tools(PostgresIngredientStore(db, userId).asTools())
                     tools(spoonacularClient.asTools())
                 },

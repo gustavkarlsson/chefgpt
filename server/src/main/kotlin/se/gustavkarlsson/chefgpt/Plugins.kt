@@ -34,11 +34,9 @@ import se.gustavkarlsson.chefgpt.chats.EventRepository
 import se.gustavkarlsson.chefgpt.chats.InMemoryChatRepository
 import se.gustavkarlsson.chefgpt.chats.InMemoryEventRepository
 import se.gustavkarlsson.chefgpt.db.connectR2dbcDatabase
-import se.gustavkarlsson.chefgpt.db.createSimpleDataSource
 import se.gustavkarlsson.chefgpt.db.migrateDatabase
 import se.gustavkarlsson.chefgpt.images.createCloudinaryImageUploader
 import se.gustavkarlsson.chefgpt.tools.SpoonacularClient
-import javax.sql.DataSource
 
 fun Application.plugins(config: ApplicationConfig) {
     // Extra lenient in production
@@ -56,12 +54,11 @@ fun Application.plugins(config: ApplicationConfig) {
     val eventRepository = InMemoryEventRepository()
     dependencies {
         provide { registrationRules }
-        provide<DataSource> { createSimpleDataSource(config.config("database")) }
         provide(InMemoryUserRepository::class)
         provide {
-            val dataSource = resolve<DataSource>()
-            migrateDatabase(dataSource)
-            connectR2dbcDatabase(config.config("database"))
+            val databaseConfig = config.config("database")
+            migrateDatabase(databaseConfig)
+            connectR2dbcDatabase(databaseConfig)
         }
         provide(PostgresUserRepository::class)
         provide<UserRepository> { resolve<PostgresUserRepository>() }
