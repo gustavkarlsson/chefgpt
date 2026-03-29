@@ -9,15 +9,14 @@ import ai.koog.agents.core.feature.config.FeatureConfig
 import ai.koog.agents.core.feature.pipeline.AIAgentGraphPipeline
 import ai.koog.prompt.message.Message
 import se.gustavkarlsson.chefgpt.api.ChatId
-import se.gustavkarlsson.chefgpt.chats.Chat
-import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.Event
+import se.gustavkarlsson.chefgpt.chats.EventRepository
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.uuid.Uuid
 
 class EventBackedChatMemory {
     class Config : FeatureConfig() {
-        var chatRepository: ChatRepository? = null
+        var eventRepository: EventRepository? = null
     }
 
     companion object Feature :
@@ -32,43 +31,42 @@ class EventBackedChatMemory {
             pipeline: AIAgentGraphPipeline,
         ): EventBackedChatMemory {
             val chatMemory = EventBackedChatMemory()
-            val chatRepository =
-                requireNotNull(config.chatRepository) {
-                    "chatRepository must be set during plugin installation"
+            val eventRepository =
+                requireNotNull(config.eventRepository) {
+                    "eventRepository must be set during plugin installation"
                 }
-            installInternal(chatRepository, pipeline)
+            installInternal(eventRepository, pipeline)
             return chatMemory
         }
 
         private fun installInternal(
-            chatRepository: ChatRepository,
+            eventRepository: EventRepository,
             pipeline: AIAgentGraphPipeline,
         ) {
             val lastSyncedMessageHolder = AtomicReference<Message?>(null)
 
             pipeline.interceptStrategyStarting(this) {
-                it.context.writeAllChatMessagesToPrompt(chatRepository, lastSyncedMessageHolder)
+                it.context.writeAllChatMessagesToPrompt(eventRepository, lastSyncedMessageHolder)
             }
 
             pipeline.interceptNodeExecutionCompleted(this) {
-                it.context.writeNewPromptMessagesToChat(chatRepository, lastSyncedMessageHolder)
+                it.context.writeNewPromptMessagesToChat(eventRepository, lastSyncedMessageHolder)
             }
             // TODO Test if interceptNodeExecutionCompleted still gets executed if execution fails. If so, remove interceptNodeExecutionFailed
             pipeline.interceptNodeExecutionFailed(this) {
-                it.context.writeNewPromptMessagesToChat(chatRepository, lastSyncedMessageHolder)
+                it.context.writeNewPromptMessagesToChat(eventRepository, lastSyncedMessageHolder)
             }
         }
 
         private suspend fun AIAgentContext.writeAllChatMessagesToPrompt(
-            chatRepository: ChatRepository,
+            eventRepository: EventRepository,
             lastSyncedMessageHolder: AtomicReference<Message?>,
         ) {
-            val chat = chatRepository.requireChat(runId)
+            val chatId = ChatId.parse(runId)
             llm.writeSession {
                 val chatMessages =
-                    chat
-                        .events()
-                        .replayCache
+                    eventRepository
+                        .list(chatId)
                         .filterIsInstance<Event.Message>()
                         .map { it.message }
                 for (message in chatMessages) {
@@ -83,7 +81,7 @@ class EventBackedChatMemory {
         }
 
         private suspend fun AIAgentGraphContextBase.writeNewPromptMessagesToChat(
-            chatRepository: ChatRepository,
+            eventRepository: EventRepository,
             lastSyncedMessageHolder: AtomicReference<Message?>,
         ) {
             val lastSyncedMessage = lastSyncedMessageHolder.get()
@@ -92,19 +90,13 @@ class EventBackedChatMemory {
                     .takeLastWhile { it != lastSyncedMessage }
 
             if (newPromptMessages.isNotEmpty()) {
-                val chat = chatRepository.requireChat(runId)
+                val chatId = ChatId.parse(runId)
                 for (message in newPromptMessages) {
                     val event = Event.Message(Uuid.random(), message)
-                    chat.append(event)
+                    eventRepository.append(chatId, event)
                 }
                 lastSyncedMessageHolder.set(newPromptMessages.last())
             }
         }
     }
-}
-
-private suspend fun ChatRepository.requireChat(runId: String): Chat {
-    val chatId = ChatId.parse(runId)
-    val chat = this[chatId] ?: throw NoSuchElementException("No chat with ID $chatId found")
-    return chat
 }

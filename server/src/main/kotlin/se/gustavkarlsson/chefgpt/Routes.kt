@@ -44,8 +44,8 @@ import se.gustavkarlsson.chefgpt.auth.LoginError
 import se.gustavkarlsson.chefgpt.auth.RegistrationError
 import se.gustavkarlsson.chefgpt.auth.Session
 import se.gustavkarlsson.chefgpt.auth.UserRepository
-import se.gustavkarlsson.chefgpt.chats.Chat
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
+import se.gustavkarlsson.chefgpt.chats.EventRepository
 import se.gustavkarlsson.chefgpt.chats.createEvent
 import se.gustavkarlsson.chefgpt.chats.toApiOrNull
 import se.gustavkarlsson.chefgpt.images.ImageUploader
@@ -140,9 +140,10 @@ fun Routing.routes() {
                         period = 1.seconds
                         event = ServerSentEvent("heartbeat")
                     }
-                    call.getChat().onOk { chat ->
-                        chat
-                            .events()
+                    call.getChatId().onOk { chatId ->
+                        val eventRepository: EventRepository by application.dependencies
+                        eventRepository
+                            .flow(chatId)
                             .mapNotNull { it.toApiOrNull() }
                             .collect { apiEvent: ApiEvent ->
                                 // TODO Batch events to improve efficiency. Maybe make a Batch event?
@@ -154,17 +155,18 @@ fun Routing.routes() {
                 post("/actions") {
                     val session = call.requireSession()
                     call
-                        .getChat()
-                        .onOk { chat ->
+                        .getChatId()
+                        .onOk { chatId ->
+                            val eventRepository: EventRepository by application.dependencies
                             val action = call.receive<ApiAction>()
-                            chat.append(action.createEvent())
+                            eventRepository.append(chatId, action.createEvent())
                             when (action) {
                                 is ApiUserJoinedChat -> {
                                     Unit
                                 }
 
                                 is ApiUserSendsMessage -> {
-                                    runAgent(session.user.id, chat.id)
+                                    runAgent(session.user.id, chatId)
                                 }
                             }
                         }.map {
@@ -203,7 +205,7 @@ private fun ApplicationCall.requireSession(): Session =
         "User principal missing. Are we calling this in a non-authenticated endpoint?"
     }
 
-private suspend fun ApplicationCall.getChat(): Result<Chat, ResponseData<ApiError>> {
+private suspend fun ApplicationCall.getChatId(): Result<ChatId, ResponseData<ApiError>> {
     val rawChatId = parameters.getOrFail("chatId")
     return ChatId
         .parseOrNull(rawChatId)
@@ -212,14 +214,16 @@ private suspend fun ApplicationCall.getChat(): Result<Chat, ResponseData<ApiErro
                 status = HttpStatusCode.BadRequest,
                 body = ApiError("invalid-chat-id", "Invalid chat ID"),
             )
-        }.map { chatId ->
+        }.flatMap { chatId ->
             val chatRepository: ChatRepository by application.dependencies
             val session = requireSession()
-            chatRepository[session.user.id, chatId]
-        }.toErrorIfNull {
-            ResponseData(
-                status = HttpStatusCode.NotFound,
-                body = ApiError("chat-not-found", "Chat not found"),
-            )
+            chatRepository[session.user.id, chatId].toResultOr {
+                ResponseData(
+                    status = HttpStatusCode.NotFound,
+                    body = ApiError("chat-not-found", "Chat not found"),
+                )
+            }
+        }.map { chat ->
+            chat.id
         }
 }

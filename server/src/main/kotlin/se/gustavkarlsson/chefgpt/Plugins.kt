@@ -30,7 +30,9 @@ import se.gustavkarlsson.chefgpt.auth.Session
 import se.gustavkarlsson.chefgpt.auth.UserRepository
 import se.gustavkarlsson.chefgpt.auth.registrationRules
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
+import se.gustavkarlsson.chefgpt.chats.EventRepository
 import se.gustavkarlsson.chefgpt.chats.InMemoryChatRepository
+import se.gustavkarlsson.chefgpt.chats.InMemoryEventRepository
 import se.gustavkarlsson.chefgpt.db.createHikariDataSource
 import se.gustavkarlsson.chefgpt.db.migrateDatabase
 import se.gustavkarlsson.chefgpt.images.createCloudinaryImageUploader
@@ -50,6 +52,7 @@ fun Application.plugins(config: ApplicationConfig) {
             prettyPrint = developmentMode
         }
     val chatRepository = InMemoryChatRepository()
+    val eventRepository = InMemoryEventRepository()
     dependencies {
         provide { registrationRules }
         provide<DataSource> { createHikariDataSource(config.config("hikari")) }
@@ -63,6 +66,7 @@ fun Application.plugins(config: ApplicationConfig) {
         provide<UserRepository> { resolve<PostgresUserRepository>() }
 
         provide<ChatRepository> { chatRepository }
+        provide<EventRepository> { eventRepository }
         provide { createCloudinaryImageUploader(config.config("chefgpt.cloudinary")) }
         provide { json }
         provide { SpoonacularClient(config.property("chefgpt.spoonacularApiKey").getString()) }
@@ -149,7 +153,7 @@ fun Application.plugins(config: ApplicationConfig) {
                 )
             }
             install(EventBackedChatMemory) {
-                this.chatRepository = chatRepository
+                this.eventRepository = eventRepository
             }
         }
     }
