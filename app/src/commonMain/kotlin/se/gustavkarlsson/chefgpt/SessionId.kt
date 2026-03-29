@@ -9,7 +9,6 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlin.jvm.JvmInline
 
-// FIXME Remove this, or move it into the app project. It's not used by the server (which handles session ID:s behind the scenes)
 @Serializable(with = SessionIdSerializer::class)
 @JvmInline
 value class SessionId(
