@@ -19,7 +19,7 @@ class RegisterSnapshotTest {
     }
 
     @Test
-    fun `register without credentials`() =
+    fun `credentials missing`() =
         testApplication {
             application { testModule() }
             val client =
