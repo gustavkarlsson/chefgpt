@@ -2,7 +2,7 @@ package se.gustavkarlsson.chefgpt.chats
 
 import kotlinx.coroutines.flow.Flow
 import se.gustavkarlsson.chefgpt.api.ChatId
-import kotlin.uuid.Uuid
+import se.gustavkarlsson.chefgpt.api.EventId
 
 interface EventRepository {
     suspend fun append(
@@ -10,14 +10,10 @@ interface EventRepository {
         event: Event,
     )
 
-    suspend fun list(
-        chatId: ChatId,
-        fromId: Uuid? = null,
-        toId: Uuid? = null,
-    ): List<Event>
+    suspend fun getAll(chatId: ChatId): List<Event>
 
     fun flow(
         chatId: ChatId,
-        last: Uuid? = null,
+        last: EventId? = null,
     ): Flow<Event>
 }

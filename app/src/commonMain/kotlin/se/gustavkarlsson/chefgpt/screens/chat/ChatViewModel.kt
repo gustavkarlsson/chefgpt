@@ -29,8 +29,8 @@ import se.gustavkarlsson.chefgpt.api.ApiUserJoined
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.ChatId
+import se.gustavkarlsson.chefgpt.api.JoinId
 import kotlin.time.Duration.Companion.seconds
-import kotlin.uuid.Uuid
 
 private val log = Logger.withTag("${ChatViewModel::class.simpleName}")
 
@@ -41,7 +41,7 @@ class ChatViewModel(
 ) : ViewModel() {
     private data class State(
         val chatId: ChatId? = null,
-        val joinId: Uuid? = null,
+        val joinId: JoinId? = null,
         val events: List<ApiEvent> = emptyList(),
         val userText: String = "",
         val attachedImage: Path? = null,
@@ -150,7 +150,7 @@ class ChatViewModel(
 
     private suspend fun runSession() =
         coroutineScope {
-            val joinId = Uuid.random()
+            val joinId = JoinId.random()
             innerState.update { it.copy(joinId = joinId) }
             // TODO Add ability to resume chat
             var job: Job? = null

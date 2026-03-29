@@ -12,10 +12,10 @@ import se.gustavkarlsson.chefgpt.api.ApiUserJoined
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserMessage
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
+import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import kotlin.time.Clock
 import kotlin.time.Instant
-import kotlin.uuid.Uuid
 import ai.koog.prompt.message.Message as KoogMessage
 
 fun Event.toApiOrNull(): ApiEvent? =
@@ -34,7 +34,7 @@ fun Event.toApiOrNull(): ApiEvent? =
     }
 
 private fun KoogMessage.toApiOrNull(
-    id: Uuid,
+    id: EventId,
     timestamp: Instant,
 ): ApiEvent? =
     when (this) {
@@ -84,7 +84,7 @@ private fun KoogMessage.User.imageUrlOrNull(): ImageUrl? {
 fun ApiAction.createEvent(): Event =
     when (this) {
         is ApiUserJoinedChat -> {
-            Event.UserJoined(Uuid.random(), Clock.System.now(), joinId)
+            Event.UserJoined(EventId.random(), Clock.System.now(), joinId)
         }
 
         is ApiUserSendsMessage -> {
@@ -101,6 +101,6 @@ fun ApiAction.createEvent(): Event =
                     }
                 }
             val koogMessage = Message.User(parts, RequestMetaInfo(Clock.System.now()))
-            Event.Message(Uuid.random(), koogMessage)
+            Event.Message(EventId.random(), koogMessage)
         }
     }

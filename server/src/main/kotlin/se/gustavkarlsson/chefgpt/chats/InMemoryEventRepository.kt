@@ -8,8 +8,8 @@ import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.dropWhile
 import org.slf4j.LoggerFactory
 import se.gustavkarlsson.chefgpt.api.ChatId
+import se.gustavkarlsson.chefgpt.api.EventId
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.uuid.Uuid
 
 private val logger = LoggerFactory.getLogger(EventRepository::class.java)
 
@@ -28,33 +28,11 @@ class InMemoryEventRepository : EventRepository {
         flow.emit(event)
     }
 
-    override suspend fun list(
-        chatId: ChatId,
-        fromId: Uuid?,
-        toId: Uuid?,
-    ): List<Event> {
-        val events = getOrCreateFlow(chatId).replayCache
-        val fromIndex =
-            if (fromId != null) {
-                val index = events.indexOfFirst { it.id == fromId }
-                if (index == -1) return emptyList() else index
-            } else {
-                0
-            }
-        val toIndex =
-            if (toId != null) {
-                val index = events.indexOfFirst { it.id == toId }
-                if (index == -1) return emptyList() else index + 1
-            } else {
-                events.size
-            }
-        if (fromIndex > toIndex) return emptyList()
-        return events.subList(fromIndex, toIndex)
-    }
+    override suspend fun getAll(chatId: ChatId): List<Event> = getOrCreateFlow(chatId).replayCache
 
     override fun flow(
         chatId: ChatId,
-        last: Uuid?,
+        last: EventId?,
     ): Flow<Event> {
         val flow = getOrCreateFlow(chatId)
         if (last == null) return flow
