@@ -30,8 +30,8 @@ import se.gustavkarlsson.chefgpt.auth.UserRepository
 import se.gustavkarlsson.chefgpt.auth.registrationRules
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventRepository
-import se.gustavkarlsson.chefgpt.chats.InMemoryChatRepository
 import se.gustavkarlsson.chefgpt.chats.InMemoryEventRepository
+import se.gustavkarlsson.chefgpt.chats.PostgresChatRepository
 import se.gustavkarlsson.chefgpt.db.connectR2dbcDatabase
 import se.gustavkarlsson.chefgpt.db.migrateDatabase
 import se.gustavkarlsson.chefgpt.images.createCloudinaryImageUploader
@@ -49,7 +49,6 @@ fun Application.plugins(config: ApplicationConfig) {
             allowTrailingComma = !developmentMode
             prettyPrint = developmentMode
         }
-    val chatRepository = InMemoryChatRepository()
     val eventRepository = InMemoryEventRepository()
     dependencies {
         provide { registrationRules }
@@ -62,7 +61,7 @@ fun Application.plugins(config: ApplicationConfig) {
         provide(PostgresUserRepository::class)
         provide<UserRepository> { resolve<PostgresUserRepository>() }
 
-        provide<ChatRepository> { chatRepository }
+        provide<ChatRepository> { PostgresChatRepository(resolve()) }
         provide<EventRepository> { eventRepository }
         provide { createCloudinaryImageUploader(config.config("chefgpt.cloudinary")) }
         provide { json }

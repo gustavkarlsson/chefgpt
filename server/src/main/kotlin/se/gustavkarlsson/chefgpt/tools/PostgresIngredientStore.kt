@@ -13,7 +13,6 @@ import org.jetbrains.exposed.v1.r2dbc.selectAll
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.db.withTransaction
 
-// TODO Add index on user_id
 private object Table : UuidTable("ingredient") {
     val userId = uuid("user_id")
     val name = text("name")

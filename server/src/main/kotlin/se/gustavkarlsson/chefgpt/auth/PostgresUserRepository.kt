@@ -17,7 +17,6 @@ import java.security.SecureRandom
 
 private const val SALT_BYTE_COUNT = 16
 
-// TODO Add index on username
 private object Table : UuidTable("user") {
     val username = text("username")
     val passwordHash = binary("password_md5_hash")
