@@ -41,7 +41,29 @@ expect {
 }
 ```
 
-<!-- TODO add instructions on snapshot testing for server -->
+### Snapshot testing (server)
+The server uses [slapshot](https://github.com/gustavkarlsson/slapshot) with the ktor3 integration for snapshot testing HTTP routes. Snapshots are stored in `server/src/test/snapshots/`.
+
+Each endpoint has its own snapshot test file (e.g. `RegisterSnapshotTest`). Use an existing one as a reference. The pattern is:
+1. Set up the test class with `@ExtendWith(SnapshotExtension::class)` and store `snapshotContext` via `@BeforeEach`.
+2. In each test, call `testApplication` with the shared `testModule()` setup.
+3. Create a client with `install(SnapshotTesting(snapshotContext))` and make HTTP requests. Slapshot automatically snapshots each request/response pair.
+
+The first run of a new snapshot test always fails and creates the snapshot file. The second run compares against it.
+
+#### Overwriting snapshots
+When a snapshot change is intentional (e.g. you changed response format), overwrite existing snapshots:
+```bash
+./gradlew :server:test -PsnapshotAction=overwrite
+```
+Review the updated snapshot files before committing.
+
+#### Clearing snapshots
+When test cases are removed, clean up orphaned snapshot files:
+```bash
+./gradlew :server:clearSnapshots
+```
+Then re-run tests to regenerate only the snapshots that are still needed.
 
 ### Running tests
 Tests can take a long time in a Kotlin Multiplatform project. Therefore, there are two approaches for testing.

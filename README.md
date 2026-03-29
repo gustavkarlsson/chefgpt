@@ -69,6 +69,26 @@ in your IDE's toolbar or run it directly from the terminal:
 To build and run the development version of the iOS app, use the run configuration from the run widget
 in your IDE’s toolbar or open the [/iosApp](./iosApp) directory in Xcode and run it from there.
 
+### Snapshot Testing (Server)
+
+The server uses [slapshot](https://github.com/gustavkarlsson/slapshot) with the ktor3 integration for snapshot testing HTTP routes. Snapshots are stored in `server/src/test/snapshots/`.
+
+Each endpoint has its own snapshot test file (e.g. `RegisterSnapshotTest`). The first run of a new snapshot test always fails and creates the snapshot file. The second run compares against it.
+
+#### Overwriting snapshots
+When a snapshot change is intentional (e.g. you changed response format), overwrite existing snapshots:
+```bash
+./gradlew :server:test -PsnapshotAction=overwrite
+```
+Review the updated snapshot files before committing.
+
+#### Clearing snapshots
+When test cases are removed, clean up orphaned snapshot files:
+```bash
+./gradlew :server:clearSnapshots
+```
+Then re-run tests to regenerate only the snapshots that are still needed.
+
 ---
 
 Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html),
