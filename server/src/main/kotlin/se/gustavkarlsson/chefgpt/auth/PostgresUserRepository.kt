@@ -3,6 +3,8 @@ package se.gustavkarlsson.chefgpt.auth
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
+import com.github.michaelbull.result.flatMap
+import com.github.michaelbull.result.toResultOr
 import kotlinx.coroutines.flow.firstOrNull
 import org.jetbrains.exposed.v1.core.dao.id.UuidTable
 import org.jetbrains.exposed.v1.core.eq
@@ -15,12 +17,14 @@ import java.security.SecureRandom
 
 private const val SALT_BYTE_COUNT = 16
 
-private object UserTable : UuidTable("user") {
+// TODO Add index on username
+private object Table : UuidTable("user") {
     val username = text("username")
     val passwordHash = binary("password_md5_hash")
     val passwordSalt = binary("password_salt")
 }
 
+// TODO Test with dev containers
 // TODO prevent hammering
 class PostgresUserRepository(
     private val db: R2dbcDatabase,
@@ -29,68 +33,71 @@ class PostgresUserRepository(
     private val md5 = MessageDigest.getInstance("MD5")
     private val secureRandom = SecureRandom()
 
-    // TODO Make more efficient
     override suspend fun register(
         name: String,
         password: String,
-    ): Result<User, RegistrationError> =
-        db.withTransaction {
-            val registrationError =
-                rules.firstNotNullOfOrNull { rule ->
-                    rule.validate(name, password)
-                }
-            if (registrationError != null) {
-                return@withTransaction Err(registrationError)
+    ): Result<User, RegistrationError> {
+        val registrationError =
+            rules.firstNotNullOfOrNull { rule ->
+                rule.validate(name, password)
             }
-
+        if (registrationError != null) {
+            return Err(registrationError)
+        }
+        return db.withTransaction {
             val exists =
-                UserTable
+                Table
                     .selectAll()
-                    .where { UserTable.username eq name }
+                    .where { Table.username eq name }
                     .limit(1)
                     .empty()
                     .not()
             if (!exists) {
                 val salt = generateSalt()
                 val newId = UserId.random()
-                UserTable.insert {
+                Table.insert {
                     it[id] = newId.value // TODO Let postgres generate the ID?
                     it[username] = name
-                    it[passwordSalt] = salt
                     it[passwordHash] = hash(password, salt)
+                    it[passwordSalt] = salt
                 }
                 Ok(User(newId, name))
             } else {
                 Err(RegistrationError.UsernameTaken)
             }
         }
+    }
 
     override suspend fun login(
         name: String,
         password: String,
     ): Result<User, LoginError> =
         db.withTransaction {
-            // TODO Make more functional?
-            val row =
-                UserTable
-                    .selectAll()
-                    .where { UserTable.username eq name }
-                    .limit(1)
-                    .firstOrNull() ?: return@withTransaction Err(LoginError.WrongCredentials)
-            val expectedHash = hash(password, row[UserTable.passwordSalt])
-            if (row[UserTable.passwordHash].contentEquals(expectedHash)) {
-                Ok(User(id = UserId(row[UserTable.id].value), name = row[UserTable.username]))
-            } else {
-                Err(LoginError.WrongCredentials)
-            }
+            Table
+                .selectAll()
+                .where { Table.username eq name }
+                .limit(1)
+                .firstOrNull()
+                .toResultOr { LoginError.WrongCredentials }
+                .flatMap { userRow ->
+                    val id = userRow[Table.id]
+                    val username = userRow[Table.username]
+                    val salt = userRow[Table.passwordSalt]
+                    val passwordHash = userRow[Table.passwordHash]
+                    val expectedHash = hash(password, salt)
+                    if (passwordHash.contentEquals(expectedHash)) {
+                        Ok(User(UserId(id.value), username))
+                    } else {
+                        Err(LoginError.WrongCredentials)
+                    }
+                }
         }
 
-    // TODO Make more efficient
     override suspend operator fun contains(name: String): Boolean =
         db.withTransaction {
-            UserTable
+            Table
                 .selectAll()
-                .where { UserTable.username eq name }
+                .where { Table.username eq name }
                 .limit(1)
                 .empty()
                 .not()
