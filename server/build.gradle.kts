@@ -69,6 +69,8 @@ dependencies {
     testImplementation(libs.kotlinTestJunit5)
     testImplementation(libs.slapshotJunit5)
     testImplementation(libs.slapshotKtor3)
+    testImplementation(libs.testcontainersJunit5)
+    testImplementation(libs.testcontainersPostgres)
 }
 
 tasks.test {

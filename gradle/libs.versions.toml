@@ -31,6 +31,7 @@ postgresDriver = "42.7.10"
 slapshot = "1.0.0"
 slf4jSimple = "2.0.17"
 spotless = "8.2.1"
+testcontainers = "1.21.0"
 
 [libraries]
 
@@ -108,6 +109,10 @@ coilNetworkKtor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref 
 
 # Misc
 kotlinResult = { module = "com.michael-bull.kotlin-result:kotlin-result", version.ref = "kotlinResult" }
+
+# Testcontainers
+testcontainersJunit5 = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+testcontainersPostgres = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
 
 # Slapshot
 slapshotJunit5 = { module = "se.gustavkarlsson.slapshot:slapshot-junit5", version.ref = "slapshot" }
