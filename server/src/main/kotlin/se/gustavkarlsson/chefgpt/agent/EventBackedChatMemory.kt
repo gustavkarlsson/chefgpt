@@ -9,10 +9,10 @@ import ai.koog.agents.core.feature.config.FeatureConfig
 import ai.koog.agents.core.feature.pipeline.AIAgentGraphPipeline
 import ai.koog.prompt.message.Message
 import se.gustavkarlsson.chefgpt.api.ChatId
+import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.chats.Event
 import se.gustavkarlsson.chefgpt.chats.EventRepository
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.uuid.Uuid
 
 class EventBackedChatMemory {
     class Config : FeatureConfig() {
@@ -66,7 +66,7 @@ class EventBackedChatMemory {
             llm.writeSession {
                 val chatMessages =
                     eventRepository
-                        .list(chatId)
+                        .getAll(chatId)
                         .filterIsInstance<Event.Message>()
                         .map { it.message }
                 for (message in chatMessages) {
@@ -92,7 +92,7 @@ class EventBackedChatMemory {
             if (newPromptMessages.isNotEmpty()) {
                 val chatId = ChatId.parse(runId)
                 for (message in newPromptMessages) {
-                    val event = Event.Message(Uuid.random(), message)
+                    val event = Event.Message(EventId.random(), message)
                     eventRepository.append(chatId, event)
                 }
                 lastSyncedMessageHolder.set(newPromptMessages.last())

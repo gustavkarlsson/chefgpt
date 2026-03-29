@@ -2,14 +2,13 @@ package se.gustavkarlsson.chefgpt.api
 
 import kotlinx.serialization.Serializable
 import kotlin.time.Instant
-import kotlin.uuid.Uuid
 
 /**
  * An event is something that has happened in a chat.
  */
 @Serializable
 sealed interface ApiEvent {
-    val id: Uuid
+    val id: EventId
     val timestamp: Instant
 }
 
@@ -33,7 +32,7 @@ sealed interface ApiUserEvent : ApiEvent
 
 @Serializable
 data class ApiAgentMessage(
-    override val id: Uuid,
+    override val id: EventId,
     override val timestamp: Instant,
     val text: String,
 ) : ApiAgentEvent {
@@ -46,7 +45,7 @@ data class ApiAgentMessage(
 
 @Serializable
 data class ApiAgentReasoning(
-    override val id: Uuid,
+    override val id: EventId,
     override val timestamp: Instant,
     val text: String,
 ) : ApiAgentEvent {
@@ -59,14 +58,14 @@ data class ApiAgentReasoning(
 
 @Serializable
 data class ApiUserJoined(
-    override val id: Uuid,
+    override val id: EventId,
     override val timestamp: Instant,
-    val joinId: Uuid,
+    val joinId: JoinId,
 ) : ApiSystemEvent
 
 @Serializable
 data class ApiUserMessage(
-    override val id: Uuid,
+    override val id: EventId,
     override val timestamp: Instant,
     val text: String?,
     val imageUrl: ImageUrl? = null,

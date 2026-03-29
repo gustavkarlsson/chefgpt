@@ -1,7 +1,6 @@
 package se.gustavkarlsson.chefgpt.api
 
 import kotlinx.serialization.Serializable
-import kotlin.uuid.Uuid
 
 /**
  * An action is something that the user has done to update the chat. It will often lead to an [ApiEvent].
@@ -26,5 +25,5 @@ data class ApiUserSendsMessage(
 
 @Serializable
 data class ApiUserJoinedChat(
-    val joinId: Uuid,
+    val joinId: JoinId,
 ) : ApiAction

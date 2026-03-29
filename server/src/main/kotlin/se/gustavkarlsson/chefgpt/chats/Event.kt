@@ -1,18 +1,19 @@
 package se.gustavkarlsson.chefgpt.chats
 
 import kotlinx.serialization.Serializable
+import se.gustavkarlsson.chefgpt.api.EventId
+import se.gustavkarlsson.chefgpt.api.JoinId
 import kotlin.time.Instant
-import kotlin.uuid.Uuid
 import ai.koog.prompt.message.Message as KoogMessage
 
 @Serializable
 sealed interface Event {
-    val id: Uuid
+    val id: EventId
     val timestamp: Instant
 
     @Serializable
     data class Message(
-        override val id: Uuid,
+        override val id: EventId,
         val message: KoogMessage,
     ) : Event {
         override val timestamp: Instant
@@ -21,8 +22,8 @@ sealed interface Event {
 
     @Serializable
     data class UserJoined(
-        override val id: Uuid,
+        override val id: EventId,
         override val timestamp: Instant,
-        val joinId: Uuid,
+        val joinId: JoinId,
     ) : Event
 }
