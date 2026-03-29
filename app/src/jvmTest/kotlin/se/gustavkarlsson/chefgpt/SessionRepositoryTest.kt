@@ -6,6 +6,7 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.uuid.Uuid
 
 class SessionRepositoryTest {
     private val file = Path("test-login-credentials.txt")
