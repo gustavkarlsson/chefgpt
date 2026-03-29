@@ -26,6 +26,7 @@ material3 = "1.10.0-alpha05"
 multiplatformMarkdownRendererM3 = "0.39.2"
 navigation3 = "1.0.0-alpha06"
 postgresDriver = "42.7.10"
+slapshot = "1.0.0"
 slf4jSimple = "2.0.17"
 spotless = "8.2.1"
 
@@ -59,6 +60,7 @@ koogKtor = { module = "ai.koog:koog-ktor", version.ref = "koog" }
 # Kotlin
 kotlinTest = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlinTestJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
+kotlinTestJunit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5", version.ref = "kotlin" }
 kotlinxCoroutinesCore = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 kotlinxCoroutinesSwing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinxCoroutines" }
 kotlinxSerializationJson = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
@@ -103,6 +105,10 @@ coilNetworkKtor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref 
 # Misc
 kotlinResult = { module = "com.michael-bull.kotlin-result:kotlin-result", version.ref = "kotlinResult" }
 
+# Slapshot
+slapshotJunit5 = { module = "se.gustavkarlsson.slapshot:slapshot-junit5", version.ref = "slapshot" }
+slapshotKtor3 = { module = "se.gustavkarlsson.slapshot:slapshot-ktor3", version.ref = "slapshot" }
+
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
@@ -113,5 +119,6 @@ kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
+slapshot = { id = "se.gustavkarlsson.slapshot", version.ref = "slapshot" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 atomicfu = { id ="org.jetbrains.kotlinx.atomicfu", version.ref = "atomicfu" }

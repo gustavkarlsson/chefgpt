@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.ktor)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.atomicfu)
+    alias(libs.plugins.slapshot)
     application
 }
 
@@ -64,7 +65,13 @@ dependencies {
 
     // Test
     testImplementation(libs.ktorServerTestHost)
-    testImplementation(libs.kotlinTestJunit)
+    testImplementation(libs.kotlinTestJunit5)
+    testImplementation(libs.slapshotJunit5)
+    testImplementation(libs.slapshotKtor3)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 tasks.register("postgres") {
