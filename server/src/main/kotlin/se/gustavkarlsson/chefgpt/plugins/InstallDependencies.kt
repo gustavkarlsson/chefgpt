@@ -9,7 +9,7 @@ import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventRepository
 import se.gustavkarlsson.chefgpt.images.ImageUploader
 import se.gustavkarlsson.chefgpt.postgres.PostgresAccess
-import se.gustavkarlsson.chefgpt.recipes.SpoonacularClient
+import se.gustavkarlsson.chefgpt.recipes.RecipeClient
 
 fun Application.installDependencies(
     database: PostgresAccess?,
@@ -17,7 +17,7 @@ fun Application.installDependencies(
     chatRepository: ChatRepository,
     eventRepository: EventRepository,
     imageUploader: ImageUploader,
-    spoonacularClient: SpoonacularClient,
+    recipeClient: RecipeClient,
     aiAgent: AiAgent,
     json: Json,
 ) {
@@ -30,7 +30,7 @@ fun Application.installDependencies(
         provide<EventRepository> { eventRepository }
         provide { imageUploader }
         provide { json }
-        provide { spoonacularClient }
+        provide<RecipeClient> { recipeClient }
         provide<AiAgent> { aiAgent }
     }
 }

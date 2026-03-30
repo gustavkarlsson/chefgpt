@@ -9,7 +9,7 @@ import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.ingredients.PostgresIngredientStore
 import se.gustavkarlsson.chefgpt.postgres.PostgresAccess
-import se.gustavkarlsson.chefgpt.recipes.SpoonacularClient
+import se.gustavkarlsson.chefgpt.recipes.RecipeClient
 
 class KoogAiAgent : AiAgent {
     override suspend fun RoutingContext.run(
@@ -17,7 +17,7 @@ class KoogAiAgent : AiAgent {
         chatId: ChatId,
     ) {
         val db: PostgresAccess by call.application.dependencies
-        val spoonacularClient: SpoonacularClient by call.application.dependencies
+        val recipeClient: RecipeClient by call.application.dependencies
         val agent =
             aiAgent(
                 strategy = findRecipeStrategy(),
@@ -27,7 +27,7 @@ class KoogAiAgent : AiAgent {
                         // TODO Tools should really be set in the plugin config, but it's broken due to https://github.com/JetBrains/koog/issues/1705
                         // TODO Pass a factory or lambda for the store instead
                         tools(PostgresIngredientStore(db, userId).asTools())
-                        tools(spoonacularClient.asTools())
+                        tools(recipeClient.asTools())
                     },
             )
         agent.run(Unit, chatId.value.toString())
