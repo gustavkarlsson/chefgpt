@@ -1,52 +1,25 @@
 package se.gustavkarlsson.chefgpt.auth
 
+import app.cash.sqldelight.async.coroutines.awaitAsOne
 import io.ktor.server.sessions.SessionStorage
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import org.jetbrains.exposed.v1.core.Column
-import org.jetbrains.exposed.v1.core.dao.id.EntityID
-import org.jetbrains.exposed.v1.core.dao.id.IdTable
-import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
-import org.jetbrains.exposed.v1.r2dbc.deleteWhere
-import org.jetbrains.exposed.v1.r2dbc.insert
-import org.jetbrains.exposed.v1.r2dbc.select
-import se.gustavkarlsson.chefgpt.db.withTransaction
-
-private object SessionTable : IdTable<String>("session") {
-    override val id: Column<EntityID<String>> = text("id").entityId()
-    override val primaryKey = PrimaryKey(id)
-    val value = text("value")
-}
+import se.gustavkarlsson.chefgpt.db.DatabaseAccess
 
 class PostgresSessionStorage(
-    private val db: R2dbcDatabase,
+    private val db: DatabaseAccess,
 ) : SessionStorage {
     override suspend fun write(
         id: String,
         value: String,
     ) {
-        db.withTransaction {
-            SessionTable.insert {
-                it[this.id] = id
-                it[this.value] = value
-            }
-        }
+        db.use { sessionQueries.upsert(id, value) }
     }
 
     override suspend fun invalidate(id: String) {
-        db.withTransaction {
-            SessionTable.deleteWhere { this.id eq id }
-        }
+        db.use { sessionQueries.deleteById(id) }
     }
 
     override suspend fun read(id: String): String =
-        db.withTransaction {
-            SessionTable
-                .select(SessionTable.value)
-                .where { SessionTable.id eq id }
-                .limit(1)
-                .map { it[SessionTable.value] }
-                .first()
+        db.use {
+            sessionQueries.selectById(id).awaitAsOne().value_
         }
 }

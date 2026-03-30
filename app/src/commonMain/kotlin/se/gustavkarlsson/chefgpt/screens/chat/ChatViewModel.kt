@@ -132,19 +132,18 @@ class ChatViewModel(
             }
             log.i { "Sending message to chat ${lastState.chatId}" }
 
-            val imageUrl =
-                if (lastState.attachedImage != null) {
-                    val extension = lastState.attachedImage.toString().substringAfterLast(".")
-                    client.uploadImage(sessionId, lastState.attachedImage, ContentType("image", extension))
-                } else {
-                    Ok(null)
-                }.map { imageUrl ->
-                    client.sendAction(sessionId, lastState.chatId, ApiUserSendsMessage(lastState.userText, imageUrl))
-                }.onErr { errorResponse ->
-                    // TODO Show message?
-                    //  Modify state?
-                    log.i { "Failed to send message: ${errorResponse.errorBody}" }
-                }
+            if (lastState.attachedImage != null) {
+                val extension = lastState.attachedImage.toString().substringAfterLast(".")
+                client.uploadImage(sessionId, lastState.attachedImage, ContentType("image", extension))
+            } else {
+                Ok(null)
+            }.map { imageUrl ->
+                client.sendAction(sessionId, lastState.chatId, ApiUserSendsMessage(lastState.userText, imageUrl))
+            }.onErr { errorResponse ->
+                // TODO Show message?
+                //  Modify state?
+                log.i { "Failed to send message: ${errorResponse.errorBody}" }
+            }
         }
     }
 

@@ -1,12 +1,12 @@
 package se.gustavkarlsson.chefgpt.setup
 
-import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import se.gustavkarlsson.chefgpt.auth.InMemoryUserRepository
 import se.gustavkarlsson.chefgpt.auth.PostgresUserRepository
 import se.gustavkarlsson.chefgpt.auth.UserRepository
 import se.gustavkarlsson.chefgpt.auth.registrationRules
+import se.gustavkarlsson.chefgpt.db.DatabaseAccess
 
-fun createUserRepository(database: R2dbcDatabase?): UserRepository =
+fun createUserRepository(database: DatabaseAccess?): UserRepository =
     if (database != null) {
         PostgresUserRepository(database, registrationRules)
     } else {

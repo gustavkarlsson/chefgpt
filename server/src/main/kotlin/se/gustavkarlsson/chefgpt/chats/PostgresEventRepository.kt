@@ -1,65 +1,75 @@
 package se.gustavkarlsson.chefgpt.chats
 
+import app.cash.sqldelight.async.coroutines.awaitAsList
+import app.cash.sqldelight.coroutines.asFlow
+import app.cash.sqldelight.coroutines.mapToList
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.json.Json
-import org.jetbrains.exposed.v1.core.and
-import org.jetbrains.exposed.v1.core.dao.id.UuidTable
-import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.core.greater
-import org.jetbrains.exposed.v1.json.json
-import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
-import org.jetbrains.exposed.v1.r2dbc.insert
-import org.jetbrains.exposed.v1.r2dbc.selectAll
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
-import se.gustavkarlsson.chefgpt.db.withTransaction
-
-private object EventTable : UuidTable("event") {
-    val chatId = uuid("chat_id")
-    val json = json<Event>("json", Json)
-}
+import se.gustavkarlsson.chefgpt.db.DatabaseAccess
+import kotlin.uuid.toJavaUuid
+import java.util.UUID as JavaUUID
 
 class PostgresEventRepository(
-    private val db: R2dbcDatabase,
+    private val db: DatabaseAccess,
 ) : EventRepository {
     override suspend fun append(
         chatId: ChatId,
         event: Event,
     ) {
-        db.withTransaction {
-            EventTable.insert {
-                it[this.chatId] = chatId.value
-                it[json] = event
-            }
+        // TODO Consider injecting a configured Json instance
+        val jsonString = Json.encodeToString<Event>(event)
+        db.use {
+            eventQueries.insert(
+                chat_id = chatId.value.toJavaUuid(),
+                json = jsonString,
+            )
         }
     }
 
     override suspend fun getAll(chatId: ChatId): List<Event> =
-        db.withTransaction {
-            EventTable
-                .selectAll()
-                .where { EventTable.chatId eq chatId.value }
-                .map { it[EventTable.json] }
-                .toList()
+        db.use {
+            eventQueries
+                .selectByChatId(chatId.value.toJavaUuid())
+                .awaitAsList()
+                // TODO Consider injecting a configured Json instance
+                .map { row -> Json.decodeFromString<Event>(row.json) }
         }
 
+    // TODO This polls the full result set on every change, which is not very efficient.
+    //  Consider using a database better suited for streaming, such as an event store.
     override fun flow(
         chatId: ChatId,
         last: EventId?,
     ): Flow<Event> =
-        EventTable
-            .selectAll()
-            .where {
+        db.stream {
+            val query =
                 if (last == null) {
-                    EventTable.chatId eq chatId.value
+                    eventQueries.selectByChatId(chatId.value.toJavaUuid())
                 } else {
-                    (EventTable.chatId eq chatId.value) and (EventTable.id greater last.value)
+                    eventQueries.selectByChatIdAfterId(
+                        chatId.value.toJavaUuid(),
+                        last.value.toJavaUuid(),
+                    )
                 }
-            }.map { it[EventTable.json] }
-            .onCompletion {
-                error("Flow completed unexpectedly") // FIXME fix this bug
+            flow {
+                val emittedIds = mutableSetOf<JavaUUID>()
+                query
+                    .asFlow()
+                    .mapToList(Dispatchers.IO)
+                    .map { rows -> rows.filter { it.id !in emittedIds } }
+                    .collect { rows ->
+                        emittedIds.addAll(rows.map { it.id })
+                        for (row in rows) {
+                            emit(row)
+                        }
+                    }
+            }.map { row ->
+                Json.decodeFromString<Event>(row.json)
             }
+        }
 }

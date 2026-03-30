@@ -1,0 +1,6 @@
+CREATE TABLE event
+(
+    id                UUID NOT NULL PRIMARY KEY DEFAULT uuidv7(),
+    chat_id           UUID NOT NULL REFERENCES chat (id) ON DELETE CASCADE,
+    json              TEXT NOT NULL -- Should be JSONB but r2dbc doesn't seem to support it.
+);

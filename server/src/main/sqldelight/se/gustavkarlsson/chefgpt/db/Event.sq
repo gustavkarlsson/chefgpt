@@ -1,0 +1,13 @@
+insert:
+INSERT INTO event (chat_id, json)
+VALUES (?, ?);
+
+selectByChatId:
+SELECT *
+FROM event
+WHERE chat_id = ?;
+
+selectByChatIdAfterId:
+SELECT *
+FROM event
+WHERE chat_id = ? AND id > ?;
