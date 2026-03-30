@@ -12,10 +12,10 @@ import se.gustavkarlsson.chefgpt.plugins.installKoog
 import se.gustavkarlsson.chefgpt.plugins.installSSE
 import se.gustavkarlsson.chefgpt.plugins.installSessions
 import se.gustavkarlsson.chefgpt.setup.createChatRepository
-import se.gustavkarlsson.chefgpt.setup.createDatabaseAccessOrNull
 import se.gustavkarlsson.chefgpt.setup.createEventRepository
 import se.gustavkarlsson.chefgpt.setup.createImageUploader
 import se.gustavkarlsson.chefgpt.setup.createJson
+import se.gustavkarlsson.chefgpt.setup.createPostgresAccessOrNull
 import se.gustavkarlsson.chefgpt.setup.createRethinkDbAccessOrNull
 import se.gustavkarlsson.chefgpt.setup.createSessionStorage
 import se.gustavkarlsson.chefgpt.setup.createSpoonacularClient
@@ -25,7 +25,7 @@ fun main(args: Array<String>) = EngineMain.main(args)
 
 fun Application.module() {
     val config = environment.config
-    val database = createDatabaseAccessOrNull(config)
+    val database = createPostgresAccessOrNull(config)
     val rethinkDb = createRethinkDbAccessOrNull(config)
     val userRepository = createUserRepository(database)
     val chatRepository = createChatRepository(database)

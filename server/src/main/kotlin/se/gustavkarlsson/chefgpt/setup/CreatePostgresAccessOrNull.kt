@@ -10,15 +10,15 @@ import io.r2dbc.spi.ConnectionFactoryOptions.PORT
 import io.r2dbc.spi.ConnectionFactoryOptions.PROTOCOL
 import io.r2dbc.spi.ConnectionFactoryOptions.USER
 import io.r2dbc.spi.ConnectionFactoryOptions.builder
-import se.gustavkarlsson.chefgpt.db.DatabaseAccess
-import se.gustavkarlsson.chefgpt.db.migrateDatabase
+import se.gustavkarlsson.chefgpt.postgres.PostgresAccess
+import se.gustavkarlsson.chefgpt.postgres.migratePostgresDatabase
 
-fun createDatabaseAccessOrNull(config: ApplicationConfig): DatabaseAccess? =
+fun createPostgresAccessOrNull(config: ApplicationConfig): PostgresAccess? =
     when (val storage = config.property("chefgpt.storage").getString()) {
         "database" -> {
             val databaseConfig = config.config("postgres")
-            migrateDatabase(databaseConfig)
-            createDatabaseAccess(databaseConfig)
+            migratePostgresDatabase(databaseConfig)
+            createPostgresAccess(databaseConfig)
         }
 
         "memory" -> {
@@ -30,7 +30,7 @@ fun createDatabaseAccessOrNull(config: ApplicationConfig): DatabaseAccess? =
         }
     }
 
-private fun createDatabaseAccess(config: ApplicationConfig): DatabaseAccess {
+private fun createPostgresAccess(config: ApplicationConfig): PostgresAccess {
     val username = config.propertyOrNull("username")?.getString()
     val password = config.propertyOrNull("password")?.getString()
     val connectionFactory =
@@ -46,5 +46,5 @@ private fun createDatabaseAccess(config: ApplicationConfig): DatabaseAccess {
                     if (password != null) option(PASSWORD, password)
                 }.build(),
         )
-    return DatabaseAccess(connectionFactory)
+    return PostgresAccess(connectionFactory)
 }

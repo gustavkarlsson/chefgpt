@@ -6,12 +6,12 @@ import kotlinx.serialization.json.Json
 import se.gustavkarlsson.chefgpt.auth.UserRepository
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventRepository
-import se.gustavkarlsson.chefgpt.db.DatabaseAccess
 import se.gustavkarlsson.chefgpt.images.ImageUploader
+import se.gustavkarlsson.chefgpt.postgres.PostgresAccess
 import se.gustavkarlsson.chefgpt.tools.SpoonacularClient
 
 fun Application.installDependencies(
-    database: DatabaseAccess?,
+    database: PostgresAccess?,
     userRepository: UserRepository,
     chatRepository: ChatRepository,
     eventRepository: EventRepository,

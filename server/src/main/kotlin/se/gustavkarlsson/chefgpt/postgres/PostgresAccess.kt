@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt.db
+package se.gustavkarlsson.chefgpt.postgres
 
 import app.cash.sqldelight.driver.r2dbc.R2dbcDriver
 import io.r2dbc.spi.ConnectionFactory
@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.reactive.awaitSingle
 
-class DatabaseAccess(
+class PostgresAccess(
     private val connectionFactory: ConnectionFactory,
 ) {
     /**

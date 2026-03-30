@@ -2,10 +2,10 @@ package se.gustavkarlsson.chefgpt.auth
 
 import app.cash.sqldelight.async.coroutines.awaitAsOne
 import io.ktor.server.sessions.SessionStorage
-import se.gustavkarlsson.chefgpt.db.DatabaseAccess
+import se.gustavkarlsson.chefgpt.postgres.PostgresAccess
 
 class PostgresSessionStorage(
-    private val db: DatabaseAccess,
+    private val db: PostgresAccess,
 ) : SessionStorage {
     override suspend fun write(
         id: String,

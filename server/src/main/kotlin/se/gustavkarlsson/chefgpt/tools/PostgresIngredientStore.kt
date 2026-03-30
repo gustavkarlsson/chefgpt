@@ -3,11 +3,11 @@ package se.gustavkarlsson.chefgpt.tools
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import se.gustavkarlsson.chefgpt.auth.UserId
-import se.gustavkarlsson.chefgpt.db.DatabaseAccess
+import se.gustavkarlsson.chefgpt.postgres.PostgresAccess
 import kotlin.uuid.toJavaUuid
 
 class PostgresIngredientStore(
-    private val db: DatabaseAccess,
+    private val db: PostgresAccess,
     private val ownerUserId: UserId,
 ) : IngredientStore {
     override suspend fun getIngredients(): List<String> =

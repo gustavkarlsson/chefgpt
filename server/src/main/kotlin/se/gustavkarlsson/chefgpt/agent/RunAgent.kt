@@ -7,7 +7,7 @@ import io.ktor.server.plugins.di.dependencies
 import io.ktor.server.routing.RoutingContext
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.auth.UserId
-import se.gustavkarlsson.chefgpt.db.DatabaseAccess
+import se.gustavkarlsson.chefgpt.postgres.PostgresAccess
 import se.gustavkarlsson.chefgpt.tools.PostgresIngredientStore
 import se.gustavkarlsson.chefgpt.tools.SpoonacularClient
 
@@ -15,7 +15,7 @@ suspend fun RoutingContext.runAgent(
     userId: UserId,
     chatId: ChatId,
 ) {
-    val db: DatabaseAccess by call.application.dependencies
+    val db: PostgresAccess by call.application.dependencies
     val spoonacularClient: SpoonacularClient by call.application.dependencies
     val agent =
         aiAgent(

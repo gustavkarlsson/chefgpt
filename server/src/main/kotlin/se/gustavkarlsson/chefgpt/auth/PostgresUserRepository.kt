@@ -5,7 +5,7 @@ import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
-import se.gustavkarlsson.chefgpt.db.DatabaseAccess
+import se.gustavkarlsson.chefgpt.postgres.PostgresAccess
 import java.security.MessageDigest
 import java.security.SecureRandom
 import kotlin.uuid.toKotlinUuid
@@ -13,7 +13,7 @@ import kotlin.uuid.toKotlinUuid
 private const val SALT_BYTE_COUNT = 16
 
 class PostgresUserRepository(
-    private val db: DatabaseAccess,
+    private val db: PostgresAccess,
     private val rules: List<RegistrationRule> = emptyList(),
 ) : UserRepository {
     private val md5 = MessageDigest.getInstance("MD5")

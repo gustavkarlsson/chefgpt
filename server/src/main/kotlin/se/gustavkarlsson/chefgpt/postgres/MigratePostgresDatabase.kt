@@ -1,11 +1,11 @@
-package se.gustavkarlsson.chefgpt.db
+package se.gustavkarlsson.chefgpt.postgres
 
 import io.ktor.server.config.ApplicationConfig
 import org.flywaydb.core.Flyway
 import org.postgresql.ds.PGSimpleDataSource
 import javax.sql.DataSource
 
-fun migrateDatabase(config: ApplicationConfig) {
+fun migratePostgresDatabase(config: ApplicationConfig) {
     val dataSource = createSimpleDataSource(config)
     Flyway
         .configure()

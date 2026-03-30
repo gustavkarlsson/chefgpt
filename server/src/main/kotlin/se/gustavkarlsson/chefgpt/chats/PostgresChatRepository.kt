@@ -5,12 +5,12 @@ import app.cash.sqldelight.async.coroutines.awaitAsOne
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.auth.UserId
-import se.gustavkarlsson.chefgpt.db.DatabaseAccess
+import se.gustavkarlsson.chefgpt.postgres.PostgresAccess
 import kotlin.uuid.toJavaUuid
 import kotlin.uuid.toKotlinUuid
 
 class PostgresChatRepository(
-    private val db: DatabaseAccess,
+    private val db: PostgresAccess,
 ) : ChatRepository {
     override suspend fun create(userId: UserId): Chat =
         db.use {
