@@ -4,6 +4,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.auth.UserId
+import kotlin.time.Clock
 
 class InMemoryChatRepository : ChatRepository {
     private val chatIdsByUserId = mutableMapOf<UserId, MutableList<ChatId>>()
@@ -39,7 +40,7 @@ class InMemoryChatRepository : ChatRepository {
 
     override suspend fun create(userId: UserId): Chat =
         mutex.withLock {
-            val chat = Chat(ChatId.random())
+            val chat = Chat(ChatId.random(), Clock.System.now())
             chatIdsByUserId.getOrPut(userId) { mutableListOf() }.add(chat.id)
             chatsByChatId[chat.id] = chat
             chat

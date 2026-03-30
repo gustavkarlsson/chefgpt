@@ -25,6 +25,13 @@ private const val UUID_PLACEHOLDER = "00000000-0000-0000-0000-000000000000"
 private val HEX_SESSION_REGEX = Regex("[0-9a-f]{32}")
 private const val HEX_SESSION_PLACEHOLDER = "00000000000000000000000000000000"
 
+private val ISO_INSTANT_REGEX =
+    Regex("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z")
+private const val ISO_INSTANT_PLACEHOLDER = "2000-01-01T00:00:00Z"
+
+private val CONTENT_LENGTH_REGEX = Regex(""""Content-Length": "\d+"""")
+private const val CONTENT_LENGTH_PLACEHOLDER = """"Content-Length": "0""""
+
 fun snapshotTestApplication(
     snapshotContext: JUnit5SnapshotContext,
     applicationConfig: Application.() -> Unit = { testModule() },
@@ -44,8 +51,10 @@ fun snapshotTestApplication(
 private fun JUnit5SnapshotContext.sanitizing(): SanitizingSnapshotContext =
     SanitizingSnapshotContext(this) { json ->
         json
+            .replace(ISO_INSTANT_REGEX, ISO_INSTANT_PLACEHOLDER)
             .replace(UUID_REGEX, UUID_PLACEHOLDER)
             .replace(HEX_SESSION_REGEX, HEX_SESSION_PLACEHOLDER)
+            .replace(CONTENT_LENGTH_REGEX, CONTENT_LENGTH_PLACEHOLDER)
     }
 
 private class SanitizingSnapshotContext(

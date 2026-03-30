@@ -11,7 +11,7 @@
     "response": {
         "status": 400,
         "headers": {
-            "Content-Length": "102",
+            "Content-Length": "0",
             "Content-Type": "application/json"
         },
         "body": {

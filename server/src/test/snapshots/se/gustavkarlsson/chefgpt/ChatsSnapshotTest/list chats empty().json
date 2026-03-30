@@ -1,25 +1,22 @@
 {
     "request": {
-        "method": "POST",
-        "url": "http://localhost/login",
+        "method": "GET",
+        "url": "http://localhost/chats",
         "headers": {
+            "Session-Id": "00000000000000000000000000000000",
             "Accept": "application/json",
             "Content-Length": "0"
         }
     },
     "response": {
-        "status": 400,
+        "status": 200,
         "headers": {
             "Content-Length": "0",
             "Content-Type": "application/json"
         },
         "body": {
             "type": "json",
-            "data": {
-                "type": "missing-credentials",
-                "message": "Missing credentials",
-                "userMessage": null
-            }
+            "data": []
         }
     }
 }

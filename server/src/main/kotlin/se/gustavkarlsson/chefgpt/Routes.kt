@@ -21,6 +21,8 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.application
+import io.ktor.server.routing.delete
+import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.sessions.sessions
@@ -35,6 +37,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import se.gustavkarlsson.chefgpt.agent.AiAgent
 import se.gustavkarlsson.chefgpt.api.ApiAction
+import se.gustavkarlsson.chefgpt.api.ApiChat
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
@@ -44,6 +47,7 @@ import se.gustavkarlsson.chefgpt.auth.LoginError
 import se.gustavkarlsson.chefgpt.auth.RegistrationError
 import se.gustavkarlsson.chefgpt.auth.Session
 import se.gustavkarlsson.chefgpt.auth.UserRepository
+import se.gustavkarlsson.chefgpt.chats.Chat
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventRepository
 import se.gustavkarlsson.chefgpt.chats.createEvent
@@ -119,14 +123,44 @@ fun Routing.routes() {
             call.respond(HttpStatusCode.Created, imageUrl.value)
         }
         route("/chats") {
-            // Start a new chat and return the ChatId
+            // List all chats for the authenticated user
+            get {
+                val chatRepository: ChatRepository by application.dependencies
+                val session = call.requireSession()
+                val chats = chatRepository.getAll(session.user.id)
+                call.respond(HttpStatusCode.OK, chats.map { it.toApi() })
+            }
+            // Start a new chat and return the ApiChat
             post {
                 val chatRepository: ChatRepository by application.dependencies
                 val session = call.requireSession()
                 val chat = chatRepository.create(session.user.id)
-                call.respond(HttpStatusCode.Created, chat.id.value.toString())
+                call.respond(HttpStatusCode.Created, chat.toApi())
             }
             route("/{chatId}") {
+                // Delete a chat
+                delete {
+                    val session = call.requireSession()
+                    val rawChatId = call.parameters.getOrFail("chatId")
+                    val chatId = ChatId.parseOrNull(rawChatId)
+                    if (chatId == null) {
+                        call.respond(
+                            HttpStatusCode.BadRequest,
+                            ApiError("invalid-chat-id", "Invalid chat ID"),
+                        )
+                        return@delete
+                    }
+                    val chatRepository: ChatRepository by application.dependencies
+                    val deleted = chatRepository.delete(session.user.id, chatId)
+                    if (deleted) {
+                        call.respond(HttpStatusCode.NoContent)
+                    } else {
+                        call.respond(
+                            HttpStatusCode.NotFound,
+                            ApiError("chat-not-found", "Chat not found"),
+                        )
+                    }
+                }
                 // Get a flow of chat events
                 sse(
                     "/events",
@@ -228,3 +262,5 @@ private suspend fun ApplicationCall.getChatId(): Result<ChatId, ResponseData<Api
             chat.id
         }
 }
+
+private fun Chat.toApi(): ApiChat = ApiChat(id, createdAt)

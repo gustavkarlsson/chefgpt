@@ -60,9 +60,9 @@ class ActionsSnapshotTest {
     fun `user joined chat`() =
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
-            val chatId = createChat(sessionId)
+            val chat = createChat(sessionId)
 
-            client.post("/chats/$chatId/actions") {
+            client.post("/chats/${chat.id}/actions") {
                 header("Session-Id", sessionId)
                 contentType(ContentType.Application.Json)
                 setBody<ApiAction>(ApiUserJoinedChat(FAKE_JOIN_ID))
