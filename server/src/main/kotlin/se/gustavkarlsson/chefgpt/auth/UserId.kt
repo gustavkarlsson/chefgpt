@@ -1,13 +1,7 @@
 package se.gustavkarlsson.chefgpt.auth
 
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
-import se.gustavkarlsson.chefgpt.api.ChatId
+import se.gustavkarlsson.chefgpt.api.UuidValueSerializer
 import kotlin.uuid.Uuid
 
 @Serializable(with = UserIdSerializer::class)
@@ -26,15 +20,4 @@ value class UserId(
     }
 }
 
-object UserIdSerializer : KSerializer<UserId> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("user-id", PrimitiveKind.STRING)
-
-    override fun serialize(
-        encoder: Encoder,
-        value: UserId,
-    ) {
-        encoder.encodeString(value.value.toString())
-    }
-
-    override fun deserialize(decoder: Decoder): UserId = UserId(Uuid.parse(decoder.decodeString()))
-}
+object UserIdSerializer : UuidValueSerializer<UserId>("user-id", ::UserId, UserId::value)

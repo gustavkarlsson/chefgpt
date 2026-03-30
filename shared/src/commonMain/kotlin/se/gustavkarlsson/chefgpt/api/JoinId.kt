@@ -1,12 +1,6 @@
 package se.gustavkarlsson.chefgpt.api
 
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 import kotlin.jvm.JvmInline
 import kotlin.uuid.Uuid
 
@@ -26,15 +20,4 @@ value class JoinId(
     }
 }
 
-object JoinIdSerializer : KSerializer<JoinId> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("join-id", PrimitiveKind.STRING)
-
-    override fun serialize(
-        encoder: Encoder,
-        value: JoinId,
-    ) {
-        encoder.encodeString(value.value.toString())
-    }
-
-    override fun deserialize(decoder: Decoder): JoinId = JoinId(Uuid.parse(decoder.decodeString()))
-}
+object JoinIdSerializer : UuidValueSerializer<JoinId>("join-id", ::JoinId, JoinId::value)

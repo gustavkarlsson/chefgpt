@@ -1,12 +1,6 @@
 package se.gustavkarlsson.chefgpt.api
 
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 import kotlin.jvm.JvmInline
 import kotlin.uuid.Uuid
 
@@ -22,15 +16,4 @@ value class EventId(
     }
 }
 
-object EventIdSerializer : KSerializer<EventId> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("event-id", PrimitiveKind.STRING)
-
-    override fun serialize(
-        encoder: Encoder,
-        value: EventId,
-    ) {
-        encoder.encodeString(value.value.toString())
-    }
-
-    override fun deserialize(decoder: Decoder): EventId = EventId(Uuid.parse(decoder.decodeString()))
-}
+object EventIdSerializer : UuidValueSerializer<EventId>("event-id", ::EventId, EventId::value)
