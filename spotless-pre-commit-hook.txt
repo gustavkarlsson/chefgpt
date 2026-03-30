@@ -25,7 +25,13 @@ if [ -n "$CHANGED_FILES" ]; then
     done
 
     if [ -s "$diff" ]; then
-      git apply --ignore-whitespace "$diff"
+      if ! git apply --ignore-whitespace "$diff"; then
+        echo "[error] Failed to restore unstaged changes. Aborting commit."
+        echo "[error] Your unstaged work is saved in: $diff"
+        echo "[error] Restore it manually with: git apply $diff"
+        unset diff
+        exit 1
+      fi
     fi
     rm "$diff"
     unset diff
