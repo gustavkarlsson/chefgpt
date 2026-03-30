@@ -13,6 +13,7 @@ import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.db.EventQueries
 import kotlin.uuid.toJavaUuid
 import kotlin.uuid.toKotlinUuid
+import java.util.UUID as JavaUUID
 
 class PostgresEventRepository(
     private val eventQueries: EventQueries,
@@ -52,7 +53,7 @@ class PostgresEventRepository(
                 )
             }
         return flow {
-            val emittedIds = mutableSetOf<java.util.UUID>()
+            val emittedIds = mutableSetOf<JavaUUID>()
             query
                 .asFlow()
                 .mapToList(Dispatchers.IO)

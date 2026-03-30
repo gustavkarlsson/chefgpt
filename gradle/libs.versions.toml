@@ -25,6 +25,7 @@ material3 = "1.10.0-alpha05"
 multiplatformMarkdownRendererM3 = "0.39.2"
 navigation3 = "1.0.0-alpha06"
 postgresDriver = "42.7.10"
+r2dbcPool = "1.0.2.RELEASE"
 r2dbcPostgres = "1.0.7.RELEASE"
 slapshot = "1.0.0"
 slf4jSimple = "2.0.17"
@@ -87,6 +88,7 @@ ktorServerSessions = { module = "io.ktor:ktor-server-sessions", version.ref = "k
 # Database
 postgresDriver = { module = "org.postgresql:postgresql", version.ref = "postgresDriver" }
 r2dbcPostgres = { module = "org.postgresql:r2dbc-postgresql", version.ref = "r2dbcPostgres" }
+r2dbcPool = { module = "io.r2dbc:r2dbc-pool", version.ref = "r2dbcPool" }
 flyway = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
 flywayPostgres = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
 sqldelightR2dbcDriver = { module = "app.cash.sqldelight:r2dbc-driver", version.ref = "sqldelight" }

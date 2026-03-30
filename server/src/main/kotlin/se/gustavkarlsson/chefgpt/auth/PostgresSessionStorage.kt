@@ -11,7 +11,7 @@ class PostgresSessionStorage(
         id: String,
         value: String,
     ) {
-        sessionQueries.insert(id, value)
+        sessionQueries.upsert(id, value)
     }
 
     override suspend fun invalidate(id: String) {

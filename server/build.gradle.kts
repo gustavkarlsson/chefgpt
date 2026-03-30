@@ -61,6 +61,7 @@ dependencies {
     implementation(libs.sqldelightR2dbcDriver)
     implementation(libs.sqldelightCoroutines)
     implementation(libs.sqldelightRuntime)
+    implementation(libs.r2dbcPool)
     implementation(libs.r2dbcPostgres)
     implementation(libs.postgresDriver)
     implementation(libs.flyway)
@@ -84,7 +85,7 @@ sqldelight {
     databases {
         create("ChefGptDatabase") {
             packageName.set("se.gustavkarlsson.chefgpt.db")
-            dialect("app.cash.sqldelight:postgresql-dialect:2.0.2")
+            dialect("app.cash.sqldelight:postgresql-dialect:${libs.versions.sqldelight.get()}")
             verifyMigrations.set(true)
             schemaOutputDirectory.set(file("src/main/sqldelight/databases"))
             generateAsync.set(true)
@@ -94,20 +95,22 @@ sqldelight {
     }
 }
 
-val copySqldelightMigrationsToFlywheel = tasks.register<Copy>("copySqldelightMigrationsToFlywheel") {
-    description = "Copies SQLDelight migrations from a temporary to the Flyway migrations directory, renaming them to match Flyway's format"
-    dependsOn("generateMainChefGptDatabaseMigrations")
-    from(sqldelightMigrationTempDirectory) {
-        include("*")
+val copySqldelightMigrationsToFlywheel =
+    tasks.register<Copy>("copySqldelightMigrationsToFlywheel") {
+        description =
+            "Copies SQLDelight migrations from a temporary to the Flyway migrations directory, renaming them to match Flyway's format"
+        dependsOn("generateMainChefGptDatabaseMigrations")
+        from(sqldelightMigrationTempDirectory) {
+            include("*")
+        }
+        into(flywayMigrationDirectory)
+        rename {
+            val version = it.takeWhile { it.isDigit() }.toInt()
+            val newName = "V${version}__migration.sql"
+            logger.info("Renaming migration file from $it to $newName")
+            newName
+        }
     }
-    into(flywayMigrationDirectory)
-    rename {
-        val version = it.takeWhile { it.isDigit() }.toInt()
-        val newName = "V${version}__migration.sql"
-        logger.info("Renaming migration file from $it to $newName")
-        newName
-    }
-}
 
 tasks.withType<KotlinCompile> {
     dependsOn(copySqldelightMigrationsToFlywheel)
