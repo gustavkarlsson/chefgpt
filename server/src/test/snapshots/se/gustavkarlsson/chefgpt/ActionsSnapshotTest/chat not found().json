@@ -6,7 +6,7 @@
             "Session-Id": "00000000000000000000000000000000",
             "Accept": "application/json",
             "Content-Type": "application/json",
-            "Content-Length": "79"
+            "Content-Length": "0"
         },
         "body": {
             "type": "json",
@@ -19,7 +19,7 @@
     "response": {
         "status": 404,
         "headers": {
-            "Content-Length": "71",
+            "Content-Length": "0",
             "Content-Type": "application/json"
         },
         "body": {
