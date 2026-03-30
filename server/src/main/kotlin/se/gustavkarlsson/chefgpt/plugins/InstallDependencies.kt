@@ -3,6 +3,7 @@ package se.gustavkarlsson.chefgpt.plugins
 import io.ktor.server.application.Application
 import io.ktor.server.plugins.di.dependencies
 import kotlinx.serialization.json.Json
+import se.gustavkarlsson.chefgpt.agent.AiAgent
 import se.gustavkarlsson.chefgpt.auth.UserRepository
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventRepository
@@ -17,6 +18,7 @@ fun Application.installDependencies(
     eventRepository: EventRepository,
     imageUploader: ImageUploader,
     spoonacularClient: SpoonacularClient,
+    aiAgent: AiAgent,
     json: Json,
 ) {
     dependencies {
@@ -29,5 +31,6 @@ fun Application.installDependencies(
         provide { imageUploader }
         provide { json }
         provide { spoonacularClient }
+        provide<AiAgent> { aiAgent }
     }
 }

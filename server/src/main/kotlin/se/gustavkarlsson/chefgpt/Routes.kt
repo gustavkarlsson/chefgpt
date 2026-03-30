@@ -33,7 +33,7 @@ import io.ktor.sse.ServerSentEvent
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
-import se.gustavkarlsson.chefgpt.agent.runAgent
+import se.gustavkarlsson.chefgpt.agent.AiAgent
 import se.gustavkarlsson.chefgpt.api.ApiAction
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiEvent
@@ -166,7 +166,8 @@ fun Routing.routes() {
                                 }
 
                                 is ApiUserSendsMessage -> {
-                                    runAgent(session.user.id, chatId)
+                                    val aiAgent: AiAgent by application.dependencies
+                                    with(aiAgent) { run(session.user.id, chatId) }
                                 }
                             }
                         }.map {
