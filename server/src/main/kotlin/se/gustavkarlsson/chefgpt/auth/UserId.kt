@@ -27,7 +27,7 @@ value class UserId(
 }
 
 object UserIdSerializer : KSerializer<UserId> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("UserId", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("user-id", PrimitiveKind.STRING)
 
     override fun serialize(
         encoder: Encoder,

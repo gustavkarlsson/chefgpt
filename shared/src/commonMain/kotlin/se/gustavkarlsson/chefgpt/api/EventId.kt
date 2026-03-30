@@ -23,7 +23,7 @@ value class EventId(
 }
 
 object EventIdSerializer : KSerializer<EventId> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("EventId", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("event-id", PrimitiveKind.STRING)
 
     override fun serialize(
         encoder: Encoder,

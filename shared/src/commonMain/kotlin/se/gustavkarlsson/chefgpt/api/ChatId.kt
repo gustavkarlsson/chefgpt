@@ -27,7 +27,7 @@ value class ChatId(
 }
 
 object ChatIdSerializer : KSerializer<ChatId> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ChatId", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("chat-id", PrimitiveKind.STRING)
 
     override fun serialize(
         encoder: Encoder,

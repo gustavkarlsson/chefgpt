@@ -27,7 +27,7 @@ value class JoinId(
 }
 
 object JoinIdSerializer : KSerializer<JoinId> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("JoinId", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("join-id", PrimitiveKind.STRING)
 
     override fun serialize(
         encoder: Encoder,

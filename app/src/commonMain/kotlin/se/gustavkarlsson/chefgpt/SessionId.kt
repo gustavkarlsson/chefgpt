@@ -18,7 +18,7 @@ value class SessionId(
 }
 
 object SessionIdSerializer : KSerializer<SessionId> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("SessionId", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("session-id", PrimitiveKind.STRING)
 
     override fun serialize(
         encoder: Encoder,
