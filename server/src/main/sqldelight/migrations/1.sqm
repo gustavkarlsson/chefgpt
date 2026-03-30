@@ -1,25 +1,23 @@
 CREATE TABLE "user"
 (
-    id                UUID  NOT NULL PRIMARY KEY,
+    id                UUID  NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     username          TEXT  NOT NULL UNIQUE,
     password_md5_hash BYTEA NOT NULL,
     password_salt     BYTEA NOT NULL
 );
 
-CREATE EXTENSION IF NOT EXISTS citext;
-
 CREATE TABLE ingredient
 (
-    id                UUID   NOT NULL PRIMARY KEY,
+    id                UUID   NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id           UUID   NOT NULL REFERENCES "user" (id) ON DELETE CASCADE,
-    name              CITEXT NOT NULL,
+    name              TEXT   NOT NULL,
     UNIQUE (user_id, name)
 );
 
 CREATE TABLE chat
 (
-    id                UUID  NOT NULL PRIMARY KEY,
+    id                UUID  NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id           UUID  NOT NULL REFERENCES "user" (id) ON DELETE CASCADE
 );
 
-CREATE INDEX "idx_user_id" ON chat(user_id);
+CREATE INDEX idx_user_id ON chat(user_id);

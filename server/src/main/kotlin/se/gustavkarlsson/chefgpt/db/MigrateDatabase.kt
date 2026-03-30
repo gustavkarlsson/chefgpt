@@ -9,6 +9,7 @@ fun migrateDatabase(config: ApplicationConfig) {
     val dataSource = createSimpleDataSource(config)
     Flyway
         .configure()
+        .validateMigrationNaming(true)
         .dataSource(dataSource)
         .load()
         .migrate()

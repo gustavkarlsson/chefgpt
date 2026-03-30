@@ -5,9 +5,9 @@ import ai.koog.ktor.aiAgent
 import ai.koog.prompt.executor.clients.anthropic.AnthropicModels
 import io.ktor.server.plugins.di.dependencies
 import io.ktor.server.routing.RoutingContext
-import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.auth.UserId
+import se.gustavkarlsson.chefgpt.db.ChefGptDatabase
 import se.gustavkarlsson.chefgpt.tools.PostgresIngredientStore
 import se.gustavkarlsson.chefgpt.tools.SpoonacularClient
 
@@ -15,7 +15,7 @@ suspend fun RoutingContext.runAgent(
     userId: UserId,
     chatId: ChatId,
 ) {
-    val db: R2dbcDatabase by call.application.dependencies
+    val db: ChefGptDatabase by call.application.dependencies
     val spoonacularClient: SpoonacularClient by call.application.dependencies
     val agent =
         aiAgent(
@@ -25,7 +25,7 @@ suspend fun RoutingContext.runAgent(
                 ToolRegistry {
                     // TODO Tools should really be set in the plugin config, but it's broken due to https://github.com/JetBrains/koog/issues/1705
                     // TODO Pass a factory or lambda for the store instead
-                    tools(PostgresIngredientStore(db, userId).asTools())
+                    tools(PostgresIngredientStore(db.ingredientQueries, userId).asTools())
                     tools(spoonacularClient.asTools())
                 },
         )

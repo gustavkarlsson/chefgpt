@@ -1,92 +1,56 @@
 package se.gustavkarlsson.chefgpt.chats
 
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toList
-import org.jetbrains.exposed.v1.core.and
-import org.jetbrains.exposed.v1.core.dao.id.UuidTable
-import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
-import org.jetbrains.exposed.v1.r2dbc.deleteWhere
-import org.jetbrains.exposed.v1.r2dbc.insert
-import org.jetbrains.exposed.v1.r2dbc.selectAll
+import app.cash.sqldelight.async.coroutines.awaitAsList
+import app.cash.sqldelight.async.coroutines.awaitAsOne
+import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.auth.UserId
-import se.gustavkarlsson.chefgpt.db.withTransaction
-
-private object Table : UuidTable("chat") {
-    val userId = uuid("user_id")
-}
+import se.gustavkarlsson.chefgpt.db.ChatQueries
+import kotlin.uuid.toJavaUuid
+import kotlin.uuid.toKotlinUuid
 
 class PostgresChatRepository(
-    private val db: R2dbcDatabase,
+    private val chatQueries: ChatQueries,
 ) : ChatRepository {
-    override suspend fun create(userId: UserId): Chat =
-        db.withTransaction {
-            val id =
-                Table
-                    .insert {
-                        it[Table.userId] = userId.value
-                    }.get(Table.id)
-                    .value
-            Chat(ChatId(id))
-        }
+    override suspend fun create(userId: UserId): Chat {
+        val id = chatQueries.insert(user_id = userId.value.toJavaUuid()).awaitAsOne()
+        return Chat(ChatId(id.toKotlinUuid()))
+    }
 
     override suspend fun delete(
         userId: UserId,
         chatId: ChatId,
     ): Boolean =
-        db.withTransaction {
-            Table.deleteWhere { id eq chatId.value } > 0
-        }
+        chatQueries
+            .deleteByUserIdAndChatId(userId.value.toJavaUuid(), chatId.value.toJavaUuid())
+            .awaitAsOneOrNull() != null
 
     override suspend fun getAll(userId: UserId): List<Chat> =
-        db.withTransaction {
-            Table
-                .selectAll()
-                .map { row ->
-                    val id = ChatId(row[Table.id].value)
-                    Chat(id)
-                }.toList()
-        }
+        chatQueries
+            .selectByUserId(userId.value.toJavaUuid())
+            .awaitAsList()
+            .map { row -> Chat(ChatId(row.id.toKotlinUuid())) }
 
     override suspend fun get(
         userId: UserId,
         chatId: ChatId,
     ): Chat? =
-        db.withTransaction {
-            Table
-                .selectAll()
-                .where { (Table.userId eq userId.value) and (Table.id eq chatId.value) }
-                .limit(1)
-                .map { row ->
-                    val id = ChatId(row[Table.id].value)
-                    Chat(id)
-                }.firstOrNull()
-        }
+        chatQueries
+            .selectByUserIdAndChatId(userId.value.toJavaUuid(), chatId.value.toJavaUuid())
+            .awaitAsOneOrNull()
+            ?.let { row -> Chat(ChatId(row.id.toKotlinUuid())) }
 
     override suspend fun get(chatId: ChatId): Chat? =
-        db.withTransaction {
-            Table
-                .selectAll()
-                .where { Table.id eq chatId.value }
-                .limit(1)
-                .map { row ->
-                    val id = ChatId(row[Table.id].value)
-                    Chat(id)
-                }.firstOrNull()
-        }
+        chatQueries
+            .selectByChatId(chatId.value.toJavaUuid())
+            .awaitAsOneOrNull()
+            ?.let { row -> Chat(ChatId(row.id.toKotlinUuid())) }
 
     override suspend fun contains(
         userId: UserId,
         chatId: ChatId,
     ): Boolean =
-        db.withTransaction {
-            Table
-                .selectAll()
-                .where { (Table.userId eq userId.value) and (Table.id eq chatId.value) }
-                .limit(1)
-                .empty()
-                .not()
-        }
+        chatQueries
+            .existsByUserIdAndChatId(userId.value.toJavaUuid(), chatId.value.toJavaUuid())
+            .awaitAsOne()
 }

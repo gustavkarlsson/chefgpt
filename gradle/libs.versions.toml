@@ -9,10 +9,7 @@ atomicfu = "0.32.1"
 coil = "3.4.0"
 composeHotReload = "1.0.0"
 composeMultiplatform = "1.10.3"
-exposed = "1.1.1"
 flyway = "12.2.0"
-r2dbcPool = "1.0.2.RELEASE"
-r2dbcPostgres = "1.0.7.RELEASE"
 jvmToolchain = "21" # Jetbrains Hot-Reload needs this
 kermit = "2.1.0"
 koin = "4.2.0"
@@ -28,8 +25,10 @@ material3 = "1.10.0-alpha05"
 multiplatformMarkdownRendererM3 = "0.39.2"
 navigation3 = "1.0.0-alpha06"
 postgresDriver = "42.7.10"
+r2dbcPostgres = "1.0.7.RELEASE"
 slapshot = "1.0.0"
 slf4jSimple = "2.0.17"
+sqldelight = "2.0.2"
 spotless = "8.4.0"
 testcontainers = "1.21.4"
 
@@ -87,13 +86,12 @@ ktorServerSessions = { module = "io.ktor:ktor-server-sessions", version.ref = "k
 
 # Database
 postgresDriver = { module = "org.postgresql:postgresql", version.ref = "postgresDriver" }
-exposedCore = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
-exposedR2dbc = { module = "org.jetbrains.exposed:exposed-r2dbc", version.ref = "exposed" }
-exposedJson = { module = "org.jetbrains.exposed:exposed-json", version.ref = "exposed" }
 r2dbcPostgres = { module = "org.postgresql:r2dbc-postgresql", version.ref = "r2dbcPostgres" }
-r2dbcPool = { module = "io.r2dbc:r2dbc-pool", version.ref = "r2dbcPool" }
-flyway = { module= "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
 flywayPostgres = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
+sqldelightR2dbcDriver = { module = "app.cash.sqldelight:r2dbc-driver", version.ref = "sqldelight" }
+sqldelightCoroutines = { module = "app.cash.sqldelight:coroutines-extensions-jvm", version.ref = "sqldelight" }
+sqldelightRuntime = { module = "app.cash.sqldelight:runtime-jvm", version.ref = "sqldelight" }
 
 # Ktor common
 ktorSerializationKotlinxJson = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
@@ -130,4 +128,5 @@ kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", versio
 ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
 slapshot = { id = "se.gustavkarlsson.slapshot", version.ref = "slapshot" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
 atomicfu = { id ="org.jetbrains.kotlinx.atomicfu", version.ref = "atomicfu" }

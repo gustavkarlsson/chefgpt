@@ -1,67 +1,45 @@
 package se.gustavkarlsson.chefgpt.tools
 
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toList
-import org.jetbrains.exposed.v1.core.and
-import org.jetbrains.exposed.v1.core.dao.id.UuidTable
-import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
-import org.jetbrains.exposed.v1.r2dbc.deleteWhere
-import org.jetbrains.exposed.v1.r2dbc.insertIgnore
-import org.jetbrains.exposed.v1.r2dbc.select
-import org.jetbrains.exposed.v1.r2dbc.selectAll
+import app.cash.sqldelight.async.coroutines.awaitAsList
+import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import se.gustavkarlsson.chefgpt.auth.UserId
-import se.gustavkarlsson.chefgpt.db.withTransaction
-
-private object Table : UuidTable("ingredient") {
-    val userId = uuid("user_id")
-    val name = text("name")
-}
+import se.gustavkarlsson.chefgpt.db.IngredientQueries
+import kotlin.uuid.toJavaUuid
 
 class PostgresIngredientStore(
-    private val db: R2dbcDatabase,
+    private val ingredientQueries: IngredientQueries,
     private val ownerUserId: UserId,
 ) : IngredientStore {
     override suspend fun getIngredients(): List<String> =
-        db.withTransaction {
-            Table
-                .select(Table.name)
-                .where { Table.userId eq ownerUserId.value }
-                .map { it[Table.name] }
-                .toList()
-        }
+        ingredientQueries
+            .selectByUserId(ownerUserId.value.toJavaUuid())
+            .awaitAsList()
+            .map { it.name }
 
     override suspend fun addIngredients(ingredients: List<String>): List<String> =
-        db.withTransaction {
+        ingredientQueries.transactionWithResult {
             ingredients
                 .map { it.trim().lowercase() }
-                .filter { ingredient ->
-                    Table
-                        .insertIgnore {
-                            it[userId] = ownerUserId.value
-                            it[name] = ingredient
-                        }.insertedCount > 0
+                .mapNotNull { ingredient ->
+                    ingredientQueries
+                        .insert(
+                            user_id = ownerUserId.value.toJavaUuid(),
+                            name = ingredient,
+                        ).awaitAsOneOrNull()
                 }
         }
 
     override suspend fun removeIngredients(ingredients: List<String>): List<String> =
-        db.withTransaction {
-            ingredients.filter { ingredient ->
-                Table.deleteWhere {
-                    (userId eq ownerUserId.value) and (name eq ingredient)
-                } > 0
+        ingredientQueries.transactionWithResult {
+            ingredients.mapNotNull { ingredient ->
+                ingredientQueries
+                    .deleteByUserIdAndName(ownerUserId.value.toJavaUuid(), ingredient)
+                    .awaitAsOneOrNull()
             }
         }
 
     override suspend fun clearIngredients(): List<String> =
-        db.withTransaction {
-            val removed =
-                Table
-                    .selectAll()
-                    .where { Table.userId eq ownerUserId.value }
-                    .map { it[Table.name] }
-                    .toList()
-            Table.deleteWhere { userId eq ownerUserId.value }
-            removed
-        }
+        ingredientQueries
+            .deleteByUserId(ownerUserId.value.toJavaUuid())
+            .awaitAsList()
 }

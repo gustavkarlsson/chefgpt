@@ -1,16 +1,16 @@
 package se.gustavkarlsson.chefgpt.setup
 
 import io.ktor.server.config.ApplicationConfig
-import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
-import se.gustavkarlsson.chefgpt.db.connectR2dbcDatabase
+import se.gustavkarlsson.chefgpt.db.ChefGptDatabase
+import se.gustavkarlsson.chefgpt.db.connectDatabase
 import se.gustavkarlsson.chefgpt.db.migrateDatabase
 
-fun createDatabaseOrNull(config: ApplicationConfig): R2dbcDatabase? =
+fun createDatabaseOrNull(config: ApplicationConfig): ChefGptDatabase? =
     when (val storage = config.property("chefgpt.storage").getString()) {
         "database" -> {
             val databaseConfig = config.config("database")
             migrateDatabase(databaseConfig)
-            connectR2dbcDatabase(databaseConfig)
+            connectDatabase(databaseConfig)
         }
 
         "memory" -> {

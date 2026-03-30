@@ -1,9 +1,12 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     alias(libs.plugins.kotlinJvm)
     alias(libs.plugins.ktor)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.atomicfu)
     alias(libs.plugins.slapshot)
+    alias(libs.plugins.sqldelight)
     application
 }
 
@@ -54,12 +57,11 @@ dependencies {
     // Koog
     implementation(libs.koogKtor)
 
-    // Database (R2DBC for application, JDBC for Flyway migrations)
-    implementation(libs.exposedCore)
-    implementation(libs.exposedR2dbc)
-    implementation(libs.exposedJson)
+    // Database (R2DBC + SQLDelight)
+    implementation(libs.sqldelightR2dbcDriver)
+    implementation(libs.sqldelightCoroutines)
+    implementation(libs.sqldelightRuntime)
     implementation(libs.r2dbcPostgres)
-    implementation(libs.r2dbcPool)
     implementation(libs.postgresDriver)
     implementation(libs.flyway)
     implementation(libs.flywayPostgres)
@@ -69,8 +71,46 @@ dependencies {
     testImplementation(libs.kotlinTestJunit5)
     testImplementation(libs.slapshotJunit5)
     testImplementation(libs.slapshotKtor3)
+    // TODO Remove once testcontainer example is replaced with proper integration tests
+    testImplementation(libs.postgresDriver)
     testImplementation(libs.testcontainersJunit5)
     testImplementation(libs.testcontainersPostgres)
+}
+
+val flywayMigrationDirectory = layout.buildDirectory.dir("resources/main/db/migration")
+val sqldelightMigrationTempDirectory = layout.buildDirectory.dir("tmp/sqldelight/migrations")
+
+sqldelight {
+    databases {
+        create("ChefGptDatabase") {
+            packageName.set("se.gustavkarlsson.chefgpt.db")
+            dialect("app.cash.sqldelight:postgresql-dialect:2.0.2")
+            verifyMigrations.set(true)
+            schemaOutputDirectory.set(file("src/main/sqldelight/databases"))
+            generateAsync.set(true)
+            deriveSchemaFromMigrations.set(true)
+            migrationOutputDirectory.set(sqldelightMigrationTempDirectory)
+        }
+    }
+}
+
+val copySqldelightMigrationsToFlywheel = tasks.register<Copy>("copySqldelightMigrationsToFlywheel") {
+    description = "Copies SQLDelight migrations from a temporary to the Flyway migrations directory, renaming them to match Flyway's format"
+    dependsOn("generateMainChefGptDatabaseMigrations")
+    from(sqldelightMigrationTempDirectory) {
+        include("*")
+    }
+    into(flywayMigrationDirectory)
+    rename {
+        val version = it.takeWhile { it.isDigit() }.toInt()
+        val newName = "V${version}__migration.sql"
+        logger.info("Renaming migration file from $it to $newName")
+        newName
+    }
+}
+
+tasks.withType<KotlinCompile> {
+    dependsOn(copySqldelightMigrationsToFlywheel)
 }
 
 tasks.test {

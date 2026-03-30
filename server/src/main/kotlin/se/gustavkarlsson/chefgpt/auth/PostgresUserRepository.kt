@@ -1,32 +1,19 @@
 package se.gustavkarlsson.chefgpt.auth
 
+import app.cash.sqldelight.async.coroutines.awaitAsOne
+import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
-import com.github.michaelbull.result.flatMap
-import com.github.michaelbull.result.toResultOr
-import kotlinx.coroutines.flow.firstOrNull
-import org.jetbrains.exposed.v1.core.dao.id.UuidTable
-import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
-import org.jetbrains.exposed.v1.r2dbc.insert
-import org.jetbrains.exposed.v1.r2dbc.selectAll
-import se.gustavkarlsson.chefgpt.db.withTransaction
+import se.gustavkarlsson.chefgpt.db.UserQueries
 import java.security.MessageDigest
 import java.security.SecureRandom
+import kotlin.uuid.toKotlinUuid
 
 private const val SALT_BYTE_COUNT = 16
 
-private object Table : UuidTable("user") {
-    val username = text("username")
-    val passwordHash = binary("password_md5_hash")
-    val passwordSalt = binary("password_salt")
-}
-
-// TODO Test with dev containers
-// TODO prevent hammering
 class PostgresUserRepository(
-    private val db: R2dbcDatabase,
+    private val userQueries: UserQueries,
     private val rules: List<RegistrationRule> = emptyList(),
 ) : UserRepository {
     private val md5 = MessageDigest.getInstance("MD5")
@@ -43,65 +30,39 @@ class PostgresUserRepository(
         if (registrationError != null) {
             return Err(registrationError)
         }
-        return db.withTransaction {
-            val exists =
-                Table
-                    .selectAll()
-                    .where { Table.username eq name }
-                    .limit(1)
-                    .empty()
-                    .not()
-            if (!exists) {
-                val salt = generateSalt()
-                val id =
-                    Table
-                        .insert {
-                            it[username] = name
-                            it[passwordHash] = hash(password, salt)
-                            it[passwordSalt] = salt
-                        }.get(Table.id)
-                        .value
-                Ok(User(UserId(id), name))
-            } else {
-                Err(RegistrationError.UsernameTaken)
-            }
+        val salt = generateSalt()
+        val id =
+            userQueries
+                .insert(
+                    username = name,
+                    password_md5_hash = hash(password, salt),
+                    password_salt = salt,
+                ).awaitAsOneOrNull()
+        return if (id != null) {
+            Ok(User(UserId(id.toKotlinUuid()), name))
+        } else {
+            Err(RegistrationError.UsernameTaken)
         }
     }
 
     override suspend fun login(
         name: String,
         password: String,
-    ): Result<User, LoginError> =
-        db.withTransaction {
-            Table
-                .selectAll()
-                .where { Table.username eq name }
-                .limit(1)
-                .firstOrNull()
-                .toResultOr { LoginError.WrongCredentials }
-                .flatMap { userRow ->
-                    val id = userRow[Table.id]
-                    val username = userRow[Table.username]
-                    val salt = userRow[Table.passwordSalt]
-                    val passwordHash = userRow[Table.passwordHash]
-                    val expectedHash = hash(password, salt)
-                    if (passwordHash.contentEquals(expectedHash)) {
-                        Ok(User(UserId(id.value), username))
-                    } else {
-                        Err(LoginError.WrongCredentials)
-                    }
-                }
+    ): Result<User, LoginError> {
+        val userRow =
+            userQueries
+                .selectByUsername(name)
+                .awaitAsOneOrNull()
+                ?: return Err(LoginError.WrongCredentials)
+        val expectedHash = hash(password, userRow.password_salt)
+        return if (userRow.password_md5_hash.contentEquals(expectedHash)) {
+            Ok(User(UserId(userRow.id.toKotlinUuid()), userRow.username))
+        } else {
+            Err(LoginError.WrongCredentials)
         }
+    }
 
-    override suspend operator fun contains(name: String): Boolean =
-        db.withTransaction {
-            Table
-                .selectAll()
-                .where { Table.username eq name }
-                .limit(1)
-                .empty()
-                .not()
-        }
+    override suspend operator fun contains(name: String): Boolean = userQueries.existsByUsername(name).awaitAsOne()
 
     private fun generateSalt(): ByteArray = ByteArray(SALT_BYTE_COUNT).also { secureRandom.nextBytes(it) }
 

@@ -1,13 +1,13 @@
 package se.gustavkarlsson.chefgpt.setup
 
-import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import se.gustavkarlsson.chefgpt.chats.EventRepository
 import se.gustavkarlsson.chefgpt.chats.InMemoryEventRepository
 import se.gustavkarlsson.chefgpt.chats.PostgresEventRepository
+import se.gustavkarlsson.chefgpt.db.ChefGptDatabase
 
-fun createEventRepository(database: R2dbcDatabase?): EventRepository =
+fun createEventRepository(database: ChefGptDatabase?): EventRepository =
     if (database != null) {
-        PostgresEventRepository(database)
+        PostgresEventRepository(database.eventQueries)
     } else {
         InMemoryEventRepository()
     }

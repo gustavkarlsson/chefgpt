@@ -1,0 +1,12 @@
+insert:
+INSERT INTO session (id, value)
+VALUES (?, ?);
+
+selectById:
+SELECT *
+FROM session
+WHERE id = ?;
+
+deleteById:
+DELETE FROM session
+WHERE id = ?;
