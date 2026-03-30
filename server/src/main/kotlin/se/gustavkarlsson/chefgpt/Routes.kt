@@ -84,7 +84,7 @@ fun Routing.routes() {
             }.onOk { session ->
                 call.sessions.set(session)
             }.map {
-                ResponseData(status = HttpStatusCode.Created)
+                ResponseData(status = HttpStatusCode.NoContent)
             }.respond(call)
     }
     post("/login") {
@@ -107,7 +107,7 @@ fun Routing.routes() {
             }.onOk { session ->
                 call.sessions.set(session)
             }.map {
-                ResponseData(status = HttpStatusCode.OK)
+                ResponseData(status = HttpStatusCode.NoContent)
             }.respond(call)
     }
     authenticate {
@@ -171,7 +171,7 @@ fun Routing.routes() {
                                 }
                             }
                         }.map {
-                            ResponseData(HttpStatusCode.OK)
+                            ResponseData(HttpStatusCode.NoContent)
                         }.respond(call)
                 }
             }
