@@ -6,12 +6,12 @@
             "Session-Id": "00000000000000000000000000000000",
             "Accept": "application/json",
             "Content-Type": "application/json",
-            "Content-Length": "106"
+            "Content-Length": "79"
         },
         "body": {
             "type": "json",
             "data": {
-                "type": "se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat",
+                "type": "api-user-joined-chat",
                 "joinId": "00000000-0000-0000-0000-000000000000"
             }
         }
