@@ -16,6 +16,7 @@ import se.gustavkarlsson.chefgpt.setup.createDatabaseAccessOrNull
 import se.gustavkarlsson.chefgpt.setup.createEventRepository
 import se.gustavkarlsson.chefgpt.setup.createImageUploader
 import se.gustavkarlsson.chefgpt.setup.createJson
+import se.gustavkarlsson.chefgpt.setup.createRethinkDbAccessOrNull
 import se.gustavkarlsson.chefgpt.setup.createSessionStorage
 import se.gustavkarlsson.chefgpt.setup.createSpoonacularClient
 import se.gustavkarlsson.chefgpt.setup.createUserRepository
@@ -25,9 +26,10 @@ fun main(args: Array<String>) = EngineMain.main(args)
 fun Application.module() {
     val config = environment.config
     val database = createDatabaseAccessOrNull(config)
+    val rethinkDb = createRethinkDbAccessOrNull(config)
     val userRepository = createUserRepository(database)
     val chatRepository = createChatRepository(database)
-    val eventRepository = createEventRepository(database)
+    val eventRepository = createEventRepository(rethinkDb)
     val sessionStorage = createSessionStorage(database)
     val imageUploader = createImageUploader(config.config("chefgpt.cloudinary"))
     val spoonacularClient = createSpoonacularClient(config.property("chefgpt.spoonacularApiKey").getString())

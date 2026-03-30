@@ -68,6 +68,9 @@ dependencies {
     implementation(libs.flyway)
     implementation(libs.flywayPostgres)
 
+    // RethinkDB
+    implementation(libs.rethinkdb)
+
     // Test
     testImplementation(libs.ktorServerTestHost)
     testImplementation(libs.kotlinTestJunit5)
@@ -121,60 +124,99 @@ tasks.test {
     useJUnitPlatform()
 }
 
-tasks.register("postgres") {
-    group = "application"
-    description = "Ensures the chefgpt postgres docker container is running"
+object Command {
+    fun run(vararg cmd: String): Pair<Int, String> {
+        val proc = ProcessBuilder(*cmd).redirectErrorStream(true).start()
+        val out =
+            proc.inputStream
+                .bufferedReader()
+                .readText()
+                .trim()
+        return proc.waitFor() to out
+    }
 
-    doFirst {
-        fun run(vararg cmd: String): Pair<Int, String> {
-            val proc = ProcessBuilder(*cmd).redirectErrorStream(true).start()
-            val out =
-                proc.inputStream
-                    .bufferedReader()
-                    .readText()
-                    .trim()
-            return proc.waitFor() to out
-        }
-
-        fun runOrThrow(vararg cmd: String) {
-            val (exitCode, output) = run(*cmd)
-            if (exitCode != 0) {
-                throw GradleException("Command failed (exit $exitCode): ${cmd.joinToString(" ")}\n$output")
-            }
-        }
-
-        val (exitCode, output) = run("docker", "inspect", "-f", "{{.State.Running}}", "chefgpt")
-        when {
-            exitCode != 0 -> {
-                logger.lifecycle("Creating and starting chefgpt container...")
-                runOrThrow(
-                    "docker",
-                    "run",
-                    "--name",
-                    "chefgpt",
-                    "--detach",
-                    "--publish",
-                    "127.0.0.1:5432:5432",
-                    "--env",
-                    "POSTGRES_PASSWORD=password",
-                    "--env",
-                    "POSTGRES_DB=chefgpt",
-                    "postgres:18.3",
-                )
-            }
-
-            output != "true" -> {
-                logger.lifecycle("Starting existing chefgpt container...")
-                runOrThrow("docker", "start", "chefgpt")
-            }
-
-            else -> {
-                logger.lifecycle("chefgpt container is already running.")
-            }
+    fun runOrThrow(vararg cmd: String) {
+        val (exitCode, output) = run(*cmd)
+        if (exitCode != 0) {
+            throw GradleException("Command failed (exit $exitCode): ${cmd.joinToString(" ")}\n$output")
         }
     }
 }
 
+val postgres =
+    tasks.register("postgres") {
+        group = "application"
+        description = "Ensures the chefgpt postgres docker container is running"
+
+        doFirst {
+            val (exitCode, output) = Command.run("docker", "inspect", "-f", "{{.State.Running}}", "chefgpt")
+            when {
+                exitCode != 0 -> {
+                    logger.lifecycle("Creating and starting chefgpt-postgres container...")
+                    Command.runOrThrow(
+                        "docker",
+                        "run",
+                        "--name",
+                        "chefgpt",
+                        "--detach",
+                        "--publish",
+                        "127.0.0.1:5432:5432",
+                        "--env",
+                        "POSTGRES_HOST_AUTH_METHOD=trust",
+                        "--env",
+                        "POSTGRES_DB=chefgpt",
+                        "postgres:18.3",
+                    )
+                }
+
+                output != "true" -> {
+                    logger.lifecycle("Starting existing chefgpt-postgres container...")
+                    Command.runOrThrow("docker", "start", "chefgpt-postgres")
+                }
+
+                else -> {
+                    logger.lifecycle("chefgpt-postgres container is already running.")
+                }
+            }
+        }
+    }
+
+val rethinkdb =
+    tasks.register("rethinkdb") {
+        group = "application"
+        description = "Ensures the rethinkdb docker container is running"
+
+        doFirst {
+            val (exitCode, output) = Command.run("docker", "inspect", "-f", "{{.State.Running}}", "chefgpt-rethinkdb")
+            when {
+                exitCode != 0 -> {
+                    logger.lifecycle("Creating and starting chefgpt-rethinkdb container...")
+                    Command.runOrThrow(
+                        "docker",
+                        "run",
+                        "--name",
+                        "chefgpt-rethinkdb",
+                        "--detach",
+                        "--publish",
+                        "127.0.0.1:28015:28015",
+                        "--publish",
+                        "127.0.0.1:8085:8080",
+                        "rethinkdb:2.4",
+                    )
+                }
+
+                output != "true" -> {
+                    logger.lifecycle("Starting existing chefgpt-rethinkdb container...")
+                    Command.runOrThrow("docker", "start", "chefgpt-rethinkdb")
+                }
+
+                else -> {
+                    logger.lifecycle("chefgpt-rethinkdb container is already running.")
+                }
+            }
+        }
+    }
+
 tasks.named("run") {
-    mustRunAfter("postgres")
+    mustRunAfter(postgres, rethinkdb)
 }

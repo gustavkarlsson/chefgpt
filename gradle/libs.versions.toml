@@ -26,6 +26,7 @@ multiplatformMarkdownRendererM3 = "0.39.2"
 navigation3 = "1.0.0-alpha06"
 postgresDriver = "42.7.10"
 r2dbcPool = "1.0.2.RELEASE"
+rethinkdb = "2.4.4"
 r2dbcPostgres = "1.0.7.RELEASE"
 slapshot = "1.0.0"
 slf4jSimple = "2.0.17"
@@ -96,6 +97,9 @@ sqldelightR2dbcDriver = { module = "app.cash.sqldelight:r2dbc-driver", version.r
 sqldelightCoroutines = { module = "app.cash.sqldelight:coroutines-extensions-jvm", version.ref = "sqldelight" }
 sqldelightRuntime = { module = "app.cash.sqldelight:runtime-jvm", version.ref = "sqldelight" }
 sqldelightPostgresDialect = { module = "app.cash.sqldelight:postgresql-dialect", version.ref = "sqldelight" }
+
+# RethinkDB
+rethinkdb = { module = "com.rethinkdb:rethinkdb-driver", version.ref = "rethinkdb" }
 
 # Ktor common
 ktorSerializationKotlinxJson = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }

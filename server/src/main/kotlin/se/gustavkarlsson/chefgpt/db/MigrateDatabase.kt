@@ -29,9 +29,14 @@ private fun getUrl(config: ApplicationConfig): String =
         append(":")
         append(config.property("port").getString())
         append("/")
-        append(config.property("name").getString())
-        append("?user=")
-        append(config.property("username").getString())
-        append("&password=")
-        append(config.property("password").getString())
+        append(config.property("database").getString())
+        val params =
+            buildList {
+                config.propertyOrNull("username")?.getString()?.let { add("user=$it") }
+                config.propertyOrNull("password")?.getString()?.let { add("password=$it") }
+            }
+        if (params.isNotEmpty()) {
+            append("?")
+            append(params.joinToString("&"))
+        }
     }
