@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.reactive.awaitSingle
+import se.gustavkarlsson.chefgpt.db.ChefGptDatabase
 
 class PostgresAccess(
     private val connectionFactory: ConnectionFactory,
