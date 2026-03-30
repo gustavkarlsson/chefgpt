@@ -11,6 +11,7 @@ import se.gustavkarlsson.chefgpt.plugins.installDependencies
 import se.gustavkarlsson.chefgpt.plugins.installKoog
 import se.gustavkarlsson.chefgpt.plugins.installSSE
 import se.gustavkarlsson.chefgpt.plugins.installSessions
+import se.gustavkarlsson.chefgpt.setup.createAiAgent
 import se.gustavkarlsson.chefgpt.setup.createChatRepository
 import se.gustavkarlsson.chefgpt.setup.createEventRepository
 import se.gustavkarlsson.chefgpt.setup.createImageUploader
@@ -33,6 +34,7 @@ fun Application.module() {
     val sessionStorage = createSessionStorage(database)
     val imageUploader = createImageUploader(config.config("chefgpt.cloudinary"))
     val spoonacularClient = createSpoonacularClient(config.property("chefgpt.spoonacularApiKey").getString())
+    val aiAgent = createAiAgent(config.property("chefgpt.agent").getString())
     val json = createJson(developmentMode)
 
     installDependencies(
@@ -42,6 +44,7 @@ fun Application.module() {
         eventRepository = eventRepository,
         imageUploader = imageUploader,
         spoonacularClient = spoonacularClient,
+        aiAgent = aiAgent,
         json = json,
     )
     installCallLogging(config)
