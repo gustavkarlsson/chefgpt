@@ -45,6 +45,7 @@ class StartViewModel(
         data class LoggedIn(
             val username: String,
             val onClickStartChatting: (Navigator) -> Unit,
+            val onClickLogout: () -> Unit,
         ) : ViewState
     }
 
@@ -68,6 +69,13 @@ class StartViewModel(
             ViewState.LoggedIn(
                 username = username,
                 onClickStartChatting = { navigator -> navigator.replace(Route.Chat(sessionId)) },
+                onClickLogout = {
+                    log.i { "Logging out '$username'" }
+                    sessionRepository.clear()
+                    innerState.update {
+                        it.copy(username = null, sessionId = null, inputUsername = username, inputPassword = "")
+                    }
+                },
             )
         } else {
             ViewState.LoggedOut(

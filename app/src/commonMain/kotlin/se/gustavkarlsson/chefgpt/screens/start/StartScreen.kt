@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -56,6 +57,7 @@ private fun Content(viewState: ViewState) {
                     LoggedInContent(
                         username = viewState.username,
                         onClickStartChatting = { viewState.onClickStartChatting(navigator) },
+                        onClickLogout = viewState.onClickLogout,
                     )
                 }
             }
@@ -111,6 +113,7 @@ private fun LoggedOutContent(
 private fun LoggedInContent(
     username: String,
     onClickStartChatting: () -> Unit,
+    onClickLogout: () -> Unit,
 ) {
     Text(
         text = "Welcome back, $username!",
@@ -124,5 +127,11 @@ private fun LoggedInContent(
     )
     Button(onClick = onClickStartChatting) {
         Text("Start chatting")
+    }
+    OutlinedButton(
+        onClick = onClickLogout,
+        modifier = Modifier.padding(top = 8.dp),
+    ) {
+        Text("Log out")
     }
 }
