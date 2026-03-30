@@ -9,7 +9,7 @@
         }
     },
     "response": {
-        "status": 201,
+        "status": 204,
         "headers": {
             "Session-Id": "00000000000000000000000000000000",
             "Content-Length": "0"
