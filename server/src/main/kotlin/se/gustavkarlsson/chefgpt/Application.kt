@@ -17,9 +17,9 @@ import se.gustavkarlsson.chefgpt.setup.createEventRepository
 import se.gustavkarlsson.chefgpt.setup.createImageUploader
 import se.gustavkarlsson.chefgpt.setup.createJson
 import se.gustavkarlsson.chefgpt.setup.createPostgresAccessOrNull
+import se.gustavkarlsson.chefgpt.setup.createRecipeClient
 import se.gustavkarlsson.chefgpt.setup.createRethinkDbAccessOrNull
 import se.gustavkarlsson.chefgpt.setup.createSessionStorage
-import se.gustavkarlsson.chefgpt.setup.createSpoonacularClient
 import se.gustavkarlsson.chefgpt.setup.createUserRepository
 
 fun main(args: Array<String>) = EngineMain.main(args)
@@ -37,7 +37,11 @@ fun Application.module() {
             type = config.property("chefgpt.imageUploader").getString(),
             config = config,
         )
-    val spoonacularClient = createSpoonacularClient(config.property("chefgpt.spoonacularApiKey").getString())
+    val recipeClient =
+        createRecipeClient(
+            recipes = config.property("chefgpt.recipes").getString(),
+            spoonacularApiKey = config.propertyOrNull("chefgpt.spoonacularApiKey")?.getString(),
+        )
     val aiAgent = createAiAgent(config.property("chefgpt.agent").getString())
     val json = createJson(developmentMode)
 
@@ -47,7 +51,7 @@ fun Application.module() {
         chatRepository = chatRepository,
         eventRepository = eventRepository,
         imageUploader = imageUploader,
-        spoonacularClient = spoonacularClient,
+        recipeClient = recipeClient,
         aiAgent = aiAgent,
         json = json,
     )
