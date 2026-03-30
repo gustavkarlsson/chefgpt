@@ -2,12 +2,12 @@ package se.gustavkarlsson.chefgpt.setup
 
 import se.gustavkarlsson.chefgpt.chats.EventRepository
 import se.gustavkarlsson.chefgpt.chats.InMemoryEventRepository
-import se.gustavkarlsson.chefgpt.chats.PostgresEventRepository
-import se.gustavkarlsson.chefgpt.db.DatabaseAccess
+import se.gustavkarlsson.chefgpt.chats.RethinkDbEventRepository
+import se.gustavkarlsson.chefgpt.rethinkdb.RethinkDbAccess
 
-fun createEventRepository(database: DatabaseAccess?): EventRepository =
-    if (database != null) {
-        PostgresEventRepository(database)
+fun createEventRepository(rethinkDb: RethinkDbAccess?): EventRepository =
+    if (rethinkDb != null) {
+        RethinkDbEventRepository(rethinkDb)
     } else {
         InMemoryEventRepository()
     }

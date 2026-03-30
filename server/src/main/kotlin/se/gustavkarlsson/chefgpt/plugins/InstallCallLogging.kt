@@ -12,12 +12,11 @@ import org.slf4j.event.Level
 
 fun Application.installCallLogging(config: ApplicationConfig) {
     install(CallLogging) {
-        val callConfig = config.config("logging.calls")
-        val configLevelString = callConfig.propertyOrNull("level")?.getString()?.uppercase()
+        val configLevelString = config.propertyOrNull("logging.calls.level")?.getString()?.uppercase()
         val configLevel = Level.entries.find { it.name == configLevelString }
         level = configLevel ?: Level.INFO
 
-        val requestHeaders = callConfig.propertyOrNull("request.headers")?.getString().toBoolean()
+        val requestHeaders = config.propertyOrNull("logging.calls.request.headers")?.getString().toBoolean()
         if (requestHeaders) {
             mdc("request.headers") { call ->
                 call.request.headers
@@ -26,7 +25,7 @@ fun Application.installCallLogging(config: ApplicationConfig) {
             }
         }
 
-        val responseHeaders = callConfig.propertyOrNull("response.headers")?.getString().toBoolean()
+        val responseHeaders = config.propertyOrNull("logging.calls.response.headers")?.getString().toBoolean()
         if (responseHeaders) {
             mdc("response.headers") { call ->
                 call.response.headers

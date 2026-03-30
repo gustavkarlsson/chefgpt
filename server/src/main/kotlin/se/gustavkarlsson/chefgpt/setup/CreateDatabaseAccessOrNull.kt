@@ -16,7 +16,7 @@ import se.gustavkarlsson.chefgpt.db.migrateDatabase
 fun createDatabaseAccessOrNull(config: ApplicationConfig): DatabaseAccess? =
     when (val storage = config.property("chefgpt.storage").getString()) {
         "database" -> {
-            val databaseConfig = config.config("database")
+            val databaseConfig = config.config("postgres")
             migrateDatabase(databaseConfig)
             createDatabaseAccess(databaseConfig)
         }
@@ -31,6 +31,8 @@ fun createDatabaseAccessOrNull(config: ApplicationConfig): DatabaseAccess? =
     }
 
 private fun createDatabaseAccess(config: ApplicationConfig): DatabaseAccess {
+    val username = config.propertyOrNull("username")?.getString()
+    val password = config.propertyOrNull("password")?.getString()
     val connectionFactory =
         ConnectionFactories.get(
             builder()
@@ -38,10 +40,11 @@ private fun createDatabaseAccess(config: ApplicationConfig): DatabaseAccess {
                 .option(PROTOCOL, "postgresql")
                 .option(HOST, config.property("host").getString())
                 .option(PORT, config.property("port").getString().toInt())
-                .option(DATABASE, config.property("name").getString())
-                .option(USER, config.property("username").getString())
-                .option(PASSWORD, config.property("password").getString())
-                .build(),
+                .option(DATABASE, config.property("database").getString())
+                .apply {
+                    if (username != null) option(USER, username)
+                    if (password != null) option(PASSWORD, password)
+                }.build(),
         )
     return DatabaseAccess(connectionFactory)
 }
