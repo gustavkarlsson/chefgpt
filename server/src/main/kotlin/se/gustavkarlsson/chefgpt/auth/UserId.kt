@@ -20,4 +20,4 @@ value class UserId(
     }
 }
 
-object UserIdSerializer : UuidValueSerializer<UserId>("UserId", ::UserId, UserId::value)
+object UserIdSerializer : UuidValueSerializer<UserId>("user-id", ::UserId, UserId::value)

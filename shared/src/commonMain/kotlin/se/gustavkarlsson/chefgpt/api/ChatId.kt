@@ -20,4 +20,4 @@ value class ChatId(
     }
 }
 
-object ChatIdSerializer : UuidValueSerializer<ChatId>("ChatId", ::ChatId, ChatId::value)
+object ChatIdSerializer : UuidValueSerializer<ChatId>("chat-id", ::ChatId, ChatId::value)

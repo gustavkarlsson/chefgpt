@@ -20,4 +20,4 @@ value class JoinId(
     }
 }
 
-object JoinIdSerializer : UuidValueSerializer<JoinId>("JoinId", ::JoinId, JoinId::value)
+object JoinIdSerializer : UuidValueSerializer<JoinId>("join-id", ::JoinId, JoinId::value)

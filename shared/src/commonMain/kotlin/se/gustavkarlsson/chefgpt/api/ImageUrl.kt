@@ -18,7 +18,7 @@ value class ImageUrl(
 }
 
 object ImageUrlSerializer : KSerializer<ImageUrl> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ImageUrl", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("image-url", PrimitiveKind.STRING)
 
     override fun serialize(
         encoder: Encoder,

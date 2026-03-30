@@ -20,6 +20,7 @@ import coil3.key.Keyer
 import coil3.map.Mapper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.io.files.Path
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
@@ -32,11 +33,14 @@ import se.gustavkarlsson.chefgpt.screens.start.StartScreen
 import se.gustavkarlsson.chefgpt.theme.ChefGptTheme
 
 @Serializable
+@SerialName("route")
 sealed interface Route : NavKey {
     @Serializable
+    @SerialName("start")
     data object Start : Route
 
     @Serializable
+    @SerialName("chat")
     data class Chat(
         val sessionId: SessionId,
     ) : Route

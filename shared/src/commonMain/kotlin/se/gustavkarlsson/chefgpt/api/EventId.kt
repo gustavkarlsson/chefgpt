@@ -16,4 +16,4 @@ value class EventId(
     }
 }
 
-object EventIdSerializer : UuidValueSerializer<EventId>("EventId", ::EventId, EventId::value)
+object EventIdSerializer : UuidValueSerializer<EventId>("event-id", ::EventId, EventId::value)
