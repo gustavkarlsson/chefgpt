@@ -5,7 +5,7 @@ import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
-import se.gustavkarlsson.chefgpt.db.UserQueries
+import se.gustavkarlsson.chefgpt.db.DatabaseAccess
 import java.security.MessageDigest
 import java.security.SecureRandom
 import kotlin.uuid.toKotlinUuid
@@ -13,7 +13,7 @@ import kotlin.uuid.toKotlinUuid
 private const val SALT_BYTE_COUNT = 16
 
 class PostgresUserRepository(
-    private val userQueries: UserQueries,
+    private val db: DatabaseAccess,
     private val rules: List<RegistrationRule> = emptyList(),
 ) : UserRepository {
     private val md5 = MessageDigest.getInstance("MD5")
@@ -31,13 +31,14 @@ class PostgresUserRepository(
             return Err(registrationError)
         }
         val salt = generateSalt()
-        val id =
+        val id = db.use {
             userQueries
                 .insert(
                     username = name,
                     password_md5_hash = hash(password, salt),
                     password_salt = salt,
                 ).awaitAsOneOrNull()
+        }
         return if (id != null) {
             Ok(User(UserId(id.toKotlinUuid()), name))
         } else {
@@ -49,11 +50,11 @@ class PostgresUserRepository(
         name: String,
         password: String,
     ): Result<User, LoginError> {
-        val userRow =
+        val userRow = db.use {
             userQueries
                 .selectByUsername(name)
                 .awaitAsOneOrNull()
-                ?: return Err(LoginError.WrongCredentials)
+        } ?: return Err(LoginError.WrongCredentials)
         val expectedHash = hash(password, userRow.password_salt)
         return if (userRow.password_md5_hash.contentEquals(expectedHash)) {
             Ok(User(UserId(userRow.id.toKotlinUuid()), userRow.username))
@@ -62,7 +63,9 @@ class PostgresUserRepository(
         }
     }
 
-    override suspend operator fun contains(name: String): Boolean = userQueries.existsByUsername(name).awaitAsOne()
+    override suspend operator fun contains(name: String): Boolean = db.use {
+        userQueries.existsByUsername(name).awaitAsOne()
+    }
 
     private fun generateSalt(): ByteArray = ByteArray(SALT_BYTE_COUNT).also { secureRandom.nextBytes(it) }
 

@@ -37,6 +37,7 @@ application {
 dependencies {
     implementation(projects.shared)
     implementation(libs.kotlinxCoroutinesCore)
+    implementation(libs.kotlinxCoroutinesReactive)
     implementation(libs.logback)
     implementation(libs.ktorServerCore)
     implementation(libs.ktorServerNetty)

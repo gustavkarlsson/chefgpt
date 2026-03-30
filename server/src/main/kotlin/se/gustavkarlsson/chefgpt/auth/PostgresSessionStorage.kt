@@ -2,21 +2,23 @@ package se.gustavkarlsson.chefgpt.auth
 
 import app.cash.sqldelight.async.coroutines.awaitAsOne
 import io.ktor.server.sessions.SessionStorage
-import se.gustavkarlsson.chefgpt.db.SessionQueries
+import se.gustavkarlsson.chefgpt.db.DatabaseAccess
 
 class PostgresSessionStorage(
-    private val sessionQueries: SessionQueries,
+    private val db: DatabaseAccess,
 ) : SessionStorage {
     override suspend fun write(
         id: String,
         value: String,
     ) {
-        sessionQueries.upsert(id, value)
+        db.use { sessionQueries.upsert(id, value) }
     }
 
     override suspend fun invalidate(id: String) {
-        sessionQueries.deleteById(id)
+        db.use { sessionQueries.deleteById(id) }
     }
 
-    override suspend fun read(id: String): String = sessionQueries.selectById(id).awaitAsOne().value_
+    override suspend fun read(id: String): String = db.use {
+        sessionQueries.selectById(id).awaitAsOne().value_
+    }
 }

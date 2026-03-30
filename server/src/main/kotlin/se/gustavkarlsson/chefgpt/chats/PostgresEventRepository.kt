@@ -10,39 +10,41 @@ import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
-import se.gustavkarlsson.chefgpt.db.EventQueries
+import se.gustavkarlsson.chefgpt.db.DatabaseAccess
 import kotlin.uuid.toJavaUuid
-import kotlin.uuid.toKotlinUuid
 import java.util.UUID as JavaUUID
 
 class PostgresEventRepository(
-    private val eventQueries: EventQueries,
+    private val db: DatabaseAccess,
 ) : EventRepository {
     override suspend fun append(
         chatId: ChatId,
         event: Event,
     ) {
         // TODO Consider injecting a configured Json instance
-        val jsonString = Json.encodeToString(Event.serializer(), event)
-        eventQueries.insert(
-            chat_id = chatId.value.toJavaUuid(),
-            json = jsonString,
-        )
+        val jsonString = Json.encodeToString<Event>(event)
+        db.use {
+            eventQueries.insert(
+                chat_id = chatId.value.toJavaUuid(),
+                json = jsonString,
+            )
+        }
     }
 
-    override suspend fun getAll(chatId: ChatId): List<Event> =
+    override suspend fun getAll(chatId: ChatId): List<Event> = db.use {
         eventQueries
             .selectByChatId(chatId.value.toJavaUuid())
             .awaitAsList()
             // TODO Consider injecting a configured Json instance
             .map { row -> Json.decodeFromString<Event>(row.json) }
+    }
 
     // TODO This polls the full result set on every change, which is not very efficient.
     //  Consider using a database better suited for streaming, such as an event store.
     override fun flow(
         chatId: ChatId,
         last: EventId?,
-    ): Flow<Event> {
+    ): Flow<Event> = db.stream {
         val query =
             if (last == null) {
                 eventQueries.selectByChatId(chatId.value.toJavaUuid())
@@ -52,7 +54,7 @@ class PostgresEventRepository(
                     last.value.toJavaUuid(),
                 )
             }
-        return flow {
+        flow {
             val emittedIds = mutableSetOf<JavaUUID>()
             query
                 .asFlow()
@@ -64,6 +66,8 @@ class PostgresEventRepository(
                         emit(row)
                     }
                 }
-        }.map { row -> Json.decodeFromString<Event>(row.json) }
+        }.map { row ->
+            Json.decodeFromString<Event>(row.json)
+        }
     }
 }
