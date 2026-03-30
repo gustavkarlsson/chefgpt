@@ -18,7 +18,8 @@ class PostgresSessionStorage(
         db.use { sessionQueries.deleteById(id) }
     }
 
-    override suspend fun read(id: String): String = db.use {
-        sessionQueries.selectById(id).awaitAsOne().value_
-    }
+    override suspend fun read(id: String): String =
+        db.use {
+            sessionQueries.selectById(id).awaitAsOne().value_
+        }
 }

@@ -31,14 +31,15 @@ class PostgresUserRepository(
             return Err(registrationError)
         }
         val salt = generateSalt()
-        val id = db.use {
-            userQueries
-                .insert(
-                    username = name,
-                    password_md5_hash = hash(password, salt),
-                    password_salt = salt,
-                ).awaitAsOneOrNull()
-        }
+        val id =
+            db.use {
+                userQueries
+                    .insert(
+                        username = name,
+                        password_md5_hash = hash(password, salt),
+                        password_salt = salt,
+                    ).awaitAsOneOrNull()
+            }
         return if (id != null) {
             Ok(User(UserId(id.toKotlinUuid()), name))
         } else {
@@ -50,11 +51,12 @@ class PostgresUserRepository(
         name: String,
         password: String,
     ): Result<User, LoginError> {
-        val userRow = db.use {
-            userQueries
-                .selectByUsername(name)
-                .awaitAsOneOrNull()
-        } ?: return Err(LoginError.WrongCredentials)
+        val userRow =
+            db.use {
+                userQueries
+                    .selectByUsername(name)
+                    .awaitAsOneOrNull()
+            } ?: return Err(LoginError.WrongCredentials)
         val expectedHash = hash(password, userRow.password_salt)
         return if (userRow.password_md5_hash.contentEquals(expectedHash)) {
             Ok(User(UserId(userRow.id.toKotlinUuid()), userRow.username))
@@ -63,9 +65,10 @@ class PostgresUserRepository(
         }
     }
 
-    override suspend operator fun contains(name: String): Boolean = db.use {
-        userQueries.existsByUsername(name).awaitAsOne()
-    }
+    override suspend operator fun contains(name: String): Boolean =
+        db.use {
+            userQueries.existsByUsername(name).awaitAsOne()
+        }
 
     private fun generateSalt(): ByteArray = ByteArray(SALT_BYTE_COUNT).also { secureRandom.nextBytes(it) }
 

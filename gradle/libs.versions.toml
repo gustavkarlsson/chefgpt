@@ -95,6 +95,7 @@ flywayPostgres = { module = "org.flywaydb:flyway-database-postgresql", version.r
 sqldelightR2dbcDriver = { module = "app.cash.sqldelight:r2dbc-driver", version.ref = "sqldelight" }
 sqldelightCoroutines = { module = "app.cash.sqldelight:coroutines-extensions-jvm", version.ref = "sqldelight" }
 sqldelightRuntime = { module = "app.cash.sqldelight:runtime-jvm", version.ref = "sqldelight" }
+sqldelightPostgresDialect = { module = "app.cash.sqldelight:postgresql-dialect", version.ref = "sqldelight" }
 
 # Ktor common
 ktorSerializationKotlinxJson = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }

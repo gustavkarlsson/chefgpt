@@ -31,43 +31,45 @@ class PostgresEventRepository(
         }
     }
 
-    override suspend fun getAll(chatId: ChatId): List<Event> = db.use {
-        eventQueries
-            .selectByChatId(chatId.value.toJavaUuid())
-            .awaitAsList()
-            // TODO Consider injecting a configured Json instance
-            .map { row -> Json.decodeFromString<Event>(row.json) }
-    }
+    override suspend fun getAll(chatId: ChatId): List<Event> =
+        db.use {
+            eventQueries
+                .selectByChatId(chatId.value.toJavaUuid())
+                .awaitAsList()
+                // TODO Consider injecting a configured Json instance
+                .map { row -> Json.decodeFromString<Event>(row.json) }
+        }
 
     // TODO This polls the full result set on every change, which is not very efficient.
     //  Consider using a database better suited for streaming, such as an event store.
     override fun flow(
         chatId: ChatId,
         last: EventId?,
-    ): Flow<Event> = db.stream {
-        val query =
-            if (last == null) {
-                eventQueries.selectByChatId(chatId.value.toJavaUuid())
-            } else {
-                eventQueries.selectByChatIdAfterId(
-                    chatId.value.toJavaUuid(),
-                    last.value.toJavaUuid(),
-                )
-            }
-        flow {
-            val emittedIds = mutableSetOf<JavaUUID>()
-            query
-                .asFlow()
-                .mapToList(Dispatchers.IO)
-                .map { rows -> rows.filter { it.id !in emittedIds } }
-                .collect { rows ->
-                    emittedIds.addAll(rows.map { it.id })
-                    for (row in rows) {
-                        emit(row)
-                    }
+    ): Flow<Event> =
+        db.stream {
+            val query =
+                if (last == null) {
+                    eventQueries.selectByChatId(chatId.value.toJavaUuid())
+                } else {
+                    eventQueries.selectByChatIdAfterId(
+                        chatId.value.toJavaUuid(),
+                        last.value.toJavaUuid(),
+                    )
                 }
-        }.map { row ->
-            Json.decodeFromString<Event>(row.json)
+            flow {
+                val emittedIds = mutableSetOf<JavaUUID>()
+                query
+                    .asFlow()
+                    .mapToList(Dispatchers.IO)
+                    .map { rows -> rows.filter { it.id !in emittedIds } }
+                    .collect { rows ->
+                        emittedIds.addAll(rows.map { it.id })
+                        for (row in rows) {
+                            emit(row)
+                        }
+                    }
+            }.map { row ->
+                Json.decodeFromString<Event>(row.json)
+            }
         }
-    }
 }

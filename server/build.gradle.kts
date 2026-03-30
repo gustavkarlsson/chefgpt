@@ -86,7 +86,7 @@ sqldelight {
     databases {
         create("ChefGptDatabase") {
             packageName.set("se.gustavkarlsson.chefgpt.db")
-            dialect("app.cash.sqldelight:postgresql-dialect:${libs.versions.sqldelight.get()}")
+            dialect(libs.sqldelightPostgresDialect)
             verifyMigrations.set(true)
             schemaOutputDirectory.set(file("src/main/sqldelight/databases"))
             generateAsync.set(true)

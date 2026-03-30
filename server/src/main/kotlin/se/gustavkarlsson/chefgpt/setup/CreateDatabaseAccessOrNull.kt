@@ -1,8 +1,15 @@
 package se.gustavkarlsson.chefgpt.setup
 
-import io.ktor.server.config.*
+import io.ktor.server.config.ApplicationConfig
 import io.r2dbc.spi.ConnectionFactories
-import io.r2dbc.spi.ConnectionFactoryOptions.*
+import io.r2dbc.spi.ConnectionFactoryOptions.DATABASE
+import io.r2dbc.spi.ConnectionFactoryOptions.DRIVER
+import io.r2dbc.spi.ConnectionFactoryOptions.HOST
+import io.r2dbc.spi.ConnectionFactoryOptions.PASSWORD
+import io.r2dbc.spi.ConnectionFactoryOptions.PORT
+import io.r2dbc.spi.ConnectionFactoryOptions.PROTOCOL
+import io.r2dbc.spi.ConnectionFactoryOptions.USER
+import io.r2dbc.spi.ConnectionFactoryOptions.builder
 import se.gustavkarlsson.chefgpt.db.DatabaseAccess
 import se.gustavkarlsson.chefgpt.db.migrateDatabase
 

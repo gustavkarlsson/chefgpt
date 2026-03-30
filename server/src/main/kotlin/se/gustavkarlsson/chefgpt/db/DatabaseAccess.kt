@@ -7,8 +7,9 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.reactive.awaitSingle
 
-class DatabaseAccess(private val connectionFactory: ConnectionFactory) {
-
+class DatabaseAccess(
+    private val connectionFactory: ConnectionFactory,
+) {
     /**
      * Use the database. A connection opened for the duration of the block.
      */
@@ -22,12 +23,13 @@ class DatabaseAccess(private val connectionFactory: ConnectionFactory) {
     /**
      * Produce a stream from the database. A connection opened for the duration of the collection.
      */
-    fun <T> stream(block: suspend ChefGptDatabase.() -> Flow<T>): Flow<T> = flow {
-        createDriver().use { driver ->
-            val flow = ChefGptDatabase(driver).block()
-            emitAll(flow)
+    fun <T> stream(block: suspend ChefGptDatabase.() -> Flow<T>): Flow<T> =
+        flow {
+            createDriver().use { driver ->
+                val flow = ChefGptDatabase(driver).block()
+                emitAll(flow)
+            }
         }
-    }
 
     private suspend fun createDriver(): R2dbcDriver {
         val connection = connectionFactory.create().awaitSingle()
