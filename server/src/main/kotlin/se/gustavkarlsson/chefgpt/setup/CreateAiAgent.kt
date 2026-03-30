@@ -6,7 +6,7 @@ import se.gustavkarlsson.chefgpt.agent.KoogAiAgent
 
 fun createAiAgent(type: String): AiAgent =
     when (type) {
-        "ai" -> KoogAiAgent()
+        "llm" -> KoogAiAgent()
         "fake" -> FakeAiAgent()
-        else -> error("Unknown agent type: '$type'. Expected 'ai' or 'fake'.")
+        else -> error("Unknown agent type: '$type'. Expected 'llm' or 'fake'.")
     }
