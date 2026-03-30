@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt.tools
+package se.gustavkarlsson.chefgpt.ingredients
 
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull

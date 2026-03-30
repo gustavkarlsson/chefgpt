@@ -7,9 +7,9 @@ import io.ktor.server.plugins.di.dependencies
 import io.ktor.server.routing.RoutingContext
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.auth.UserId
+import se.gustavkarlsson.chefgpt.ingredients.PostgresIngredientStore
 import se.gustavkarlsson.chefgpt.postgres.PostgresAccess
-import se.gustavkarlsson.chefgpt.tools.PostgresIngredientStore
-import se.gustavkarlsson.chefgpt.tools.SpoonacularClient
+import se.gustavkarlsson.chefgpt.recipes.SpoonacularClient
 
 class KoogAiAgent : AiAgent {
     override suspend fun RoutingContext.run(

@@ -9,7 +9,7 @@ import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventRepository
 import se.gustavkarlsson.chefgpt.images.ImageUploader
 import se.gustavkarlsson.chefgpt.postgres.PostgresAccess
-import se.gustavkarlsson.chefgpt.tools.SpoonacularClient
+import se.gustavkarlsson.chefgpt.recipes.SpoonacularClient
 
 fun Application.installDependencies(
     database: PostgresAccess?,

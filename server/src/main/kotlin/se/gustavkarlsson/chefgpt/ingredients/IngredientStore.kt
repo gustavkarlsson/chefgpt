@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt.tools
+package se.gustavkarlsson.chefgpt.ingredients
 
 import ai.koog.agents.core.tools.annotations.LLMDescription
 import ai.koog.agents.core.tools.annotations.Tool
