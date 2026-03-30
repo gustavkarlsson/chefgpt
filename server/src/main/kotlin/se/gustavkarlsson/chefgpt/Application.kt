@@ -32,7 +32,11 @@ fun Application.module() {
     val chatRepository = createChatRepository(database)
     val eventRepository = createEventRepository(rethinkDb)
     val sessionStorage = createSessionStorage(database)
-    val imageUploader = createImageUploader(config.config("chefgpt.cloudinary"))
+    val imageUploader =
+        createImageUploader(
+            type = config.property("chefgpt.imageUploader").getString(),
+            config = config,
+        )
     val spoonacularClient = createSpoonacularClient(config.property("chefgpt.spoonacularApiKey").getString())
     val aiAgent = createAiAgent(config.property("chefgpt.agent").getString())
     val json = createJson(developmentMode)
