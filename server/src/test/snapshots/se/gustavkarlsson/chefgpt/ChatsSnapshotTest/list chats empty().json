@@ -1,6 +1,6 @@
 {
     "request": {
-        "method": "POST",
+        "method": "GET",
         "url": "http://localhost/chats",
         "headers": {
             "Session-Id": "00000000000000000000000000000000",
@@ -9,17 +9,14 @@
         }
     },
     "response": {
-        "status": 201,
+        "status": 200,
         "headers": {
-            "Content-Length": "87",
+            "Content-Length": "2",
             "Content-Type": "application/json"
         },
         "body": {
             "type": "json",
-            "data": {
-                "id": "00000000-0000-0000-0000-000000000000",
-                "createdAt": "2000-01-01T00:00:00Z"
-            }
+            "data": []
         }
     }
 }

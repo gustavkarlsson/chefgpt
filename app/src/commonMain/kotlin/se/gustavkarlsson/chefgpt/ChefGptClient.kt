@@ -36,6 +36,7 @@ import kotlinx.io.files.SystemFileSystem
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import se.gustavkarlsson.chefgpt.api.ApiAction
+import se.gustavkarlsson.chefgpt.api.ApiChat
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ChatId
@@ -126,11 +127,10 @@ class ChefGptClient(
         val response =
             httpClient.post("$baseUrl/chats") {
                 sessionIdHeader(sessionId)
-                accept(ContentType.Text.Plain)
+                accept(ContentType.Application.Json)
             }
         return response.toResultSafe {
-            val uuidString = response.bodyAsText()
-            ChatId.parse(uuidString)
+            response.body<ApiChat>().id
         }
     }
 

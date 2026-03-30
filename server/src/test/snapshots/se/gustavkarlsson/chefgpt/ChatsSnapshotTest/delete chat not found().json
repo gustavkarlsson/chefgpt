@@ -1,7 +1,7 @@
 {
     "request": {
-        "method": "POST",
-        "url": "http://localhost/chats",
+        "method": "DELETE",
+        "url": "http://localhost/chats/00000000-0000-0000-0000-000000000000",
         "headers": {
             "Session-Id": "00000000000000000000000000000000",
             "Accept": "application/json",
@@ -9,16 +9,17 @@
         }
     },
     "response": {
-        "status": 201,
+        "status": 404,
         "headers": {
-            "Content-Length": "87",
+            "Content-Length": "71",
             "Content-Type": "application/json"
         },
         "body": {
             "type": "json",
             "data": {
-                "id": "00000000-0000-0000-0000-000000000000",
-                "createdAt": "2000-01-01T00:00:00Z"
+                "type": "chat-not-found",
+                "message": "Chat not found",
+                "userMessage": null
             }
         }
     }
