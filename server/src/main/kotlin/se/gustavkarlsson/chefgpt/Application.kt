@@ -32,7 +32,11 @@ fun Application.module() {
     val chatRepository = createChatRepository(database)
     val eventRepository = createEventRepository(rethinkDb)
     val sessionStorage = createSessionStorage(database)
-    val imageUploader = createImageUploader(config.config("chefgpt.cloudinary"))
+    val imageUploader =
+        createImageUploader(
+            type = config.property("chefgpt.imageUploader").getString(),
+            config = config,
+        )
     val recipeClient =
         createRecipeClient(
             recipes = config.property("chefgpt.recipes").getString(),
