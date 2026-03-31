@@ -17,6 +17,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.koin.compose.KoinApplication
 import org.koin.compose.koinInject
+import se.gustavkarlsson.chefgpt.api.ApiChat
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.di.AppModule
 import se.gustavkarlsson.chefgpt.screens.chat.ChatScreen
@@ -34,6 +35,7 @@ sealed interface Route : NavKey {
     @SerialName("chat")
     data class Chat(
         val sessionId: SessionId,
+        val chat: ApiChat,
     ) : Route
 }
 
@@ -63,7 +65,7 @@ fun App() {
                 entryProvider =
                     entryProvider {
                         entry<Route.Start> { StartScreen() }
-                        entry<Route.Chat> { key -> ChatScreen(key.sessionId) }
+                        entry<Route.Chat> { key -> ChatScreen(key) }
                     },
             )
         }

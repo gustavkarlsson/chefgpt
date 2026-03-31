@@ -123,14 +123,14 @@ class ChefGptClient(
         }
     }
 
-    suspend fun createChat(sessionId: SessionId): Result<ChatId, ErrorResponse> {
+    suspend fun createChat(sessionId: SessionId): Result<ApiChat, ErrorResponse> {
         val response =
             httpClient.post("$baseUrl/chats") {
                 sessionIdHeader(sessionId)
                 accept(ContentType.Application.Json)
             }
         return response.toResultSafe {
-            response.body<ApiChat>().id
+            response.body<ApiChat>()
         }
     }
 
