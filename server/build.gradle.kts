@@ -149,15 +149,16 @@ val postgres =
         description = "Ensures the chefgpt postgres docker container is running"
 
         doFirst {
-            val (exitCode, output) = Command.run("docker", "inspect", "-f", "{{.State.Running}}", "chefgpt")
+            val containerName = "chefgpt-postgres"
+            val (exitCode, output) = Command.run("docker", "inspect", "-f", "{{.State.Running}}", containerName)
             when {
                 exitCode != 0 -> {
-                    logger.lifecycle("Creating and starting chefgpt-postgres container...")
+                    logger.lifecycle("Creating and starting $containerName container...")
                     Command.runOrThrow(
                         "docker",
                         "run",
                         "--name",
-                        "chefgpt",
+                        containerName,
                         "--detach",
                         "--publish",
                         "127.0.0.1:5432:5432",
@@ -170,12 +171,12 @@ val postgres =
                 }
 
                 output != "true" -> {
-                    logger.lifecycle("Starting existing chefgpt-postgres container...")
-                    Command.runOrThrow("docker", "start", "chefgpt-postgres")
+                    logger.lifecycle("Starting existing $containerName container...")
+                    Command.runOrThrow("docker", "start", containerName)
                 }
 
                 else -> {
-                    logger.lifecycle("chefgpt-postgres container is already running.")
+                    logger.lifecycle("$containerName container is already running.")
                 }
             }
         }
@@ -187,15 +188,16 @@ val rethinkdb =
         description = "Ensures the rethinkdb docker container is running"
 
         doFirst {
-            val (exitCode, output) = Command.run("docker", "inspect", "-f", "{{.State.Running}}", "chefgpt-rethinkdb")
+            val containerName = "chefgpt-rethinkdb"
+            val (exitCode, output) = Command.run("docker", "inspect", "-f", "{{.State.Running}}", containerName)
             when {
                 exitCode != 0 -> {
-                    logger.lifecycle("Creating and starting chefgpt-rethinkdb container...")
+                    logger.lifecycle("Creating and starting $containerName container...")
                     Command.runOrThrow(
                         "docker",
                         "run",
                         "--name",
-                        "chefgpt-rethinkdb",
+                        containerName,
                         "--detach",
                         "--publish",
                         "127.0.0.1:28015:28015",
@@ -206,12 +208,12 @@ val rethinkdb =
                 }
 
                 output != "true" -> {
-                    logger.lifecycle("Starting existing chefgpt-rethinkdb container...")
-                    Command.runOrThrow("docker", "start", "chefgpt-rethinkdb")
+                    logger.lifecycle("Starting existing $containerName container...")
+                    Command.runOrThrow("docker", "start", containerName)
                 }
 
                 else -> {
-                    logger.lifecycle("chefgpt-rethinkdb container is already running.")
+                    logger.lifecycle("$containerName container is already running.")
                 }
             }
         }
