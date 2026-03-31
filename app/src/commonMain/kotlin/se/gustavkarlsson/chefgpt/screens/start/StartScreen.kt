@@ -22,7 +22,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import org.koin.compose.viewmodel.koinViewModel
-import se.gustavkarlsson.chefgpt.LocalNavigator
 import se.gustavkarlsson.chefgpt.screens.start.StartViewModel.ViewState
 
 @Composable
@@ -53,10 +52,9 @@ private fun Content(viewState: ViewState) {
                 }
 
                 is ViewState.LoggedIn -> {
-                    val navigator = LocalNavigator.current
                     LoggedInContent(
                         username = viewState.username,
-                        onClickStartChatting = { viewState.onClickStartChatting(navigator) },
+                        onClickStartChatting = viewState.onClickStartChatting,
                         onClickLogout = viewState.onClickLogout,
                     )
                 }

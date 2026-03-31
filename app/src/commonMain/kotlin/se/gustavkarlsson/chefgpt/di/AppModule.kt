@@ -5,6 +5,8 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 import se.gustavkarlsson.chefgpt.ChefGptClient
+import se.gustavkarlsson.chefgpt.Navigator
+import se.gustavkarlsson.chefgpt.Route
 import se.gustavkarlsson.chefgpt.SessionId
 import se.gustavkarlsson.chefgpt.SessionRepository
 import se.gustavkarlsson.chefgpt.screens.chat.ChatViewModel
@@ -12,6 +14,9 @@ import se.gustavkarlsson.chefgpt.screens.start.StartViewModel
 
 val AppModule =
     module {
+        single {
+            Navigator(Route.Start)
+        }
         single {
             // TODO Get path depending on platform
             SessionRepository(Path("sessions.txt"))
