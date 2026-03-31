@@ -19,20 +19,20 @@ kotlinResult = "2.3.1"
 kotlinxCoroutines = "1.10.2"
 kotlinxSerializationJson = "1.10.0"
 ktlint = "1.8.0"
-ktor = "3.4.1"
+ktor = "3.4.2"
 logback = "1.5.32"
 material3 = "1.10.0-alpha05"
 multiplatformMarkdownRendererM3 = "0.39.2"
-navigation3 = "1.0.0-alpha06"
+navigation3 = "1.1.0-alpha01"
 postgresDriver = "42.7.10"
 r2dbcPool = "1.0.2.RELEASE"
 rethinkdb = "2.4.4"
-r2dbcPostgres = "1.0.7.RELEASE"
+r2dbcPostgres = "1.1.1.RELEASE"
 slapshot = "1.0.0"
 slf4jSimple = "2.0.17"
-sqldelight = "2.0.2"
+sqldelight = "2.1.0"
 spotless = "8.4.0"
-testcontainers = "1.21.4"
+testcontainers = "2.0.4"
 
 [libraries]
 
@@ -117,8 +117,8 @@ coilNetworkKtor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref 
 kotlinResult = { module = "com.michael-bull.kotlin-result:kotlin-result", version.ref = "kotlinResult" }
 
 # Testcontainers
-testcontainersJunit5 = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
-testcontainersPostgres = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+testcontainersJunit5 = { module = "org.testcontainers:testcontainers-junit-jupiter", version.ref = "testcontainers" }
+testcontainersPostgres = { module = "org.testcontainers:testcontainers-postgresql", version.ref = "testcontainers" }
 
 # Slapshot
 slapshotJunit5 = { module = "se.gustavkarlsson.slapshot:slapshot-junit5", version.ref = "slapshot" }
