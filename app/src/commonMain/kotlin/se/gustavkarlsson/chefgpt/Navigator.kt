@@ -1,23 +1,24 @@
 package se.gustavkarlsson.chefgpt
 
-import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.navigation3.runtime.NavKey
 
 class Navigator(
-    private val backStack: MutableList<NavKey>,
+    initialRoute: Route,
 ) {
+    private val _backStack = mutableStateListOf<NavKey>(initialRoute)
+    val backStack: List<NavKey> = _backStack
+
     fun push(route: Route) {
-        backStack.add(route)
+        _backStack.add(route)
     }
 
     fun replace(route: Route) {
-        backStack.removeLastOrNull()
-        backStack.add(route)
+        _backStack.removeLastOrNull()
+        _backStack.add(route)
     }
 
     fun pop() {
-        backStack.removeLastOrNull()
+        _backStack.removeLastOrNull()
     }
 }
-
-val LocalNavigator = compositionLocalOf<Navigator> { error("No Navigator provided") }

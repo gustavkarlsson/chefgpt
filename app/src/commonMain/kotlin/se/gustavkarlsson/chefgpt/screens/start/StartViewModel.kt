@@ -24,6 +24,7 @@ private val log = Logger.withTag("${StartViewModel::class.simpleName}")
 class StartViewModel(
     private val sessionRepository: SessionRepository,
     private val client: ChefGptClient,
+    private val navigator: Navigator,
 ) : ViewModel() {
     private data class State(
         val username: String? = null,
@@ -44,7 +45,7 @@ class StartViewModel(
 
         data class LoggedIn(
             val username: String,
-            val onClickStartChatting: (Navigator) -> Unit,
+            val onClickStartChatting: () -> Unit,
             val onClickLogout: () -> Unit,
         ) : ViewState
     }
@@ -68,7 +69,7 @@ class StartViewModel(
         if (username != null && sessionId != null) {
             ViewState.LoggedIn(
                 username = username,
-                onClickStartChatting = { navigator -> navigator.replace(Route.Chat(sessionId)) },
+                onClickStartChatting = { navigator.replace(Route.Chat(sessionId)) },
                 onClickLogout = {
                     log.i { "Logging out '$username'" }
                     sessionRepository.clear()
