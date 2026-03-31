@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Clear
@@ -55,7 +56,7 @@ import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import se.gustavkarlsson.chefgpt.SessionId
+import se.gustavkarlsson.chefgpt.Route
 import se.gustavkarlsson.chefgpt.api.ApiAgentEvent
 import se.gustavkarlsson.chefgpt.api.ApiAgentMessage
 import se.gustavkarlsson.chefgpt.api.ApiAgentReasoning
@@ -67,8 +68,8 @@ import se.gustavkarlsson.chefgpt.pickImageFile
 import se.gustavkarlsson.chefgpt.screens.chat.ChatViewModel.ViewState
 
 @Composable
-fun ChatScreen(sessionId: SessionId) {
-    val viewModel = koinViewModel<ChatViewModel> { parametersOf(sessionId) }
+fun ChatScreen(chat: Route.Chat) {
+    val viewModel = koinViewModel<ChatViewModel> { parametersOf(chat) }
     val viewState by viewModel.viewState.collectAsState()
     Content(viewState)
 }
@@ -77,35 +78,46 @@ fun ChatScreen(sessionId: SessionId) {
 private fun Content(viewState: ViewState) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        topBar = {
+            Row(
+                modifier = Modifier.padding(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = viewState.onClickBack) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                    )
+                }
+                Surface(
+                    color = if (viewState.connected) Color.Green else Color.Red,
+                    shape = CircleShape,
+                    modifier = Modifier.size(16.dp),
+                ) {
+                }
+            }
+        },
     ) { paddingValues ->
-        Box {
-            Surface(
-                color = if (viewState.connected) Color.Green else Color.Red,
-                shape = CircleShape,
-                modifier = Modifier.align(Alignment.TopStart).padding(8.dp).size(16.dp),
-            ) {
-            }
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-            ) {
-                MessageList(
-                    events = viewState.events,
-                    modifier = Modifier.weight(1f),
-                )
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+        ) {
+            MessageList(
+                events = viewState.events,
+                modifier = Modifier.weight(1f),
+            )
 
-                MessageInput(
-                    userText = viewState.userText,
-                    attachedImage = viewState.attachedImage,
-                    onUserTextChanged = viewState.onUserTextChanged,
-                    onClickSend = viewState.onClickSend,
-                    onImageAttached = viewState.onImageAttached,
-                    onImageCleared = viewState.onImageCleared,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
+            MessageInput(
+                userText = viewState.userText,
+                attachedImage = viewState.attachedImage,
+                onUserTextChanged = viewState.onUserTextChanged,
+                onClickSend = viewState.onClickSend,
+                onImageAttached = viewState.onImageAttached,
+                onImageCleared = viewState.onImageCleared,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }

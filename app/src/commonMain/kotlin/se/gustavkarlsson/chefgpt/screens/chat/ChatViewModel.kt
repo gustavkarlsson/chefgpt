@@ -6,7 +6,6 @@ import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.map
 import com.github.michaelbull.result.onErr
-import com.github.michaelbull.result.onOk
 import io.ktor.http.ContentType
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -23,12 +22,12 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
 import se.gustavkarlsson.chefgpt.ChefGptClient
-import se.gustavkarlsson.chefgpt.SessionId
+import se.gustavkarlsson.chefgpt.Navigator
+import se.gustavkarlsson.chefgpt.Route
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserJoined
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
-import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.JoinId
 import kotlin.time.Duration.Companion.seconds
 
@@ -37,10 +36,13 @@ private val log = Logger.withTag("${ChatViewModel::class.simpleName}")
 // TODO Fix error handling
 class ChatViewModel(
     private val client: ChefGptClient,
-    private val sessionId: SessionId,
+    private val chat: Route.Chat,
+    private val navigator: Navigator,
 ) : ViewModel() {
+    private val sessionId = chat.sessionId
+    private val chatId = chat.chat.id
+
     private data class State(
-        val chatId: ChatId? = null,
         val joinId: JoinId? = null,
         val events: List<ApiEvent> = emptyList(),
         val userText: String = "",
@@ -55,6 +57,7 @@ class ChatViewModel(
         val attachedImage: Path?,
         val onClickSend: (() -> Unit)?,
         val onImageCleared: (() -> Unit)?,
+        val onClickBack: () -> Unit,
     ) {
         val onUserTextChanged: (String) -> Unit
             get() = { text -> innerState.update { it.copy(userText = text) } }
@@ -89,7 +92,7 @@ class ChatViewModel(
 
     private fun State.toViewState(): ViewState =
         ViewState(
-            connected = chatId != null && joinId != null,
+            connected = joinId != null,
             events = events,
             userText = userText,
             attachedImage = attachedImage,
@@ -105,13 +108,11 @@ class ChatViewModel(
                 } else {
                     null
                 },
+            onClickBack = { navigator.pop() },
         )
 
     private fun State.allowsSend(): Boolean =
         when {
-            // No chat yet
-            chatId == null -> false
-
             // Nothing to sent
             userText.isBlank() && attachedImage == null -> false
 
@@ -127,10 +128,7 @@ class ChatViewModel(
                 innerState.getAndUpdate {
                     it.copy(userText = "", attachedImage = null)
                 }
-            if (lastState.chatId == null) {
-                return@launch
-            }
-            log.i { "Sending message to chat ${lastState.chatId}" }
+            log.i { "Sending message to chat $chatId" }
 
             if (lastState.attachedImage != null) {
                 val extension = lastState.attachedImage.toString().substringAfterLast(".")
@@ -138,7 +136,7 @@ class ChatViewModel(
             } else {
                 Ok(null)
             }.map { imageUrl ->
-                client.sendAction(sessionId, lastState.chatId, ApiUserSendsMessage(lastState.userText, imageUrl))
+                client.sendAction(sessionId, chatId, ApiUserSendsMessage(lastState.userText, imageUrl))
             }.onErr { errorResponse ->
                 // TODO Show message?
                 //  Modify state?
@@ -150,35 +148,30 @@ class ChatViewModel(
     private suspend fun runSession() =
         coroutineScope {
             val joinId = JoinId.random()
-            innerState.update { it.copy(joinId = joinId) }
-            // TODO Add ability to resume chat
+            innerState.update { it.copy(joinId = joinId, events = emptyList()) }
+
             var job: Job? = null
-            client
-                .createChat(sessionId)
-                .onOk { chatId ->
-                    log.i { "Chat created: $chatId" }
-                    innerState.update { it.copy(chatId = chatId, events = emptyList()) }
-                    job =
-                        launch {
-                            // TODO Handle errors
-                            client.listenToEvents(sessionId, chatId).collect { event ->
-                                innerState.update { it.copy(events = it.events + event) }
-                            }
-                        }
-                }.map { chatId ->
-                    client.sendAction(sessionId, chatId, ApiUserJoinedChat(joinId))
-                }.onErr { errorResponse ->
-                    // TODO Show message?
-                    //  Modify state?
-                    log.i { "Failed to run session: ${errorResponse.errorBody}" }
-                    job?.cancel("Failed to run session")
+            job =
+                launch {
+                    // TODO Handle errors
+                    client.listenToEvents(sessionId, chatId).collect { event ->
+                        innerState.update { it.copy(events = it.events + event) }
+                    }
                 }
-            job?.join()
+
+            client
+                .sendAction(sessionId, chatId, ApiUserJoinedChat(joinId))
+                .onErr { errorResponse ->
+                    log.i { "Failed to join chat: ${errorResponse.errorBody}" }
+                    job.cancel("Failed to join chat")
+                }
+
+            job.join()
         }
 
     private fun stopSession() {
         innerState.update {
-            it.copy(chatId = null, joinId = null)
+            it.copy(joinId = null)
         }
     }
 }
