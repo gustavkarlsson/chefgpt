@@ -13,6 +13,8 @@ flyway = "12.2.0"
 jvmToolchain = "21" # Jetbrains Hot-Reload needs this
 kermit = "2.1.0"
 koin = "4.2.0"
+koinAnnotations = "2.3.1"
+ksp = "2.3.6"
 koog = "0.7.3"
 kotlin = "2.3.20"
 kotlinResult = "2.3.1"
@@ -53,6 +55,8 @@ multiplatformMarkdownRendererM3 = { module = "com.mikepenz:multiplatform-markdow
 navigation3Ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
 
 # Koin
+koinAnnotations = { module = "io.insert-koin:koin-annotations", version.ref = "koinAnnotations" }
+koinKspCompiler = { module = "io.insert-koin:koin-ksp-compiler", version.ref = "koinAnnotations" }
 koinCore = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koinCompose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
 koinComposeViewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
@@ -138,3 +142,4 @@ slapshot = { id = "se.gustavkarlsson.slapshot", version.ref = "slapshot" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
 atomicfu = { id ="org.jetbrains.kotlinx.atomicfu", version.ref = "atomicfu" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

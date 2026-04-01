@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.atomicfu)
+    alias(libs.plugins.ksp)
 }
 
 kotlin {
@@ -51,6 +52,9 @@ kotlin {
     }
 
     sourceSets {
+        commonMain.configure {
+            kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
+        }
         commonMain.dependencies {
             implementation(projects.shared)
             implementation(libs.composeRuntime)
@@ -72,6 +76,7 @@ kotlin {
             implementation(libs.coilCompose)
             implementation(libs.coilNetworkKtor)
             implementation(libs.navigation3Ui)
+            implementation(libs.koinAnnotations)
             implementation(libs.koinCore)
             implementation(libs.koinCompose)
             implementation(libs.koinComposeViewmodel)
@@ -128,7 +133,22 @@ android {
 
 dependencies {
     debugImplementation(libs.composeUiTooling)
+    add("kspCommonMainMetadata", libs.koinKspCompiler)
+    add("kspAndroid", libs.koinKspCompiler)
+    add("kspIosArm64", libs.koinKspCompiler)
+    add("kspIosSimulatorArm64", libs.koinKspCompiler)
+    add("kspJvm", libs.koinKspCompiler)
+    add("kspJs", libs.koinKspCompiler)
+    add("kspWasmJs", libs.koinKspCompiler)
 }
+
+// Ensure platform KSP tasks depend on common metadata generation
+tasks
+    .matching {
+        it.name.startsWith("ksp") && it.name != "kspCommonMainKotlinMetadata"
+    }.configureEach {
+        dependsOn("kspCommonMainKotlinMetadata")
+    }
 
 compose.desktop {
     application {
