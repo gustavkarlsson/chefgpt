@@ -2,8 +2,8 @@ package se.gustavkarlsson.chefgpt.agent
 
 import ai.koog.prompt.message.ContentPart
 import ai.koog.prompt.message.ResponseMetaInfo
-import io.ktor.server.plugins.di.dependencies
 import io.ktor.server.routing.RoutingContext
+import org.koin.ktor.ext.inject
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.auth.UserId
@@ -19,7 +19,7 @@ class FakeAiAgent(
         userId: UserId,
         chatId: ChatId,
     ) {
-        val eventRepository: EventRepository by call.application.dependencies
+        val eventRepository: EventRepository by call.inject()
         val message =
             KoogMessage.Assistant(
                 parts = listOf(ContentPart.Text("This is a fake response from the dummy agent.")),

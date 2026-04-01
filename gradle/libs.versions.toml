@@ -56,6 +56,7 @@ navigation3Ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", 
 koinCore = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koinCompose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
 koinComposeViewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
+koinKtor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
 
 # Koog
 koogAgents = { module = "ai.koog:koog-agents", version.ref = "koog" }
@@ -81,7 +82,6 @@ ktorServerCore = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor"
 ktorServerNetty = { module = "io.ktor:ktor-server-netty-jvm", version.ref = "ktor" }
 ktorServerAuth = { module = "io.ktor:ktor-server-auth", version.ref = "ktor" }
 ktorServerTestHost = { module = "io.ktor:ktor-server-test-host-jvm", version.ref = "ktor" }
-ktorServerDi = { module = "io.ktor:ktor-server-di", version.ref = "ktor" }
 ktorServerSse = { module = "io.ktor:ktor-server-sse", version.ref = "ktor" }
 ktorServerContentNegotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
 ktorServerCallLogging = { module = "io.ktor:ktor-server-call-logging", version.ref = "ktor" }
