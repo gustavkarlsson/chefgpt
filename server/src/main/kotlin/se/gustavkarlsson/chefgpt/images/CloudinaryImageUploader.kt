@@ -41,44 +41,48 @@ class CloudinaryImageUploader(
     override suspend fun uploadImage(
         readChannel: ByteReadChannel,
         contentType: ContentType?,
-    ): ImageUrl {
-        val jsonObject =
-            client
-                .submitFormWithBinaryData(
-                    url =
-                        url {
-                            protocol = URLProtocol.HTTPS
-                            host = "api.cloudinary.com"
-                            pathSegments = listOf("v1_1", cloud, "image", "upload")
-                        },
-                    formData =
-                        formData {
-                            append(
-                                key = "file",
-                                value = ChannelProvider { readChannel },
-                                headers =
-                                    headers {
-                                        val finalFileName =
-                                            buildString {
-                                                append("image")
-                                                if (contentType?.contentType == "image") {
-                                                    append(".${contentType.contentSubtype}")
+    ): ImageUrl? =
+        try {
+            val jsonObject =
+                client
+                    .submitFormWithBinaryData(
+                        url =
+                            url {
+                                protocol = URLProtocol.HTTPS
+                                host = "api.cloudinary.com"
+                                pathSegments = listOf("v1_1", cloud, "image", "upload")
+                            },
+                        formData =
+                            formData {
+                                append(
+                                    key = "file",
+                                    value = ChannelProvider { readChannel },
+                                    headers =
+                                        headers {
+                                            val finalFileName =
+                                                buildString {
+                                                    append("image")
+                                                    if (contentType?.contentType == "image") {
+                                                        append(".${contentType.contentSubtype}")
+                                                    }
                                                 }
-                                            }
-                                        append(HttpHeaders.ContentDisposition, "filename=$finalFileName")
-                                        contentType?.let { append(HttpHeaders.ContentType, it.toString()) }
-                                    },
-                            )
-                        },
-                ) {
-                    basicAuth(apiKey, apiSecret)
-                }.body<JsonObject>()
-        val url =
-            jsonObject
-                .getValue("secure_url")
-                .jsonPrimitive.content
-        return ImageUrl(url)
-    }
+                                            append(HttpHeaders.ContentDisposition, "filename=$finalFileName")
+                                            contentType?.let { append(HttpHeaders.ContentType, it.toString()) }
+                                        },
+                                )
+                            },
+                    ) {
+                        basicAuth(apiKey, apiSecret)
+                    }.body<JsonObject>()
+            val url =
+                jsonObject
+                    .getValue("secure_url")
+                    .jsonPrimitive.content
+            ImageUrl(url)
+        } catch (_: Exception) {
+            // TODO log error
+            null
+        }
 
     override fun close() {
         client.close()

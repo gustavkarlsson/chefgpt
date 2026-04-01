@@ -120,7 +120,11 @@ fun Routing.routes() {
             val imageUploader: ImageUploader by application.dependencies
             val contentType = call.request.contentType()
             val imageUrl = imageUploader.uploadImage(call.receive(), contentType)
-            call.respond(HttpStatusCode.Created, imageUrl.value)
+            if (imageUrl != null) {
+                call.respond(HttpStatusCode.Created, imageUrl.value)
+            } else {
+                call.respond(HttpStatusCode.InternalServerError)
+            }
         }
         route("/chats") {
             // List all chats for the authenticated user
