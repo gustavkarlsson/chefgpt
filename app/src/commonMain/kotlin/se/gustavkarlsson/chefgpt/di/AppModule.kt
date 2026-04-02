@@ -1,40 +1,51 @@
 package se.gustavkarlsson.chefgpt.di
 
-import kotlinx.io.files.Path
-import org.koin.core.module.dsl.viewModel
-import org.koin.core.module.dsl.viewModelOf
+import org.koin.core.KoinApplication
+import org.koin.core.context.startKoin
+import org.koin.dsl.KoinAppDeclaration
+import org.koin.dsl.includes
 import org.koin.dsl.module
+import org.koin.plugin.module.dsl.single
+import org.koin.plugin.module.dsl.viewModel
 import se.gustavkarlsson.chefgpt.ChatRepository
 import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.Navigator
-import se.gustavkarlsson.chefgpt.Route
 import se.gustavkarlsson.chefgpt.SessionRepository
 import se.gustavkarlsson.chefgpt.screens.chat.ChatViewModel
 import se.gustavkarlsson.chefgpt.screens.start.StartViewModel
 
-val AppModule =
+val singletonModule =
     module {
-        single {
-            Navigator(Route.Start)
-        }
-        single {
-            // TODO Get path depending on platform
-            SessionRepository(Path("sessions.txt"))
-        }
-        single {
-            // TODO Get path depending on platform
-            ChatRepository(Path("chats.txt"))
-        }
-        single {
-            // TODO Set base url and dev mode based on config
-            ChefGptClient()
-        }
-        viewModel { params ->
-            ChatViewModel(
-                client = get(),
-                chat = params[0] as Route.Chat,
-                navigator = get(),
-            )
-        }
-        viewModelOf(::StartViewModel)
+        single<ChefGptClient>()
+        // TODO Should be activity retained scoped for Android.
+        single<Navigator>()
+        // TODO Get path depending on platform
+        single<SessionRepository>()
+        // TODO Get path depending on platform
+        single<ChatRepository>()
+    }
+
+val viewModelModule =
+    module {
+        viewModel<StartViewModel>()
+        viewModel<ChatViewModel>()
+    }
+
+val nativeModule =
+    module {
+        single<NativeComponent>()
+    }
+
+val appModule =
+    module {
+        includes(singletonModule, viewModelModule, nativeModule)
+    }
+
+fun initKoin(configuration: KoinAppDeclaration? = null): KoinApplication =
+    startKoin {
+        includes(configuration)
+        modules(appModule)
+    }.also {
+        val platformInfo = it.koin.get<NativeComponent>().getInfo()
+        println("Started Koin on: $platformInfo")
     }

@@ -15,7 +15,7 @@ data class StoredChat(
 )
 
 class ChatRepository(
-    private val file: Path,
+    private val file: Path = Path("chats.txt"),
 ) {
     fun loadAll(): List<StoredChat> {
         if (!SystemFileSystem.exists(file)) return emptyList()
