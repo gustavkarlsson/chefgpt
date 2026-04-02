@@ -1,6 +1,5 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -10,7 +9,7 @@ plugins {
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.atomicfu)
-    alias(libs.plugins.ksp)
+    alias(libs.plugins.koinCompiler)
 }
 
 kotlin {
@@ -35,6 +34,7 @@ kotlin {
     }
 
     jvm {
+        @Suppress("OPT_IN_USAGE")
         mainRun {
             mainClass = "se.gustavkarlsson.chefgpt.MainKt"
         }
@@ -65,8 +65,7 @@ kotlin {
             implementation(libs.composeUiToolingPreview)
             implementation(libs.androidxLifecycleViewmodelCompose)
             implementation(libs.androidxLifecycleRuntimeCompose)
-            // TODO specify dependency instead of compose.materialIconsExtended
-            implementation(compose.materialIconsExtended)
+            implementation(libs.materialIconsExtended)
             implementation(libs.multiplatformMarkdownRendererM3)
             implementation(libs.ktorClientCore)
             implementation(libs.ktorClientCio)
@@ -76,10 +75,11 @@ kotlin {
             implementation(libs.coilCompose)
             implementation(libs.coilNetworkKtor)
             implementation(libs.navigation3Ui)
-            implementation(libs.koinAnnotations)
             implementation(libs.koinCore)
+            implementation(libs.koinAnnotations)
             implementation(libs.koinCompose)
             implementation(libs.koinComposeViewmodel)
+            implementation(libs.koinComposeNavigation3)
             implementation(libs.kotlinResult)
             implementation(libs.ktorClientLogging)
             implementation(libs.kermit)
@@ -131,15 +131,8 @@ android {
     }
 }
 
-dependencies {
-    debugImplementation(libs.composeUiTooling)
-    add("kspCommonMainMetadata", libs.koinKspCompiler)
-    add("kspAndroid", libs.koinKspCompiler)
-    add("kspIosArm64", libs.koinKspCompiler)
-    add("kspIosSimulatorArm64", libs.koinKspCompiler)
-    add("kspJvm", libs.koinKspCompiler)
-    add("kspJs", libs.koinKspCompiler)
-    add("kspWasmJs", libs.koinKspCompiler)
+koinCompiler {
+    userLogs = true // Log component detection
 }
 
 // Ensure platform KSP tasks depend on common metadata generation

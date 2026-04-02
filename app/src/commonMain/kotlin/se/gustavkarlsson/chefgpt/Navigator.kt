@@ -4,7 +4,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.navigation3.runtime.NavKey
 
 class Navigator(
-    initialRoute: Route,
+    initialRoute: Route = Route.Start,
 ) {
     private val _backStack = mutableStateListOf<NavKey>(initialRoute)
     val backStack: List<NavKey> = _backStack

@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
+import org.koin.core.annotation.InjectedParam
 import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.Navigator
 import se.gustavkarlsson.chefgpt.Route
@@ -36,7 +37,7 @@ private val log = Logger.withTag("${ChatViewModel::class.simpleName}")
 // TODO Fix error handling
 class ChatViewModel(
     private val client: ChefGptClient,
-    private val chat: Route.Chat,
+    @InjectedParam private val chat: Route.Chat,
     private val navigator: Navigator,
 ) : ViewModel() {
     private val sessionId = chat.sessionId

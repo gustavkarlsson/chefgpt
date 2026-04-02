@@ -12,7 +12,7 @@ data class SessionCredentials(
 )
 
 class SessionRepository(
-    private val file: Path,
+    private val file: Path = Path("sessions.txt"),
 ) {
     fun load(): SessionCredentials? {
         if (!SystemFileSystem.exists(file)) return null

@@ -13,8 +13,7 @@ flyway = "12.2.0"
 jvmToolchain = "21" # Jetbrains Hot-Reload needs this
 kermit = "2.1.0"
 koin = "4.2.0"
-koinAnnotations = "2.3.1"
-ksp = "2.3.6"
+koinPlugin = "0.4.1"
 koog = "0.7.3"
 kotlin = "2.3.20"
 kotlinResult = "2.3.1"
@@ -24,8 +23,9 @@ ktlint = "1.8.0"
 ktor = "3.4.2"
 logback = "1.5.32"
 material3 = "1.10.0-alpha05"
+materialIconsExtended = "1.7.3"
 multiplatformMarkdownRendererM3 = "0.39.2"
-navigation3 = "1.1.0-alpha01"
+navigation3 = "1.1.0-beta01"
 postgresDriver = "42.7.10"
 r2dbcPool = "1.0.2.RELEASE"
 rethinkdb = "2.4.4"
@@ -51,15 +51,16 @@ composeRuntime = { module = "org.jetbrains.compose.runtime:runtime", version.ref
 composeUi = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
 composeUiTooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref = "composeMultiplatform" }
 composeUiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "composeMultiplatform" }
+materialIconsExtended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
 multiplatformMarkdownRendererM3 = { module = "com.mikepenz:multiplatform-markdown-renderer-m3", version.ref = "multiplatformMarkdownRendererM3" }
 navigation3Ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
 
 # Koin
-koinAnnotations = { module = "io.insert-koin:koin-annotations", version.ref = "koinAnnotations" }
-koinKspCompiler = { module = "io.insert-koin:koin-ksp-compiler", version.ref = "koinAnnotations" }
 koinCore = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+koinAnnotations = { module = "io.insert-koin:koin-annotations", version.ref = "koin" }
 koinCompose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
 koinComposeViewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
+koinComposeNavigation3 = { module = "io.insert-koin:koin-compose-navigation3", version.ref = "koin" }
 
 # Koog
 koogAgents = { module = "ai.koog:koog-agents", version.ref = "koog" }
@@ -134,6 +135,7 @@ androidLibrary = { id = "com.android.library", version.ref = "agp" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 composeHotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "composeHotReload" }
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
+koinCompiler = { id = "io.insert-koin.compiler.plugin", version.ref = "koinPlugin" }
 kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
@@ -142,4 +144,3 @@ slapshot = { id = "se.gustavkarlsson.slapshot", version.ref = "slapshot" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
 atomicfu = { id ="org.jetbrains.kotlinx.atomicfu", version.ref = "atomicfu" }
-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

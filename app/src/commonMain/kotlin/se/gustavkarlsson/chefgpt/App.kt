@@ -15,11 +15,9 @@ import coil3.map.Mapper
 import kotlinx.io.files.Path
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import org.koin.compose.KoinApplication
 import org.koin.compose.koinInject
 import se.gustavkarlsson.chefgpt.api.ApiChat
 import se.gustavkarlsson.chefgpt.api.ImageUrl
-import se.gustavkarlsson.chefgpt.di.AppModule
 import se.gustavkarlsson.chefgpt.screens.chat.ChatScreen
 import se.gustavkarlsson.chefgpt.screens.start.StartScreen
 import se.gustavkarlsson.chefgpt.theme.ChefGptTheme
@@ -41,33 +39,31 @@ sealed interface Route : NavKey {
 
 @Composable
 fun App() {
-    KoinApplication(application = { modules(AppModule) }) {
-        // TODO Extract this
-        var initializedImageLoader by rememberSaveable { mutableStateOf(false) }
-        if (!initializedImageLoader) {
-            setSingletonImageLoaderFactory { context ->
-                ImageLoader(context)
-                    .newBuilder()
-                    .components {
-                        add(Mapper<Path, String> { data, _ -> data.toString() })
-                        add(Keyer<Path> { data, _ -> data.toString() })
-                        add(Mapper<ImageUrl, String> { data, _ -> data.value })
-                        add(Keyer<ImageUrl> { data, _ -> data.value })
-                    }.build()
-            }
-            initializedImageLoader = true
+    // TODO Extract this
+    var initializedImageLoader by rememberSaveable { mutableStateOf(false) }
+    if (!initializedImageLoader) {
+        setSingletonImageLoaderFactory { context ->
+            ImageLoader(context)
+                .newBuilder()
+                .components {
+                    add(Mapper<Path, String> { data, _ -> data.toString() })
+                    add(Keyer<Path> { data, _ -> data.toString() })
+                    add(Mapper<ImageUrl, String> { data, _ -> data.value })
+                    add(Keyer<ImageUrl> { data, _ -> data.value })
+                }.build()
         }
-        val navigator = koinInject<Navigator>()
-        ChefGptTheme {
-            NavDisplay(
-                backStack = navigator.backStack,
-                onBack = { navigator.pop() },
-                entryProvider =
-                    entryProvider {
-                        entry<Route.Start> { StartScreen() }
-                        entry<Route.Chat> { key -> ChatScreen(key) }
-                    },
-            )
-        }
+        initializedImageLoader = true
+    }
+    val navigator = koinInject<Navigator>()
+    ChefGptTheme {
+        NavDisplay(
+            backStack = navigator.backStack,
+            onBack = { navigator.pop() },
+            entryProvider =
+                entryProvider {
+                    entry<Route.Start> { StartScreen() }
+                    entry<Route.Chat> { key -> ChatScreen(key) }
+                },
+        )
     }
 }
