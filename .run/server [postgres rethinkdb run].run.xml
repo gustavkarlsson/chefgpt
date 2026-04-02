@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="server [postgres run]" type="GradleRunConfiguration" factoryName="Gradle">
+  <configuration default="false" name="server [postgres rethinkdb run]" type="GradleRunConfiguration" factoryName="Gradle">
     <ExternalSystemSettings>
       <option name="executionName" />
       <option name="externalProjectPath" value="$PROJECT_DIR$/server" />
@@ -11,6 +11,7 @@
       <option name="taskNames">
         <list>
           <option value="postgres" />
+          <option value="rethinkdb" />
           <option value="run" />
         </list>
       </option>

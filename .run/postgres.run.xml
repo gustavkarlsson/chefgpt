@@ -3,7 +3,7 @@
     <deployment type="docker-image">
       <settings>
         <option name="imageTag" value="postgres:18.3" />
-        <option name="containerName" value="" />
+        <option name="containerName" value="chefgpt-postgres" />
         <option name="envVars">
           <list>
             <DockerEnvVarImpl>
