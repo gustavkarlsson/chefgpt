@@ -5,7 +5,6 @@ import org.koin.core.context.startKoin
 import org.koin.dsl.KoinAppDeclaration
 import org.koin.dsl.includes
 import org.koin.dsl.module
-import org.koin.mp.KoinPlatform
 import org.koin.plugin.module.dsl.single
 import org.koin.plugin.module.dsl.viewModel
 import se.gustavkarlsson.chefgpt.ChatRepository
@@ -47,6 +46,6 @@ fun initKoin(configuration: KoinAppDeclaration? = null): KoinApplication =
         includes(configuration)
         modules(appModule)
     }.also {
-        val platformInfo = KoinPlatform.getKoin().get<NativeComponent>().getInfo()
+        val platformInfo = it.koin.get<NativeComponent>().getInfo()
         println("Started Koin on: $platformInfo")
     }
