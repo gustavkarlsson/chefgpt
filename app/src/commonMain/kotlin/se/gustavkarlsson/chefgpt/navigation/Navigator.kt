@@ -1,24 +1,25 @@
 package se.gustavkarlsson.chefgpt.navigation
 
-import androidx.compose.runtime.mutableStateListOf
-import androidx.navigation3.runtime.NavKey
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 class Navigator(
     initialRoute: Route = Route.Start,
 ) {
-    private val _backStack = mutableStateListOf<NavKey>(initialRoute)
-    val backStack: List<NavKey> = _backStack
+    private val _backStack = MutableStateFlow<List<Route>>(listOf(initialRoute))
+    val backStack: StateFlow<List<Route>> = _backStack.asStateFlow()
 
     fun push(route: Route) {
-        _backStack.add(route)
+        _backStack.update { routes -> routes + route }
     }
 
-    fun replace(route: Route) {
-        _backStack.removeLastOrNull()
-        _backStack.add(route)
+    fun replaceTop(route: Route) {
+        _backStack.update { routes -> routes.dropLast(1) + route }
     }
 
     fun pop() {
-        _backStack.removeLastOrNull()
+        _backStack.update { routes -> routes.dropLast(1) }
     }
 }

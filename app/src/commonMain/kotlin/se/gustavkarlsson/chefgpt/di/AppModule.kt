@@ -8,7 +8,10 @@ import org.koin.dsl.includes
 import org.koin.dsl.module
 import org.koin.plugin.module.dsl.single
 import org.koin.plugin.module.dsl.viewModel
+import se.gustavkarlsson.chefgpt.ApiConversationFactory
 import se.gustavkarlsson.chefgpt.ChefGptClient
+import se.gustavkarlsson.chefgpt.ConversationFactory
+import se.gustavkarlsson.chefgpt.chats.ApiChatRepository
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventHistoryStore
 import se.gustavkarlsson.chefgpt.navigation.Navigator
@@ -26,9 +29,10 @@ val singletonModule =
         // TODO Get path depending on platform
         single<LastSessionFileStore>()
         // TODO Get path depending on platform
-        single<ChatRepository>()
         single<EventHistoryStore>()
         single<SessionRepositoryImpl>() bind SessionRepository::class
+        single<ApiChatRepository>() bind ChatRepository::class
+        single<ApiConversationFactory>() bind ConversationFactory::class
     }
 
 val viewModelModule =

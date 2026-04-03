@@ -18,9 +18,9 @@ data class UserCredentials(
 interface SessionRepository {
     suspend fun getCurrentSession(): SessionCredentials?
 
-    suspend fun clearCurrentSession(): Boolean
-
     suspend fun register(credentials: UserCredentials): Result<SessionCredentials, ErrorResponse>
 
     suspend fun login(credentials: UserCredentials): Result<SessionCredentials, ErrorResponse>
+
+    suspend fun logOut(): Boolean
 }

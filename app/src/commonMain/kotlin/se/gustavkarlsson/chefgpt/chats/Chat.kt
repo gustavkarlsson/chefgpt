@@ -1,14 +1,9 @@
 package se.gustavkarlsson.chefgpt.chats
 
-import kotlinx.coroutines.flow.Flow
-import se.gustavkarlsson.chefgpt.api.ApiAction
-import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ChatId
+import kotlin.time.Instant
 
-interface Chat {
-    val id: ChatId
-
-    suspend fun send(apiEvent: ApiAction)
-
-    fun streamEvents(): Flow<ApiEvent>
-}
+data class Chat(
+    val id: ChatId,
+    val createdAt: Instant,
+)

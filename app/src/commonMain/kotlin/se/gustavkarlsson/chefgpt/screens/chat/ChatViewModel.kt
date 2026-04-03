@@ -8,7 +8,6 @@ import com.github.michaelbull.result.map
 import com.github.michaelbull.result.onErr
 import io.ktor.http.ContentType
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,12 +21,13 @@ import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
 import org.koin.core.annotation.InjectedParam
 import se.gustavkarlsson.chefgpt.ChefGptClient
+import se.gustavkarlsson.chefgpt.ConversationFactory
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserJoined
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.JoinId
-import se.gustavkarlsson.chefgpt.chats.EventHistoryStore
+import se.gustavkarlsson.chefgpt.chats.Conversation
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.navigation.Route
 import kotlin.time.Duration.Companion.seconds
@@ -37,12 +37,11 @@ private val log = Logger.withTag("${ChatViewModel::class.simpleName}")
 // TODO Fix error handling
 class ChatViewModel(
     private val client: ChefGptClient,
+    conversationFactory: ConversationFactory,
     private val navigator: Navigator,
-    private val eventHistoryStore: EventHistoryStore,
     @InjectedParam private val chat: Route.Chat,
 ) : ViewModel() {
-    private val sessionId = chat.sessionId
-    private val chatId = chat.chat.id
+    private val conversation: Conversation = conversationFactory.create(chat.sessionId, chat.chatId)
 
     private data class State(
         val joinId: JoinId? = null,
@@ -130,15 +129,16 @@ class ChatViewModel(
                 innerState.getAndUpdate {
                     it.copy(userText = "", attachedImage = null)
                 }
-            log.i { "Sending message to chat $chatId" }
+            log.i { "Sending message to ${conversation.chatId}" }
 
             if (lastState.attachedImage != null) {
                 val extension = lastState.attachedImage.toString().substringAfterLast(".")
-                client.uploadImage(sessionId, lastState.attachedImage, ContentType("image", extension))
+                // TODO Introduce user-case
+                client.uploadImage(conversation.sessionId, lastState.attachedImage, ContentType("image", extension))
             } else {
                 Ok(null)
             }.map { imageUrl ->
-                client.sendAction(sessionId, chatId, ApiUserSendsMessage(lastState.userText, imageUrl))
+                conversation.send(ApiUserSendsMessage(lastState.userText, imageUrl))
             }.onErr { errorResponse ->
                 // TODO Show message?
                 //  Modify state?
@@ -155,23 +155,11 @@ class ChatViewModel(
             val job =
                 launch {
                     // TODO Handle errors
-                    val lastEventId =
-                        innerState.value.events
-                            .lastOrNull()
-                            ?.id
-                    client.listenToEvents(sessionId, chatId, lastEventId).collect { event ->
-                        eventHistoryStore.append(chatId, event)
+                    conversation.streamEvents().collect { event ->
                         innerState.update { it.copy(events = it.events + event) }
                     }
                 }
-
-            client
-                .sendAction(sessionId, chatId, ApiUserJoinedChat(joinId))
-                .onErr { errorResponse ->
-                    log.i { "Failed to join chat: ${errorResponse.errorBody}" }
-                    job.cancel("Failed to join chat")
-                }
-
+            conversation.send(ApiUserJoinedChat(joinId))
             job.join()
         }
 

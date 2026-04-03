@@ -1,6 +1,7 @@
 package se.gustavkarlsson.chefgpt
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -39,9 +40,10 @@ fun App() {
     }
     val navigator = koinInject<Navigator>()
     ChefGptTheme {
+        // FIXME VM:s do not ge cleared when popping navigator
         NavDisplay(
-            backStack = navigator.backStack,
-            onBack = { navigator.pop() },
+            backStack = navigator.backStack.collectAsState().value,
+            onBack = navigator::pop,
             entryProvider =
                 entryProvider {
                     entry<Route.Start> { StartScreen() }

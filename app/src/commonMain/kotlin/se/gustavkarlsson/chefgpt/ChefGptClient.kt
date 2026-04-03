@@ -17,6 +17,8 @@ import io.ktor.client.plugins.sse.sse
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.accept
 import io.ktor.client.request.basicAuth
+import io.ktor.client.request.delete
+import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
@@ -133,10 +135,33 @@ class ChefGptClient(
         }
     }
 
+    suspend fun deleteChat(
+        sessionId: SessionId,
+        chatId: ChatId,
+    ): Result<Unit, ErrorResponse> {
+        val response =
+            httpClient.delete("$baseUrl/chats/$chatId") {
+                sessionIdHeader(sessionId)
+                accept(ContentType.Application.Json)
+            }
+        return response.toResultSafe {}
+    }
+
+    suspend fun getAllChats(sessionId: SessionId): Result<List<ApiChat>, ErrorResponse> {
+        val response =
+            httpClient.get("$baseUrl/chats") {
+                sessionIdHeader(sessionId)
+                accept(ContentType.Application.Json)
+            }
+        return response.toResultSafe {
+            response.body<List<ApiChat>>()
+        }
+    }
+
     fun listenToEvents(
         sessionId: SessionId,
         chatId: ChatId,
-        lastEventId: EventId? = null,
+        lastEventId: EventId?,
     ): Flow<ApiEvent> =
         flow {
             httpClient.sse(
@@ -165,14 +190,14 @@ class ChefGptClient(
         sessionId: SessionId,
         chatId: ChatId,
         action: ApiAction,
-    ): Result<Nothing?, ErrorResponse> {
+    ): Result<Unit, ErrorResponse> {
         val response =
             httpClient.post("$baseUrl/chats/$chatId/actions") {
                 sessionIdHeader(sessionId)
                 contentType(ContentType.Application.Json)
                 setBody(action)
             }
-        return response.toResultSafe { null }
+        return response.toResultSafe {}
     }
 
     override fun close() {

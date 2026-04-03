@@ -5,6 +5,9 @@ import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.onErr
 import com.github.michaelbull.result.onOk
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -12,29 +15,25 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import se.gustavkarlsson.chefgpt.ChefGptClient
-import se.gustavkarlsson.chefgpt.api.ApiChat
+import se.gustavkarlsson.chefgpt.chats.Chat
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
-import se.gustavkarlsson.chefgpt.chats.StoredChat
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.navigation.Route
-import se.gustavkarlsson.chefgpt.sessions.SessionId
+import se.gustavkarlsson.chefgpt.sessions.SessionCredentials
 import se.gustavkarlsson.chefgpt.sessions.SessionRepository
 import se.gustavkarlsson.chefgpt.sessions.UserCredentials
-import se.gustavkarlsson.chefgpt.sessions.UserName
 
 private val log = Logger.withTag("${StartViewModel::class.simpleName}")
 
 class StartViewModel(
-    private val sessionRepository: SessionRepository,
     private val chatRepository: ChatRepository,
-    private val client: ChefGptClient,
+    private val sessionRepository: SessionRepository,
     private val navigator: Navigator,
 ) : ViewModel() {
+    // TODO Split logged in and out states
     private data class State(
-        val username: UserName? = null,
-        val sessionId: SessionId? = null,
-        val chats: List<StoredChat> = emptyList(),
+        val sessionCredentials: SessionCredentials? = null,
+        val chats: List<Chat> = emptyList(),
         val inputUsername: String = "",
         val inputPassword: String = "",
     )
@@ -51,11 +50,34 @@ class StartViewModel(
 
         data class LoggedIn(
             val username: String,
-            val chats: List<StoredChat>,
+            val chats: List<Chat>,
             val onClickNewChat: () -> Unit,
-            val onClickChat: (StoredChat) -> Unit,
+            val onClickChat: (Chat) -> Unit,
             val onClickLogout: () -> Unit,
         ) : ViewState
+    }
+
+    private var streamChatsJob: Job = Job().apply { complete() }
+
+    // TODO Synchronize
+    private fun replaceStreamChatsJob(
+        reason: String,
+        work: (suspend CoroutineScope.() -> Unit)?,
+    ) {
+        streamChatsJob.cancel(reason)
+        if (work != null) {
+            streamChatsJob = viewModelScope.launch(block = work)
+        }
+    }
+
+    init {
+        viewModelScope.launch {
+            val lastCredentials = sessionRepository.getCurrentSession() ?: return@launch
+            innerState.update { it.copy(sessionCredentials = lastCredentials) }
+            replaceStreamChatsJob("Loaded last session") {
+                streamChats(lastCredentials)
+            }
+        }
     }
 
     private val innerState = MutableStateFlow(State())
@@ -66,75 +88,57 @@ class StartViewModel(
             .map { it.toViewState() }
             .stateIn(viewModelScope, SharingStarted.Eagerly, innerState.value.toViewState())
 
-    init {
-        viewModelScope.launch {
-            val credentials = sessionRepository.getCurrentSession()
-            if (credentials != null) {
-                log.i { "Restored session for '${credentials.username}'" }
-                val chats =
-                    chatRepository
-                        .loadAll()
-                        .filter { it.owner == credentials.username }
-                        .sortedByDescending { it.createdAt }
-                innerState.value =
-                    State(
-                        username = credentials.username,
-                        sessionId = credentials.sessionId,
-                        chats = chats,
-                    )
+    private suspend fun streamChats(credentials: SessionCredentials) {
+        chatRepository
+            .getAll(credentials.sessionId)
+            .collect { chatsResult ->
+                chatsResult
+                    .onOk { chats ->
+                        innerState.update {
+                            it.copy(
+                                sessionCredentials = credentials,
+                                chats = chats,
+                            )
+                        }
+                    }.onErr {
+                        // TODO Show error?
+                    }
             }
-        }
-    }
-
-    fun refreshChats() {
-        val state = innerState.value
-        val username = state.username ?: return
-        val chats =
-            chatRepository
-                .loadAll()
-                .filter { it.owner == username }
-                .sortedByDescending { it.createdAt }
-        innerState.update { it.copy(chats = chats) }
     }
 
     private fun State.toViewState(): ViewState =
-        if (username != null && sessionId != null) {
+        if (sessionCredentials != null) {
             ViewState.LoggedIn(
-                username = username.value,
+                username = sessionCredentials.username.value,
                 chats = chats,
                 onClickNewChat = {
                     viewModelScope.launch {
-                        // TODO Create chat with chatrepository
-                        client
-                            .createChat(sessionId)
-                            .onOk { apiChat ->
-                                log.i { "Chat created: ${apiChat.id}" }
-                                chatRepository.save(StoredChat(apiChat.id, apiChat.createdAt, username))
-                                innerState.update {
-                                    it.copy(
-                                        chats =
-                                            listOf(StoredChat(apiChat.id, apiChat.createdAt, username)) + it.chats,
-                                    )
+                        chatRepository
+                            .create(sessionCredentials.sessionId)
+                            .onOk { chat ->
+                                log.i { "Chat created: ${chat.id}" }
+                                replaceStreamChatsJob("Created new chat") {
+                                    streamChats(sessionCredentials)
                                 }
-                                navigator.push(Route.Chat(sessionId, apiChat))
+                                navigator.push(Route.Chat(sessionCredentials.sessionId, chat.id))
                             }.onErr { errorResponse ->
                                 // TODO Show message?
                                 log.i { "Failed to create chat: ${errorResponse.errorBody}" }
                             }
                     }
                 },
-                onClickChat = { storedChat ->
-                    navigator.push(Route.Chat(sessionId, ApiChat(storedChat.id, storedChat.createdAt)))
+                onClickChat = { chat ->
+                    navigator.push(Route.Chat(sessionCredentials.sessionId, chat.id))
                 },
                 onClickLogout = {
-                    log.i { "Logging out '$username'" }
+                    log.i { "Logging out '${sessionCredentials.username}'" }
+                    replaceStreamChatsJob("Logging out", work = null)
                     viewModelScope.launch {
-                        sessionRepository.clearCurrentSession()
+                        sessionRepository.logOut()
                     }
                     innerState.update {
                         it.copy(
-                            username = null,
-                            sessionId = null,
+                            sessionCredentials = null,
                             chats = emptyList(),
                             inputUsername = "",
                             inputPassword = "",
@@ -154,13 +158,13 @@ class StartViewModel(
                             viewModelScope.launch {
                                 sessionRepository
                                     .register(UserCredentials(inputUsername, inputPassword))
-                                    .onOk { session ->
+                                    .onOk { credentials ->
                                         log.i { "Registered as '$inputUsername'" }
+                                        replaceStreamChatsJob("Registered new user") {
+                                            streamChats(credentials)
+                                        }
                                         innerState.update {
-                                            it.copy(
-                                                username = UserName(inputUsername),
-                                                sessionId = session.sessionId,
-                                            )
+                                            it.copy(sessionCredentials = credentials)
                                         }
                                     }.onErr { errorResponse ->
                                         // TODO Show message?
@@ -180,13 +184,13 @@ class StartViewModel(
                             viewModelScope.launch {
                                 sessionRepository
                                     .login(UserCredentials(inputUsername, inputPassword))
-                                    .onOk { session ->
+                                    .onOk { credentials ->
                                         log.i { "Logged in as '$inputUsername'" }
+                                        replaceStreamChatsJob("Logged in user") {
+                                            streamChats(credentials)
+                                        }
                                         innerState.update {
-                                            it.copy(
-                                                username = UserName(inputUsername),
-                                                sessionId = session.sessionId,
-                                            )
+                                            it.copy(sessionCredentials = credentials)
                                         }
                                     }.onErr { errorResponse ->
                                         // TODO Show message?
