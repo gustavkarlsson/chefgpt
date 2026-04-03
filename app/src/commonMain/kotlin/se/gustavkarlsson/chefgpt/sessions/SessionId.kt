@@ -1,6 +1,7 @@
 package se.gustavkarlsson.chefgpt.sessions
 
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
@@ -10,6 +11,7 @@ import kotlinx.serialization.encoding.Encoder
 import kotlin.jvm.JvmInline
 
 @Serializable(with = SessionIdSerializer::class)
+@SerialName("session-id")
 @JvmInline
 value class SessionId(
     val value: String,
