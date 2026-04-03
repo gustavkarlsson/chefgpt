@@ -1,6 +1,7 @@
 package se.gustavkarlsson.chefgpt.api
 
 import kotlinx.serialization.Serializable
+import se.gustavkarlsson.chefgpt.UuidValueSerializer
 import kotlin.jvm.JvmInline
 import kotlin.uuid.Uuid
 
