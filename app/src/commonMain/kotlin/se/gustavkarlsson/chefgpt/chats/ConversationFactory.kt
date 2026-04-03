@@ -1,7 +1,6 @@
-package se.gustavkarlsson.chefgpt
+package se.gustavkarlsson.chefgpt.chats
 
 import se.gustavkarlsson.chefgpt.api.ChatId
-import se.gustavkarlsson.chefgpt.chats.Conversation
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 
 fun interface ConversationFactory {

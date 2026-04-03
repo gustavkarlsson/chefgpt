@@ -78,9 +78,10 @@ class ChefGptClient(
                         private val log = Logger.withTag("${ChefGptClient::class.simpleName}-Calls")
 
                         override fun log(message: String) {
-                            log.i { message }
+                            log.d { message }
                         }
                     }
+                format
                 // TODO Make level configurable
                 level = LogLevel.HEADERS
             }
@@ -158,6 +159,7 @@ class ChefGptClient(
         }
     }
 
+    // TODO Error handling
     fun listenToEvents(
         sessionId: SessionId,
         chatId: ChatId,

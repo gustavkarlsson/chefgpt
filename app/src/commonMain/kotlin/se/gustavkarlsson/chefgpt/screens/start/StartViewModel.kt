@@ -30,7 +30,7 @@ class StartViewModel(
     private val sessionRepository: SessionRepository,
     private val navigator: Navigator,
 ) : ViewModel() {
-    // TODO Split logged in and out states
+    // TODO Split into loading, logging in, and logging out states
     private data class State(
         val sessionCredentials: SessionCredentials? = null,
         val chats: List<Chat> = emptyList(),
@@ -72,17 +72,22 @@ class StartViewModel(
 
     init {
         viewModelScope.launch {
-            val lastCredentials = sessionRepository.getCurrentSession() ?: return@launch
-            innerState.update { it.copy(sessionCredentials = lastCredentials) }
-            replaceStreamChatsJob("Loaded last session") {
-                streamChats(lastCredentials)
-            }
+            // Ignore errors, as we can just start with a fresh session
+            sessionRepository
+                .getCurrentSession()
+                .onOk { lastCredentials ->
+                    if (lastCredentials != null) {
+                        innerState.update { it.copy(sessionCredentials = lastCredentials) }
+                        replaceStreamChatsJob("Loaded last session") {
+                            streamChats(lastCredentials)
+                        }
+                    }
+                }
         }
     }
 
     private val innerState = MutableStateFlow(State())
 
-    // TODO Introduce a loading state before we know if we're logged in or not
     val viewState: StateFlow<ViewState> =
         innerState
             .map { it.toViewState() }
@@ -100,53 +105,16 @@ class StartViewModel(
                                 chats = chats,
                             )
                         }
-                    }.onErr {
-                        // TODO Show error?
+                    }.onErr { errorResponse ->
+                        // TODO Show user-friendly error
+                        log.e { "Failed to stream chats: $errorResponse" }
+                        // TODO Recover somehow
                     }
             }
     }
 
     private fun State.toViewState(): ViewState =
-        if (sessionCredentials != null) {
-            ViewState.LoggedIn(
-                username = sessionCredentials.username.value,
-                chats = chats,
-                onClickNewChat = {
-                    viewModelScope.launch {
-                        chatRepository
-                            .create(sessionCredentials.sessionId)
-                            .onOk { chat ->
-                                log.i { "Chat created: ${chat.id}" }
-                                replaceStreamChatsJob("Created new chat") {
-                                    streamChats(sessionCredentials)
-                                }
-                                navigator.push(Route.Chat(sessionCredentials.sessionId, chat.id))
-                            }.onErr { errorResponse ->
-                                // TODO Show message?
-                                log.i { "Failed to create chat: ${errorResponse.errorBody}" }
-                            }
-                    }
-                },
-                onClickChat = { chat ->
-                    navigator.push(Route.Chat(sessionCredentials.sessionId, chat.id))
-                },
-                onClickLogout = {
-                    log.i { "Logging out '${sessionCredentials.username}'" }
-                    replaceStreamChatsJob("Logging out", work = null)
-                    viewModelScope.launch {
-                        sessionRepository.logOut()
-                    }
-                    innerState.update {
-                        it.copy(
-                            sessionCredentials = null,
-                            chats = emptyList(),
-                            inputUsername = "",
-                            inputPassword = "",
-                        )
-                    }
-                },
-            )
-        } else {
+        if (sessionCredentials == null) {
             ViewState.LoggedOut(
                 username = inputUsername,
                 password = inputPassword,
@@ -154,54 +122,102 @@ class StartViewModel(
                 onPasswordChange = { innerState.value = innerState.value.copy(inputPassword = it) },
                 onClickRegister =
                     if (inputUsername.isNotBlank() && inputPassword.isNotBlank()) {
-                        {
-                            viewModelScope.launch {
-                                sessionRepository
-                                    .register(UserCredentials(inputUsername, inputPassword))
-                                    .onOk { credentials ->
-                                        log.i { "Registered as '$inputUsername'" }
-                                        replaceStreamChatsJob("Registered new user") {
-                                            streamChats(credentials)
-                                        }
-                                        innerState.update {
-                                            it.copy(sessionCredentials = credentials)
-                                        }
-                                    }.onErr { errorResponse ->
-                                        // TODO Show message?
-                                        //  Modify state?
-                                        log.i {
-                                            "Registration failed for '$inputUsername': ${errorResponse.errorBody}"
-                                        }
-                                    }
-                            }
-                        }
+                        { onClickRegister(inputUsername, inputPassword) }
                     } else {
                         null
                     },
                 onClickLogin =
                     if (inputUsername.isNotBlank() && inputPassword.isNotBlank()) {
-                        {
-                            viewModelScope.launch {
-                                sessionRepository
-                                    .login(UserCredentials(inputUsername, inputPassword))
-                                    .onOk { credentials ->
-                                        log.i { "Logged in as '$inputUsername'" }
-                                        replaceStreamChatsJob("Logged in user") {
-                                            streamChats(credentials)
-                                        }
-                                        innerState.update {
-                                            it.copy(sessionCredentials = credentials)
-                                        }
-                                    }.onErr { errorResponse ->
-                                        // TODO Show message?
-                                        //  Modify state?
-                                        log.i { "Login failed for '$inputUsername': ${errorResponse.errorBody}" }
-                                    }
-                            }
-                        }
+                        { onClickLogin(this.inputUsername, this.inputPassword) }
                     } else {
                         null
                     },
             )
+        } else {
+            ViewState.LoggedIn(
+                username = sessionCredentials.username.value,
+                chats = chats,
+                onClickNewChat = { onClickNewChat(sessionCredentials) },
+                onClickChat = { chat -> navigator.push(Route.Chat(sessionCredentials.sessionId, chat.id)) },
+                onClickLogout = { onClickLogout() },
+            )
         }
+
+    private fun onClickRegister(
+        inputUsername: String,
+        inputPassword: String,
+    ) {
+        viewModelScope.launch {
+            sessionRepository
+                .register(UserCredentials(inputUsername, inputPassword))
+                .onOk { credentials ->
+                    log.i { "Registered as '$inputUsername'" }
+                    replaceStreamChatsJob("Registered new user") {
+                        streamChats(credentials)
+                    }
+                    innerState.update {
+                        it.copy(sessionCredentials = credentials)
+                    }
+                }.onErr { errorResponse ->
+                    // TODO Show correct feedback message based on the status code
+                    //  Modify state?
+                    log.i {
+                        "Registration failed for '$inputUsername': ${errorResponse.errorBody}"
+                    }
+                }
+        }
+    }
+
+    private fun onClickLogin(
+        inputUsername: String,
+        inputPassword: String,
+    ) {
+        viewModelScope.launch {
+            sessionRepository
+                .login(UserCredentials(inputUsername, inputPassword))
+                .onOk { credentials ->
+                    log.i { "Logged in as '$inputUsername'" }
+                    replaceStreamChatsJob("Logged in user") {
+                        streamChats(credentials)
+                    }
+                    innerState.update {
+                        it.copy(sessionCredentials = credentials)
+                    }
+                }.onErr { errorResponse ->
+                    // TODO Show correct feedback message based on the status code
+                    //  Modify state?
+                    log.i { "Login failed for '$inputUsername': ${errorResponse.errorBody}" }
+                }
+        }
+    }
+
+    private fun onClickNewChat(sessionCredentials: SessionCredentials) {
+        viewModelScope.launch {
+            chatRepository
+                .create(sessionCredentials.sessionId)
+                .onOk { chat ->
+                    log.i { "Chat created: ${chat.id}" }
+                    navigator.push(Route.Chat(sessionCredentials.sessionId, chat.id))
+                }.onErr { errorResponse ->
+                    // TODO Show user-friendly error
+                    log.e { "Failed to create chat: ${errorResponse.errorBody}" }
+                }
+        }
+    }
+
+    private fun onClickLogout() {
+        replaceStreamChatsJob("Logging out", work = null)
+        viewModelScope.launch {
+            // TODO Handle failure to log out?
+            sessionRepository.logOut()
+        }
+        innerState.update {
+            it.copy(
+                sessionCredentials = null,
+                chats = emptyList(),
+                inputUsername = "",
+                inputPassword = "",
+            )
+        }
+    }
 }

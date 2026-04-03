@@ -12,7 +12,12 @@ interface Conversation {
     val sessionId: SessionId
     val chatId: ChatId
 
-    suspend fun send(action: ApiAction): Result<Unit, ErrorResponse>
+    suspend fun sendAction(action: ApiAction): Result<Unit, ErrorResponse>
 
-    fun streamEvents(): Flow<ApiEvent> // TODO Result?
+    fun events(): Flow<Result<ApiEvent, EventStreamError>>
+}
+
+enum class EventStreamError {
+    NetworkIo,
+    EventHistoryIo,
 }

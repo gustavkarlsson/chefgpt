@@ -1,5 +1,10 @@
 package se.gustavkarlsson.chefgpt.chats
 
+import co.touchlab.kermit.Logger
+import com.github.michaelbull.result.Err
+import com.github.michaelbull.result.Ok
+import com.github.michaelbull.result.Result
+import com.github.michaelbull.result.map
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.io.buffered
@@ -11,6 +16,8 @@ import kotlinx.serialization.json.Json
 import se.gustavkarlsson.chefgpt.IoOrDefault
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ChatId
+
+private val log = Logger.withTag("${EventHistoryStore::class.simpleName}")
 
 // TODO Replace with database
 class EventHistoryStore(
@@ -26,44 +33,54 @@ class EventHistoryStore(
             ignoreUnknownKeys = true
         }
 
-    // TODO Return Result
-    suspend fun load(chatId: ChatId): List<ApiEvent> =
+    suspend fun load(chatId: ChatId): Result<List<ApiEvent>, Unit> =
         withContext(Dispatchers.IoOrDefault) {
-            val file = file(chatId)
-            if (!SystemFileSystem.exists(file)) return@withContext emptyList()
-            val source = SystemFileSystem.source(file).buffered()
-            source.use {
-                val events = mutableListOf<ApiEvent>()
-                while (true) {
-                    val line = it.readLine() ?: break
-                    if (line.isBlank()) continue
-                    val event = runCatching { json.decodeFromString<ApiEvent>(line) }.getOrNull() ?: continue
-                    events.add(event)
+            try {
+                val file = file(chatId)
+                if (!SystemFileSystem.exists(file)) {
+                    log.i { "No events to load" }
+                    return@withContext Ok(emptyList())
                 }
-                events
+                SystemFileSystem.source(file).buffered().use {
+                    val events = mutableListOf<ApiEvent>()
+                    while (true) {
+                        val line = it.readLine() ?: break
+                        if (line.isBlank()) continue
+                        val event = json.decodeFromString<ApiEvent>(line)
+                        events.add(event)
+                    }
+                    log.i { "Loaded ${events.size} events" }
+                    Ok(events)
+                }
+            } catch (e: Exception) {
+                log.e(e) { "Failed to load events" }
+                Err(Unit)
             }
         }
 
-    // TODO Return Result
     suspend fun append(
         chatId: ChatId,
         event: ApiEvent,
-    ) {
+    ): Result<Unit, Unit> =
         withContext(Dispatchers.IoOrDefault) {
-            val file = file(chatId)
-            val existing = load(chatId)
-            if (SystemFileSystem.exists(file)) {
-                SystemFileSystem.delete(file)
-            }
-            val sink = SystemFileSystem.sink(file).buffered()
-            sink.use {
-                for (entry in existing + event) {
-                    it.writeString(json.encodeToString(entry))
-                    it.writeString("\n")
-                }
+            try {
+                load(chatId)
+                    .map { existing ->
+                        val file = file(chatId)
+                        SystemFileSystem.delete(file, mustExist = false)
+                        SystemFileSystem.sink(file).buffered().use {
+                            for (entry in existing + event) {
+                                it.writeString(json.encodeToString(entry))
+                                it.writeString("\n")
+                            }
+                        }
+                        log.d { "Appended event" }
+                    }
+            } catch (e: Exception) {
+                log.e(e) { "Failed to append event" }
+                Err(Unit)
             }
         }
-    }
 
     private fun file(chatId: ChatId): Path = Path("$dir/events_$chatId.txt")
 }

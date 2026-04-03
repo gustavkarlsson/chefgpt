@@ -5,10 +5,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
+// TODO Add logging
+
 class Navigator(
     initialRoute: Route = Route.Start,
 ) {
-    private val _backStack = MutableStateFlow<List<Route>>(listOf(initialRoute))
+    private val _backStack = MutableStateFlow(listOf(initialRoute))
     val backStack: StateFlow<List<Route>> = _backStack.asStateFlow()
 
     fun push(route: Route) {

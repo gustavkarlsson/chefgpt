@@ -17,9 +17,7 @@ class LastSessionFileStoreTest {
 
     @AfterTest
     fun cleanup() {
-        if (SystemFileSystem.exists(file)) {
-            SystemFileSystem.delete(file)
-        }
+        SystemFileSystem.delete(file, mustExist = false)
     }
 
     @Test
