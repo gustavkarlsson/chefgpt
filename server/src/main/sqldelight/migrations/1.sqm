@@ -10,16 +10,23 @@ CREATE EXTENSION IF NOT EXISTS citext;
 
 CREATE TABLE ingredient
 (
-    id                UUID   NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id           UUID   NOT NULL REFERENCES "user" (id) ON DELETE CASCADE,
-    name              CITEXT NOT NULL,
+    id      UUID   NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID   NOT NULL REFERENCES "user" (id) ON DELETE CASCADE,
+    name    CITEXT NOT NULL,
     UNIQUE (user_id, name)
 );
 
 CREATE TABLE chat
 (
-    id                UUID  NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id           UUID  NOT NULL REFERENCES "user" (id) ON DELETE CASCADE
+    id         UUID        NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id    UUID        NOT NULL REFERENCES "user" (id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX idx_user_id ON chat(user_id);
+
+CREATE TABLE session
+(
+    id    TEXT NOT NULL PRIMARY KEY,
+    value TEXT NOT NULL
+);
