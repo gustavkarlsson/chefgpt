@@ -25,9 +25,9 @@ Run JVM tests (CI-equivalent, fast):
 ./gradlew spotlessCheck :server:test :shared:jvmTest :shared:testDebugUnitTest :app:jvmTest :app:testDebugUnitTest
 ```
 
-Run all tests (slow):
+Run all tests and lint checks (slow and requires platform-specific tools installed):
 ```bash
-./gradlew test
+./gradlew check
 ```
 
 Individual modules can also be tested if changes are isolated.
