@@ -69,7 +69,7 @@ import se.gustavkarlsson.chefgpt.screens.chat.ChatViewModel.ViewState
 
 @Composable
 fun ChatScreen(chat: Route.Chat) {
-    val viewModel = koinViewModel<ChatViewModel>(key = chat.chatId.value.toString()) { parametersOf(chat) }
+    val viewModel = koinViewModel<ChatViewModel> { parametersOf(chat) }
     val viewState by viewModel.viewState.collectAsState()
     Content(viewState)
 }

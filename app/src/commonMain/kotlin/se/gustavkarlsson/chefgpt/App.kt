@@ -6,7 +6,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import coil3.ImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
@@ -40,10 +42,14 @@ fun App() {
     }
     val navigator = koinInject<Navigator>()
     ChefGptTheme {
-        // FIXME VM:s do not ge cleared when popping navigator
         NavDisplay(
             backStack = navigator.backStack.collectAsState().value,
             onBack = navigator::pop,
+            entryDecorators =
+                listOf(
+                    rememberSaveableStateHolderNavEntryDecorator(),
+                    rememberViewModelStoreNavEntryDecorator(),
+                ),
             entryProvider =
                 entryProvider {
                     entry<Route.Start> { StartScreen() }

@@ -66,6 +66,7 @@ kotlin {
             implementation(libs.composeUiToolingPreview)
             implementation(libs.androidxLifecycleViewmodelCompose)
             implementation(libs.androidxLifecycleRuntimeCompose)
+            implementation(libs.androidxLifecycleViewmodelNavigation3)
             implementation(libs.materialIconsExtended)
             implementation(libs.multiplatformMarkdownRendererM3)
             implementation(libs.ktorClientCore)
