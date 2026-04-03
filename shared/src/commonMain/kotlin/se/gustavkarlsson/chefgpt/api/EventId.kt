@@ -13,6 +13,8 @@ value class EventId(
 
     companion object {
         fun random(): EventId = EventId(Uuid.random())
+
+        fun parseOrNull(uuidString: String): EventId? = Uuid.parseOrNull(uuidString)?.let(::EventId)
     }
 }
 
