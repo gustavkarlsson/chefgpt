@@ -101,6 +101,7 @@ allprojects {
         // Separate config for scripts such as build.gradle.kts files
         kotlinGradle {
             target("**/*.kts")
+            targetExclude("**/generated/**") // build directory is excluded automatically
             commonKotlinConfig()
         }
     }
