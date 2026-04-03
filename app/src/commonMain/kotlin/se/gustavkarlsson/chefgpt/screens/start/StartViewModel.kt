@@ -13,25 +13,26 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import se.gustavkarlsson.chefgpt.ChefGptClient
-import se.gustavkarlsson.chefgpt.Route
 import se.gustavkarlsson.chefgpt.api.ApiChat
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.StoredChat
 import se.gustavkarlsson.chefgpt.navigation.Navigator
-import se.gustavkarlsson.chefgpt.sessions.LastSessionFileStore
-import se.gustavkarlsson.chefgpt.sessions.SessionCredentials
+import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.sessions.SessionId
+import se.gustavkarlsson.chefgpt.sessions.SessionRepository
+import se.gustavkarlsson.chefgpt.sessions.UserCredentials
+import se.gustavkarlsson.chefgpt.sessions.UserName
 
 private val log = Logger.withTag("${StartViewModel::class.simpleName}")
 
 class StartViewModel(
-    private val lastSessionStore: LastSessionFileStore,
+    private val sessionRepository: SessionRepository,
     private val chatRepository: ChatRepository,
     private val client: ChefGptClient,
     private val navigator: Navigator,
 ) : ViewModel() {
     private data class State(
-        val username: String? = null,
+        val username: UserName? = null,
         val sessionId: SessionId? = null,
         val chats: List<StoredChat> = emptyList(),
         val inputUsername: String = "",
@@ -59,26 +60,29 @@ class StartViewModel(
 
     private val innerState = MutableStateFlow(State())
 
+    // TODO Introduce a loading state before we know if we're logged in or not
     val viewState: StateFlow<ViewState> =
         innerState
             .map { it.toViewState() }
             .stateIn(viewModelScope, SharingStarted.Eagerly, innerState.value.toViewState())
 
     init {
-        val credentials = lastSessionStore.load()
-        if (credentials != null) {
-            log.i { "Restored session for '${credentials.username}'" }
-            val chats =
-                chatRepository
-                    .loadAll()
-                    .filter { it.owner == credentials.username }
-                    .sortedByDescending { it.createdAt }
-            innerState.value =
-                State(
-                    username = credentials.username,
-                    sessionId = credentials.sessionId,
-                    chats = chats,
-                )
+        viewModelScope.launch {
+            val credentials = sessionRepository.getCurrentSession()
+            if (credentials != null) {
+                log.i { "Restored session for '${credentials.username}'" }
+                val chats =
+                    chatRepository
+                        .loadAll()
+                        .filter { it.owner == credentials.username }
+                        .sortedByDescending { it.createdAt }
+                innerState.value =
+                    State(
+                        username = credentials.username,
+                        sessionId = credentials.sessionId,
+                        chats = chats,
+                    )
+            }
         }
     }
 
@@ -96,10 +100,11 @@ class StartViewModel(
     private fun State.toViewState(): ViewState =
         if (username != null && sessionId != null) {
             ViewState.LoggedIn(
-                username = username,
+                username = username.value,
                 chats = chats,
                 onClickNewChat = {
                     viewModelScope.launch {
+                        // TODO Create chat with chatrepository
                         client
                             .createChat(sessionId)
                             .onOk { apiChat ->
@@ -123,13 +128,15 @@ class StartViewModel(
                 },
                 onClickLogout = {
                     log.i { "Logging out '$username'" }
-                    lastSessionStore.clear()
+                    viewModelScope.launch {
+                        sessionRepository.clearCurrentSession()
+                    }
                     innerState.update {
                         it.copy(
                             username = null,
                             sessionId = null,
                             chats = emptyList(),
-                            inputUsername = username,
+                            inputUsername = "",
                             inputPassword = "",
                         )
                     }
@@ -145,12 +152,16 @@ class StartViewModel(
                     if (inputUsername.isNotBlank() && inputPassword.isNotBlank()) {
                         {
                             viewModelScope.launch {
-                                client
-                                    .register(inputUsername, inputPassword)
-                                    .onOk { sessionId ->
+                                sessionRepository
+                                    .register(UserCredentials(inputUsername, inputPassword))
+                                    .onOk { session ->
                                         log.i { "Registered as '$inputUsername'" }
-                                        lastSessionStore.save(SessionCredentials(inputUsername, sessionId))
-                                        innerState.update { it.copy(username = inputUsername, sessionId = sessionId) }
+                                        innerState.update {
+                                            it.copy(
+                                                username = UserName(inputUsername),
+                                                sessionId = session.sessionId,
+                                            )
+                                        }
                                     }.onErr { errorResponse ->
                                         // TODO Show message?
                                         //  Modify state?
@@ -167,12 +178,16 @@ class StartViewModel(
                     if (inputUsername.isNotBlank() && inputPassword.isNotBlank()) {
                         {
                             viewModelScope.launch {
-                                client
-                                    .login(inputUsername, inputPassword)
-                                    .onOk { sessionId ->
+                                sessionRepository
+                                    .login(UserCredentials(inputUsername, inputPassword))
+                                    .onOk { session ->
                                         log.i { "Logged in as '$inputUsername'" }
-                                        lastSessionStore.save(SessionCredentials(inputUsername, sessionId))
-                                        innerState.update { it.copy(username = inputUsername, sessionId = sessionId) }
+                                        innerState.update {
+                                            it.copy(
+                                                username = UserName(inputUsername),
+                                                sessionId = session.sessionId,
+                                            )
+                                        }
                                     }.onErr { errorResponse ->
                                         // TODO Show message?
                                         //  Modify state?

@@ -45,6 +45,7 @@ import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.sessions.SessionId
+import se.gustavkarlsson.chefgpt.sessions.UserCredentials
 import io.ktor.client.plugins.logging.Logger as KtorLogger
 
 class ChefGptClient(
@@ -83,26 +84,20 @@ class ChefGptClient(
             }
         }
 
-    suspend fun register(
-        username: String,
-        password: String,
-    ): Result<SessionId, ErrorResponse> {
+    suspend fun register(credentials: UserCredentials): Result<SessionId, ErrorResponse> {
         val response =
             httpClient.post("$baseUrl/register") {
-                basicAuth(username, password)
+                basicAuth(credentials.userName.value, credentials.password.value)
             }
         return response.toResultSafe {
             SessionId(response.headers["Session-Id"]!!)
         }
     }
 
-    suspend fun login(
-        username: String,
-        password: String,
-    ): Result<SessionId, ErrorResponse> {
+    suspend fun login(credentials: UserCredentials): Result<SessionId, ErrorResponse> {
         val response =
             httpClient.post("$baseUrl/login") {
-                basicAuth(username, password)
+                basicAuth(credentials.userName.value, credentials.password.value)
             }
         return response.toResultSafe {
             SessionId(response.headers["Session-Id"]!!)

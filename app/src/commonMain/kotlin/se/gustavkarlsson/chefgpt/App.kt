@@ -5,7 +5,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import coil3.ImageLoader
@@ -13,31 +12,13 @@ import coil3.compose.setSingletonImageLoaderFactory
 import coil3.key.Keyer
 import coil3.map.Mapper
 import kotlinx.io.files.Path
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import org.koin.compose.koinInject
-import se.gustavkarlsson.chefgpt.api.ApiChat
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.navigation.Navigator
+import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.screens.chat.ChatScreen
 import se.gustavkarlsson.chefgpt.screens.start.StartScreen
-import se.gustavkarlsson.chefgpt.sessions.SessionId
 import se.gustavkarlsson.chefgpt.theme.ChefGptTheme
-
-@Serializable
-@SerialName("route")
-sealed interface Route : NavKey {
-    @Serializable
-    @SerialName("start")
-    data object Start : Route
-
-    @Serializable
-    @SerialName("chat")
-    data class Chat(
-        val sessionId: SessionId,
-        val chat: ApiChat,
-    ) : Route
-}
 
 @Composable
 fun App() {

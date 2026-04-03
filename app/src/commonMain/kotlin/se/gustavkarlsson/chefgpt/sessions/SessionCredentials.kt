@@ -1,6 +1,6 @@
 package se.gustavkarlsson.chefgpt.sessions
 
 data class SessionCredentials(
-    val username: String,
+    val username: UserName,
     val sessionId: SessionId,
 )

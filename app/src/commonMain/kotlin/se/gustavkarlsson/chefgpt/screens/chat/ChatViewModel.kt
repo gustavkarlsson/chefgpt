@@ -22,14 +22,14 @@ import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
 import org.koin.core.annotation.InjectedParam
 import se.gustavkarlsson.chefgpt.ChefGptClient
-import se.gustavkarlsson.chefgpt.Route
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserJoined
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.JoinId
-import se.gustavkarlsson.chefgpt.chats.EventHistoryRepository
+import se.gustavkarlsson.chefgpt.chats.EventHistoryStore
 import se.gustavkarlsson.chefgpt.navigation.Navigator
+import se.gustavkarlsson.chefgpt.navigation.Route
 import kotlin.time.Duration.Companion.seconds
 
 private val log = Logger.withTag("${ChatViewModel::class.simpleName}")
@@ -38,7 +38,7 @@ private val log = Logger.withTag("${ChatViewModel::class.simpleName}")
 class ChatViewModel(
     private val client: ChefGptClient,
     private val navigator: Navigator,
-    private val eventHistoryRepository: EventHistoryRepository,
+    private val eventHistoryStore: EventHistoryStore,
     @InjectedParam private val chat: Route.Chat,
 ) : ViewModel() {
     private val sessionId = chat.sessionId
@@ -160,7 +160,7 @@ class ChatViewModel(
                             .lastOrNull()
                             ?.id
                     client.listenToEvents(sessionId, chatId, lastEventId).collect { event ->
-                        eventHistoryRepository.save(chatId, event)
+                        eventHistoryStore.append(chatId, event)
                         innerState.update { it.copy(events = it.events + event) }
                     }
                 }

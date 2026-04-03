@@ -12,11 +12,21 @@ import se.gustavkarlsson.chefgpt.IoOrDefault
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ChatId
 
-class EventHistoryRepository(
+// TODO Replace with database
+class EventHistoryStore(
     private val dir: Path = Path("."),
+    private val prettyPrint: Boolean = false,
 ) {
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json =
+        Json {
+            prettyPrint = this@EventHistoryStore.prettyPrint
+            isLenient = true
+            encodeDefaults = true
+            explicitNulls = false
+            ignoreUnknownKeys = true
+        }
 
+    // TODO Return Result
     suspend fun load(chatId: ChatId): List<ApiEvent> =
         withContext(Dispatchers.IoOrDefault) {
             val file = file(chatId)
@@ -34,20 +44,23 @@ class EventHistoryRepository(
             }
         }
 
-    suspend fun save(
+    // TODO Return Result
+    suspend fun append(
         chatId: ChatId,
         event: ApiEvent,
-    ) = withContext(Dispatchers.IoOrDefault) {
-        val file = file(chatId)
-        val existing = load(chatId)
-        if (SystemFileSystem.exists(file)) {
-            SystemFileSystem.delete(file)
-        }
-        val sink = SystemFileSystem.sink(file).buffered()
-        sink.use {
-            for (entry in existing + event) {
-                it.writeString(json.encodeToString(entry))
-                it.writeString("\n")
+    ) {
+        withContext(Dispatchers.IoOrDefault) {
+            val file = file(chatId)
+            val existing = load(chatId)
+            if (SystemFileSystem.exists(file)) {
+                SystemFileSystem.delete(file)
+            }
+            val sink = SystemFileSystem.sink(file).buffered()
+            sink.use {
+                for (entry in existing + event) {
+                    it.writeString(json.encodeToString(entry))
+                    it.writeString("\n")
+                }
             }
         }
     }
