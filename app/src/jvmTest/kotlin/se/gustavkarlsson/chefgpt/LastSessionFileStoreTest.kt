@@ -1,14 +1,16 @@
 package se.gustavkarlsson.chefgpt
 
+import com.github.michaelbull.result.Ok
+import kotlinx.coroutines.runBlocking
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import se.gustavkarlsson.chefgpt.sessions.LastSessionFileStore
 import se.gustavkarlsson.chefgpt.sessions.SessionCredentials
 import se.gustavkarlsson.chefgpt.sessions.SessionId
+import se.gustavkarlsson.chefgpt.sessions.UserName
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 import kotlin.uuid.Uuid
 
 class LastSessionFileStoreTest {
@@ -21,42 +23,48 @@ class LastSessionFileStoreTest {
     }
 
     @Test
-    fun `load returns null when file does not exist`() {
-        assertNull(repository.load())
-    }
+    fun `load returns null when file does not exist`() =
+        runBlocking {
+            assertEquals(Ok(null), repository.load())
+        }
 
     @Test
-    fun `save and load round-trips credentials`() {
-        val credentials = SessionCredentials("alice", SessionId(Uuid.random().toString()))
+    fun `save and load round-trips credentials`() =
+        runBlocking {
+            val credentials = SessionCredentials(UserName("alice"), SessionId(Uuid.random().toString()))
 
-        repository.save(credentials)
-        val loaded = repository.load()
+            repository.save(credentials)
+            val loaded = repository.load()
 
-        assertEquals(credentials, loaded)
-    }
-
-    @Test
-    fun `save overwrites previous credentials`() {
-        repository.save(SessionCredentials("alice", SessionId(Uuid.random().toString())))
-        val second = SessionCredentials("bob", SessionId(Uuid.random().toString()))
-        repository.save(second)
-
-        val loaded = repository.load()
-
-        assertEquals(second, loaded)
-    }
+            assertEquals(Ok(credentials), loaded)
+        }
 
     @Test
-    fun `clear removes the file`() {
-        repository.save(SessionCredentials("alice", SessionId(Uuid.random().toString())))
+    fun `save overwrites previous credentials`() =
+        runBlocking {
+            repository.save(SessionCredentials(UserName("alice"), SessionId(Uuid.random().toString())))
+            val second = SessionCredentials(UserName("bob"), SessionId(Uuid.random().toString()))
+            repository.save(second)
 
-        repository.clear()
+            val loaded = repository.load()
 
-        assertNull(repository.load())
-    }
+            assertEquals(Ok(second), loaded)
+        }
+
+    @Test
+    fun `clear removes the file`() =
+        runBlocking {
+            repository.save(SessionCredentials(UserName("alice"), SessionId(Uuid.random().toString())))
+
+            repository.clear()
+
+            assertEquals(Ok(null), repository.load())
+        }
 
     @Test
     fun `clear is safe when file does not exist`() {
-        repository.clear()
+        runBlocking {
+            repository.clear()
+        }
     }
 }
