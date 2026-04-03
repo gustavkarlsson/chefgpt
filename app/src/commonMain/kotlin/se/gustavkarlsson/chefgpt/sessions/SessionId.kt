@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt
+package se.gustavkarlsson.chefgpt.sessions
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable

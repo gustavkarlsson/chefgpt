@@ -22,14 +22,14 @@ import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
 import org.koin.core.annotation.InjectedParam
 import se.gustavkarlsson.chefgpt.ChefGptClient
-import se.gustavkarlsson.chefgpt.EventHistoryRepository
-import se.gustavkarlsson.chefgpt.Navigator
 import se.gustavkarlsson.chefgpt.Route
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserJoined
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.JoinId
+import se.gustavkarlsson.chefgpt.chats.EventHistoryRepository
+import se.gustavkarlsson.chefgpt.navigation.Navigator
 import kotlin.time.Duration.Companion.seconds
 
 private val log = Logger.withTag("${ChatViewModel::class.simpleName}")
@@ -76,8 +76,6 @@ class ChatViewModel(
 
     init {
         viewModelScope.launch {
-            val history = eventHistoryRepository.load(chatId)
-            innerState.update { it.copy(events = history) }
             while (true) {
                 try {
                     runSession()

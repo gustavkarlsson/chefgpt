@@ -7,13 +7,13 @@ import org.koin.dsl.includes
 import org.koin.dsl.module
 import org.koin.plugin.module.dsl.single
 import org.koin.plugin.module.dsl.viewModel
-import se.gustavkarlsson.chefgpt.ChatRepository
 import se.gustavkarlsson.chefgpt.ChefGptClient
-import se.gustavkarlsson.chefgpt.EventHistoryRepository
-import se.gustavkarlsson.chefgpt.Navigator
-import se.gustavkarlsson.chefgpt.SessionRepository
+import se.gustavkarlsson.chefgpt.chats.ChatRepository
+import se.gustavkarlsson.chefgpt.chats.EventHistoryRepository
+import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.screens.chat.ChatViewModel
 import se.gustavkarlsson.chefgpt.screens.start.StartViewModel
+import se.gustavkarlsson.chefgpt.sessions.LastSessionFileStore
 
 val singletonModule =
     module {
@@ -21,7 +21,7 @@ val singletonModule =
         // TODO Should be activity retained scoped for Android.
         single<Navigator>()
         // TODO Get path depending on platform
-        single<SessionRepository>()
+        single<LastSessionFileStore>()
         // TODO Get path depending on platform
         single<ChatRepository>()
         single<EventHistoryRepository>()

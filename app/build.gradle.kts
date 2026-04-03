@@ -57,6 +57,7 @@ kotlin {
         }
         commonMain.dependencies {
             implementation(projects.shared)
+            implementation(libs.kotlinxCoroutinesCore)
             implementation(libs.composeRuntime)
             implementation(libs.composeFoundation)
             implementation(libs.composeMaterial3)

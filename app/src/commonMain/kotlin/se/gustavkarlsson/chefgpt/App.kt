@@ -18,8 +18,10 @@ import kotlinx.serialization.Serializable
 import org.koin.compose.koinInject
 import se.gustavkarlsson.chefgpt.api.ApiChat
 import se.gustavkarlsson.chefgpt.api.ImageUrl
+import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.screens.chat.ChatScreen
 import se.gustavkarlsson.chefgpt.screens.start.StartScreen
+import se.gustavkarlsson.chefgpt.sessions.SessionId
 import se.gustavkarlsson.chefgpt.theme.ChefGptTheme
 
 @Serializable

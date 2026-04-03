@@ -33,7 +33,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.koin.compose.viewmodel.koinViewModel
-import se.gustavkarlsson.chefgpt.StoredChat
+import se.gustavkarlsson.chefgpt.chats.StoredChat
 import se.gustavkarlsson.chefgpt.screens.start.StartViewModel.ViewState
 
 @Composable

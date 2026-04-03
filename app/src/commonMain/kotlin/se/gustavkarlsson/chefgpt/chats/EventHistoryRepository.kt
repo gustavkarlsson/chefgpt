@@ -1,7 +1,6 @@
-package se.gustavkarlsson.chefgpt
+package se.gustavkarlsson.chefgpt.chats
 
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
@@ -9,6 +8,7 @@ import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.readLine
 import kotlinx.io.writeString
 import kotlinx.serialization.json.Json
+import se.gustavkarlsson.chefgpt.IoOrDefault
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ChatId
 
@@ -18,7 +18,7 @@ class EventHistoryRepository(
     private val json = Json { ignoreUnknownKeys = true }
 
     suspend fun load(chatId: ChatId): List<ApiEvent> =
-        withContext(Dispatchers.IO) {
+        withContext(Dispatchers.IoOrDefault) {
             val file = file(chatId)
             if (!SystemFileSystem.exists(file)) return@withContext emptyList()
             val source = SystemFileSystem.source(file).buffered()
@@ -37,7 +37,7 @@ class EventHistoryRepository(
     suspend fun save(
         chatId: ChatId,
         event: ApiEvent,
-    ) = withContext(Dispatchers.IO) {
+    ) = withContext(Dispatchers.IoOrDefault) {
         val file = file(chatId)
         val existing = load(chatId)
         if (SystemFileSystem.exists(file)) {

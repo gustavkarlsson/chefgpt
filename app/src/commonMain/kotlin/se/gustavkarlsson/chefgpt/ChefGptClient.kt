@@ -44,6 +44,7 @@ import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.api.ImageUrl
+import se.gustavkarlsson.chefgpt.sessions.SessionId
 import io.ktor.client.plugins.logging.Logger as KtorLogger
 
 class ChefGptClient(

@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt
+package se.gustavkarlsson.chefgpt.chats
 
 import kotlinx.io.buffered
 import kotlinx.io.files.Path

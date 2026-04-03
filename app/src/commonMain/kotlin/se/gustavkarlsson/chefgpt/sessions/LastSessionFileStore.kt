@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt
+package se.gustavkarlsson.chefgpt.sessions
 
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
@@ -6,13 +6,8 @@ import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.readLine
 import kotlinx.io.writeString
 
-data class SessionCredentials(
-    val username: String,
-    val sessionId: SessionId,
-)
-
-class SessionRepository(
-    private val file: Path = Path("sessions.txt"),
+class LastSessionFileStore(
+    private val file: Path = Path("session.txt"),
 ) {
     fun load(): SessionCredentials? {
         if (!SystemFileSystem.exists(file)) return null

@@ -1,7 +1,8 @@
-package se.gustavkarlsson.chefgpt
+package se.gustavkarlsson.chefgpt.navigation
 
 import androidx.compose.runtime.mutableStateListOf
 import androidx.navigation3.runtime.NavKey
+import se.gustavkarlsson.chefgpt.Route
 
 class Navigator(
     initialRoute: Route = Route.Start,

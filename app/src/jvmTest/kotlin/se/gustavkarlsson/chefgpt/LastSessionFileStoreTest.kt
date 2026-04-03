@@ -2,15 +2,18 @@ package se.gustavkarlsson.chefgpt
 
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
+import se.gustavkarlsson.chefgpt.sessions.LastSessionFileStore
+import se.gustavkarlsson.chefgpt.sessions.SessionCredentials
+import se.gustavkarlsson.chefgpt.sessions.SessionId
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.uuid.Uuid
 
-class SessionRepositoryTest {
+class LastSessionFileStoreTest {
     private val file = Path("test-login-credentials.txt")
-    private val repository = SessionRepository(file)
+    private val repository = LastSessionFileStore(file)
 
     @AfterTest
     fun cleanup() {

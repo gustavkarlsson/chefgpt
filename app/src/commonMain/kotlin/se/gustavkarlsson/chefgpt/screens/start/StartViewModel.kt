@@ -12,20 +12,20 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import se.gustavkarlsson.chefgpt.ChatRepository
 import se.gustavkarlsson.chefgpt.ChefGptClient
-import se.gustavkarlsson.chefgpt.Navigator
 import se.gustavkarlsson.chefgpt.Route
-import se.gustavkarlsson.chefgpt.SessionCredentials
-import se.gustavkarlsson.chefgpt.SessionId
-import se.gustavkarlsson.chefgpt.SessionRepository
-import se.gustavkarlsson.chefgpt.StoredChat
 import se.gustavkarlsson.chefgpt.api.ApiChat
+import se.gustavkarlsson.chefgpt.chats.ChatRepository
+import se.gustavkarlsson.chefgpt.chats.StoredChat
+import se.gustavkarlsson.chefgpt.navigation.Navigator
+import se.gustavkarlsson.chefgpt.sessions.LastSessionFileStore
+import se.gustavkarlsson.chefgpt.sessions.SessionCredentials
+import se.gustavkarlsson.chefgpt.sessions.SessionId
 
 private val log = Logger.withTag("${StartViewModel::class.simpleName}")
 
 class StartViewModel(
-    private val sessionRepository: SessionRepository,
+    private val lastSessionStore: LastSessionFileStore,
     private val chatRepository: ChatRepository,
     private val client: ChefGptClient,
     private val navigator: Navigator,
@@ -65,7 +65,7 @@ class StartViewModel(
             .stateIn(viewModelScope, SharingStarted.Eagerly, innerState.value.toViewState())
 
     init {
-        val credentials = sessionRepository.load()
+        val credentials = lastSessionStore.load()
         if (credentials != null) {
             log.i { "Restored session for '${credentials.username}'" }
             val chats =
@@ -123,7 +123,7 @@ class StartViewModel(
                 },
                 onClickLogout = {
                     log.i { "Logging out '$username'" }
-                    sessionRepository.clear()
+                    lastSessionStore.clear()
                     innerState.update {
                         it.copy(
                             username = null,
@@ -149,7 +149,7 @@ class StartViewModel(
                                     .register(inputUsername, inputPassword)
                                     .onOk { sessionId ->
                                         log.i { "Registered as '$inputUsername'" }
-                                        sessionRepository.save(SessionCredentials(inputUsername, sessionId))
+                                        lastSessionStore.save(SessionCredentials(inputUsername, sessionId))
                                         innerState.update { it.copy(username = inputUsername, sessionId = sessionId) }
                                     }.onErr { errorResponse ->
                                         // TODO Show message?
@@ -171,7 +171,7 @@ class StartViewModel(
                                     .login(inputUsername, inputPassword)
                                     .onOk { sessionId ->
                                         log.i { "Logged in as '$inputUsername'" }
-                                        sessionRepository.save(SessionCredentials(inputUsername, sessionId))
+                                        lastSessionStore.save(SessionCredentials(inputUsername, sessionId))
                                         innerState.update { it.copy(username = inputUsername, sessionId = sessionId) }
                                     }.onErr { errorResponse ->
                                         // TODO Show message?
