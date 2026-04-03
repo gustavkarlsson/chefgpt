@@ -18,8 +18,10 @@ import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.accept
 import io.ktor.client.request.basicAuth
 import io.ktor.client.request.header
+import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.request.url
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
@@ -40,6 +42,7 @@ import se.gustavkarlsson.chefgpt.api.ApiChat
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ChatId
+import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import io.ktor.client.plugins.logging.Logger as KtorLogger
 
@@ -137,15 +140,19 @@ class ChefGptClient(
     fun listenToEvents(
         sessionId: SessionId,
         chatId: ChatId,
+        lastEventId: EventId? = null,
     ): Flow<ApiEvent> =
         flow {
             httpClient.sse(
-                urlString = "$baseUrl/chats/$chatId/events",
                 deserialize = { typeInfo, text ->
                     val serializer = json.serializersModule.serializer(typeInfo.kotlinType!!)
                     json.decodeFromString(serializer, text)
                 },
                 request = {
+                    url("$baseUrl/chats/$chatId/events")
+                    if (lastEventId != null) {
+                        parameter("lastEventId", lastEventId)
+                    }
                     sessionIdHeader(sessionId)
                 },
             ) {
@@ -190,7 +197,7 @@ private suspend fun <T> HttpResponse.toResultSafe(readSafe: suspend HttpResponse
     }
 
 private fun HttpRequestBuilder.sessionIdHeader(sessionId: SessionId) {
-    header("Session-Id", sessionId.value.toString())
+    header("Session-Id", sessionId.value)
 }
 
 private fun Path.byteReadChannel(): ByteReadChannel {

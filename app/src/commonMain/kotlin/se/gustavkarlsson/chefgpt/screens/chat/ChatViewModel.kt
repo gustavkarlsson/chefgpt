@@ -8,7 +8,6 @@ import com.github.michaelbull.result.map
 import com.github.michaelbull.result.onErr
 import io.ktor.http.ContentType
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -23,6 +22,7 @@ import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
 import org.koin.core.annotation.InjectedParam
 import se.gustavkarlsson.chefgpt.ChefGptClient
+import se.gustavkarlsson.chefgpt.EventHistoryRepository
 import se.gustavkarlsson.chefgpt.Navigator
 import se.gustavkarlsson.chefgpt.Route
 import se.gustavkarlsson.chefgpt.api.ApiEvent
@@ -37,8 +37,9 @@ private val log = Logger.withTag("${ChatViewModel::class.simpleName}")
 // TODO Fix error handling
 class ChatViewModel(
     private val client: ChefGptClient,
-    @InjectedParam private val chat: Route.Chat,
     private val navigator: Navigator,
+    private val eventHistoryRepository: EventHistoryRepository,
+    @InjectedParam private val chat: Route.Chat,
 ) : ViewModel() {
     private val sessionId = chat.sessionId
     private val chatId = chat.chat.id
@@ -75,6 +76,8 @@ class ChatViewModel(
 
     init {
         viewModelScope.launch {
+            val history = eventHistoryRepository.load(chatId)
+            innerState.update { it.copy(events = history) }
             while (true) {
                 try {
                     runSession()
@@ -149,13 +152,17 @@ class ChatViewModel(
     private suspend fun runSession() =
         coroutineScope {
             val joinId = JoinId.random()
-            innerState.update { it.copy(joinId = joinId, events = emptyList()) }
+            innerState.update { it.copy(joinId = joinId) }
 
-            var job: Job? = null
-            job =
+            val job =
                 launch {
                     // TODO Handle errors
-                    client.listenToEvents(sessionId, chatId).collect { event ->
+                    val lastEventId =
+                        innerState.value.events
+                            .lastOrNull()
+                            ?.id
+                    client.listenToEvents(sessionId, chatId, lastEventId).collect { event ->
+                        eventHistoryRepository.save(chatId, event)
                         innerState.update { it.copy(events = it.events + event) }
                     }
                 }

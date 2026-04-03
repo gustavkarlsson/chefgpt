@@ -1,0 +1,56 @@
+package se.gustavkarlsson.chefgpt
+
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.withContext
+import kotlinx.io.buffered
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
+import kotlinx.io.readLine
+import kotlinx.io.writeString
+import kotlinx.serialization.json.Json
+import se.gustavkarlsson.chefgpt.api.ApiEvent
+import se.gustavkarlsson.chefgpt.api.ChatId
+
+class EventHistoryRepository(
+    private val dir: Path = Path("."),
+) {
+    private val json = Json { ignoreUnknownKeys = true }
+
+    suspend fun load(chatId: ChatId): List<ApiEvent> =
+        withContext(Dispatchers.IO) {
+            val file = file(chatId)
+            if (!SystemFileSystem.exists(file)) return@withContext emptyList()
+            val source = SystemFileSystem.source(file).buffered()
+            source.use {
+                val events = mutableListOf<ApiEvent>()
+                while (true) {
+                    val line = it.readLine() ?: break
+                    if (line.isBlank()) continue
+                    val event = runCatching { json.decodeFromString<ApiEvent>(line) }.getOrNull() ?: continue
+                    events.add(event)
+                }
+                events
+            }
+        }
+
+    suspend fun save(
+        chatId: ChatId,
+        event: ApiEvent,
+    ) = withContext(Dispatchers.IO) {
+        val file = file(chatId)
+        val existing = load(chatId)
+        if (SystemFileSystem.exists(file)) {
+            SystemFileSystem.delete(file)
+        }
+        val sink = SystemFileSystem.sink(file).buffered()
+        sink.use {
+            for (entry in existing + event) {
+                it.writeString(json.encodeToString(entry))
+                it.writeString("\n")
+            }
+        }
+    }
+
+    private fun file(chatId: ChatId): Path = Path("$dir/events_$chatId.txt")
+}

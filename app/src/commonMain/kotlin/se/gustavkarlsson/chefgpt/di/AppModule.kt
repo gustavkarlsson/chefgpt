@@ -9,6 +9,7 @@ import org.koin.plugin.module.dsl.single
 import org.koin.plugin.module.dsl.viewModel
 import se.gustavkarlsson.chefgpt.ChatRepository
 import se.gustavkarlsson.chefgpt.ChefGptClient
+import se.gustavkarlsson.chefgpt.EventHistoryRepository
 import se.gustavkarlsson.chefgpt.Navigator
 import se.gustavkarlsson.chefgpt.SessionRepository
 import se.gustavkarlsson.chefgpt.screens.chat.ChatViewModel
@@ -23,6 +24,7 @@ val singletonModule =
         single<SessionRepository>()
         // TODO Get path depending on platform
         single<ChatRepository>()
+        single<EventHistoryRepository>()
     }
 
 val viewModelModule =

@@ -1,3 +1,4 @@
 # Stores user sessions for the client-app
 sessions.txt
 chats.txt
+events_*.txt
