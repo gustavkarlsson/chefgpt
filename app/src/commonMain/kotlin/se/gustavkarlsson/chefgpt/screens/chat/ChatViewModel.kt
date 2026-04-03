@@ -6,10 +6,9 @@ import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.map
 import com.github.michaelbull.result.onErr
+import com.github.michaelbull.result.onOk
 import io.ktor.http.ContentType
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,13 +22,15 @@ import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
 import org.koin.core.annotation.InjectedParam
 import se.gustavkarlsson.chefgpt.ChefGptClient
-import se.gustavkarlsson.chefgpt.Navigator
-import se.gustavkarlsson.chefgpt.Route
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserJoined
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.JoinId
+import se.gustavkarlsson.chefgpt.chats.Conversation
+import se.gustavkarlsson.chefgpt.chats.ConversationFactory
+import se.gustavkarlsson.chefgpt.navigation.Navigator
+import se.gustavkarlsson.chefgpt.navigation.Route
 import kotlin.time.Duration.Companion.seconds
 
 private val log = Logger.withTag("${ChatViewModel::class.simpleName}")
@@ -37,11 +38,11 @@ private val log = Logger.withTag("${ChatViewModel::class.simpleName}")
 // TODO Fix error handling
 class ChatViewModel(
     private val client: ChefGptClient,
-    @InjectedParam private val chat: Route.Chat,
+    conversationFactory: ConversationFactory,
     private val navigator: Navigator,
+    @InjectedParam private val chat: Route.Chat,
 ) : ViewModel() {
-    private val sessionId = chat.sessionId
-    private val chatId = chat.chat.id
+    private val conversation: Conversation = conversationFactory.create(chat.sessionId, chat.chatId)
 
     private data class State(
         val joinId: JoinId? = null,
@@ -78,13 +79,14 @@ class ChatViewModel(
             while (true) {
                 try {
                     runSession()
+                    log.e { "Session ended" }
                 } catch (e: CancellationException) {
                     // For good coroutine hygiene
                     throw e
                 } catch (e: Exception) {
-                    log.i(e) { "Session interrupted" }
+                    log.e(e) { "Session failed" }
                 } finally {
-                    runCatching { stopSession() }
+                    innerState.update { it.copy(joinId = null) }
                     delay(1.seconds)
                 }
             }
@@ -129,19 +131,20 @@ class ChatViewModel(
                 innerState.getAndUpdate {
                     it.copy(userText = "", attachedImage = null)
                 }
-            log.i { "Sending message to chat $chatId" }
+            log.i { "Sending message to ${conversation.chatId}" }
 
             if (lastState.attachedImage != null) {
                 val extension = lastState.attachedImage.toString().substringAfterLast(".")
-                client.uploadImage(sessionId, lastState.attachedImage, ContentType("image", extension))
+                // TODO Introduce use-case
+                client.uploadImage(conversation.sessionId, lastState.attachedImage, ContentType("image", extension))
             } else {
                 Ok(null)
             }.map { imageUrl ->
-                client.sendAction(sessionId, chatId, ApiUserSendsMessage(lastState.userText, imageUrl))
+                conversation.sendAction(ApiUserSendsMessage(lastState.userText, imageUrl))
             }.onErr { errorResponse ->
                 // TODO Show message?
                 //  Modify state?
-                log.i { "Failed to send message: ${errorResponse.errorBody}" }
+                log.e { "Failed to send message: ${errorResponse.errorBody}" }
             }
         }
     }
@@ -149,30 +152,19 @@ class ChatViewModel(
     private suspend fun runSession() =
         coroutineScope {
             val joinId = JoinId.random()
-            innerState.update { it.copy(joinId = joinId, events = emptyList()) }
+            innerState.update { it.copy(joinId = joinId) }
 
-            var job: Job? = null
-            job =
-                launch {
-                    // TODO Handle errors
-                    client.listenToEvents(sessionId, chatId).collect { event ->
-                        innerState.update { it.copy(events = it.events + event) }
-                    }
+            launch {
+                conversation.events().collect { eventResult ->
+                    eventResult
+                        .onOk { event ->
+                            innerState.update { it.copy(events = it.events + event) }
+                        }.onErr { errorResponse ->
+                            log.e { "Failed to stream events: $errorResponse" }
+                        }
                 }
-
-            client
-                .sendAction(sessionId, chatId, ApiUserJoinedChat(joinId))
-                .onErr { errorResponse ->
-                    log.i { "Failed to join chat: ${errorResponse.errorBody}" }
-                    job.cancel("Failed to join chat")
-                }
-
-            job.join()
+            }
+            conversation.sendAction(ApiUserJoinedChat(joinId))
+            // Waits until the launch job is done
         }
-
-    private fun stopSession() {
-        innerState.update {
-            it.copy(joinId = null)
-        }
-    }
 }

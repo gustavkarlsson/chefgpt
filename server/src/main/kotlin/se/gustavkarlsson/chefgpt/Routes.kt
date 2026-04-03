@@ -1,5 +1,6 @@
 package se.gustavkarlsson.chefgpt
 
+import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
 import com.github.michaelbull.result.flatMap
 import com.github.michaelbull.result.map
@@ -43,6 +44,7 @@ import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.ChatId
+import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.auth.LoginError
 import se.gustavkarlsson.chefgpt.auth.RegistrationError
 import se.gustavkarlsson.chefgpt.auth.Session
@@ -178,16 +180,35 @@ fun Routing.routes() {
                         period = 1.seconds
                         event = ServerSentEvent("heartbeat")
                     }
-                    call.getChatId().onOk { chatId ->
-                        val eventRepository: EventRepository by application.dependencies
-                        eventRepository
-                            .flow(chatId)
-                            .mapNotNull { it.toApiOrNull() }
-                            .collect { apiEvent: ApiEvent ->
-                                // TODO Batch events to improve efficiency. Maybe make a Batch event?
-                                send(apiEvent)
+                    call
+                        .getChatId()
+                        .flatMap { chatId ->
+                            val lastEventId = call.request.queryParameters["lastEventId"]
+                            if (lastEventId != null) {
+                                EventId
+                                    .parseOrNull(lastEventId)
+                                    .toResultOr {
+                                        ResponseData(
+                                            status = HttpStatusCode.BadRequest,
+                                            body =
+                                                ApiError(
+                                                    "invalid-event-id",
+                                                    "Query parameter lastEventId=$lastEventId is not valid",
+                                                ),
+                                        )
+                                    }.map { chatId to it }
+                            } else {
+                                Ok(chatId to null)
                             }
-                    }
+                        }.onOk { (chatId, lastEventId) ->
+                            val eventRepository: EventRepository by application.dependencies
+                            eventRepository
+                                .flow(chatId, last = lastEventId)
+                                .mapNotNull { it.toApiOrNull() }
+                                .collect { apiEvent: ApiEvent ->
+                                    send(apiEvent)
+                                }
+                        }
                 }
                 // Send an event, some of which may be processed by an LLM
                 post("/actions") {

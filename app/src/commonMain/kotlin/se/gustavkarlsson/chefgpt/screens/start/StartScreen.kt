@@ -33,18 +33,13 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.koin.compose.viewmodel.koinViewModel
-import se.gustavkarlsson.chefgpt.StoredChat
+import se.gustavkarlsson.chefgpt.chats.Chat
 import se.gustavkarlsson.chefgpt.screens.start.StartViewModel.ViewState
 
 @Composable
 fun StartScreen() {
     val viewModel = koinViewModel<StartViewModel>()
     val viewState by viewModel.viewState.collectAsState()
-    LaunchedEffect(viewState) {
-        if (viewState is ViewState.LoggedIn) {
-            viewModel.refreshChats()
-        }
-    }
     Content(viewState)
 }
 
@@ -96,8 +91,8 @@ private fun Content(viewState: ViewState) {
 
 @Composable
 private fun ChatSidebar(
-    chats: List<StoredChat>,
-    onChatClick: (StoredChat) -> Unit,
+    chats: List<Chat>,
+    onChatClick: (Chat) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -134,7 +129,7 @@ private fun ChatSidebar(
 
 @Composable
 private fun ChatItem(
-    chat: StoredChat,
+    chat: Chat,
     onClick: () -> Unit,
 ) {
     Surface(

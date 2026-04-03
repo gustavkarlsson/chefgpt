@@ -57,6 +57,7 @@ kotlin {
         }
         commonMain.dependencies {
             implementation(projects.shared)
+            implementation(libs.kotlinxCoroutinesCore)
             implementation(libs.composeRuntime)
             implementation(libs.composeFoundation)
             implementation(libs.composeMaterial3)
@@ -65,6 +66,7 @@ kotlin {
             implementation(libs.composeUiToolingPreview)
             implementation(libs.androidxLifecycleViewmodelCompose)
             implementation(libs.androidxLifecycleRuntimeCompose)
+            implementation(libs.androidxLifecycleViewmodelNavigation3)
             implementation(libs.materialIconsExtended)
             implementation(libs.multiplatformMarkdownRendererM3)
             implementation(libs.ktorClientCore)

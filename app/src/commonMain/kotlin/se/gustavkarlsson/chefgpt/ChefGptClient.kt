@@ -17,9 +17,13 @@ import io.ktor.client.plugins.sse.sse
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.accept
 import io.ktor.client.request.basicAuth
+import io.ktor.client.request.delete
+import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.request.url
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
@@ -40,7 +44,10 @@ import se.gustavkarlsson.chefgpt.api.ApiChat
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ChatId
+import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.api.ImageUrl
+import se.gustavkarlsson.chefgpt.sessions.SessionId
+import se.gustavkarlsson.chefgpt.sessions.UserCredentials
 import io.ktor.client.plugins.logging.Logger as KtorLogger
 
 class ChefGptClient(
@@ -71,34 +78,29 @@ class ChefGptClient(
                         private val log = Logger.withTag("${ChefGptClient::class.simpleName}-Calls")
 
                         override fun log(message: String) {
-                            log.i { message }
+                            log.d { message }
                         }
                     }
+                format
                 // TODO Make level configurable
                 level = LogLevel.HEADERS
             }
         }
 
-    suspend fun register(
-        username: String,
-        password: String,
-    ): Result<SessionId, ErrorResponse> {
+    suspend fun register(credentials: UserCredentials): Result<SessionId, ErrorResponse> {
         val response =
             httpClient.post("$baseUrl/register") {
-                basicAuth(username, password)
+                basicAuth(credentials.userName.value, credentials.password.value)
             }
         return response.toResultSafe {
             SessionId(response.headers["Session-Id"]!!)
         }
     }
 
-    suspend fun login(
-        username: String,
-        password: String,
-    ): Result<SessionId, ErrorResponse> {
+    suspend fun login(credentials: UserCredentials): Result<SessionId, ErrorResponse> {
         val response =
             httpClient.post("$baseUrl/login") {
-                basicAuth(username, password)
+                basicAuth(credentials.userName.value, credentials.password.value)
             }
         return response.toResultSafe {
             SessionId(response.headers["Session-Id"]!!)
@@ -134,18 +136,46 @@ class ChefGptClient(
         }
     }
 
+    suspend fun deleteChat(
+        sessionId: SessionId,
+        chatId: ChatId,
+    ): Result<Unit, ErrorResponse> {
+        val response =
+            httpClient.delete("$baseUrl/chats/$chatId") {
+                sessionIdHeader(sessionId)
+                accept(ContentType.Application.Json)
+            }
+        return response.toResultSafe {}
+    }
+
+    suspend fun getAllChats(sessionId: SessionId): Result<List<ApiChat>, ErrorResponse> {
+        val response =
+            httpClient.get("$baseUrl/chats") {
+                sessionIdHeader(sessionId)
+                accept(ContentType.Application.Json)
+            }
+        return response.toResultSafe {
+            response.body<List<ApiChat>>()
+        }
+    }
+
+    // TODO Error handling
     fun listenToEvents(
         sessionId: SessionId,
         chatId: ChatId,
+        lastEventId: EventId?,
     ): Flow<ApiEvent> =
         flow {
             httpClient.sse(
-                urlString = "$baseUrl/chats/$chatId/events",
                 deserialize = { typeInfo, text ->
                     val serializer = json.serializersModule.serializer(typeInfo.kotlinType!!)
                     json.decodeFromString(serializer, text)
                 },
                 request = {
+                    url("$baseUrl/chats/$chatId/events")
+                    if (lastEventId != null) {
+                        parameter("lastEventId", lastEventId)
+                    }
                     sessionIdHeader(sessionId)
                 },
             ) {
@@ -162,14 +192,14 @@ class ChefGptClient(
         sessionId: SessionId,
         chatId: ChatId,
         action: ApiAction,
-    ): Result<Nothing?, ErrorResponse> {
+    ): Result<Unit, ErrorResponse> {
         val response =
             httpClient.post("$baseUrl/chats/$chatId/actions") {
                 sessionIdHeader(sessionId)
                 contentType(ContentType.Application.Json)
                 setBody(action)
             }
-        return response.toResultSafe { null }
+        return response.toResultSafe {}
     }
 
     override fun close() {
@@ -190,7 +220,7 @@ private suspend fun <T> HttpResponse.toResultSafe(readSafe: suspend HttpResponse
     }
 
 private fun HttpRequestBuilder.sessionIdHeader(sessionId: SessionId) {
-    header("Session-Id", sessionId.value.toString())
+    header("Session-Id", sessionId.value)
 }
 
 private fun Path.byteReadChannel(): ByteReadChannel {

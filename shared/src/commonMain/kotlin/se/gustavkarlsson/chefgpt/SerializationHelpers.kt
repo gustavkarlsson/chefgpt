@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt.api
+package se.gustavkarlsson.chefgpt
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -23,4 +23,21 @@ abstract class UuidValueSerializer<T>(
     }
 
     override fun deserialize(decoder: Decoder): T = wrap(Uuid.parse(decoder.decodeString()))
+}
+
+abstract class StringValueSerializer<T>(
+    serialName: String,
+    private val wrap: (String) -> T,
+    private val unwrap: (T) -> String,
+) : KSerializer<T> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(serialName, PrimitiveKind.STRING)
+
+    override fun serialize(
+        encoder: Encoder,
+        value: T,
+    ) {
+        encoder.encodeString(unwrap(value))
+    }
+
+    override fun deserialize(decoder: Decoder): T = wrap(decoder.decodeString())
 }

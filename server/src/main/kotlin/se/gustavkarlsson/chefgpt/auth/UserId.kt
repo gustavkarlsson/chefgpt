@@ -1,7 +1,7 @@
 package se.gustavkarlsson.chefgpt.auth
 
 import kotlinx.serialization.Serializable
-import se.gustavkarlsson.chefgpt.api.UuidValueSerializer
+import se.gustavkarlsson.chefgpt.UuidValueSerializer
 import kotlin.uuid.Uuid
 
 @Serializable(with = UserIdSerializer::class)
