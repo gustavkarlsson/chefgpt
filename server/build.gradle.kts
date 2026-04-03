@@ -99,11 +99,18 @@ sqldelight {
     }
 }
 
+val clearFlywayMigrationDirectory =
+    tasks.register<Delete>("clearFlywayMigrationDirectory") {
+        description = "Clears the Flyway migrations directory"
+        delete(flywayMigrationDirectory)
+    }
+
 val copySqldelightMigrationsToFlywheel =
     tasks.register<Copy>("copySqldelightMigrationsToFlywheel") {
         description =
             "Copies SQLDelight migrations from a temporary to the Flyway migrations directory, renaming them to match Flyway's format"
         dependsOn("generateMainChefGptDatabaseMigrations")
+        dependsOn(clearFlywayMigrationDirectory)
         from(sqldelightMigrationTempDirectory) {
             include("*")
         }
