@@ -27,9 +27,7 @@ fun createPostgresModule(config: ApplicationConfig) =
                 }
             }
 
-            "memory" -> {
-                Unit
-            }
+            "memory" -> {}
 
             else -> {
                 error("bindings.storage must be 'memory' or 'database', got '$storage'")
