@@ -2,7 +2,6 @@ package se.gustavkarlsson.chefgpt.plugins
 
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
-import io.ktor.server.config.ApplicationConfig
 import io.ktor.server.plugins.calllogging.CallLogging
 import io.ktor.server.plugins.calllogging.processingTimeMillis
 import io.ktor.server.request.httpMethod
@@ -10,7 +9,8 @@ import io.ktor.server.request.path
 import io.ktor.util.toMap
 import org.slf4j.event.Level
 
-fun Application.installCallLogging(config: ApplicationConfig) {
+fun Application.installCallLogging() {
+    val config = environment.config
     install(CallLogging) {
         val configLevelString = config.propertyOrNull("logging.calls.level")?.getString()?.uppercase()
         val configLevel = Level.entries.find { it.name == configLevelString }

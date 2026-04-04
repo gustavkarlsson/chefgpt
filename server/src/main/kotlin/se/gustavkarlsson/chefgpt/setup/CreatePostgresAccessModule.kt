@@ -10,23 +10,30 @@ import io.r2dbc.spi.ConnectionFactoryOptions.PORT
 import io.r2dbc.spi.ConnectionFactoryOptions.PROTOCOL
 import io.r2dbc.spi.ConnectionFactoryOptions.USER
 import io.r2dbc.spi.ConnectionFactoryOptions.builder
+import org.koin.dsl.module
 import se.gustavkarlsson.chefgpt.postgres.PostgresAccess
 import se.gustavkarlsson.chefgpt.postgres.migratePostgresDatabase
 
-fun createPostgresAccessOrNull(config: ApplicationConfig): PostgresAccess? =
-    when (val storage = config.property("chefgpt.storage").getString()) {
-        "database" -> {
-            val databaseConfig = config.config("postgres")
-            migratePostgresDatabase(databaseConfig)
-            createPostgresAccess(databaseConfig)
-        }
+fun createPostgresModule(config: ApplicationConfig) =
+    module {
+        when (val storage = config.property("chefgpt.storage").getString()) {
+            "database" -> {
+                // FIXME Consider not providing "access",
+                //  but the database connection itself (lazily) through a request scope.
+                single {
+                    val databaseConfig = config.config("postgres")
+                    migratePostgresDatabase(databaseConfig)
+                    createPostgresAccess(databaseConfig)
+                }
+            }
 
-        "memory" -> {
-            null
-        }
+            "memory" -> {
+                Unit
+            }
 
-        else -> {
-            error("chefgpt.storage must be 'memory' or 'database', got '$storage'")
+            else -> {
+                error("chefgpt.storage must be 'memory' or 'database', got '$storage'")
+            }
         }
     }
 

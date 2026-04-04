@@ -18,8 +18,7 @@
             "type": "json",
             "data": {
                 "type": "invalid-username",
-                "message": "Username must be at least 3 characters long",
-                "userMessage": null
+                "message": "Username must be at least 3 characters long"
             }
         }
     }

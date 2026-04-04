@@ -3,13 +3,11 @@ package se.gustavkarlsson.chefgpt.plugins
 import ai.koog.ktor.Koog
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
+import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.agent.EventBackedChatMemory
-import se.gustavkarlsson.chefgpt.chats.EventRepository
 
-fun Application.installKoog(
-    anthropicApiKey: String,
-    eventRepository: EventRepository,
-) {
+fun Application.installKoog() {
+    val anthropicApiKey = environment.config.property("chefgpt.anthropicApiKey").getString()
     install(Koog) {
         llm {
             anthropic(apiKey = anthropicApiKey)
@@ -38,7 +36,7 @@ fun Application.installKoog(
                 )
             }
             install(EventBackedChatMemory) {
-                this.eventRepository = eventRepository
+                this.eventRepository = get()
             }
         }
     }

@@ -62,6 +62,8 @@ koinAnnotations = { module = "io.insert-koin:koin-annotations", version.ref = "k
 koinCompose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
 koinComposeViewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
 koinComposeNavigation3 = { module = "io.insert-koin:koin-compose-navigation3", version.ref = "koin" }
+koinKtor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
+koinLoggerSlf4j = { module = "io.insert-koin:koin-logger-slf4j", version.ref = "koin" }
 
 # Koog
 koogAgents = { module = "ai.koog:koog-agents", version.ref = "koog" }

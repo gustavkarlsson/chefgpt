@@ -3,21 +3,16 @@ package se.gustavkarlsson.chefgpt.agent
 import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.ktor.aiAgent
 import ai.koog.prompt.executor.clients.anthropic.AnthropicModels
-import io.ktor.server.plugins.di.dependencies
 import io.ktor.server.routing.RoutingContext
 import se.gustavkarlsson.chefgpt.api.ChatId
-import se.gustavkarlsson.chefgpt.auth.UserId
-import se.gustavkarlsson.chefgpt.ingredients.PostgresIngredientStore
-import se.gustavkarlsson.chefgpt.postgres.PostgresAccess
+import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 import se.gustavkarlsson.chefgpt.recipes.RecipeClient
 
-class KoogAiAgent : AiAgent {
-    override suspend fun RoutingContext.run(
-        userId: UserId,
-        chatId: ChatId,
-    ) {
-        val db: PostgresAccess by call.application.dependencies
-        val recipeClient: RecipeClient by call.application.dependencies
+class KoogAiAgent(
+    private val recipeClient: RecipeClient,
+    private val ingredientStore: IngredientStore,
+) : AiAgent {
+    override suspend fun RoutingContext.run(chatId: ChatId) {
         val agent =
             aiAgent(
                 strategy = findRecipeStrategy(),
@@ -25,8 +20,7 @@ class KoogAiAgent : AiAgent {
                 tools =
                     ToolRegistry {
                         // TODO Tools should really be set in the plugin config, but it's broken due to https://github.com/JetBrains/koog/issues/1705
-                        // TODO Pass a factory or lambda for the store instead
-                        tools(PostgresIngredientStore(db, userId).asTools())
+                        tools(ingredientStore.asTools())
                         tools(recipeClient.asTools())
                     },
             )

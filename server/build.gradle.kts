@@ -43,7 +43,6 @@ dependencies {
     implementation(libs.ktorServerNetty)
     implementation(libs.ktorServerAuth)
     implementation(libs.ktorServerContentNegotiation)
-    implementation(libs.ktorServerDi)
     implementation(libs.ktorServerSse)
     implementation(libs.ktorServerCallLogging)
     implementation(libs.ktorServerSessions)
@@ -51,6 +50,10 @@ dependencies {
     implementation(libs.ktorClientCio)
     implementation(libs.ktorClientContentNegotiation)
     implementation(libs.ktorSerializationKotlinxJson)
+
+    // Koin
+    implementation(libs.koinKtor)
+    implementation(libs.koinLoggerSlf4j)
 
     // Misc
     implementation(libs.kotlinResult)
