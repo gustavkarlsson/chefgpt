@@ -12,7 +12,7 @@ fun createImageUploaderModule(config: ApplicationConfig) =
         single {
             when (val type = config.property("chefgpt.imageUploader").getString()) {
                 "cloudinary" -> {
-                    val cloudinaryConfig = config.config("chefgpt.cloudinary")
+                    val cloudinaryConfig = config.config("cloudinary")
                     CloudinaryImageUploader(
                         apiKey = cloudinaryConfig.property("apiKey").getString(),
                         apiSecret = cloudinaryConfig.property("apiSecret").getString(),
