@@ -16,7 +16,7 @@ import se.gustavkarlsson.chefgpt.postgres.migratePostgresDatabase
 
 fun createPostgresModule(config: ApplicationConfig) =
     module {
-        when (val storage = config.property("chefgpt.storage").getString()) {
+        when (val storage = config.property("bindings.storage").getString()) {
             "database" -> {
                 // FIXME Consider not providing "access",
                 //  but the database connection itself (lazily) through a request scope.
@@ -32,7 +32,7 @@ fun createPostgresModule(config: ApplicationConfig) =
             }
 
             else -> {
-                error("chefgpt.storage must be 'memory' or 'database', got '$storage'")
+                error("bindings.storage must be 'memory' or 'database', got '$storage'")
             }
         }
     }

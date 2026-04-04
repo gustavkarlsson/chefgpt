@@ -34,11 +34,11 @@ private const val CONTENT_LENGTH_PLACEHOLDER = """"Content-Length": "0""""
 
 private val testConfig =
     MapApplicationConfig(
-        "chefgpt.storage" to "memory",
-        "chefgpt.agent" to "fake",
-        "chefgpt.recipes" to "fake",
-        "chefgpt.imageUploader" to "fake",
-        "chefgpt.anthropicApiKey" to "test-key",
+        "bindings.storage" to "memory",
+        "bindings.agent" to "fake",
+        "bindings.recipes" to "fake",
+        "bindings.imageUploader" to "fake",
+        "anthropic.apiKey" to "test-key",
     )
 
 fun snapshotTestApplication(

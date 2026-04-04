@@ -6,7 +6,7 @@ import se.gustavkarlsson.chefgpt.rethinkdb.RethinkDbAccess
 
 fun createRethinkDbAccessModule(config: ApplicationConfig) =
     module {
-        when (val storage = config.property("chefgpt.storage").getString()) {
+        when (val storage = config.property("bindings.storage").getString()) {
             "database" -> {
                 single {
                     val rethinkConfig = config.config("rethinkdb")
@@ -28,7 +28,7 @@ fun createRethinkDbAccessModule(config: ApplicationConfig) =
             }
 
             else -> {
-                error("chefgpt.storage must be 'memory' or 'database', got '$storage'")
+                error("bindings.storage must be 'memory' or 'database', got '$storage'")
             }
         }
     }

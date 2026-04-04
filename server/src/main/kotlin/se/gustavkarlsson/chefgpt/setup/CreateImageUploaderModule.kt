@@ -10,7 +10,7 @@ import se.gustavkarlsson.chefgpt.images.ImageUploader
 fun createImageUploaderModule(config: ApplicationConfig) =
     module {
         single {
-            when (val type = config.property("chefgpt.imageUploader").getString()) {
+            when (val type = config.property("bindings.imageUploader").getString()) {
                 "cloudinary" -> {
                     val cloudinaryConfig = config.config("cloudinary")
                     CloudinaryImageUploader(
