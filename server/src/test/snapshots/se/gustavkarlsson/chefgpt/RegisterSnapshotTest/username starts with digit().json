@@ -18,8 +18,7 @@
             "type": "json",
             "data": {
                 "type": "invalid-username",
-                "message": "Username must start with a letter",
-                "userMessage": null
+                "message": "Username must start with a letter"
             }
         }
     }
