@@ -7,7 +7,7 @@ import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.agent.EventBackedChatMemory
 
 fun Application.installKoog() {
-    val anthropicApiKey = environment.config.property("chefgpt.anthropicApiKey").getString()
+    val anthropicApiKey = environment.config.property("anthropic.apiKey").getString()
     install(Koog) {
         llm {
             anthropic(apiKey = anthropicApiKey)

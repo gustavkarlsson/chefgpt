@@ -15,7 +15,7 @@ fun createAiAgentModule(config: ApplicationConfig) =
     module {
         requestScope {
             scoped {
-                when (val type = config.property("chefgpt.agent").getString()) {
+                when (val type = config.property("bindings.agent").getString()) {
                     "llm" -> {
                         val recipeClient = get<RecipeClient>()
                         val ingredientStore = get<IngredientStore>()

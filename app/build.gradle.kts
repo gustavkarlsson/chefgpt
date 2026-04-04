@@ -52,9 +52,6 @@ kotlin {
     }
 
     sourceSets {
-        commonMain.configure {
-            kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
-        }
         commonMain.dependencies {
             implementation(projects.shared)
             implementation(libs.kotlinxCoroutinesCore)
@@ -136,14 +133,6 @@ android {
 koinCompiler {
     userLogs = true // Log component detection
 }
-
-// Ensure platform KSP tasks depend on common metadata generation
-tasks
-    .matching {
-        it.name.startsWith("ksp") && it.name != "kspCommonMainKotlinMetadata"
-    }.configureEach {
-        dependsOn("kspCommonMainKotlinMetadata")
-    }
 
 compose.desktop {
     application {

@@ -10,9 +10,9 @@ import se.gustavkarlsson.chefgpt.recipes.SpoonacularClient
 fun createRecipeClientModule(config: ApplicationConfig) =
     module {
         single {
-            when (val recipes = config.property("chefgpt.recipes").getString()) {
+            when (val recipes = config.property("bindings.recipes").getString()) {
                 "spoonacular" -> {
-                    val spoonacularApiKey = config.property("chefgpt.spoonacularApiKey").getString()
+                    val spoonacularApiKey = config.property("spoonacular.apiKey").getString()
                     SpoonacularClient(spoonacularApiKey)
                 }
 
