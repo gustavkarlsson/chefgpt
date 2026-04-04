@@ -6,8 +6,7 @@ import com.github.michaelbull.result.map
 import com.github.michaelbull.result.onOk
 import com.github.michaelbull.result.toResultOr
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.auth.authenticate
-import io.ktor.server.routing.Routing
+import io.ktor.server.routing.Route
 import io.ktor.server.sse.heartbeat
 import io.ktor.server.sse.send
 import io.ktor.server.sse.sse
@@ -25,49 +24,47 @@ import se.gustavkarlsson.chefgpt.chats.toApiOrNull
 import se.gustavkarlsson.chefgpt.getChatId
 import kotlin.time.Duration.Companion.seconds
 
-fun Routing.chatEventsRoute() {
-    authenticate {
-        sse(
-            "/chats/{chatId}/events",
-            serialize = { typeInfo, value ->
-                val json = get<Json>()
-                val serializer = json.serializersModule.serializer(typeInfo.kotlinType!!)
-                json.encodeToString(serializer, value)
-            },
-        ) {
-            heartbeat {
-                period = 1.seconds
-                event = ServerSentEvent("heartbeat")
-            }
-            call
-                .getChatId()
-                .flatMap { chatId ->
-                    val lastEventId = call.request.queryParameters["lastEventId"]
-                    if (lastEventId != null) {
-                        EventId
-                            .parseOrNull(lastEventId)
-                            .toResultOr {
-                                ResponseData(
-                                    status = HttpStatusCode.BadRequest,
-                                    body =
-                                        ApiError(
-                                            "invalid-event-id",
-                                            "Query parameter lastEventId=$lastEventId is not valid",
-                                        ),
-                                )
-                            }.map { chatId to it }
-                    } else {
-                        Ok(chatId to null)
-                    }
-                }.onOk { (chatId, lastEventId) ->
-                    val eventRepository = get<EventRepository>()
-                    eventRepository
-                        .flow(chatId, last = lastEventId)
-                        .mapNotNull { it.toApiOrNull() }
-                        .collect { apiEvent: ApiEvent ->
-                            send(apiEvent)
-                        }
-                }
+fun Route.chatEventsRoute() {
+    sse(
+        "/chats/{chatId}/events",
+        serialize = { typeInfo, value ->
+            val json = get<Json>()
+            val serializer = json.serializersModule.serializer(typeInfo.kotlinType!!)
+            json.encodeToString(serializer, value)
+        },
+    ) {
+        heartbeat {
+            period = 1.seconds
+            event = ServerSentEvent("heartbeat")
         }
+        call
+            .getChatId()
+            .flatMap { chatId ->
+                val lastEventId = call.request.queryParameters["lastEventId"]
+                if (lastEventId != null) {
+                    EventId
+                        .parseOrNull(lastEventId)
+                        .toResultOr {
+                            ResponseData(
+                                status = HttpStatusCode.BadRequest,
+                                body =
+                                    ApiError(
+                                        "invalid-event-id",
+                                        "Query parameter lastEventId=$lastEventId is not valid",
+                                    ),
+                            )
+                        }.map { chatId to it }
+                } else {
+                    Ok(chatId to null)
+                }
+            }.onOk { (chatId, lastEventId) ->
+                val eventRepository = get<EventRepository>()
+                eventRepository
+                    .flow(chatId, last = lastEventId)
+                    .mapNotNull { it.toApiOrNull() }
+                    .collect { apiEvent: ApiEvent ->
+                        send(apiEvent)
+                    }
+            }
     }
 }

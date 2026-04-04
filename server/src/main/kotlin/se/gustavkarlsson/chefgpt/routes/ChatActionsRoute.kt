@@ -3,9 +3,8 @@ package se.gustavkarlsson.chefgpt.routes
 import com.github.michaelbull.result.map
 import com.github.michaelbull.result.onOk
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.auth.authenticate
 import io.ktor.server.request.receive
-import io.ktor.server.routing.Routing
+import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 import org.koin.ktor.ext.get
 import org.koin.ktor.plugin.scope
@@ -20,29 +19,27 @@ import se.gustavkarlsson.chefgpt.getChatId
 import se.gustavkarlsson.chefgpt.requireSession
 import se.gustavkarlsson.chefgpt.respond
 
-fun Routing.chatActionsRoute() {
-    authenticate {
-        post("/chats/{chatId}/actions") {
-            call.requireSession()
-            call
-                .getChatId()
-                .onOk { chatId ->
-                    val eventRepository = get<EventRepository>()
-                    val action = call.receive<ApiAction>()
-                    eventRepository.append(chatId, action.createEvent())
-                    when (action) {
-                        is ApiUserJoinedChat -> {
-                            Unit
-                        }
-
-                        is ApiUserSendsMessage -> {
-                            val aiAgent = call.scope.get<AiAgent>()
-                            with(aiAgent) { run(chatId) }
-                        }
+fun Route.chatActionsRoute() {
+    post("/chats/{chatId}/actions") {
+        call.requireSession()
+        call
+            .getChatId()
+            .onOk { chatId ->
+                val eventRepository = get<EventRepository>()
+                val action = call.receive<ApiAction>()
+                eventRepository.append(chatId, action.createEvent())
+                when (action) {
+                    is ApiUserJoinedChat -> {
+                        Unit
                     }
-                }.map {
-                    ResponseData(HttpStatusCode.NoContent)
-                }.respond(call)
-        }
+
+                    is ApiUserSendsMessage -> {
+                        val aiAgent = call.scope.get<AiAgent>()
+                        with(aiAgent) { run(chatId) }
+                    }
+                }
+            }.map {
+                ResponseData(HttpStatusCode.NoContent)
+            }.respond(call)
     }
 }

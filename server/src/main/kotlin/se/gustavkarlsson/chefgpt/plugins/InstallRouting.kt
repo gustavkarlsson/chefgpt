@@ -1,6 +1,7 @@
 package se.gustavkarlsson.chefgpt.plugins
 
 import io.ktor.server.application.Application
+import io.ktor.server.auth.authenticate
 import io.ktor.server.routing.routing
 import se.gustavkarlsson.chefgpt.routes.chatActionsRoute
 import se.gustavkarlsson.chefgpt.routes.chatEventsRoute
@@ -16,11 +17,13 @@ fun Application.installRouting() {
     routing {
         registerRoute()
         loginRoute()
-        imagesRoute()
-        getChatsRoute()
-        createChatRoute()
-        deleteChatRoute()
-        chatEventsRoute()
-        chatActionsRoute()
+        authenticate {
+            imagesRoute()
+            getChatsRoute()
+            createChatRoute()
+            deleteChatRoute()
+            chatEventsRoute()
+            chatActionsRoute()
+        }
     }
 }
