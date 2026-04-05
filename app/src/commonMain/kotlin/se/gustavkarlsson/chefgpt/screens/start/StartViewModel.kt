@@ -167,7 +167,7 @@ class StartViewModel(
                     when (error) {
                         is RegisterError.ServerError ->
                             log.i {
-                                "Registration failed for '$inputUsername': ${error.errorResponse.errorBody}"
+                                "Registration failed for '$inputUsername': ${error.response.errorBody}"
                             }
                         RegisterError.StorageFailed ->
                             log.e { "Registration succeeded but failed to save session for '$inputUsername'" }
