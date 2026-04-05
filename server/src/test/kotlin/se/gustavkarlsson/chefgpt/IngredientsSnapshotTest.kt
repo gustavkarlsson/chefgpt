@@ -3,6 +3,7 @@ package se.gustavkarlsson.chefgpt
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.request.put
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -97,5 +98,43 @@ class IngredientsSnapshotTest {
     fun `delete ingredient unauthenticated`() =
         snapshotTestApplication(snapshotContext) { client ->
             client.delete("/ingredients/tomato")
+        }
+
+    @Test
+    fun `put ingredient new`() =
+        snapshotTestApplication(snapshotContext) { client ->
+            val sessionId = registerUser()
+
+            client.put("/ingredients/tomato") {
+                header("Session-Id", sessionId)
+            }
+        }
+
+    @Test
+    fun `put ingredient existing`() =
+        snapshotTestApplication(
+            snapshotContext,
+            extraKoinModules =
+                listOf(
+                    module {
+                        requestScope {
+                            scoped {
+                                InMemoryIngredientStore(mutableListOf("tomato"))
+                            } bind IngredientStore::class
+                        }
+                    },
+                ),
+        ) { client ->
+            val sessionId = registerUser()
+
+            client.put("/ingredients/tomato") {
+                header("Session-Id", sessionId)
+            }
+        }
+
+    @Test
+    fun `put ingredient unauthenticated`() =
+        snapshotTestApplication(snapshotContext) { client ->
+            client.put("/ingredients/tomato")
         }
 }
