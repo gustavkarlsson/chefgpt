@@ -53,6 +53,7 @@ class StartViewModel(
             val chats: List<Chat>,
             val onClickNewChat: () -> Unit,
             val onClickChat: (Chat) -> Unit,
+            val onClickDeleteChat: (Chat) -> Unit,
             val onClickLogout: () -> Unit,
         ) : ViewState
     }
@@ -139,6 +140,7 @@ class StartViewModel(
                 chats = chats,
                 onClickNewChat = { onClickNewChat(sessionCredentials) },
                 onClickChat = { chat -> navigator.push(Route.Chat(sessionCredentials.sessionId, chat.id)) },
+                onClickDeleteChat = { chat -> onClickDeleteChat(sessionCredentials, chat) },
                 onClickLogout = { onClickLogout() },
             )
         }
@@ -201,6 +203,22 @@ class StartViewModel(
                 }.onErr { errorResponse ->
                     // TODO Show user-friendly error
                     log.e { "Failed to create chat: ${errorResponse.errorBody}" }
+                }
+        }
+    }
+
+    private fun onClickDeleteChat(
+        sessionCredentials: SessionCredentials,
+        chat: Chat,
+    ) {
+        viewModelScope.launch {
+            chatRepository
+                .delete(sessionCredentials.sessionId, chat.id)
+                .onOk {
+                    log.i { "Chat deleted: ${chat.id}" }
+                }.onErr { errorResponse ->
+                    // TODO Show user-friendly error
+                    log.e { "Failed to delete chat: ${errorResponse.errorBody}" }
                 }
         }
     }

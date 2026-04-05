@@ -11,8 +11,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -69,6 +73,7 @@ private fun Content(viewState: ViewState) {
                     ChatSidebar(
                         chats = viewState.chats,
                         onChatClick = viewState.onClickChat,
+                        onChatDelete = viewState.onClickDeleteChat,
                         modifier = Modifier.width(260.dp).fillMaxHeight(),
                     )
                     VerticalDivider()
@@ -93,6 +98,7 @@ private fun Content(viewState: ViewState) {
 private fun ChatSidebar(
     chats: List<Chat>,
     onChatClick: (Chat) -> Unit,
+    onChatDelete: (Chat) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -119,6 +125,7 @@ private fun ChatSidebar(
                         ChatItem(
                             chat = chat,
                             onClick = { onChatClick(chat) },
+                            onDelete = { onChatDelete(chat) },
                         )
                     }
                 }
@@ -131,26 +138,35 @@ private fun ChatSidebar(
 private fun ChatItem(
     chat: Chat,
     onClick: () -> Unit,
+    onDelete: () -> Unit,
 ) {
-    Surface(
+    val formatted =
+        chat.createdAt
+            .toString()
+            .replace("T", " ")
+            .take(19)
+    Row(
         modifier =
             Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onClick)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0f),
+                .padding(start = 16.dp, top = 4.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        val formatted =
-            chat.createdAt
-                .toString()
-                .replace("T", " ")
-                .take(19)
         Text(
             text = "Chat from $formatted",
             style = MaterialTheme.typography.bodyMedium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
         )
+        IconButton(onClick = onDelete) {
+            Icon(
+                imageVector = Icons.Default.Delete,
+                contentDescription = "Delete chat",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
