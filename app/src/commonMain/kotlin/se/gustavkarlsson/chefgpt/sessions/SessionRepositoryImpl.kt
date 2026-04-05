@@ -1,11 +1,13 @@
 package se.gustavkarlsson.chefgpt.sessions
 
 import co.touchlab.kermit.Logger
+import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
 import com.github.michaelbull.result.flatMap
 import com.github.michaelbull.result.map
 import com.github.michaelbull.result.onOk
+import io.ktor.http.HttpStatusCode
 import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.ErrorResponse
 
@@ -27,8 +29,7 @@ class SessionRepositoryImpl(
                 if (lastSessionFileStore.save(credentials)) {
                     Ok(credentials)
                 } else {
-                    // FIXME Respond with the correct error here instead!
-                    Ok(credentials)
+                    Err(ErrorResponse(HttpStatusCode.InternalServerError))
                 }
             }
 
