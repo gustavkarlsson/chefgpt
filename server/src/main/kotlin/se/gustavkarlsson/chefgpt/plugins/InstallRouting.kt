@@ -7,6 +7,7 @@ import se.gustavkarlsson.chefgpt.routes.chatActionsRoute
 import se.gustavkarlsson.chefgpt.routes.chatEventsRoute
 import se.gustavkarlsson.chefgpt.routes.createChatRoute
 import se.gustavkarlsson.chefgpt.routes.deleteChatRoute
+import se.gustavkarlsson.chefgpt.routes.deleteIngredientRoute
 import se.gustavkarlsson.chefgpt.routes.getChatsRoute
 import se.gustavkarlsson.chefgpt.routes.getIngredientsRoute
 import se.gustavkarlsson.chefgpt.routes.imagesRoute
@@ -22,6 +23,7 @@ fun Application.installRouting() {
             imagesRoute()
             getChatsRoute()
             getIngredientsRoute()
+            deleteIngredientRoute()
             createChatRoute()
             deleteChatRoute()
             chatEventsRoute()
