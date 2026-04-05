@@ -4,7 +4,10 @@ import com.github.michaelbull.result.Result
 import se.gustavkarlsson.chefgpt.ErrorResponse
 
 sealed interface RegisterError {
-    data class ServerError(val response: ErrorResponse) : RegisterError
+    data class ServerError(
+        val response: ErrorResponse,
+    ) : RegisterError
+
     data object StorageFailed : RegisterError
 }
 

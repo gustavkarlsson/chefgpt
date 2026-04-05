@@ -165,12 +165,15 @@ class StartViewModel(
                     // TODO Show correct feedback message based on the error
                     //  Modify state?
                     when (error) {
-                        is RegisterError.ServerError ->
+                        is RegisterError.ServerError -> {
                             log.i {
                                 "Registration failed for '$inputUsername': ${error.response.errorBody}"
                             }
-                        RegisterError.StorageFailed ->
+                        }
+
+                        RegisterError.StorageFailed -> {
                             log.e { "Registration succeeded but failed to save session for '$inputUsername'" }
+                        }
                     }
                 }
         }
