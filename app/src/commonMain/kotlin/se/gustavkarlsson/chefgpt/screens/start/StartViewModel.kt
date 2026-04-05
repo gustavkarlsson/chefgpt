@@ -19,6 +19,7 @@ import se.gustavkarlsson.chefgpt.chats.Chat
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.navigation.Route
+import se.gustavkarlsson.chefgpt.sessions.RegisterError
 import se.gustavkarlsson.chefgpt.sessions.SessionCredentials
 import se.gustavkarlsson.chefgpt.sessions.SessionRepository
 import se.gustavkarlsson.chefgpt.sessions.UserCredentials
@@ -160,11 +161,19 @@ class StartViewModel(
                     innerState.update {
                         it.copy(sessionCredentials = credentials)
                     }
-                }.onErr { errorResponse ->
-                    // TODO Show correct feedback message based on the status code
+                }.onErr { error ->
+                    // TODO Show correct feedback message based on the error
                     //  Modify state?
-                    log.i {
-                        "Registration failed for '$inputUsername': ${errorResponse.errorBody}"
+                    when (error) {
+                        is RegisterError.ServerError -> {
+                            log.i {
+                                "Registration failed for '$inputUsername': ${error.response.errorBody}"
+                            }
+                        }
+
+                        RegisterError.StorageFailed -> {
+                            log.e { "Registration succeeded but failed to save session for '$inputUsername'" }
+                        }
                     }
                 }
         }
