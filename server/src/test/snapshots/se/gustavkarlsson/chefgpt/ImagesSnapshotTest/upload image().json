@@ -1,0 +1,27 @@
+{
+    "request": {
+        "method": "POST",
+        "url": "http://localhost/images",
+        "headers": {
+            "Session-Id": "00000000000000000000000000000000",
+            "Accept": "application/json",
+            "Content-Type": "image/jpeg",
+            "Content-Length": "0"
+        },
+        "body": {
+            "type": "binary-base64",
+            "data": "AQID"
+        }
+    },
+    "response": {
+        "status": 201,
+        "headers": {
+            "Content-Length": "0",
+            "Content-Type": "text/plain; charset=UTF-8"
+        },
+        "body": {
+            "type": "text",
+            "data": "https://cataas.com/cat"
+        }
+    }
+}

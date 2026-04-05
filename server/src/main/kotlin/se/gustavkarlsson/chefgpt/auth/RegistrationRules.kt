@@ -1,0 +1,35 @@
+package se.gustavkarlsson.chefgpt.auth
+
+val registrationRules =
+    listOf(
+        RegistrationRule.name("Username must be at least 3 characters long") { name ->
+            name.length >= 3
+        },
+        RegistrationRule.name("Username must start with a letter") { name ->
+            name.firstOrNull()?.isLetter() ?: false
+        },
+        RegistrationRule.name("Username must only contain letters, digits, '-', and '_'") { name ->
+            name.all { it.isLetterOrDigit() || it == '-' || it == '_' }
+        },
+        RegistrationRule.password("Password must be at least 8 characters") { password ->
+            password.length >= 8
+        },
+        RegistrationRule.password("Password must contain only valid characters") { password ->
+            password.none { it.isISOControl() } && password.all { it.isDefined() }
+        },
+        RegistrationRule.password(
+            "Password must contain at least three of the following: lower-case letter, upper-case letter, number, special character",
+        ) { password ->
+            // TODO Set a better algorithm for complexity
+            val criteriaCount =
+                listOf<Char.() -> Boolean>(
+                    { isLowerCase() },
+                    { isUpperCase() },
+                    { isDigit() },
+                    { !isLetterOrDigit() },
+                ).count { isCharCriteria ->
+                    password.any(isCharCriteria)
+                }
+            criteriaCount >= 3
+        },
+    )

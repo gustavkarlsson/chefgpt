@@ -1,0 +1,15 @@
+selectByUsername:
+SELECT *
+FROM "user"
+WHERE username = ?;
+
+insert:
+INSERT INTO "user" (username, password_md5_hash, password_salt)
+VALUES (?, ?, ?)
+ON CONFLICT DO NOTHING
+RETURNING id;
+
+existsByUsername:
+SELECT COUNT(*) > 0
+FROM "user"
+WHERE username = ?;

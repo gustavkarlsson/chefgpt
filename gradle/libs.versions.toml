@@ -1,45 +1,145 @@
 [versions]
-agp = "8.11.2"
-android-compileSdk = "36"
-android-minSdk = "24"
-android-targetSdk = "36"
-androidx-activity = "1.12.2"
-androidx-appcompat = "1.7.1"
-androidx-core = "1.17.0"
-androidx-espresso = "3.7.0"
-androidx-lifecycle = "2.9.6"
-androidx-testExt = "1.3.0"
+agp = "8.13.2"
+androidCompileSdk = "36"
+androidMinSdk = "24"
+androidTargetSdk = "36"
+androidxActivity = "1.13.0"
+androidxLifecycle = "2.10.0"
+atomicfu = "0.32.1"
+coil = "3.4.0"
 composeHotReload = "1.0.0"
-composeMultiplatform = "1.10.0"
-junit = "4.13.2"
-kotlin = "2.3.0"
-kotlinx-coroutines = "1.10.2"
+composeMultiplatform = "1.10.3"
+flyway = "12.2.0"
+jvmToolchain = "21" # Jetbrains Hot-Reload needs this
+kermit = "2.1.0"
+koin = "4.2.0"
+koinPlugin = "0.4.1"
+koog = "0.7.3"
+kotlin = "2.3.20"
+kotlinResult = "2.3.1"
+kotlinxCoroutines = "1.10.2"
+kotlinxSerializationJson = "1.10.0"
+ktlint = "1.8.0"
+ktor = "3.4.2"
+logback = "1.5.32"
 material3 = "1.10.0-alpha05"
+materialIconsExtended = "1.7.3"
+multiplatformMarkdownRendererM3 = "0.39.2"
+navigation3 = "1.1.0-beta01"
+postgresDriver = "42.7.10"
+r2dbcPool = "1.0.2.RELEASE"
+r2dbcPostgres = "1.1.1.RELEASE"
+slapshot = "1.0.0"
+slf4jSimple = "2.0.17"
+sqldelight = "2.1.0"
+spotless = "8.4.0"
+testcontainers = "2.0.4"
 
 [libraries]
-kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
-kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
-junit = { module = "junit:junit", version.ref = "junit" }
-androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
-androidx-testExt-junit = { module = "androidx.test.ext:junit", version.ref = "androidx-testExt" }
-androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "androidx-espresso" }
-androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "androidx-appcompat" }
-androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
-compose-uiTooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref = "composeMultiplatform" }
-androidx-lifecycle-viewmodelCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
-androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
-compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
-compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
-compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "material3" }
-compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
-compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
-compose-uiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "composeMultiplatform" }
-kotlinx-coroutinesSwing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
+
+# Android
+androidxActivityCompose = { module = "androidx.activity:activity-compose", version.ref = "androidxActivity" }
+androidxLifecycleRuntimeCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidxLifecycle" }
+androidxLifecycleViewmodelCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidxLifecycle" }
+androidxLifecycleViewmodelNavigation3 = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "androidxLifecycle" }
+
+# Compose
+composeComponentsResources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
+composeFoundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
+composeMaterial3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "material3" }
+composeRuntime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
+composeUi = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
+composeUiTooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref = "composeMultiplatform" }
+composeUiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "composeMultiplatform" }
+materialIconsExtended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
+multiplatformMarkdownRendererM3 = { module = "com.mikepenz:multiplatform-markdown-renderer-m3", version.ref = "multiplatformMarkdownRendererM3" }
+navigation3Ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
+
+# Koin
+koinCore = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+koinAnnotations = { module = "io.insert-koin:koin-annotations", version.ref = "koin" }
+koinCompose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
+koinComposeViewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
+koinComposeNavigation3 = { module = "io.insert-koin:koin-compose-navigation3", version.ref = "koin" }
+koinKtor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
+koinLoggerSlf4j = { module = "io.insert-koin:koin-logger-slf4j", version.ref = "koin" }
+
+# Koog
+koogAgents = { module = "ai.koog:koog-agents", version.ref = "koog" }
+koogKtor = { module = "ai.koog:koog-ktor", version.ref = "koog" }
+
+# Kotlin
+kotlinTest = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+kotlinTestJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
+kotlinTestJunit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5", version.ref = "kotlin" }
+kotlinxCoroutinesCore = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+kotlinxCoroutinesReactive = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactive", version.ref = "kotlinxCoroutines" }
+kotlinxCoroutinesSwing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinxCoroutines" }
+kotlinxSerializationJson = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+
+# Ktor client
+ktorClientCio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
+ktorClientContentNegotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktorClientCore = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktorClientLogging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
+
+# Ktor server
+ktorServerCore = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor" }
+ktorServerNetty = { module = "io.ktor:ktor-server-netty-jvm", version.ref = "ktor" }
+ktorServerAuth = { module = "io.ktor:ktor-server-auth", version.ref = "ktor" }
+ktorServerTestHost = { module = "io.ktor:ktor-server-test-host-jvm", version.ref = "ktor" }
+ktorServerDi = { module = "io.ktor:ktor-server-di", version.ref = "ktor" }
+ktorServerSse = { module = "io.ktor:ktor-server-sse", version.ref = "ktor" }
+ktorServerContentNegotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
+ktorServerCallLogging = { module = "io.ktor:ktor-server-call-logging", version.ref = "ktor" }
+ktorServerSessions = { module = "io.ktor:ktor-server-sessions", version.ref = "ktor" }
+
+# Database
+postgresDriver = { module = "org.postgresql:postgresql", version.ref = "postgresDriver" }
+r2dbcPostgres = { module = "org.postgresql:r2dbc-postgresql", version.ref = "r2dbcPostgres" }
+r2dbcPool = { module = "io.r2dbc:r2dbc-pool", version.ref = "r2dbcPool" }
+flyway = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flywayPostgres = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
+sqldelightR2dbcDriver = { module = "app.cash.sqldelight:r2dbc-driver", version.ref = "sqldelight" }
+sqldelightCoroutines = { module = "app.cash.sqldelight:coroutines-extensions-jvm", version.ref = "sqldelight" }
+sqldelightRuntime = { module = "app.cash.sqldelight:runtime-jvm", version.ref = "sqldelight" }
+sqldelightPostgresDialect = { module = "app.cash.sqldelight:postgresql-dialect", version.ref = "sqldelight" }
+
+# Ktor common
+ktorSerializationKotlinxJson = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+
+# Logging
+kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
+logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+slf4jApi = { module = "org.slf4j:slf4j-api", version.ref = "slf4jSimple" }
+
+# Coil
+coilCompose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+coilNetworkKtor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
+
+# Misc
+kotlinResult = { module = "com.michael-bull.kotlin-result:kotlin-result", version.ref = "kotlinResult" }
+
+# Testcontainers
+testcontainersJunit5 = { module = "org.testcontainers:testcontainers-junit-jupiter", version.ref = "testcontainers" }
+testcontainersPostgres = { module = "org.testcontainers:testcontainers-postgresql", version.ref = "testcontainers" }
+
+# Slapshot
+slapshotJunit5 = { module = "se.gustavkarlsson.slapshot:slapshot-junit5", version.ref = "slapshot" }
+slapshotKtor3 = { module = "se.gustavkarlsson.slapshot:slapshot-ktor3", version.ref = "slapshot" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
+composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 composeHotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "composeHotReload" }
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
-composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+koinCompiler = { id = "io.insert-koin.compiler.plugin", version.ref = "koinPlugin" }
+kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
+slapshot = { id = "se.gustavkarlsson.slapshot", version.ref = "slapshot" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
+atomicfu = { id ="org.jetbrains.kotlinx.atomicfu", version.ref = "atomicfu" }

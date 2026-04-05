@@ -1,0 +1,20 @@
+selectByUserId:
+SELECT *
+FROM ingredient
+WHERE user_id = ?;
+
+insert:
+INSERT INTO ingredient (user_id, name)
+VALUES (?, ?)
+ON CONFLICT DO NOTHING
+RETURNING name;
+
+deleteByUserIdAndName:
+DELETE FROM ingredient
+WHERE user_id = ? AND name = ?
+RETURNING name;
+
+deleteByUserId:
+DELETE FROM ingredient
+WHERE user_id = ?
+RETURNING name;

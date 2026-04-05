@@ -1,0 +1,25 @@
+{
+    "request": {
+        "method": "DELETE",
+        "url": "http://localhost/chats/00000000-0000-0000-0000-000000000000",
+        "headers": {
+            "Session-Id": "00000000000000000000000000000000",
+            "Accept": "application/json",
+            "Content-Length": "0"
+        }
+    },
+    "response": {
+        "status": 404,
+        "headers": {
+            "Content-Length": "0",
+            "Content-Type": "application/json"
+        },
+        "body": {
+            "type": "json",
+            "data": {
+                "type": "chat-not-found",
+                "message": "Chat not found"
+            }
+        }
+    }
+}

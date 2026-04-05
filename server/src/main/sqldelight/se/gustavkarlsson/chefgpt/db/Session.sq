@@ -1,0 +1,13 @@
+upsert:
+INSERT INTO session (id, value)
+VALUES (?, ?)
+ON CONFLICT (id) DO UPDATE SET value = EXCLUDED.value;
+
+selectById:
+SELECT *
+FROM session
+WHERE id = ?;
+
+deleteById:
+DELETE FROM session
+WHERE id = ?;

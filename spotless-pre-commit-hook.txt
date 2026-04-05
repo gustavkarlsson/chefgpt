@@ -1,0 +1,44 @@
+######## SPOTLESS-GRADLE HOOK START ########
+
+# NOTE: This hook will run spotlessApply on ALL kotlin files in the project, not only files in the staging area.
+
+CHANGED_FILES="$(git --no-pager diff --name-status --no-color --cached | awk '$1 != "D" && $NF ~ /\.kts?$/ { print $NF }')"
+
+if [ -n "$CHANGED_FILES" ]; then
+    diff=.git/unstaged-spotless-git-hook.diff
+    git diff --color=never > "$diff"
+    if [ -s "$diff" ]; then
+      git apply -R "$diff"
+    fi
+
+    echo "Running spotlessApply"
+
+    ./gradlew --quiet spotlessApply
+    gradle_command_exit_code=$?
+
+    echo "spotlessApply finished"
+
+    echo "$CHANGED_FILES" | while read -r file; do
+        if [ -f "$file" ]; then
+            git add "$file"
+        fi
+    done
+
+    if [ -s "$diff" ]; then
+      if ! git apply --ignore-whitespace "$diff"; then
+        echo "[error] Failed to restore unstaged changes. Aborting commit."
+        echo "[error] Your unstaged work is saved in: $diff"
+        echo "[error] Restore it manually with: git apply $diff"
+        unset diff
+        exit 1
+      fi
+    fi
+    rm "$diff"
+    unset diff
+
+    echo "Completed spotless hook."
+    if [ $gradle_command_exit_code -ne 0 ]; then
+        exit $gradle_command_exit_code
+    fi
+fi
+######## SPOTLESS-GRADLE HOOK END ########

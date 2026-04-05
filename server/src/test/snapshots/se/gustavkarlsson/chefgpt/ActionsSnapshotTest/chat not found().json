@@ -1,0 +1,33 @@
+{
+    "request": {
+        "method": "POST",
+        "url": "http://localhost/chats/00000000-0000-0000-0000-000000000000/actions",
+        "headers": {
+            "Session-Id": "00000000000000000000000000000000",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Content-Length": "0"
+        },
+        "body": {
+            "type": "json",
+            "data": {
+                "type": "api-user-joined-chat",
+                "joinId": "00000000-0000-0000-0000-000000000000"
+            }
+        }
+    },
+    "response": {
+        "status": 404,
+        "headers": {
+            "Content-Length": "0",
+            "Content-Type": "application/json"
+        },
+        "body": {
+            "type": "json",
+            "data": {
+                "type": "chat-not-found",
+                "message": "Chat not found"
+            }
+        }
+    }
+}

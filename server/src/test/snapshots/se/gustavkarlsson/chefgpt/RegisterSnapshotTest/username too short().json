@@ -1,0 +1,25 @@
+{
+    "request": {
+        "method": "POST",
+        "url": "http://localhost/register",
+        "headers": {
+            "Authorization": "Basic YWI6VGVzdDEyMyE=",
+            "Accept": "application/json",
+            "Content-Length": "0"
+        }
+    },
+    "response": {
+        "status": 400,
+        "headers": {
+            "Content-Length": "0",
+            "Content-Type": "application/json"
+        },
+        "body": {
+            "type": "json",
+            "data": {
+                "type": "invalid-username",
+                "message": "Username must be at least 3 characters long"
+            }
+        }
+    }
+}

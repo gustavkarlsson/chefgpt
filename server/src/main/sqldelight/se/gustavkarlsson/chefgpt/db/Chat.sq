@@ -1,0 +1,29 @@
+insert:
+INSERT INTO chat (user_id)
+VALUES (?)
+RETURNING id, created_at;
+
+deleteByUserIdAndChatId:
+DELETE FROM chat
+WHERE user_id = ? AND id = ?
+RETURNING id;
+
+selectByUserId:
+SELECT *
+FROM chat
+WHERE user_id = ?;
+
+selectByUserIdAndChatId:
+SELECT *
+FROM chat
+WHERE user_id = ? AND id = ?;
+
+selectByChatId:
+SELECT *
+FROM chat
+WHERE id = ?;
+
+existsByUserIdAndChatId:
+SELECT COUNT(*) > 0
+FROM chat
+WHERE user_id = ? AND id = ?;
