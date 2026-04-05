@@ -1,5 +1,6 @@
 package se.gustavkarlsson.chefgpt.ingredients
 
+import org.jetbrains.annotations.VisibleForTesting
 import se.gustavkarlsson.chefgpt.auth.UserId
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
@@ -11,7 +12,8 @@ class InMemoryIngredientStoreFactory {
         InMemoryIngredientStore(storage.computeIfAbsent(userId) { CopyOnWriteArrayList() })
 }
 
-private class InMemoryIngredientStore(
+@VisibleForTesting
+class InMemoryIngredientStore(
     private val ingredients: MutableList<String>,
 ) : IngredientStore {
     override suspend fun getIngredients(): List<String> = ingredients.toList()

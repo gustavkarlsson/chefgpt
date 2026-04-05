@@ -1,0 +1,16 @@
+{
+    "request": {
+        "method": "PUT",
+        "url": "http://localhost/ingredients/tomato",
+        "headers": {
+            "Accept": "application/json",
+            "Content-Length": "0"
+        }
+    },
+    "response": {
+        "status": 401,
+        "headers": {
+            "Content-Length": "0"
+        }
+    }
+}

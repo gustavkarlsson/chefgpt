@@ -7,9 +7,12 @@ import se.gustavkarlsson.chefgpt.routes.chatActionsRoute
 import se.gustavkarlsson.chefgpt.routes.chatEventsRoute
 import se.gustavkarlsson.chefgpt.routes.createChatRoute
 import se.gustavkarlsson.chefgpt.routes.deleteChatRoute
+import se.gustavkarlsson.chefgpt.routes.deleteIngredientRoute
 import se.gustavkarlsson.chefgpt.routes.getChatsRoute
+import se.gustavkarlsson.chefgpt.routes.getIngredientsRoute
 import se.gustavkarlsson.chefgpt.routes.imagesRoute
 import se.gustavkarlsson.chefgpt.routes.loginRoute
+import se.gustavkarlsson.chefgpt.routes.putIngredientRoute
 import se.gustavkarlsson.chefgpt.routes.registerRoute
 
 // TODO set timeouts
@@ -20,6 +23,9 @@ fun Application.installRouting() {
         authenticate {
             imagesRoute()
             getChatsRoute()
+            getIngredientsRoute()
+            putIngredientRoute()
+            deleteIngredientRoute()
             createChatRoute()
             deleteChatRoute()
             chatEventsRoute()
