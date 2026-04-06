@@ -2,6 +2,7 @@ package se.gustavkarlsson.chefgpt.ingredients
 
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
+import kotlinx.coroutines.flow.Flow
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.postgres.PostgresDatabasePool
 import se.gustavkarlsson.chefgpt.postgres.use
@@ -17,6 +18,9 @@ class PostgresIngredientStore(
                 .awaitAsList()
                 .map { it.name }
         }
+
+    override fun streamIngredients(userId: UserId): Flow<List<String>> = TODO("FIXME")
+
 
     override suspend fun addIngredients(
         userId: UserId,
