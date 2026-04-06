@@ -51,7 +51,7 @@ fun snapshotTestApplication(
     test: suspend ApplicationTestBuilder.(HttpClient) -> Unit,
 ) = testApplication {
     environment { config = applicationConfig }
-    application { module(extraKoinModules) }
+    application { moduleWithExtraKoinModules(extraKoinModules) }
     val client =
         createClient {
             install(ContentNegotiation) { json() }
