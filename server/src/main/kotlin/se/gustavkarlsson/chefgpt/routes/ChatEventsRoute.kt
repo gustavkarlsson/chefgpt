@@ -10,7 +10,6 @@ import io.ktor.server.routing.Route
 import io.ktor.server.sse.heartbeat
 import io.ktor.server.sse.send
 import io.ktor.server.sse.sse
-import io.ktor.sse.ServerSentEvent
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
@@ -34,8 +33,7 @@ fun Route.chatEventsRoute() {
         },
     ) {
         heartbeat {
-            period = 1.seconds
-            event = ServerSentEvent("heartbeat")
+            period = 15.seconds
         }
         val eventRepository = get<EventRepository>()
         call
