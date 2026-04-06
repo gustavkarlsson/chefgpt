@@ -8,11 +8,14 @@ import ai.koog.agents.core.feature.AIAgentGraphFeature
 import ai.koog.agents.core.feature.config.FeatureConfig
 import ai.koog.agents.core.feature.pipeline.AIAgentGraphPipeline
 import ai.koog.prompt.message.Message
+import org.slf4j.LoggerFactory
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.chats.Event
 import se.gustavkarlsson.chefgpt.chats.EventRepository
 import java.util.concurrent.atomic.AtomicReference
+
+private val logger = LoggerFactory.getLogger(EventRepository::class.java)
 
 class EventBackedChatMemory {
     class Config : FeatureConfig() {
@@ -69,16 +72,41 @@ class EventBackedChatMemory {
                         .getAll(chatId)
                         .filterIsInstance<Event.Message>()
                         .map { it.message }
-                for (message in chatMessages) {
+                val sanitizedMessages = sanitizeMessages(chatMessages)
+                if (chatMessages.size != sanitizedMessages.size) {
+                    val droppedMessageCount = chatMessages.size - sanitizedMessages.size
+                    logger.warn("$droppedMessageCount messages were dropped during sanitization")
+                }
+                for (message in sanitizedMessages) {
                     appendPrompt {
                         message(message)
                     }
                 }
-                chatMessages.lastOrNull()?.let { message ->
+                sanitizedMessages.lastOrNull()?.let { message ->
                     lastSyncedMessageHolder.set(message)
                 }
             }
         }
+
+        /**
+         * Removes any orphaned [Message.Tool.Call] that is not immediately followed by
+         * a [Message.Tool.Result]. This can happen if an agent run was interrupted after
+         * saving the tool call but before saving the tool result. Such orphaned calls
+         * cause Anthropic to reject the request with a "tool_use without tool_result" error.
+         */
+        private fun sanitizeMessages(messages: List<Message>): List<Message> =
+            buildList {
+                for ((index, message) in messages.withIndex()) {
+                    if (message is Message.Tool.Call) {
+                        val next = messages.getOrNull(index + 1)
+                        if (next !is Message.Tool.Result) {
+                            // Orphaned tool call — drop it and everything after
+                            break
+                        }
+                    }
+                    add(message)
+                }
+            }
 
         private suspend fun AIAgentGraphContextBase.writeNewPromptMessagesToChat(
             eventRepository: EventRepository,

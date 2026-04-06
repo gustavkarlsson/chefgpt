@@ -12,16 +12,6 @@ import ai.koog.agents.core.dsl.extension.onReasoningMessage
 import ai.koog.agents.core.dsl.extension.onToolCall
 import ai.koog.prompt.message.Message
 
-// FIXME Error from anthropic:
-//  {
-//    "type": "error",
-//    "error": {
-//        "type": "invalid_request_error",
-//        "message": "messages.4: `tool_use` ids were found without `tool_result` blocks immediately after: toolu_01GyK51VV86vNtWFFv6fN3hy. Each `tool_use` block must have a corresponding `tool_result` block in the next message."
-//    },
-//    "request_id": "req_011CZhdMYrcePZtfXgPVrt1H"
-// }
-
 fun findRecipeStrategy(): AIAgentGraphStrategy<Unit, Unit> =
     strategy("find-recipe") {
         val nodeExecuteLLM by nodeExecuteLLM("executeLLM")
