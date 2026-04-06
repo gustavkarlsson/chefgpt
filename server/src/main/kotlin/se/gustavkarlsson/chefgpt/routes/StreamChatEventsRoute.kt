@@ -23,7 +23,7 @@ import se.gustavkarlsson.chefgpt.chats.toApiOrNull
 import se.gustavkarlsson.chefgpt.getChatId
 import kotlin.time.Duration.Companion.seconds
 
-fun Route.chatEventsRoute() {
+fun Route.streamChatEventsRoute() {
     sse(
         "/chats/{chatId}/events",
         serialize = { typeInfo, value ->
