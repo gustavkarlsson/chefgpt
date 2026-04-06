@@ -45,9 +45,11 @@ fun ApplicationCall.getCredentials(): Result<UserPasswordCredential, ResponseDat
         }
 
 fun ApplicationCall.requireSession(): Session =
-    checkNotNull(principal<Session>()) {
+    checkNotNull(sessionOrNull()) {
         "User principal missing. Are we calling this in a non-authenticated endpoint?"
     }
+
+fun ApplicationCall.sessionOrNull(): Session? = principal<Session>()
 
 suspend fun ApplicationCall.getChatId(): Result<ChatId, ResponseData<ApiError>> {
     val rawChatId = parameters.getOrFail("chatId")
