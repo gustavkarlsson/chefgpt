@@ -188,6 +188,28 @@ class ChefGptClient(
             }
         }
 
+    // TODO Error handling
+    fun listenToIngredients(sessionId: SessionId): Flow<List<String>> =
+        flow {
+            httpClient.sse(
+                deserialize = { typeInfo, text ->
+                    val serializer = json.serializersModule.serializer(typeInfo.kotlinType!!)
+                    json.decodeFromString(serializer, text)
+                },
+                request = {
+                    url("$baseUrl/ingredients")
+                    sessionIdHeader(sessionId)
+                },
+            ) {
+                incoming.collect { serverSentEvent ->
+                    val data = serverSentEvent.data ?: return@collect
+                    if (data == "heartbeat") return@collect
+                    val event = json.decodeFromString<List<String>>(data)
+                    emit(event)
+                }
+            }
+        }
+
     suspend fun sendAction(
         sessionId: SessionId,
         chatId: ChatId,
