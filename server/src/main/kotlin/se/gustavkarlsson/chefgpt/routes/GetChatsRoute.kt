@@ -12,8 +12,8 @@ import se.gustavkarlsson.chefgpt.toApi
 fun Route.getChatsRoute() {
     get("/chats") {
         val chatRepository = get<ChatRepository>()
-        val session = call.requireSession()
-        val chats = chatRepository.getAll(session.user.id)
+        val userId = call.requireSession().user.id
+        val chats = chatRepository.getAll(userId)
         call.respond(HttpStatusCode.OK, chats.map { it.toApi() })
     }
 }

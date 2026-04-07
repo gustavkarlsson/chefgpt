@@ -5,18 +5,17 @@ import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
-import se.gustavkarlsson.chefgpt.postgres.PostgresAccess
+import se.gustavkarlsson.chefgpt.postgres.PostgresDatabasePool
+import se.gustavkarlsson.chefgpt.postgres.useSingletonScope
 import java.security.MessageDigest
 import java.security.SecureRandom
 import kotlin.io.encoding.Base64
-import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.uuid.toKotlinUuid
 
 private const val SALT_BYTE_COUNT = 16
 
-@OptIn(ExperimentalEncodingApi::class)
 class PostgresUserRepository(
-    private val db: PostgresAccess,
+    private val dbPool: PostgresDatabasePool,
     private val rules: List<RegistrationRule> = emptyList(),
 ) : UserRepository {
     private val md5 = MessageDigest.getInstance("MD5")
@@ -35,7 +34,7 @@ class PostgresUserRepository(
         }
         val salt = generateSalt()
         val id =
-            db.use {
+            dbPool.useSingletonScope {
                 userQueries
                     .insert(
                         username = name,
@@ -55,7 +54,7 @@ class PostgresUserRepository(
         password: String,
     ): Result<User, LoginError> {
         val userRow =
-            db.use {
+            dbPool.useSingletonScope {
                 userQueries
                     .selectByUsername(name)
                     .awaitAsOneOrNull()
@@ -70,7 +69,7 @@ class PostgresUserRepository(
     }
 
     override suspend operator fun contains(name: String): Boolean =
-        db.use {
+        dbPool.useSingletonScope {
             userQueries.existsByUsername(name).awaitAsOne()
         }
 

@@ -4,19 +4,20 @@ import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onStart
 import kotlinx.serialization.json.Json
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.db.SelectByChatIdAfter
-import se.gustavkarlsson.chefgpt.postgres.PostgresAccess
+import se.gustavkarlsson.chefgpt.postgres.PostgresDatabasePool
+import se.gustavkarlsson.chefgpt.postgres.use
 import kotlin.uuid.toJavaUuid
 
 class PostgresEventRepository(
-    private val db: PostgresAccess,
+    private val dbPool: PostgresDatabasePool,
 ) : EventRepository {
     private val refreshFlow = MutableSharedFlow<ChatId>(extraBufferCapacity = 64)
 
@@ -25,17 +26,14 @@ class PostgresEventRepository(
         event: Event,
     ) {
         val json = Json.encodeToString<Event>(event)
-        db.use {
-            eventQueries.insert(
-                chat_id = chatId.value.toJavaUuid(),
-                value = json,
-            )
+        dbPool.use(chatId) {
+            eventQueries.insert(chatId.value.toJavaUuid(), json)
         }
         refreshFlow.tryEmit(chatId)
     }
 
     override suspend fun getAll(chatId: ChatId): List<Event> =
-        db.use {
+        dbPool.use(chatId) {
             eventQueries
                 .selectByChatIdAfter(chatId.value.toJavaUuid(), 0L)
                 .awaitAsList()
@@ -46,12 +44,12 @@ class PostgresEventRepository(
         chatId: ChatId,
         last: EventId?,
     ): Flow<Event> =
-        flow {
+        channelFlow {
             var lastRowId =
                 if (last != null) {
-                    db.use {
+                    dbPool.use(chatId) {
                         eventQueries
-                            .findRowId(last.value.toString())
+                            .findRowId(chatId.value.toJavaUuid(), last.value.toString())
                             .awaitAsOneOrNull()
                     } ?: 0L
                 } else {
@@ -63,13 +61,13 @@ class PostgresEventRepository(
                     .onStart { emit(chatId) }
             triggers.collectLatest {
                 val rows =
-                    db.use {
+                    dbPool.use(chatId) {
                         eventQueries
                             .selectByChatIdAfter(chatId.value.toJavaUuid(), lastRowId)
                             .awaitAsList()
                     }
                 for (row in rows) {
-                    emit(row.parseEvent())
+                    send(row.parseEvent())
                     lastRowId = row.id
                 }
             }

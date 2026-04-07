@@ -20,10 +20,10 @@ import se.gustavkarlsson.chefgpt.respond
 
 fun Routing.loginRoute() {
     post("/login") {
+        val userRepository = get<UserRepository>()
         call
             .getCredentials()
             .flatMap { credentials ->
-                val userRepository = get<UserRepository>()
                 userRepository.login(credentials.name, credentials.password).mapError { loginError ->
                     when (loginError) {
                         LoginError.WrongCredentials -> {

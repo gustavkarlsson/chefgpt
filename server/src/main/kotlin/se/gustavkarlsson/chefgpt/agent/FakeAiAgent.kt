@@ -5,6 +5,7 @@ import ai.koog.prompt.message.ResponseMetaInfo
 import io.ktor.server.routing.RoutingContext
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
+import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.chats.Event
 import se.gustavkarlsson.chefgpt.chats.EventRepository
 import kotlin.time.Clock
@@ -14,7 +15,10 @@ class FakeAiAgent(
     private val eventRepository: EventRepository,
     private val clock: Clock = Clock.System,
 ) : AiAgent {
-    override suspend fun RoutingContext.run(chatId: ChatId) {
+    override suspend fun RoutingContext.run(
+        userId: UserId,
+        chatId: ChatId,
+    ) {
         val message =
             KoogMessage.Assistant(
                 parts = listOf(ContentPart.Text("This is a fake response from the dummy agent.")),

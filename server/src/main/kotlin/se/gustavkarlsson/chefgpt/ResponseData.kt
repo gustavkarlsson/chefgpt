@@ -15,6 +15,14 @@ data class ResponseData<out T>(
     }
 }
 
+suspend fun ApplicationCall.respond(responseData: ResponseData<*>) {
+    if (responseData.body != null) {
+        respond(responseData.status, responseData.body)
+    } else {
+        respond(responseData.status)
+    }
+}
+
 suspend fun Result<ResponseData<*>, ResponseData<*>>.respond(call: ApplicationCall) {
     val responseData = merge()
     if (responseData.body != null) {

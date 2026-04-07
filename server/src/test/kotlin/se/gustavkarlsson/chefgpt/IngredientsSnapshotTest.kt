@@ -11,7 +11,7 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 import org.koin.module.requestScope
 import se.gustavkarlsson.chefgpt.ingredients.InMemoryIngredientStore
-import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
+import se.gustavkarlsson.chefgpt.ingredients.IngredientStoreTools
 import se.gustavkarlsson.slapshot.junit5.JUnit5SnapshotContext
 import se.gustavkarlsson.slapshot.junit5.SnapshotExtension
 
@@ -50,7 +50,7 @@ class IngredientsSnapshotTest {
                         requestScope {
                             scoped {
                                 InMemoryIngredientStore(mutableListOf("tomato", "basil"))
-                            } bind IngredientStore::class
+                            } bind IngredientStoreTools::class
                         }
                     },
                 ),
@@ -72,7 +72,7 @@ class IngredientsSnapshotTest {
                         requestScope {
                             scoped {
                                 InMemoryIngredientStore(mutableListOf("tomato", "basil"))
-                            } bind IngredientStore::class
+                            } bind IngredientStoreTools::class
                         }
                     },
                 ),
@@ -120,7 +120,7 @@ class IngredientsSnapshotTest {
                         requestScope {
                             scoped {
                                 InMemoryIngredientStore(mutableListOf("tomato"))
-                            } bind IngredientStore::class
+                            } bind IngredientStoreTools::class
                         }
                     },
                 ),

@@ -5,7 +5,8 @@ import app.cash.sqldelight.async.coroutines.awaitAsOne
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.auth.UserId
-import se.gustavkarlsson.chefgpt.postgres.PostgresAccess
+import se.gustavkarlsson.chefgpt.postgres.PostgresDatabasePool
+import se.gustavkarlsson.chefgpt.postgres.use
 import java.time.OffsetDateTime
 import kotlin.time.Instant
 import kotlin.time.toKotlinInstant
@@ -13,10 +14,10 @@ import kotlin.uuid.toJavaUuid
 import kotlin.uuid.toKotlinUuid
 
 class PostgresChatRepository(
-    private val db: PostgresAccess,
+    private val dbPool: PostgresDatabasePool,
 ) : ChatRepository {
     override suspend fun create(userId: UserId): Chat =
-        db.use {
+        dbPool.use(userId) {
             val row = chatQueries.insert(user_id = userId.value.toJavaUuid()).awaitAsOne()
             Chat(ChatId(row.id.toKotlinUuid()), row.created_at.toKotlinInstant())
         }
@@ -25,16 +26,16 @@ class PostgresChatRepository(
         userId: UserId,
         chatId: ChatId,
     ): Boolean =
-        db.use {
+        dbPool.use(userId) {
             chatQueries
-                .deleteByUserIdAndChatId(userId.value.toJavaUuid(), chatId.value.toJavaUuid())
+                .deleteByUserIdAndChatId(user_id = userId.value.toJavaUuid(), id = chatId.value.toJavaUuid())
                 .awaitAsOneOrNull() != null
         }
 
     override suspend fun getAll(userId: UserId): List<Chat> =
-        db.use {
+        dbPool.use(userId) {
             chatQueries
-                .selectByUserId(userId.value.toJavaUuid())
+                .selectByUserId(user_id = userId.value.toJavaUuid())
                 .awaitAsList()
                 .map { row -> Chat(ChatId(row.id.toKotlinUuid()), row.created_at.toKotlinInstant()) }
         }
@@ -43,17 +44,9 @@ class PostgresChatRepository(
         userId: UserId,
         chatId: ChatId,
     ): Chat? =
-        db.use {
+        dbPool.use(userId) {
             chatQueries
-                .selectByUserIdAndChatId(userId.value.toJavaUuid(), chatId.value.toJavaUuid())
-                .awaitAsOneOrNull()
-                ?.let { row -> Chat(ChatId(row.id.toKotlinUuid()), row.created_at.toKotlinInstant()) }
-        }
-
-    override suspend fun get(chatId: ChatId): Chat? =
-        db.use {
-            chatQueries
-                .selectByChatId(chatId.value.toJavaUuid())
+                .selectByUserIdAndChatId(user_id = userId.value.toJavaUuid(), id = chatId.value.toJavaUuid())
                 .awaitAsOneOrNull()
                 ?.let { row -> Chat(ChatId(row.id.toKotlinUuid()), row.created_at.toKotlinInstant()) }
         }
@@ -62,9 +55,9 @@ class PostgresChatRepository(
         userId: UserId,
         chatId: ChatId,
     ): Boolean =
-        db.use {
+        dbPool.use(userId) {
             chatQueries
-                .existsByUserIdAndChatId(userId.value.toJavaUuid(), chatId.value.toJavaUuid())
+                .existsByUserIdAndChatId(user_id = userId.value.toJavaUuid(), id = chatId.value.toJavaUuid())
                 .awaitAsOne()
         }
 }

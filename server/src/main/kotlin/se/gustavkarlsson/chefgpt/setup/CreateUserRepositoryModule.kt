@@ -7,14 +7,14 @@ import se.gustavkarlsson.chefgpt.auth.InMemoryUserRepository
 import se.gustavkarlsson.chefgpt.auth.PostgresUserRepository
 import se.gustavkarlsson.chefgpt.auth.UserRepository
 import se.gustavkarlsson.chefgpt.auth.registrationRules
-import se.gustavkarlsson.chefgpt.postgres.PostgresAccess
+import se.gustavkarlsson.chefgpt.postgres.PostgresDatabasePool
 
 fun Application.createUserRepositoryModule() =
     module {
         single {
-            val database = getOrNull<PostgresAccess>()
-            if (database != null) {
-                PostgresUserRepository(database, registrationRules)
+            val dbPool = getOrNull<PostgresDatabasePool>()
+            if (dbPool != null) {
+                PostgresUserRepository(dbPool, registrationRules)
             } else {
                 InMemoryUserRepository(registrationRules)
             }

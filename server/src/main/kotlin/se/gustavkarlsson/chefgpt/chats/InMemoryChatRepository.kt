@@ -1,62 +1,34 @@
 package se.gustavkarlsson.chefgpt.chats
 
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.auth.UserId
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.Clock
 
 class InMemoryChatRepository : ChatRepository {
-    private val chatIdsByUserId = mutableMapOf<UserId, MutableList<ChatId>>()
-    private val chatsByChatId = mutableMapOf<ChatId, Chat>()
-    private val mutex = Mutex()
+    private val storage = ConcurrentHashMap<UserId, CopyOnWriteArrayList<Chat>>()
 
     override suspend fun contains(
         userId: UserId,
         chatId: ChatId,
-    ): Boolean =
-        mutex.withLock {
-            val userChatIds = chatIdsByUserId[userId].orEmpty()
-            chatId in userChatIds
-        }
+    ): Boolean = chatId in storage[userId].orEmpty().map { it.id }
 
     override suspend operator fun get(
         userId: UserId,
         chatId: ChatId,
-    ): Chat? =
-        mutex.withLock {
-            val userChatIds = chatIdsByUserId[userId].orEmpty()
-            if (chatId in userChatIds) {
-                chatsByChatId.getValue(chatId)
-            } else {
-                null
-            }
-        }
+    ): Chat? = storage[userId].orEmpty().find { it.id == chatId }
 
-    override suspend operator fun get(chatId: ChatId): Chat? =
-        mutex.withLock {
-            chatsByChatId[chatId]
-        }
-
-    override suspend fun create(userId: UserId): Chat =
-        mutex.withLock {
-            val chat = Chat(ChatId.random(), Clock.System.now())
-            chatIdsByUserId.getOrPut(userId) { mutableListOf() }.add(chat.id)
-            chatsByChatId[chat.id] = chat
-            chat
-        }
+    override suspend fun create(userId: UserId): Chat {
+        val chat = Chat(ChatId.random(), Clock.System.now())
+        storage.getOrDefault(userId, CopyOnWriteArrayList()).add(chat)
+        return chat
+    }
 
     override suspend fun delete(
         userId: UserId,
         chatId: ChatId,
-    ): Boolean =
-        mutex.withLock {
-            chatIdsByUserId[userId]?.remove(chatId)
-            chatsByChatId.remove(chatId) != null
-        }
+    ): Boolean = storage[userId]?.removeIf { it.id == chatId } == true
 
-    override suspend fun getAll(userId: UserId): List<Chat> {
-        val userChatIds = chatIdsByUserId[userId].orEmpty()
-        return chatsByChatId.filterKeys(userChatIds::contains).values.toList()
-    }
+    override suspend fun getAll(userId: UserId): List<Chat> = storage[userId].orEmpty().toList()
 }

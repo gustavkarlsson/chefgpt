@@ -37,6 +37,7 @@ fun Route.chatEventsRoute() {
             period = 1.seconds
             event = ServerSentEvent("heartbeat")
         }
+        val eventRepository = get<EventRepository>()
         call
             .getChatId()
             .flatMap { chatId ->
@@ -58,7 +59,6 @@ fun Route.chatEventsRoute() {
                     Ok(chatId to null)
                 }
             }.onOk { (chatId, lastEventId) ->
-                val eventRepository = get<EventRepository>()
                 eventRepository
                     .flow(chatId, last = lastEventId)
                     .mapNotNull { it.toApiOrNull() }

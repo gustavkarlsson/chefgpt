@@ -18,8 +18,6 @@ interface ChatRepository {
         chatId: ChatId,
     ): Chat?
 
-    suspend operator fun get(chatId: ChatId): Chat?
-
     suspend fun contains(
         userId: UserId,
         chatId: ChatId,
