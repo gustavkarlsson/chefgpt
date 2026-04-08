@@ -1,22 +1,19 @@
 package se.gustavkarlsson.chefgpt.chats
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.onStart
 import kotlinx.serialization.json.Json
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.db.SelectByChatIdAfter
 import se.gustavkarlsson.chefgpt.postgres.DatabaseAccess
+import se.gustavkarlsson.chefgpt.util.RepoSyncer
 import kotlin.uuid.toJavaUuid
 
 class PostgresEventRepository(
     private val db: DatabaseAccess,
 ) : EventRepository {
-    private val refreshFlow = MutableSharedFlow<ChatId>(extraBufferCapacity = 64)
+    private val syncer = RepoSyncer<ChatId>()
 
     override suspend fun append(
         chatId: ChatId,
@@ -26,7 +23,7 @@ class PostgresEventRepository(
         db.use {
             eventQueries.insert(chatId.value.toJavaUuid(), json)
         }
-        refreshFlow.tryEmit(chatId)
+        syncer.notifyChange(chatId)
     }
 
     override suspend fun getAll(chatId: ChatId): List<Event> =
@@ -52,11 +49,7 @@ class PostgresEventRepository(
                 } else {
                     0L
                 }
-            val triggers =
-                refreshFlow
-                    .filter { it == chatId }
-                    .onStart { emit(chatId) }
-            triggers.collectLatest {
+            syncer.listen(chatId).collect {
                 val rows =
                     db.use {
                         eventQueries

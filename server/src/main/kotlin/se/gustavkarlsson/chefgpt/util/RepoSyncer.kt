@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.channelFlow
 import java.util.concurrent.ConcurrentHashMap
 
-// FIXME Use this everywhere
 class RepoSyncer<T : Any> {
     private val listenersByKey = ConcurrentHashMap<T, MutableSet<Listener>>()
 
