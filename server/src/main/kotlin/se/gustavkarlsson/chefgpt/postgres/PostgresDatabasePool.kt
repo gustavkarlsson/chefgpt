@@ -4,6 +4,8 @@ import app.cash.sqldelight.driver.r2dbc.R2dbcDriver
 import io.r2dbc.spi.ConnectionFactory
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.reactive.awaitSingle
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.slf4j.LoggerFactory
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.auth.UserId
@@ -16,6 +18,7 @@ class PostgresDatabasePool(
     private val connectionPool: ConnectionFactory,
 ) {
     private val borrows = ConcurrentHashMap<DbScope, Entry>()
+    private val mutex = Mutex()
 
     suspend fun <T> use(
         scope: DbScope,
@@ -29,16 +32,13 @@ class PostgresDatabasePool(
         }
     }
 
-    private suspend fun borrow(scope: DbScope): ChefGptDatabase {
-        val entry =
-            borrows.getOrPut(scope) {
-                val entry = createEntry()
-                val borrowers = entry.incrementBorrowers()
-                logger.info("Borrowing database with $scope ($borrowers borrowers)")
-                entry
-            }
-        return entry.database
-    }
+    private suspend fun borrow(scope: DbScope): ChefGptDatabase =
+        mutex.withLock {
+            val entry = borrows.getOrPut(scope) { createEntry() }
+            val borrowers = entry.incrementBorrowers()
+            logger.info("Borrowing database with $scope ($borrowers borrowers)")
+            return entry.database
+        }
 
     private suspend fun createEntry(): Entry {
         val connection = connectionPool.create().awaitSingle()
@@ -47,20 +47,22 @@ class PostgresDatabasePool(
         return Entry(driver, database)
     }
 
-    private fun giveBack(scope: DbScope) {
-        borrows.compute(scope) { _, entry ->
-            val entry =
-                checkNotNull(entry) {
-                    "No entry when giving back"
+    private suspend fun giveBack(scope: DbScope) {
+        mutex.withLock {
+            borrows.compute(scope) { _, entry ->
+                val entry =
+                    checkNotNull(entry) {
+                        "No entry when giving back with $scope"
+                    }
+                val borrowers = entry.decrementBorrowers()
+                if (borrowers == 0) {
+                    logger.info("Giving back last database with $scope")
+                    entry.driver.close()
+                    null // Remove it
+                } else {
+                    logger.info("Giving back database with $scope ($borrowers borrowers)")
+                    entry
                 }
-            val borrowers = entry.decrementBorrowers()
-            if (borrowers == 0) {
-                logger.info("Giving back last database with $scope")
-                entry.driver.close()
-                null // Remove it
-            } else {
-                logger.info("Giving back database with $scope ($borrowers borrowers)")
-                entry
             }
         }
     }

@@ -14,7 +14,7 @@ import io.ktor.server.auth.basicAuthenticationCredentials
 import io.ktor.server.auth.principal
 import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.util.getOrFail
-import org.koin.ktor.plugin.scope
+import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.api.ApiChat
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ChatId
@@ -52,6 +52,7 @@ fun ApplicationCall.requireSession(): Session =
 fun ApplicationCall.sessionOrNull(): Session? = principal<Session>()
 
 suspend fun ApplicationCall.getChatId(): Result<ChatId, ResponseData<ApiError>> {
+    val chatRepository = get<ChatRepository>()
     val userId = requireSession().user.id
     val rawChatId = parameters.getOrFail("chatId")
     return ChatId
@@ -62,7 +63,6 @@ suspend fun ApplicationCall.getChatId(): Result<ChatId, ResponseData<ApiError>> 
                 body = ApiError("invalid-chat-id", "Invalid chat ID"),
             )
         }.flatMap { chatId ->
-            val chatRepository = scope.get<ChatRepository>()
             chatRepository[userId, chatId].toResultOr {
                 ResponseData(
                     status = HttpStatusCode.NotFound,

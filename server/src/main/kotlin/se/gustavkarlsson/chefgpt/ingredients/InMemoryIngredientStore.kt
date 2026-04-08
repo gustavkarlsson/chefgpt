@@ -1,36 +1,47 @@
 package se.gustavkarlsson.chefgpt.ingredients
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import se.gustavkarlsson.chefgpt.auth.UserId
 import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryIngredientStore(
-    private val storage: ConcurrentHashMap<UserId, MutableList<String>> = ConcurrentHashMap(),
+    private val storage: ConcurrentHashMap<UserId, MutableStateFlow<Set<String>>> = ConcurrentHashMap(),
 ) : IngredientStore {
-    override suspend fun getIngredients(userId: UserId): List<String> = storage[userId].orEmpty().toList()
+    override suspend fun getIngredients(userId: UserId): List<String> = storage[userId]?.value.orEmpty().toList()
+
+    override fun streamIngredients(userId: UserId): Flow<List<String>> =
+        storage
+            .getOrPut(userId) { MutableStateFlow(emptySet()) }
+            .map { it.toList() }
 
     override suspend fun addIngredients(
         userId: UserId,
         ingredients: List<String>,
     ): List<String> {
-        val storedIngredients = storage.getOrPut(userId) { mutableListOf() }
+        val storedIngredients = storage.getOrPut(userId) { MutableStateFlow(emptySet()) }
         val normalized = ingredients.map { it.trim().lowercase() }
-        val added = normalized.filter { it !in storedIngredients }
-        storedIngredients += added
-        return added
+        val added = storedIngredients.value + normalized
+        storedIngredients.update { it + normalized }
+        return added.toList()
     }
 
     override suspend fun removeIngredients(
         userId: UserId,
         ingredients: List<String>,
     ): List<String> {
-        val storedIngredients = storage.getOrPut(userId) { mutableListOf() }
-        return ingredients.filter { storedIngredients.remove(it) }
+        val storedIngredients = storage.getOrPut(userId) { MutableStateFlow(emptySet()) }
+        val removed = storedIngredients.value - ingredients.toSet()
+        storedIngredients.update { it - ingredients.toSet() }
+        return removed.toList()
     }
 
     override suspend fun clearIngredients(userId: UserId): List<String> {
-        val storedIngredients = storage.getOrPut(userId) { mutableListOf() }
-        val removed = storedIngredients.toList()
-        storedIngredients.clear()
-        return removed
+        val storedIngredients = storage.getOrPut(userId) { MutableStateFlow(emptySet()) }
+        val removed = storedIngredients.value
+        storedIngredients.update { emptySet() }
+        return removed.toList()
     }
 }

@@ -8,8 +8,8 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
 import org.koin.ktor.ext.get
-import org.koin.ktor.plugin.scope
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
+import se.gustavkarlsson.chefgpt.requireSession
 import kotlin.time.Duration.Companion.seconds
 
 fun Route.streamIngredientsRoute() {
@@ -24,10 +24,11 @@ fun Route.streamIngredientsRoute() {
         heartbeat {
             period = 15.seconds
         }
-        val ingredientStore = call.scope.get<IngredientStore>()
+        val ingredientStore = get<IngredientStore>()
+        val userId = call.requireSession().user.id
 
         ingredientStore
-            .streamIngredients()
+            .streamIngredients(userId)
             .collectLatest { ingredients ->
                 send(ingredients)
             }

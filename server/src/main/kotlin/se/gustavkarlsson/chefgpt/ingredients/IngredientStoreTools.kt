@@ -5,7 +5,8 @@ import ai.koog.agents.core.tools.annotations.Tool
 import ai.koog.agents.core.tools.reflect.ToolSet
 import se.gustavkarlsson.chefgpt.auth.UserId
 
-private class IngredientStoreTools(
+@Suppress("unused")
+class IngredientStoreTools(
     private val store: IngredientStore,
     private val userId: UserId,
 ) : ToolSet {
