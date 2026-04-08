@@ -10,12 +10,11 @@ import kotlinx.serialization.json.Json
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.db.SelectByChatIdAfter
-import se.gustavkarlsson.chefgpt.postgres.PostgresDatabasePool
-import se.gustavkarlsson.chefgpt.postgres.use
+import se.gustavkarlsson.chefgpt.postgres.DatabaseAccess
 import kotlin.uuid.toJavaUuid
 
 class PostgresEventRepository(
-    private val dbPool: PostgresDatabasePool,
+    private val db: DatabaseAccess,
 ) : EventRepository {
     private val refreshFlow = MutableSharedFlow<ChatId>(extraBufferCapacity = 64)
 
@@ -24,14 +23,14 @@ class PostgresEventRepository(
         event: Event,
     ) {
         val json = Json.encodeToString<Event>(event)
-        dbPool.use(chatId) {
+        db.use {
             eventQueries.insert(chatId.value.toJavaUuid(), json)
         }
         refreshFlow.tryEmit(chatId)
     }
 
     override suspend fun getAll(chatId: ChatId): List<Event> =
-        dbPool.use(chatId) {
+        db.use {
             eventQueries
                 .selectByChatIdAfter(chatId.value.toJavaUuid(), 0L)
                 .executeAsList()
@@ -45,7 +44,7 @@ class PostgresEventRepository(
         channelFlow {
             var lastRowId =
                 if (last != null) {
-                    dbPool.use(chatId) {
+                    db.use {
                         eventQueries
                             .findRowId(chatId.value.toJavaUuid(), last.value.toString())
                             .executeAsOneOrNull()
@@ -59,7 +58,7 @@ class PostgresEventRepository(
                     .onStart { emit(chatId) }
             triggers.collectLatest {
                 val rows =
-                    dbPool.use(chatId) {
+                    db.use {
                         eventQueries
                             .selectByChatIdAfter(chatId.value.toJavaUuid(), lastRowId)
                             .executeAsList()

@@ -1,21 +1,20 @@
 package se.gustavkarlsson.chefgpt.auth
 
 import io.ktor.server.sessions.SessionStorage
-import se.gustavkarlsson.chefgpt.postgres.PostgresDatabasePool
-import se.gustavkarlsson.chefgpt.postgres.useSingletonScope
+import se.gustavkarlsson.chefgpt.postgres.DatabaseAccess
 
 class PostgresSessionStorage(
-    private val dbPool: PostgresDatabasePool,
+    private val db: DatabaseAccess,
 ) : SessionStorage {
     override suspend fun write(
         id: String,
         value: String,
     ) {
-        dbPool.useSingletonScope { sessionQueries.upsert(id, value) }
+        db.use { sessionQueries.upsert(id, value) }
     }
 
     override suspend fun invalidate(id: String) {
-        val deletedCount = dbPool.useSingletonScope { sessionQueries.deleteById(id).value }
+        val deletedCount = db.use { sessionQueries.deleteById(id).value }
         when (deletedCount) {
             0L -> throw NoSuchElementException("Could not invalidate session with ID: $id as it does not exist")
             1L -> Unit
@@ -25,7 +24,7 @@ class PostgresSessionStorage(
 
     override suspend fun read(id: String): String {
         val sessions =
-            dbPool.useSingletonScope {
+            db.use {
                 sessionQueries.selectById(id).executeAsList()
             }
         return when (sessions.size) {

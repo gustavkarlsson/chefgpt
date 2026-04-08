@@ -6,14 +6,14 @@ import io.ktor.server.sessions.SessionStorageMemory
 import org.koin.dsl.bind
 import org.koin.dsl.module
 import se.gustavkarlsson.chefgpt.auth.PostgresSessionStorage
-import se.gustavkarlsson.chefgpt.postgres.PostgresDatabasePool
+import se.gustavkarlsson.chefgpt.postgres.DatabaseAccess
 
 fun Application.createSessionStorageModule() =
     module {
         single {
-            val dbPool = getOrNull<PostgresDatabasePool>()
-            if (dbPool != null) {
-                PostgresSessionStorage(dbPool)
+            val db = getOrNull<DatabaseAccess>()
+            if (db != null) {
+                PostgresSessionStorage(db)
             } else {
                 SessionStorageMemory()
             }

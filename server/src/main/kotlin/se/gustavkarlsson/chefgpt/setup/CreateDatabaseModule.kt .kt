@@ -7,7 +7,7 @@ import io.ktor.server.application.Application
 import io.ktor.server.config.ApplicationConfig
 import org.koin.dsl.module
 import se.gustavkarlsson.chefgpt.db.ChefGptDatabase
-import se.gustavkarlsson.chefgpt.postgres.PostgresDatabasePool
+import se.gustavkarlsson.chefgpt.postgres.DatabaseAccess
 import se.gustavkarlsson.chefgpt.postgres.migratePostgresDatabase
 
 fun Application.createDatabaseModule() =
@@ -21,7 +21,7 @@ fun Application.createDatabaseModule() =
                     val dataSource = createHikariDataSource(databaseConfig)
                     val driver = dataSource.asJdbcDriver()
                     val database = ChefGptDatabase(driver)
-                    PostgresDatabasePool(database)
+                    DatabaseAccess(database)
                 }
             }
 

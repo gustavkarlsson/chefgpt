@@ -3,8 +3,7 @@ package se.gustavkarlsson.chefgpt.auth
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
-import se.gustavkarlsson.chefgpt.postgres.PostgresDatabasePool
-import se.gustavkarlsson.chefgpt.postgres.useSingletonScope
+import se.gustavkarlsson.chefgpt.postgres.DatabaseAccess
 import java.security.MessageDigest
 import java.security.SecureRandom
 import kotlin.io.encoding.Base64
@@ -13,7 +12,7 @@ import kotlin.uuid.toKotlinUuid
 private const val SALT_BYTE_COUNT = 16
 
 class PostgresUserRepository(
-    private val dbPool: PostgresDatabasePool,
+    private val db: DatabaseAccess,
     private val rules: List<RegistrationRule> = emptyList(),
 ) : UserRepository {
     private val md5 = MessageDigest.getInstance("MD5")
@@ -32,7 +31,7 @@ class PostgresUserRepository(
         }
         val salt = generateSalt()
         val id =
-            dbPool.useSingletonScope {
+            db.use {
                 userQueries
                     .insert(
                         username = name,
@@ -52,7 +51,7 @@ class PostgresUserRepository(
         password: String,
     ): Result<User, LoginError> {
         val userRow =
-            dbPool.useSingletonScope {
+            db.use {
                 userQueries
                     .selectByUsername(name)
                     .executeAsOneOrNull()
@@ -67,7 +66,7 @@ class PostgresUserRepository(
     }
 
     override suspend operator fun contains(name: String): Boolean =
-        dbPool.useSingletonScope {
+        db.use {
             userQueries.existsByUsername(name).executeAsOne()
         }
 

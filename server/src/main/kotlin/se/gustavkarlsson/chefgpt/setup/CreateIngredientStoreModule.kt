@@ -6,14 +6,14 @@ import org.koin.dsl.module
 import se.gustavkarlsson.chefgpt.ingredients.InMemoryIngredientStore
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 import se.gustavkarlsson.chefgpt.ingredients.PostgresIngredientStore
-import se.gustavkarlsson.chefgpt.postgres.PostgresDatabasePool
+import se.gustavkarlsson.chefgpt.postgres.DatabaseAccess
 
 fun Application.createIngredientStoreModule() =
     module {
         single {
-            val dbPool = getOrNull<PostgresDatabasePool>()
-            if (dbPool != null) {
-                PostgresIngredientStore(dbPool)
+            val db = getOrNull<DatabaseAccess>()
+            if (db != null) {
+                PostgresIngredientStore(db)
             } else {
                 InMemoryIngredientStore()
             }

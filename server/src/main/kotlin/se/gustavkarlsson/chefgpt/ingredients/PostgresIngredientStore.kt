@@ -3,18 +3,17 @@ package se.gustavkarlsson.chefgpt.ingredients
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import se.gustavkarlsson.chefgpt.auth.UserId
-import se.gustavkarlsson.chefgpt.postgres.PostgresDatabasePool
-import se.gustavkarlsson.chefgpt.postgres.use
+import se.gustavkarlsson.chefgpt.postgres.DatabaseAccess
 import se.gustavkarlsson.chefgpt.util.RepoSyncer
 import kotlin.uuid.toJavaUuid
 
 class PostgresIngredientStore(
-    private val dbPool: PostgresDatabasePool,
+    private val db: DatabaseAccess,
 ) : IngredientStore {
     private val syncer = RepoSyncer<UserId>()
 
     override suspend fun getIngredients(userId: UserId): List<String> =
-        dbPool.use(userId) {
+        db.use {
             ingredientQueries
                 .selectByUserId(userId.value.toJavaUuid())
                 .executeAsList()
@@ -25,7 +24,7 @@ class PostgresIngredientStore(
         syncer
             .listen(userId)
             .map {
-                dbPool.use(userId) {
+                db.use {
                     ingredientQueries
                         .selectByUserId(userId.value.toJavaUuid())
                         .executeAsList()
@@ -38,7 +37,7 @@ class PostgresIngredientStore(
         ingredients: List<String>,
     ): List<String> {
         val added =
-            dbPool.use(userId) {
+            db.use {
                 ingredientQueries.transactionWithResult {
                     ingredients
                         .map { it.trim().lowercase() }
@@ -62,7 +61,7 @@ class PostgresIngredientStore(
         ingredients: List<String>,
     ): List<String> {
         val removed =
-            dbPool.use(userId) {
+            db.use {
                 ingredientQueries.transactionWithResult {
                     ingredients.mapNotNull { ingredient ->
                         ingredientQueries
@@ -79,7 +78,7 @@ class PostgresIngredientStore(
 
     override suspend fun clearIngredients(userId: UserId): List<String> {
         val removed =
-            dbPool.use(userId) {
+            db.use {
                 ingredientQueries
                     .deleteByUserId(userId.value.toJavaUuid())
                     .executeAsList()
