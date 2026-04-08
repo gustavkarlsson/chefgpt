@@ -1,7 +1,5 @@
 package se.gustavkarlsson.chefgpt.ingredients
 
-import app.cash.sqldelight.async.coroutines.awaitAsList
-import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import app.cash.sqldelight.coroutines.asFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
@@ -18,7 +16,7 @@ class PostgresIngredientStore(
         dbPool.use(userId) {
             ingredientQueries
                 .selectByUserId(userId.value.toJavaUuid())
-                .awaitAsList()
+                .executeAsList()
                 .map { it.name }
         }
 
@@ -28,7 +26,7 @@ class PostgresIngredientStore(
                 ingredientQueries
                     .selectByUserId(userId.value.toJavaUuid())
                     .asFlow()
-                    .map { it.awaitAsList() }
+                    .map { it.executeAsList() }
                     .map { ingredients -> ingredients.map { it.name } }
                     .collect { send(it) }
             }
@@ -47,7 +45,7 @@ class PostgresIngredientStore(
                             .insert(
                                 user_id = userId.value.toJavaUuid(),
                                 name = ingredient,
-                            ).awaitAsOneOrNull()
+                            ).executeAsOneOrNull()
                     }
             }
         }
@@ -61,7 +59,7 @@ class PostgresIngredientStore(
                 ingredients.mapNotNull { ingredient ->
                     ingredientQueries
                         .deleteByUserIdAndName(userId.value.toJavaUuid(), ingredient)
-                        .awaitAsOneOrNull()
+                        .executeAsOneOrNull()
                 }
             }
         }
@@ -70,6 +68,6 @@ class PostgresIngredientStore(
         dbPool.use(userId) {
             ingredientQueries
                 .deleteByUserId(userId.value.toJavaUuid())
-                .awaitAsList()
+                .executeAsList()
         }
 }

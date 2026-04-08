@@ -1,7 +1,5 @@
 package se.gustavkarlsson.chefgpt.auth
 
-import app.cash.sqldelight.async.coroutines.awaitAsOne
-import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
@@ -40,7 +38,7 @@ class PostgresUserRepository(
                         username = name,
                         password_md5_hash = Base64.encode(hash(password, salt)),
                         password_salt = Base64.encode(salt),
-                    ).awaitAsOneOrNull()
+                    ).executeAsOneOrNull()
             }
         return if (id != null) {
             Ok(User(UserId(id.toKotlinUuid()), name))
@@ -57,7 +55,7 @@ class PostgresUserRepository(
             dbPool.useSingletonScope {
                 userQueries
                     .selectByUsername(name)
-                    .awaitAsOneOrNull()
+                    .executeAsOneOrNull()
             } ?: return Err(LoginError.WrongCredentials)
         val salt = Base64.decode(userRow.password_salt)
         val expectedHash = Base64.encode(hash(password, salt))
@@ -70,7 +68,7 @@ class PostgresUserRepository(
 
     override suspend operator fun contains(name: String): Boolean =
         dbPool.useSingletonScope {
-            userQueries.existsByUsername(name).awaitAsOne()
+            userQueries.existsByUsername(name).executeAsOne()
         }
 
     private fun generateSalt(): ByteArray = ByteArray(SALT_BYTE_COUNT).also { secureRandom.nextBytes(it) }

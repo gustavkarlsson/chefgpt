@@ -1,7 +1,5 @@
 package se.gustavkarlsson.chefgpt.chats
 
-import app.cash.sqldelight.async.coroutines.awaitAsList
-import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.channelFlow
@@ -36,7 +34,7 @@ class PostgresEventRepository(
         dbPool.use(chatId) {
             eventQueries
                 .selectByChatIdAfter(chatId.value.toJavaUuid(), 0L)
-                .awaitAsList()
+                .executeAsList()
                 .map { row -> row.parseEvent() }
         }
 
@@ -50,7 +48,7 @@ class PostgresEventRepository(
                     dbPool.use(chatId) {
                         eventQueries
                             .findRowId(chatId.value.toJavaUuid(), last.value.toString())
-                            .awaitAsOneOrNull()
+                            .executeAsOneOrNull()
                     } ?: 0L
                 } else {
                     0L
@@ -64,7 +62,7 @@ class PostgresEventRepository(
                     dbPool.use(chatId) {
                         eventQueries
                             .selectByChatIdAfter(chatId.value.toJavaUuid(), lastRowId)
-                            .awaitAsList()
+                            .executeAsList()
                     }
                 for (row in rows) {
                     send(row.parseEvent())

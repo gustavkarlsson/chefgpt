@@ -1,18 +1,12 @@
 package se.gustavkarlsson.chefgpt.setup
 
+import app.cash.sqldelight.driver.jdbc.asJdbcDriver
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import io.ktor.server.application.Application
 import io.ktor.server.config.ApplicationConfig
-import io.r2dbc.spi.ConnectionFactories
-import io.r2dbc.spi.ConnectionFactory
-import io.r2dbc.spi.ConnectionFactoryOptions.DATABASE
-import io.r2dbc.spi.ConnectionFactoryOptions.DRIVER
-import io.r2dbc.spi.ConnectionFactoryOptions.HOST
-import io.r2dbc.spi.ConnectionFactoryOptions.PASSWORD
-import io.r2dbc.spi.ConnectionFactoryOptions.PORT
-import io.r2dbc.spi.ConnectionFactoryOptions.PROTOCOL
-import io.r2dbc.spi.ConnectionFactoryOptions.USER
-import io.r2dbc.spi.ConnectionFactoryOptions.builder
 import org.koin.dsl.module
+import se.gustavkarlsson.chefgpt.db.ChefGptDatabase
 import se.gustavkarlsson.chefgpt.postgres.PostgresDatabasePool
 import se.gustavkarlsson.chefgpt.postgres.migratePostgresDatabase
 
@@ -24,8 +18,10 @@ fun Application.createDatabaseModule() =
                 single {
                     val databaseConfig = config.config("postgres")
                     migratePostgresDatabase(databaseConfig)
-                    val connectionFactory = createConnectionFactory(databaseConfig)
-                    PostgresDatabasePool(connectionFactory)
+                    val dataSource = createHikariDataSource(databaseConfig)
+                    val driver = dataSource.asJdbcDriver()
+                    val database = ChefGptDatabase(driver)
+                    PostgresDatabasePool(database)
                 }
             }
 
@@ -39,19 +35,17 @@ fun Application.createDatabaseModule() =
         }
     }
 
-private fun createConnectionFactory(config: ApplicationConfig): ConnectionFactory {
+private fun createHikariDataSource(config: ApplicationConfig): HikariDataSource {
+    val host = config.property("host").getString()
+    val port = config.property("port").getString()
+    val database = config.property("database").getString()
     val username = config.propertyOrNull("username")?.getString()
     val password = config.propertyOrNull("password")?.getString()
-    return ConnectionFactories.get(
-        builder()
-            .option(DRIVER, "pool")
-            .option(PROTOCOL, "postgresql")
-            .option(HOST, config.property("host").getString())
-            .option(PORT, config.property("port").getString().toInt())
-            .option(DATABASE, config.property("database").getString())
-            .apply {
-                if (username != null) option(USER, username)
-                if (password != null) option(PASSWORD, password)
-            }.build(),
+    return HikariDataSource(
+        HikariConfig().apply {
+            jdbcUrl = "jdbc:postgresql://$host:$port/$database"
+            if (username != null) this.username = username
+            if (password != null) this.password = password
+        },
     )
 }
