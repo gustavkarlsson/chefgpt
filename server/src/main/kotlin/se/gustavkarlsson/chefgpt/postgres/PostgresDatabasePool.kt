@@ -6,6 +6,7 @@ import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.db.ChefGptDatabase
 
+// FIXME rename and remove scopes
 class PostgresDatabasePool(
     private val database: ChefGptDatabase,
 ) {
