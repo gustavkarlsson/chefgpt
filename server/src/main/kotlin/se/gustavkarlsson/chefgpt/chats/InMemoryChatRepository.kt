@@ -21,7 +21,7 @@ class InMemoryChatRepository : ChatRepository {
 
     override suspend fun create(userId: UserId): Chat {
         val chat = Chat(ChatId.random(), Clock.System.now())
-        storage.getOrDefault(userId, CopyOnWriteArrayList()).add(chat)
+        storage.getOrPut(userId) { CopyOnWriteArrayList() }.add(chat)
         return chat
     }
 
