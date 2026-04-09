@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap
 class RepoSyncer<T : Any> {
     private val listenersByKey = ConcurrentHashMap<T, MutableSet<Listener>>()
 
-    fun listen(key: T): Flow<Unit> =
+    fun notifications(key: T): Flow<Unit> =
         channelFlow {
             val listener = Listener()
             try {

@@ -1,6 +1,7 @@
 package se.gustavkarlsson.chefgpt.ingredients
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.postgres.DatabaseAccess
@@ -22,7 +23,7 @@ class PostgresIngredientStore(
 
     override fun streamIngredients(userId: UserId): Flow<List<String>> =
         syncer
-            .listen(userId)
+            .notifications(userId)
             .map {
                 db.use {
                     ingredientQueries
@@ -30,7 +31,7 @@ class PostgresIngredientStore(
                         .executeAsList()
                         .map { it.name }
                 }
-            }
+            }.distinctUntilChanged()
 
     override suspend fun addIngredients(
         userId: UserId,

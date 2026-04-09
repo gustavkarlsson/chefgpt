@@ -9,6 +9,7 @@ import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.requireSession
 import se.gustavkarlsson.chefgpt.toApi
 
+// FIXME Add streaming
 fun Route.getChatsRoute() {
     get("/chats") {
         val chatRepository = get<ChatRepository>()

@@ -30,7 +30,7 @@ fun Route.streamIngredientsRoute() {
         ingredientStore
             .streamIngredients(userId)
             .collectLatest { ingredients ->
-                send(ingredients)
+                send(ingredients, "ingredients")
             }
     }
 }

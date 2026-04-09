@@ -13,6 +13,7 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.sse.SSE
+import io.ktor.client.plugins.sse.deserialize
 import io.ktor.client.plugins.sse.sse
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.accept
@@ -180,9 +181,11 @@ class ChefGptClient(
                 },
             ) {
                 incoming.collect { serverSentEvent ->
-                    val data = serverSentEvent.data ?: return@collect
-                    if (data == "heartbeat") return@collect
-                    val event = json.decodeFromString<ApiEvent>(data)
+                    if (serverSentEvent.event != "event") return@collect
+                    val event =
+                        checkNotNull(deserialize<ApiEvent>(serverSentEvent.data)) {
+                            "Could not deserialize event: ${serverSentEvent.data}"
+                        }
                     emit(event)
                 }
             }
@@ -202,10 +205,12 @@ class ChefGptClient(
                 },
             ) {
                 incoming.collect { serverSentEvent ->
-                    val data = serverSentEvent.data ?: return@collect
-                    if (data == "heartbeat") return@collect
-                    val event = json.decodeFromString<List<String>>(data)
-                    emit(event)
+                    if (serverSentEvent.event != "ingredients") return@collect
+                    val ingredients =
+                        checkNotNull(deserialize<List<String>>(serverSentEvent.data)) {
+                            "Could not deserialize ingredients: ${serverSentEvent.data}"
+                        }
+                    emit(ingredients)
                 }
             }
         }

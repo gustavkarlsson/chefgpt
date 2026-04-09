@@ -61,7 +61,7 @@ fun Route.streamChatEventsRoute() {
                     .flow(chatId, last = lastEventId)
                     .mapNotNull { it.toApiOrNull() }
                     .collect { apiEvent: ApiEvent ->
-                        send(apiEvent)
+                        send(apiEvent, "event")
                     }
             }
     }

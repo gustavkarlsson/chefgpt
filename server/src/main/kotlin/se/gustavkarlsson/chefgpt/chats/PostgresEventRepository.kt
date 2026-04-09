@@ -49,7 +49,7 @@ class PostgresEventRepository(
                 } else {
                     0L
                 }
-            syncer.listen(chatId).collect {
+            syncer.notifications(chatId).collect {
                 val rows =
                     db.use {
                         eventQueries
