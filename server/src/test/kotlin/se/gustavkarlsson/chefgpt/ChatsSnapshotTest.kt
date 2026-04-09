@@ -1,7 +1,6 @@
 package se.gustavkarlsson.chefgpt
 
 import io.ktor.client.request.delete
-import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import org.junit.jupiter.api.BeforeEach
@@ -39,27 +38,6 @@ class ChatsSnapshotTest {
             val sessionId = registerUser()
 
             client.post("/chats") {
-                header("Session-Id", sessionId)
-            }
-        }
-
-    @Test
-    fun `list chats empty`() =
-        snapshotTestApplication(snapshotContext) { client ->
-            val sessionId = registerUser()
-
-            client.get("/chats") {
-                header("Session-Id", sessionId)
-            }
-        }
-
-    @Test
-    fun `list chats with one chat`() =
-        snapshotTestApplication(snapshotContext) { client ->
-            val sessionId = registerUser()
-            createChat(sessionId)
-
-            client.get("/chats") {
                 header("Session-Id", sessionId)
             }
         }

@@ -1,8 +1,12 @@
 package se.gustavkarlsson.chefgpt.chats
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.postgres.DatabaseAccess
+import se.gustavkarlsson.chefgpt.util.RepoSyncer
 import java.time.OffsetDateTime
 import kotlin.time.Instant
 import kotlin.time.toKotlinInstant
@@ -12,29 +16,45 @@ import kotlin.uuid.toKotlinUuid
 class PostgresChatRepository(
     private val db: DatabaseAccess,
 ) : ChatRepository {
-    override suspend fun create(userId: UserId): Chat =
-        db.use {
-            val row = chatQueries.insert(user_id = userId.value.toJavaUuid()).executeAsOne()
-            Chat(ChatId(row.id.toKotlinUuid()), row.created_at.toKotlinInstant())
-        }
+    private val syncer = RepoSyncer<UserId>()
+
+    override suspend fun create(userId: UserId): Chat {
+        val chat =
+            db.use {
+                val row = chatQueries.insert(user_id = userId.value.toJavaUuid()).executeAsOne()
+                Chat(ChatId(row.id.toKotlinUuid()), row.created_at.toKotlinInstant())
+            }
+        syncer.notifyChange(userId)
+        return chat
+    }
 
     override suspend fun delete(
         userId: UserId,
         chatId: ChatId,
-    ): Boolean =
-        db.use {
-            chatQueries
-                .deleteByUserIdAndChatId(user_id = userId.value.toJavaUuid(), id = chatId.value.toJavaUuid())
-                .executeAsOneOrNull() != null
+    ): Boolean {
+        val deleted =
+            db.use {
+                chatQueries
+                    .deleteByUserIdAndChatId(user_id = userId.value.toJavaUuid(), id = chatId.value.toJavaUuid())
+                    .executeAsOneOrNull() != null
+            }
+        if (deleted) {
+            syncer.notifyChange(userId)
         }
+        return deleted
+    }
 
-    override suspend fun getAll(userId: UserId): List<Chat> =
-        db.use {
-            chatQueries
-                .selectByUserId(user_id = userId.value.toJavaUuid())
-                .executeAsList()
-                .map { row -> Chat(ChatId(row.id.toKotlinUuid()), row.created_at.toKotlinInstant()) }
-        }
+    override fun stream(userId: UserId): Flow<List<Chat>> =
+        syncer
+            .notifications(userId)
+            .map {
+                db.use {
+                    chatQueries
+                        .selectByUserId(user_id = userId.value.toJavaUuid())
+                        .executeAsList()
+                        .map { row -> Chat(ChatId(row.id.toKotlinUuid()), row.created_at.toKotlinInstant()) }
+                }
+            }.distinctUntilChanged()
 
     override suspend fun get(
         userId: UserId,
