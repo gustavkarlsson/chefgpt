@@ -4,13 +4,9 @@ import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.put
-import io.ktor.client.request.url
-import io.ktor.serialization.kotlinx.json.DefaultJson
-import kotlinx.coroutines.flow.first
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import se.gustavkarlsson.chefgpt.util.sseTyped
 import se.gustavkarlsson.slapshot.junit5.JUnit5SnapshotContext
 import se.gustavkarlsson.slapshot.junit5.SnapshotExtension
 
@@ -27,44 +23,6 @@ class IngredientsSnapshotTest {
     fun unauthenticated() =
         snapshotTestApplication(snapshotContext) { client ->
             client.get("/ingredients")
-        }
-
-    @Test
-    fun `list ingredients empty`() =
-        snapshotTestApplication(snapshotContext) { client ->
-            val sessionId = registerUser()
-
-            // FIXME slapshot doesn't handle SSE bodies
-            client.sseTyped<List<String>>(
-                json = DefaultJson,
-                eventType = "ingredients",
-                request = {
-                    url("/ingredients")
-                    header("Session-Id", sessionId)
-                },
-            ) { _, incoming ->
-                incoming.first()
-            }
-        }
-
-    @Test
-    fun `list ingredients with some`() =
-        snapshotTestApplication(snapshotContext) { client ->
-            val sessionId = registerUser()
-
-            addIngredients(sessionId, "tomato", "basil")
-
-            // FIXME slapshot doesn't handle SSE bodies
-            client.sseTyped<List<String>>(
-                json = DefaultJson,
-                eventType = "ingredients",
-                request = {
-                    url("/ingredients")
-                    header("Session-Id", sessionId)
-                },
-            ) { _, incoming ->
-                incoming.first()
-            }
         }
 
     @Test

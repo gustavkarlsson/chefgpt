@@ -23,6 +23,7 @@ import se.gustavkarlsson.chefgpt.chats.toApiOrNull
 import se.gustavkarlsson.chefgpt.getChatId
 import kotlin.time.Duration.Companion.seconds
 
+// TODO Add tests (Not snapshot test, as they are not possible)
 fun Route.streamChatEventsRoute() {
     sse(
         "/chats/{chatId}/events",

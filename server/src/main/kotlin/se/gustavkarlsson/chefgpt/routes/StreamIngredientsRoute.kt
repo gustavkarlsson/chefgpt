@@ -12,6 +12,7 @@ import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 import se.gustavkarlsson.chefgpt.requireSession
 import kotlin.time.Duration.Companion.seconds
 
+// TODO Add tests (Not snapshot test, as they are not possible)
 fun Route.streamIngredientsRoute() {
     sse(
         "/ingredients",
