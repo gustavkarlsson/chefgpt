@@ -2,8 +2,8 @@ package se.gustavkarlsson.chefgpt.ingredients
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.update
 import se.gustavkarlsson.chefgpt.auth.UserId
 import java.util.concurrent.ConcurrentHashMap
 
@@ -23,8 +23,8 @@ class InMemoryIngredientStore(
     ): List<String> {
         val storedIngredients = storage.getOrPut(userId) { MutableStateFlow(emptySet()) }
         val normalized = ingredients.map { it.trim().lowercase() }
-        val added = storedIngredients.value + normalized
-        storedIngredients.update { it + normalized }
+        val preUpdate = storedIngredients.getAndUpdate { it + normalized }
+        val added = normalized - preUpdate
         return added.toList()
     }
 
@@ -33,15 +33,14 @@ class InMemoryIngredientStore(
         ingredients: List<String>,
     ): List<String> {
         val storedIngredients = storage.getOrPut(userId) { MutableStateFlow(emptySet()) }
-        val removed = storedIngredients.value - ingredients.toSet()
-        storedIngredients.update { it - ingredients.toSet() }
+        val preUpdate = storedIngredients.getAndUpdate { it - ingredients.toSet() }
+        val removed = ingredients intersect preUpdate
         return removed.toList()
     }
 
     override suspend fun clearIngredients(userId: UserId): List<String> {
         val storedIngredients = storage.getOrPut(userId) { MutableStateFlow(emptySet()) }
-        val removed = storedIngredients.value
-        storedIngredients.update { emptySet() }
-        return removed.toList()
+        val preUpdate = storedIngredients.getAndUpdate { emptySet() }
+        return preUpdate.toList()
     }
 }
