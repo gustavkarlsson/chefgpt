@@ -5,6 +5,7 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.basicAuth
 import io.ktor.client.request.header
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.testing.ApplicationTestBuilder
 import se.gustavkarlsson.chefgpt.api.ApiChat
@@ -16,7 +17,10 @@ suspend fun ApplicationTestBuilder.registerUser(
     username: String = VALID_USERNAME,
     password: String = VALID_PASSWORD,
 ): String {
-    val client = createClient {}
+    val client =
+        createClient {
+            expectSuccess = true
+        }
     val response =
         client.post("/register") {
             basicAuth(username, password)
@@ -29,6 +33,7 @@ suspend fun ApplicationTestBuilder.registerUser(
 suspend fun ApplicationTestBuilder.createChat(sessionId: String): ApiChat {
     val setupClient =
         createClient {
+            expectSuccess = true
             install(ContentNegotiation) { json() }
         }
     val response =
@@ -36,4 +41,20 @@ suspend fun ApplicationTestBuilder.createChat(sessionId: String): ApiChat {
             header("Session-Id", sessionId)
         }
     return response.body<ApiChat>()
+}
+
+suspend fun ApplicationTestBuilder.addIngredients(
+    sessionId: String,
+    vararg ingredients: String,
+) {
+    val client =
+        createClient {
+            expectSuccess = true
+            install(ContentNegotiation) { json() }
+        }
+    for (ingredient in ingredients) {
+        client.put("/ingredients/$ingredient") {
+            header("Session-Id", sessionId)
+        }
+    }
 }

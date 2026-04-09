@@ -4,14 +4,13 @@ import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.put
+import io.ktor.client.request.url
+import io.ktor.serialization.kotlinx.json.DefaultJson
+import kotlinx.coroutines.flow.first
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.koin.dsl.bind
-import org.koin.dsl.module
-import org.koin.module.requestScope
-import se.gustavkarlsson.chefgpt.ingredients.InMemoryIngredientStore
-import se.gustavkarlsson.chefgpt.ingredients.IngredientStoreTools
+import se.gustavkarlsson.chefgpt.util.sseTyped
 import se.gustavkarlsson.slapshot.junit5.JUnit5SnapshotContext
 import se.gustavkarlsson.slapshot.junit5.SnapshotExtension
 
@@ -35,49 +34,45 @@ class IngredientsSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.get("/ingredients") {
-                header("Session-Id", sessionId)
+            // FIXME slapshot doesn't handle SSE bodies
+            client.sseTyped<List<String>>(
+                json = DefaultJson,
+                eventType = "ingredients",
+                request = {
+                    url("/ingredients")
+                    header("Session-Id", sessionId)
+                },
+            ) { _, incoming ->
+                incoming.first()
             }
         }
 
     @Test
     fun `list ingredients with some`() =
-        snapshotTestApplication(
-            snapshotContext,
-            extraKoinModules =
-                listOf(
-                    module {
-                        requestScope {
-                            scoped {
-                                InMemoryIngredientStore(mutableListOf("tomato", "basil"))
-                            } bind IngredientStoreTools::class
-                        }
-                    },
-                ),
-        ) { client ->
+        snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.get("/ingredients") {
-                header("Session-Id", sessionId)
+            addIngredients(sessionId, "tomato", "basil")
+
+            // FIXME slapshot doesn't handle SSE bodies
+            client.sseTyped<List<String>>(
+                json = DefaultJson,
+                eventType = "ingredients",
+                request = {
+                    url("/ingredients")
+                    header("Session-Id", sessionId)
+                },
+            ) { _, incoming ->
+                incoming.first()
             }
         }
 
     @Test
     fun `delete ingredient`() =
-        snapshotTestApplication(
-            snapshotContext,
-            extraKoinModules =
-                listOf(
-                    module {
-                        requestScope {
-                            scoped {
-                                InMemoryIngredientStore(mutableListOf("tomato", "basil"))
-                            } bind IngredientStoreTools::class
-                        }
-                    },
-                ),
-        ) { client ->
+        snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
+
+            addIngredients(sessionId, "tomato", "basil")
 
             client.delete("/ingredients/tomato") {
                 header("Session-Id", sessionId)
@@ -112,20 +107,10 @@ class IngredientsSnapshotTest {
 
     @Test
     fun `put ingredient existing`() =
-        snapshotTestApplication(
-            snapshotContext,
-            extraKoinModules =
-                listOf(
-                    module {
-                        requestScope {
-                            scoped {
-                                InMemoryIngredientStore(mutableListOf("tomato"))
-                            } bind IngredientStoreTools::class
-                        }
-                    },
-                ),
-        ) { client ->
+        snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
+
+            addIngredients(sessionId, "tomato")
 
             client.put("/ingredients/tomato") {
                 header("Session-Id", sessionId)

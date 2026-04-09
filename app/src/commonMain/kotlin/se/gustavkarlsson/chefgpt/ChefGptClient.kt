@@ -13,8 +13,6 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.sse.SSE
-import io.ktor.client.plugins.sse.deserialize
-import io.ktor.client.plugins.sse.sse
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.accept
 import io.ktor.client.request.basicAuth
@@ -34,12 +32,11 @@ import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.utils.io.ByteReadChannel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.serializer
 import se.gustavkarlsson.chefgpt.api.ApiAction
 import se.gustavkarlsson.chefgpt.api.ApiChat
 import se.gustavkarlsson.chefgpt.api.ApiError
@@ -49,6 +46,7 @@ import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 import se.gustavkarlsson.chefgpt.sessions.UserCredentials
+import se.gustavkarlsson.chefgpt.util.sseTyped
 import io.ktor.client.plugins.logging.Logger as KtorLogger
 
 class ChefGptClient(
@@ -166,12 +164,10 @@ class ChefGptClient(
         chatId: ChatId,
         lastEventId: EventId?,
     ): Flow<ApiEvent> =
-        flow {
-            httpClient.sse(
-                deserialize = { typeInfo, text ->
-                    val serializer = json.serializersModule.serializer(typeInfo.kotlinType!!)
-                    json.decodeFromString(serializer, text)
-                },
+        channelFlow {
+            httpClient.sseTyped<ApiEvent>(
+                json = json,
+                eventType = "event",
                 request = {
                     url("$baseUrl/chats/$chatId/events")
                     if (lastEventId != null) {
@@ -179,39 +175,23 @@ class ChefGptClient(
                     }
                     sessionIdHeader(sessionId)
                 },
-            ) {
-                incoming.collect { serverSentEvent ->
-                    if (serverSentEvent.event != "event") return@collect
-                    val event =
-                        checkNotNull(deserialize<ApiEvent>(serverSentEvent.data)) {
-                            "Could not deserialize event: ${serverSentEvent.data}"
-                        }
-                    emit(event)
-                }
+            ) { _, incoming ->
+                incoming.collect(::send)
             }
         }
 
     // TODO Error handling
     fun listenToIngredients(sessionId: SessionId): Flow<List<String>> =
-        flow {
-            httpClient.sse(
-                deserialize = { typeInfo, text ->
-                    val serializer = json.serializersModule.serializer(typeInfo.kotlinType!!)
-                    json.decodeFromString(serializer, text)
-                },
+        channelFlow {
+            httpClient.sseTyped<List<String>>(
+                json = json,
+                eventType = "ingredients",
                 request = {
                     url("$baseUrl/ingredients")
                     sessionIdHeader(sessionId)
                 },
-            ) {
-                incoming.collect { serverSentEvent ->
-                    if (serverSentEvent.event != "ingredients") return@collect
-                    val ingredients =
-                        checkNotNull(deserialize<List<String>>(serverSentEvent.data)) {
-                            "Could not deserialize ingredients: ${serverSentEvent.data}"
-                        }
-                    emit(ingredients)
-                }
+            ) { _, incoming ->
+                incoming.collect(::send)
             }
         }
 

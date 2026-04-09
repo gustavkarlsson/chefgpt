@@ -32,7 +32,8 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(libs.kotlinxSerializationJson)
+            api(libs.ktorClientCore)
+            api(libs.kotlinxSerializationJson)
         }
         commonTest.dependencies {
             implementation(libs.kotlinTest)
