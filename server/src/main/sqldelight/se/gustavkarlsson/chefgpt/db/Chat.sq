@@ -16,12 +16,8 @@ WHERE user_id = ?;
 selectByUserIdAndChatId:
 SELECT *
 FROM chat
-WHERE user_id = ? AND id = ?;
-
-selectByChatId:
-SELECT *
-FROM chat
-WHERE id = ?;
+WHERE user_id = ?
+AND id = ?;
 
 existsByUserIdAndChatId:
 SELECT COUNT(*) > 0

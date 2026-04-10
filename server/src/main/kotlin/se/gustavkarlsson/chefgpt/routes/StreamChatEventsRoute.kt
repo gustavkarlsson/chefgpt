@@ -7,13 +7,8 @@ import com.github.michaelbull.result.onOk
 import com.github.michaelbull.result.toResultOr
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.routing.Route
-import io.ktor.server.sse.heartbeat
 import io.ktor.server.sse.send
-import io.ktor.server.sse.sse
-import io.ktor.sse.ServerSentEvent
 import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.serializer
 import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.ResponseData
 import se.gustavkarlsson.chefgpt.api.ApiError
@@ -22,21 +17,12 @@ import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.chats.EventRepository
 import se.gustavkarlsson.chefgpt.chats.toApiOrNull
 import se.gustavkarlsson.chefgpt.getChatId
-import kotlin.time.Duration.Companion.seconds
+import se.gustavkarlsson.chefgpt.util.sse
 
-fun Route.chatEventsRoute() {
-    sse(
-        "/chats/{chatId}/events",
-        serialize = { typeInfo, value ->
-            val json = get<Json>()
-            val serializer = json.serializersModule.serializer(typeInfo.kotlinType!!)
-            json.encodeToString(serializer, value)
-        },
-    ) {
-        heartbeat {
-            period = 1.seconds
-            event = ServerSentEvent("heartbeat")
-        }
+// TODO Add tests (Not snapshot test, as they are not possible)
+fun Route.streamChatEventsRoute() {
+    sse("/chats/{chatId}/events") {
+        val eventRepository = get<EventRepository>()
         call
             .getChatId()
             .flatMap { chatId ->
@@ -58,12 +44,11 @@ fun Route.chatEventsRoute() {
                     Ok(chatId to null)
                 }
             }.onOk { (chatId, lastEventId) ->
-                val eventRepository = get<EventRepository>()
                 eventRepository
                     .flow(chatId, last = lastEventId)
                     .mapNotNull { it.toApiOrNull() }
                     .collect { apiEvent: ApiEvent ->
-                        send(apiEvent)
+                        send(apiEvent, "event")
                     }
             }
     }

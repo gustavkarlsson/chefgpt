@@ -4,6 +4,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
 import io.ktor.client.engine.HttpClientEngineConfig
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.sse.SSE
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.config.ApplicationConfig
 import io.ktor.server.config.MapApplicationConfig
@@ -55,6 +56,7 @@ fun snapshotTestApplication(
     val client =
         createClient {
             install(ContentNegotiation) { json() }
+            install(SSE)
             install(SnapshotTesting(snapshotContext.sanitizing()))
             clientConfig()
         }

@@ -7,7 +7,6 @@ import io.ktor.server.request.receive
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 import org.koin.ktor.ext.get
-import org.koin.ktor.plugin.scope
 import se.gustavkarlsson.chefgpt.ResponseData
 import se.gustavkarlsson.chefgpt.agent.AiAgent
 import se.gustavkarlsson.chefgpt.api.ApiAction
@@ -16,10 +15,12 @@ import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.chats.EventRepository
 import se.gustavkarlsson.chefgpt.chats.createEvent
 import se.gustavkarlsson.chefgpt.getChatId
+import se.gustavkarlsson.chefgpt.requireSession
 import se.gustavkarlsson.chefgpt.respond
 
 fun Route.chatActionsRoute() {
     post("/chats/{chatId}/actions") {
+        val userId = call.requireSession().user.id
         call
             .getChatId()
             .onOk { chatId ->
@@ -32,8 +33,8 @@ fun Route.chatActionsRoute() {
                     }
 
                     is ApiUserSendsMessage -> {
-                        val aiAgent = call.scope.get<AiAgent>()
-                        with(aiAgent) { run(chatId) }
+                        val aiAgent = get<AiAgent>()
+                        with(aiAgent) { run(userId, chatId) }
                     }
                 }
             }.map {

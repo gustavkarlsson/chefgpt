@@ -1,27 +1,22 @@
 package se.gustavkarlsson.chefgpt.ingredients
 
-import ai.koog.agents.core.tools.annotations.LLMDescription
-import ai.koog.agents.core.tools.annotations.Tool
-import ai.koog.agents.core.tools.reflect.ToolSet
+import kotlinx.coroutines.flow.Flow
+import se.gustavkarlsson.chefgpt.auth.UserId
 
-interface IngredientStore : ToolSet {
-    @Tool
-    @LLMDescription("Get all user's stored ingredients")
-    suspend fun getIngredients(): List<String>
+interface IngredientStore {
+    suspend fun getIngredients(userId: UserId): List<String>
 
-    @Tool
-    @LLMDescription(
-        "Add the given ingredients to the user's store. Returns the ingredients that were actually added, excluding any that already existed",
-    )
-    suspend fun addIngredients(ingredients: List<String>): List<String>
+    fun streamIngredients(userId: UserId): Flow<List<String>>
 
-    @Tool
-    @LLMDescription(
-        "Remove the given ingredients from the user's store. Returns the ingredients that were actually removed, excluding any that did not exist",
-    )
-    suspend fun removeIngredients(ingredients: List<String>): List<String>
+    suspend fun addIngredients(
+        userId: UserId,
+        ingredients: List<String>,
+    ): List<String>
 
-    @Tool
-    @LLMDescription("Clear all ingredients from the user's store. Returns the ingredients that were removed")
-    suspend fun clearIngredients(): List<String>
+    suspend fun removeIngredients(
+        userId: UserId,
+        ingredients: List<String>,
+    ): List<String>
+
+    suspend fun clearIngredients(userId: UserId): List<String>
 }

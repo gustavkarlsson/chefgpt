@@ -5,12 +5,13 @@ import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
 import kotlinx.io.bytestring.ByteString
 import java.security.MessageDigest
+import java.util.concurrent.ConcurrentHashMap
 
 // TODO prevent hammering
 class InMemoryUserRepository(
     private val rules: List<RegistrationRule> = emptyList(),
 ) : UserRepository {
-    private val users = mutableMapOf<String, UserData>()
+    private val users = ConcurrentHashMap<String, UserData>()
     private val md5 = MessageDigest.getInstance("MD5")
 
     override suspend fun register(
@@ -46,7 +47,7 @@ class InMemoryUserRepository(
         }
     }
 
-    override suspend operator fun contains(name: String): Boolean = name in users
+    override suspend operator fun contains(name: String): Boolean = users.containsKey(name)
 
     // Not the safest way to do this, but it's fine for now
     private fun hash(password: String) = ByteString(md5.digest(password.encodeToByteArray()))

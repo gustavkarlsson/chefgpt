@@ -1,11 +1,10 @@
 package se.gustavkarlsson.chefgpt.auth
 
-import app.cash.sqldelight.async.coroutines.awaitAsOne
 import io.ktor.server.sessions.SessionStorage
-import se.gustavkarlsson.chefgpt.postgres.PostgresAccess
+import se.gustavkarlsson.chefgpt.postgres.DatabaseAccess
 
 class PostgresSessionStorage(
-    private val db: PostgresAccess,
+    private val db: DatabaseAccess,
 ) : SessionStorage {
     override suspend fun write(
         id: String,
@@ -15,11 +14,23 @@ class PostgresSessionStorage(
     }
 
     override suspend fun invalidate(id: String) {
-        db.use { sessionQueries.deleteById(id) }
+        val deletedCount = db.use { sessionQueries.deleteById(id).value }
+        when (deletedCount) {
+            0L -> throw NoSuchElementException("Could not invalidate session with ID: $id as it does not exist")
+            1L -> Unit
+            else -> error("Invalidated too many sessions with ID: $deletedCount ($deletedCount)")
+        }
     }
 
-    override suspend fun read(id: String): String =
-        db.use {
-            sessionQueries.selectById(id).awaitAsOne().value_
+    override suspend fun read(id: String): String {
+        val sessions =
+            db.use {
+                sessionQueries.selectById(id).executeAsList()
+            }
+        return when (sessions.size) {
+            0 -> throw NoSuchElementException("Could not find any session with ID: $id")
+            1 -> sessions.first().value_
+            else -> error("Invalidated too many sessions with ID: $id")
         }
+    }
 }

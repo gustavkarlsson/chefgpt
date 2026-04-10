@@ -1,5 +1,6 @@
 package se.gustavkarlsson.chefgpt.chats
 
+import kotlinx.coroutines.flow.Flow
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.auth.UserId
 
@@ -11,14 +12,12 @@ interface ChatRepository {
         chatId: ChatId,
     ): Boolean
 
-    suspend fun getAll(userId: UserId): List<Chat>
+    fun stream(userId: UserId): Flow<List<Chat>>
 
     suspend operator fun get(
         userId: UserId,
         chatId: ChatId,
     ): Chat?
-
-    suspend operator fun get(chatId: ChatId): Chat?
 
     suspend fun contains(
         userId: UserId,

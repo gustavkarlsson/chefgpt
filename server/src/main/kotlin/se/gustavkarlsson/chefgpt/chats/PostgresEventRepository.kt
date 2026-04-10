@@ -1,24 +1,19 @@
 package se.gustavkarlsson.chefgpt.chats
 
-import app.cash.sqldelight.async.coroutines.awaitAsList
-import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.serialization.json.Json
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.db.SelectByChatIdAfter
-import se.gustavkarlsson.chefgpt.postgres.PostgresAccess
+import se.gustavkarlsson.chefgpt.postgres.DatabaseAccess
+import se.gustavkarlsson.chefgpt.util.RepoSyncer
 import kotlin.uuid.toJavaUuid
 
 class PostgresEventRepository(
-    private val db: PostgresAccess,
+    private val db: DatabaseAccess,
 ) : EventRepository {
-    private val refreshFlow = MutableSharedFlow<ChatId>(extraBufferCapacity = 64)
+    private val syncer = RepoSyncer<ChatId>()
 
     override suspend fun append(
         chatId: ChatId,
@@ -26,19 +21,16 @@ class PostgresEventRepository(
     ) {
         val json = Json.encodeToString<Event>(event)
         db.use {
-            eventQueries.insert(
-                chat_id = chatId.value.toJavaUuid(),
-                value = json,
-            )
+            eventQueries.insert(chatId.value.toJavaUuid(), json)
         }
-        refreshFlow.tryEmit(chatId)
+        syncer.notifyChange(chatId)
     }
 
     override suspend fun getAll(chatId: ChatId): List<Event> =
         db.use {
             eventQueries
                 .selectByChatIdAfter(chatId.value.toJavaUuid(), 0L)
-                .awaitAsList()
+                .executeAsList()
                 .map { row -> row.parseEvent() }
         }
 
@@ -46,30 +38,26 @@ class PostgresEventRepository(
         chatId: ChatId,
         last: EventId?,
     ): Flow<Event> =
-        flow {
+        channelFlow {
             var lastRowId =
                 if (last != null) {
                     db.use {
                         eventQueries
-                            .findRowId(last.value.toString())
-                            .awaitAsOneOrNull()
+                            .findRowId(chatId.value.toJavaUuid(), last.value.toString())
+                            .executeAsOneOrNull()
                     } ?: 0L
                 } else {
                     0L
                 }
-            val triggers =
-                refreshFlow
-                    .filter { it == chatId }
-                    .onStart { emit(chatId) }
-            triggers.collectLatest {
+            syncer.notifications(chatId).collect {
                 val rows =
                     db.use {
                         eventQueries
                             .selectByChatIdAfter(chatId.value.toJavaUuid(), lastRowId)
-                            .awaitAsList()
+                            .executeAsList()
                     }
                 for (row in rows) {
-                    emit(row.parseEvent())
+                    send(row.parseEvent())
                     lastRowId = row.id
                 }
             }

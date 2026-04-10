@@ -26,9 +26,8 @@ material3 = "1.10.0-alpha05"
 materialIconsExtended = "1.7.3"
 multiplatformMarkdownRendererM3 = "0.39.2"
 navigation3 = "1.1.0-beta01"
+hikaricp = "6.2.1"
 postgresDriver = "42.7.10"
-r2dbcPool = "1.0.2.RELEASE"
-r2dbcPostgres = "1.1.1.RELEASE"
 slapshot = "1.0.0"
 slf4jSimple = "2.0.17"
 sqldelight = "2.1.0"
@@ -73,8 +72,8 @@ kotlinTest = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotli
 kotlinTestJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 kotlinTestJunit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5", version.ref = "kotlin" }
 kotlinxCoroutinesCore = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
-kotlinxCoroutinesReactive = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactive", version.ref = "kotlinxCoroutines" }
 kotlinxCoroutinesSwing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinxCoroutines" }
+kotlinxCoroutinesTest = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
 kotlinxSerializationJson = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 
 # Ktor client
@@ -95,12 +94,11 @@ ktorServerCallLogging = { module = "io.ktor:ktor-server-call-logging", version.r
 ktorServerSessions = { module = "io.ktor:ktor-server-sessions", version.ref = "ktor" }
 
 # Database
+hikaricp = { module = "com.zaxxer:HikariCP", version.ref = "hikaricp" }
 postgresDriver = { module = "org.postgresql:postgresql", version.ref = "postgresDriver" }
-r2dbcPostgres = { module = "org.postgresql:r2dbc-postgresql", version.ref = "r2dbcPostgres" }
-r2dbcPool = { module = "io.r2dbc:r2dbc-pool", version.ref = "r2dbcPool" }
 flyway = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
 flywayPostgres = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
-sqldelightR2dbcDriver = { module = "app.cash.sqldelight:r2dbc-driver", version.ref = "sqldelight" }
+sqldelightJdbcDriver = { module = "app.cash.sqldelight:jdbc-driver", version.ref = "sqldelight" }
 sqldelightCoroutines = { module = "app.cash.sqldelight:coroutines-extensions-jvm", version.ref = "sqldelight" }
 sqldelightRuntime = { module = "app.cash.sqldelight:runtime-jvm", version.ref = "sqldelight" }
 sqldelightPostgresDialect = { module = "app.cash.sqldelight:postgresql-dialect", version.ref = "sqldelight" }

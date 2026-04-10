@@ -6,14 +6,14 @@ import org.koin.dsl.module
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.InMemoryChatRepository
 import se.gustavkarlsson.chefgpt.chats.PostgresChatRepository
-import se.gustavkarlsson.chefgpt.postgres.PostgresAccess
+import se.gustavkarlsson.chefgpt.postgres.DatabaseAccess
 
 fun Application.createChatRepositoryModule() =
     module {
         single {
-            val database = getOrNull<PostgresAccess>()
-            if (database != null) {
-                PostgresChatRepository(database)
+            val db = getOrNull<DatabaseAccess>()
+            if (db != null) {
+                PostgresChatRepository(db)
             } else {
                 InMemoryChatRepository()
             }

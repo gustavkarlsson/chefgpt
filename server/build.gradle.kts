@@ -4,7 +4,6 @@ plugins {
     alias(libs.plugins.kotlinJvm)
     alias(libs.plugins.ktor)
     alias(libs.plugins.kotlinSerialization)
-    alias(libs.plugins.atomicfu)
     alias(libs.plugins.slapshot)
     alias(libs.plugins.sqldelight)
     application
@@ -37,7 +36,6 @@ application {
 dependencies {
     implementation(projects.shared)
     implementation(libs.kotlinxCoroutinesCore)
-    implementation(libs.kotlinxCoroutinesReactive)
     implementation(libs.logback)
     implementation(libs.ktorServerCore)
     implementation(libs.ktorServerNetty)
@@ -61,12 +59,11 @@ dependencies {
     // Koog
     implementation(libs.koogKtor)
 
-    // Database (R2DBC + SQLDelight)
-    implementation(libs.sqldelightR2dbcDriver)
+    // Database (JDBC + SQLDelight + HikariCP)
+    implementation(libs.sqldelightJdbcDriver)
     implementation(libs.sqldelightCoroutines)
     implementation(libs.sqldelightRuntime)
-    implementation(libs.r2dbcPool)
-    implementation(libs.r2dbcPostgres)
+    implementation(libs.hikaricp)
     implementation(libs.postgresDriver)
     implementation(libs.flyway)
     implementation(libs.flywayPostgres)
@@ -74,6 +71,7 @@ dependencies {
     // Test
     testImplementation(libs.ktorServerTestHost)
     testImplementation(libs.kotlinTestJunit5)
+    testImplementation(libs.kotlinxCoroutinesTest)
     testImplementation(libs.slapshotJunit5)
     testImplementation(libs.slapshotKtor3)
     // TODO Remove once testcontainer example is replaced with proper integration tests
@@ -92,7 +90,7 @@ sqldelight {
             dialect(libs.sqldelightPostgresDialect)
             verifyMigrations.set(true)
             schemaOutputDirectory.set(file("src/main/sqldelight/databases"))
-            generateAsync.set(true)
+            generateAsync.set(false)
             deriveSchemaFromMigrations.set(true)
             migrationOutputDirectory.set(sqldelightMigrationTempDirectory)
         }

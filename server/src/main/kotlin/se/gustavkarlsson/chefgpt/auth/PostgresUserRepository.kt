@@ -1,22 +1,18 @@
 package se.gustavkarlsson.chefgpt.auth
 
-import app.cash.sqldelight.async.coroutines.awaitAsOne
-import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
-import se.gustavkarlsson.chefgpt.postgres.PostgresAccess
+import se.gustavkarlsson.chefgpt.postgres.DatabaseAccess
 import java.security.MessageDigest
 import java.security.SecureRandom
 import kotlin.io.encoding.Base64
-import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.uuid.toKotlinUuid
 
 private const val SALT_BYTE_COUNT = 16
 
-@OptIn(ExperimentalEncodingApi::class)
 class PostgresUserRepository(
-    private val db: PostgresAccess,
+    private val db: DatabaseAccess,
     private val rules: List<RegistrationRule> = emptyList(),
 ) : UserRepository {
     private val md5 = MessageDigest.getInstance("MD5")
@@ -41,7 +37,7 @@ class PostgresUserRepository(
                         username = name,
                         password_md5_hash = Base64.encode(hash(password, salt)),
                         password_salt = Base64.encode(salt),
-                    ).awaitAsOneOrNull()
+                    ).executeAsOneOrNull()
             }
         return if (id != null) {
             Ok(User(UserId(id.toKotlinUuid()), name))
@@ -58,7 +54,7 @@ class PostgresUserRepository(
             db.use {
                 userQueries
                     .selectByUsername(name)
-                    .awaitAsOneOrNull()
+                    .executeAsOneOrNull()
             } ?: return Err(LoginError.WrongCredentials)
         val salt = Base64.decode(userRow.password_salt)
         val expectedHash = Base64.encode(hash(password, salt))
@@ -71,7 +67,7 @@ class PostgresUserRepository(
 
     override suspend operator fun contains(name: String): Boolean =
         db.use {
-            userQueries.existsByUsername(name).awaitAsOne()
+            userQueries.existsByUsername(name).executeAsOne()
         }
 
     private fun generateSalt(): ByteArray = ByteArray(SALT_BYTE_COUNT).also { secureRandom.nextBytes(it) }

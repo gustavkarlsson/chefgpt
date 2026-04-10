@@ -3,10 +3,14 @@ INSERT INTO event (chat_id, json)
 VALUES (?, ?::jsonb);
 
 findRowId:
-SELECT id FROM event WHERE json->>'id' = ? LIMIT 1;
+SELECT id
+FROM event
+WHERE chat_id = ?
+AND json->>'id' = ?
+LIMIT 1;
 
 selectByChatIdAfter:
-SELECT id, chat_id, json::text AS json
+SELECT id, json::text AS json
 FROM event
 WHERE chat_id = ?
 AND id > ?

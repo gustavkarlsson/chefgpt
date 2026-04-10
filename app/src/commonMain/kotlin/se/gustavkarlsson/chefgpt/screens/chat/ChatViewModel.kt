@@ -76,6 +76,11 @@ class ChatViewModel(
 
     init {
         viewModelScope.launch {
+            client.listenToIngredients(conversation.sessionId).collect {
+                log.i { "Received ingredients: $it" }
+            }
+        }
+        viewModelScope.launch {
             while (true) {
                 try {
                     runSession()

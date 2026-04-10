@@ -45,11 +45,15 @@ fun ApplicationCall.getCredentials(): Result<UserPasswordCredential, ResponseDat
         }
 
 fun ApplicationCall.requireSession(): Session =
-    checkNotNull(principal<Session>()) {
+    checkNotNull(sessionOrNull()) {
         "User principal missing. Are we calling this in a non-authenticated endpoint?"
     }
 
+fun ApplicationCall.sessionOrNull(): Session? = principal<Session>()
+
 suspend fun ApplicationCall.getChatId(): Result<ChatId, ResponseData<ApiError>> {
+    val chatRepository = get<ChatRepository>()
+    val userId = requireSession().user.id
     val rawChatId = parameters.getOrFail("chatId")
     return ChatId
         .parseOrNull(rawChatId)
@@ -59,9 +63,7 @@ suspend fun ApplicationCall.getChatId(): Result<ChatId, ResponseData<ApiError>> 
                 body = ApiError("invalid-chat-id", "Invalid chat ID"),
             )
         }.flatMap { chatId ->
-            val chatRepository = get<ChatRepository>()
-            val session = requireSession()
-            chatRepository[session.user.id, chatId].toResultOr {
+            chatRepository[userId, chatId].toResultOr {
                 ResponseData(
                     status = HttpStatusCode.NotFound,
                     body = ApiError("chat-not-found", "Chat not found"),

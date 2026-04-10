@@ -20,10 +20,10 @@ import se.gustavkarlsson.chefgpt.respond
 
 fun Routing.registerRoute() {
     post("/register") {
+        val userRepository = get<UserRepository>()
         call
             .getCredentials()
             .flatMap { credentials ->
-                val userRepository = get<UserRepository>()
                 userRepository.register(credentials.name, credentials.password).mapError { registrationError ->
                     when (registrationError) {
                         is RegistrationError.InvalidUserName -> {

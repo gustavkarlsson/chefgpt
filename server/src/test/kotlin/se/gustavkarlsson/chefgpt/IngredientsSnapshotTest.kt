@@ -7,11 +7,6 @@ import io.ktor.client.request.put
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.koin.dsl.bind
-import org.koin.dsl.module
-import org.koin.module.requestScope
-import se.gustavkarlsson.chefgpt.ingredients.InMemoryIngredientStore
-import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 import se.gustavkarlsson.slapshot.junit5.JUnit5SnapshotContext
 import se.gustavkarlsson.slapshot.junit5.SnapshotExtension
 
@@ -31,53 +26,11 @@ class IngredientsSnapshotTest {
         }
 
     @Test
-    fun `list ingredients empty`() =
+    fun `delete ingredient`() =
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.get("/ingredients") {
-                header("Session-Id", sessionId)
-            }
-        }
-
-    @Test
-    fun `list ingredients with some`() =
-        snapshotTestApplication(
-            snapshotContext,
-            extraKoinModules =
-                listOf(
-                    module {
-                        requestScope {
-                            scoped {
-                                InMemoryIngredientStore(mutableListOf("tomato", "basil"))
-                            } bind IngredientStore::class
-                        }
-                    },
-                ),
-        ) { client ->
-            val sessionId = registerUser()
-
-            client.get("/ingredients") {
-                header("Session-Id", sessionId)
-            }
-        }
-
-    @Test
-    fun `delete ingredient`() =
-        snapshotTestApplication(
-            snapshotContext,
-            extraKoinModules =
-                listOf(
-                    module {
-                        requestScope {
-                            scoped {
-                                InMemoryIngredientStore(mutableListOf("tomato", "basil"))
-                            } bind IngredientStore::class
-                        }
-                    },
-                ),
-        ) { client ->
-            val sessionId = registerUser()
+            addIngredients(sessionId, "tomato", "basil")
 
             client.delete("/ingredients/tomato") {
                 header("Session-Id", sessionId)
@@ -112,20 +65,10 @@ class IngredientsSnapshotTest {
 
     @Test
     fun `put ingredient existing`() =
-        snapshotTestApplication(
-            snapshotContext,
-            extraKoinModules =
-                listOf(
-                    module {
-                        requestScope {
-                            scoped {
-                                InMemoryIngredientStore(mutableListOf("tomato"))
-                            } bind IngredientStore::class
-                        }
-                    },
-                ),
-        ) { client ->
+        snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
+
+            addIngredients(sessionId, "tomato")
 
             client.put("/ingredients/tomato") {
                 header("Session-Id", sessionId)
