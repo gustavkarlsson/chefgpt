@@ -54,6 +54,7 @@ dependencies {
     implementation(libs.koinLoggerSlf4j)
 
     // Misc
+    implementation(libs.bcrypt)
     implementation(libs.kotlinResult)
 
     // Koog
