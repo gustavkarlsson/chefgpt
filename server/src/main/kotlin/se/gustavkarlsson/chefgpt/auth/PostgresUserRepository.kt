@@ -1,22 +1,20 @@
 package se.gustavkarlsson.chefgpt.auth
 
+import at.favre.lib.crypto.bcrypt.BCrypt
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
 import se.gustavkarlsson.chefgpt.postgres.DatabaseAccess
-import java.security.MessageDigest
-import java.security.SecureRandom
-import kotlin.io.encoding.Base64
 import kotlin.uuid.toKotlinUuid
 
-private const val SALT_BYTE_COUNT = 16
+private const val BCRYPT_COST = 12
 
 class PostgresUserRepository(
     private val db: DatabaseAccess,
     private val rules: List<RegistrationRule> = emptyList(),
 ) : UserRepository {
-    private val md5 = MessageDigest.getInstance("MD5")
-    private val secureRandom = SecureRandom()
+    private val hasher = BCrypt.withDefaults()
+    private val hashVerifier = BCrypt.verifyer()
 
     override suspend fun register(
         name: String,
@@ -29,14 +27,13 @@ class PostgresUserRepository(
         if (registrationError != null) {
             return Err(registrationError)
         }
-        val salt = generateSalt()
+        val hash = hasher.hashToString(BCRYPT_COST, password.toCharArray())
         val id =
             db.use {
                 userQueries
                     .insert(
                         username = name,
-                        password_md5_hash = Base64.encode(hash(password, salt)),
-                        password_salt = Base64.encode(salt),
+                        password_hash = hash,
                     ).executeAsOneOrNull()
             }
         return if (id != null) {
@@ -56,9 +53,8 @@ class PostgresUserRepository(
                     .selectByUsername(name)
                     .executeAsOneOrNull()
             } ?: return Err(LoginError.WrongCredentials)
-        val salt = Base64.decode(userRow.password_salt)
-        val expectedHash = Base64.encode(hash(password, salt))
-        return if (userRow.password_md5_hash == expectedHash) {
+        val result = hashVerifier.verify(password.toCharArray(), userRow.password_hash)
+        return if (result.verified) {
             Ok(User(UserId(userRow.id.toKotlinUuid()), userRow.username))
         } else {
             Err(LoginError.WrongCredentials)
@@ -69,11 +65,4 @@ class PostgresUserRepository(
         db.use {
             userQueries.existsByUsername(name).executeAsOne()
         }
-
-    private fun generateSalt(): ByteArray = ByteArray(SALT_BYTE_COUNT).also { secureRandom.nextBytes(it) }
-
-    private fun hash(
-        password: String,
-        salt: ByteArray,
-    ): ByteArray = md5.digest(password.encodeToByteArray() + salt)
 }

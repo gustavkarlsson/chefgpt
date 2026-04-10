@@ -18,7 +18,7 @@ class PostgresSessionStorage(
         when (deletedCount) {
             0L -> throw NoSuchElementException("Could not invalidate session with ID: $id as it does not exist")
             1L -> Unit
-            else -> error("Invalidated too many sessions with ID: $deletedCount ($deletedCount)")
+            else -> error("Invalidated too many sessions with ID: $id ($deletedCount)")
         }
     }
 

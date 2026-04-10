@@ -2,8 +2,7 @@ CREATE TABLE "user"
 (
     id                UUID  NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     username          TEXT  NOT NULL UNIQUE,
-    password_md5_hash TEXT  NOT NULL,
-    password_salt     TEXT  NOT NULL
+    password_hash     TEXT  NOT NULL
 );
 
 CREATE EXTENSION IF NOT EXISTS citext;

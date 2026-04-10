@@ -1,18 +1,20 @@
 package se.gustavkarlsson.chefgpt.auth
 
+import at.favre.lib.crypto.bcrypt.BCrypt
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
-import kotlinx.io.bytestring.ByteString
-import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
+
+private const val BCRYPT_COST = 12
 
 // TODO prevent hammering
 class InMemoryUserRepository(
     private val rules: List<RegistrationRule> = emptyList(),
 ) : UserRepository {
     private val users = ConcurrentHashMap<String, UserData>()
-    private val md5 = MessageDigest.getInstance("MD5")
+    private val hasher = BCrypt.withDefaults()
+    private val hashVerifier = BCrypt.verifyer()
 
     override suspend fun register(
         name: String,
@@ -27,7 +29,8 @@ class InMemoryUserRepository(
         }
 
         val user = User(id = UserId.random(), name = name)
-        val alreadyRegistered = users.putIfAbsent(name, UserData(user, hash(password)))
+        val hash = hasher.hashToString(BCRYPT_COST, password.toCharArray())
+        val alreadyRegistered = users.putIfAbsent(name, UserData(user, hash))
         return if (alreadyRegistered == null) {
             Ok(user)
         } else {
@@ -40,7 +43,7 @@ class InMemoryUserRepository(
         password: String,
     ): Result<User, LoginError> {
         val userData = users[name] ?: return Err(LoginError.WrongCredentials)
-        return if (userData.passwordHash == hash(password)) {
+        return if (hashVerifier.verify(password.toCharArray(), userData.passwordHash).verified) {
             Ok(userData.user)
         } else {
             Err(LoginError.WrongCredentials)
@@ -48,12 +51,9 @@ class InMemoryUserRepository(
     }
 
     override suspend operator fun contains(name: String): Boolean = users.containsKey(name)
-
-    // Not the safest way to do this, but it's fine for now
-    private fun hash(password: String) = ByteString(md5.digest(password.encodeToByteArray()))
 }
 
 private data class UserData(
     val user: User,
-    val passwordHash: ByteString,
+    val passwordHash: String,
 )

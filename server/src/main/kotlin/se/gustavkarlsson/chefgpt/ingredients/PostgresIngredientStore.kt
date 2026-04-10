@@ -64,11 +64,13 @@ class PostgresIngredientStore(
         val removed =
             db.use {
                 ingredientQueries.transactionWithResult {
-                    ingredients.mapNotNull { ingredient ->
-                        ingredientQueries
-                            .deleteByUserIdAndName(userId.value.toJavaUuid(), ingredient)
-                            .executeAsOneOrNull()
-                    }
+                    ingredients
+                        .map { it.trim().lowercase() }
+                        .mapNotNull { ingredient ->
+                            ingredientQueries
+                                .deleteByUserIdAndName(userId.value.toJavaUuid(), ingredient)
+                                .executeAsOneOrNull()
+                        }
                 }
             }
         if (removed.isNotEmpty()) {
