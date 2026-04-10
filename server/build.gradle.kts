@@ -71,6 +71,7 @@ dependencies {
     // Test
     testImplementation(libs.ktorServerTestHost)
     testImplementation(libs.kotlinTestJunit5)
+    testImplementation(libs.kotlinxCoroutinesTest)
     testImplementation(libs.slapshotJunit5)
     testImplementation(libs.slapshotKtor3)
     // TODO Remove once testcontainer example is replaced with proper integration tests

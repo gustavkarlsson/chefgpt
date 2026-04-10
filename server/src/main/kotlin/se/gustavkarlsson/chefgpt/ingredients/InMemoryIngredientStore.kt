@@ -22,7 +22,7 @@ class InMemoryIngredientStore(
         ingredients: List<String>,
     ): List<String> {
         val storedIngredients = storage.getOrPut(userId) { MutableStateFlow(emptySet()) }
-        val normalized = ingredients.map { it.trim().lowercase() }
+        val normalized = ingredients.map { it.trim().lowercase() }.toSet()
         val preUpdate = storedIngredients.getAndUpdate { it + normalized }
         val added = normalized - preUpdate
         return added.toList()
@@ -33,8 +33,9 @@ class InMemoryIngredientStore(
         ingredients: List<String>,
     ): List<String> {
         val storedIngredients = storage.getOrPut(userId) { MutableStateFlow(emptySet()) }
-        val preUpdate = storedIngredients.getAndUpdate { it - ingredients.toSet() }
-        val removed = ingredients intersect preUpdate
+        val normalized = ingredients.map { it.trim().lowercase() }.toSet()
+        val preUpdate = storedIngredients.getAndUpdate { it - normalized }
+        val removed = normalized intersect preUpdate
         return removed.toList()
     }
 
