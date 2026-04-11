@@ -17,7 +17,6 @@ import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.accept
 import io.ktor.client.request.basicAuth
 import io.ktor.client.request.delete
-import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
@@ -147,16 +146,19 @@ class ChefGptClient(
         return response.toResultSafe {}
     }
 
-    suspend fun getAllChats(sessionId: SessionId): Result<List<ApiChat>, ErrorResponse> {
-        val response =
-            httpClient.get("$baseUrl/chats") {
-                sessionIdHeader(sessionId)
-                accept(ContentType.Application.Json)
+    fun listenToChats(sessionId: SessionId): Flow<List<ApiChat>> =
+        channelFlow {
+            httpClient.sseTyped<List<ApiChat>>(
+                json = json,
+                eventType = "chats",
+                request = {
+                    url("$baseUrl/chats")
+                    sessionIdHeader(sessionId)
+                },
+            ) { _, incoming ->
+                incoming.collect(::send)
             }
-        return response.toResultSafe {
-            response.body<List<ApiChat>>()
         }
-    }
 
     // TODO Error handling
     fun listenToEvents(

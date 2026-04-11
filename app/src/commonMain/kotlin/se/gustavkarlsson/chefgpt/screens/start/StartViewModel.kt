@@ -97,21 +97,14 @@ class StartViewModel(
 
     private suspend fun streamChats(credentials: SessionCredentials) {
         chatRepository
-            .getAll(credentials.sessionId)
-            .collect { chatsResult ->
-                chatsResult
-                    .onOk { chats ->
-                        innerState.update {
-                            it.copy(
-                                sessionCredentials = credentials,
-                                chats = chats,
-                            )
-                        }
-                    }.onErr { errorResponse ->
-                        // TODO Show user-friendly error
-                        log.e { "Failed to stream chats: $errorResponse" }
-                        // TODO Recover somehow
-                    }
+            .stream(credentials.sessionId)
+            .collect { chats ->
+                innerState.update {
+                    it.copy(
+                        sessionCredentials = credentials,
+                        chats = chats,
+                    )
+                }
             }
     }
 

@@ -9,7 +9,7 @@ import se.gustavkarlsson.chefgpt.sessions.SessionId
 interface ChatRepository {
     suspend fun create(sessionId: SessionId): Result<Chat, ErrorResponse>
 
-    suspend fun getAll(sessionId: SessionId): Flow<Result<List<Chat>, ErrorResponse>>
+    suspend fun stream(sessionId: SessionId): Flow<List<Chat>>
 
     suspend fun delete(
         sessionId: SessionId,
