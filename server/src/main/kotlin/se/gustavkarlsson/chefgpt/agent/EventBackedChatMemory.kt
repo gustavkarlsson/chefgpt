@@ -4,10 +4,12 @@ import ai.koog.agents.core.agent.config.AIAgentConfig
 import ai.koog.agents.core.agent.context.AIAgentContext
 import ai.koog.agents.core.agent.context.AIAgentGraphContextBase
 import ai.koog.agents.core.agent.entity.AIAgentStorageKey
+import ai.koog.agents.core.agent.entity.createStorageKey
 import ai.koog.agents.core.feature.AIAgentGraphFeature
 import ai.koog.agents.core.feature.config.FeatureConfig
 import ai.koog.agents.core.feature.pipeline.AIAgentGraphPipeline
 import ai.koog.prompt.message.Message
+import ai.koog.prompt.message.MessagePart
 import org.slf4j.LoggerFactory
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
@@ -25,7 +27,7 @@ class EventBackedChatMemory {
     companion object Feature :
         AIAgentGraphFeature<Config, EventBackedChatMemory> {
         override val key: AIAgentStorageKey<EventBackedChatMemory> =
-            AIAgentStorageKey("agents-features-event-backed-chat-memory")
+            createStorageKey("agents-features-event-backed-chat-memory")
 
         override fun createInitialConfig(agentConfig: AIAgentConfig): Config = Config()
 
@@ -89,17 +91,18 @@ class EventBackedChatMemory {
         }
 
         /**
-         * Removes any orphaned [Message.Tool.Call] that is not immediately followed by
-         * a [Message.Tool.Result]. This can happen if an agent run was interrupted after
-         * saving the tool call but before saving the tool result. Such orphaned calls
-         * cause Anthropic to reject the request with a "tool_use without tool_result" error.
+         * Removes any message holding an orphaned [MessagePart.Tool.Call] that is not
+         * immediately followed by a message holding a [MessagePart.Tool.Result]. This can
+         * happen if an agent run was interrupted after saving the tool call but before
+         * saving the tool result. Such orphaned calls cause Anthropic to reject the
+         * request with a "tool_use without tool_result" error.
          */
         private fun sanitizeMessages(messages: List<Message>): List<Message> =
             buildList {
                 for ((index, message) in messages.withIndex()) {
-                    if (message is Message.Tool.Call) {
+                    if (message.parts.any { it is MessagePart.Tool.Call }) {
                         val next = messages.getOrNull(index + 1)
-                        if (next !is Message.Tool.Result) {
+                        if (next?.parts?.any { it is MessagePart.Tool.Result } != true) {
                             // Orphaned tool call — drop it and everything after
                             break
                         }

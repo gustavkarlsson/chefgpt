@@ -15,7 +15,9 @@ jvmToolchain = "21" # Jetbrains Hot-Reload needs this
 kermit = "2.1.0"
 koin = "4.2.0"
 koinPlugin = "0.4.1"
-koog = "0.7.3"
+# koog-ktor is a 1.0 beta-stream module (no stable 1.0.0 exists) that pulls koog-agents from the 1.0 preview stream; keep the two pinned as a matched pair.
+koogAgents = "1.0.0-preview7"
+koogKtor = "1.0.0-beta-preview7"
 kotlin = "2.3.20"
 kotlinResult = "2.3.1"
 kotlinxCoroutines = "1.10.2"
@@ -65,8 +67,8 @@ koinKtor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
 koinLoggerSlf4j = { module = "io.insert-koin:koin-logger-slf4j", version.ref = "koin" }
 
 # Koog
-koogAgents = { module = "ai.koog:koog-agents", version.ref = "koog" }
-koogKtor = { module = "ai.koog:koog-ktor", version.ref = "koog" }
+koogAgents = { module = "ai.koog:koog-agents", version.ref = "koogAgents" }
+koogKtor = { module = "ai.koog:koog-ktor", version.ref = "koogKtor" }
 
 # Kotlin
 kotlinTest = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
