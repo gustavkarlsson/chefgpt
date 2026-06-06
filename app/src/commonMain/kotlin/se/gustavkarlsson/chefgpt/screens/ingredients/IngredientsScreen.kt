@@ -47,7 +47,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.kodein.emoji.Emoji
-import org.kodein.emoji.compose.NotoImageEmoji
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -204,11 +203,12 @@ private fun IngredientCard(
 
 @Composable
 private fun IngredientImage(name: String) {
+    // TODO Move emoji resolution to VM
     val resolver = koinInject<IngredientEmojiResolver>()
     val emoji by produceState<Emoji?>(null, name) { value = resolver.resolve(name) }
     val resolved = emoji
     if (resolved != null) {
-        NotoImageEmoji(emoji = resolved, modifier = Modifier.size(48.dp))
+        Text(text = resolved.details.string, style = MaterialTheme.typography.headlineLarge)
     } else {
         Box(
             modifier =

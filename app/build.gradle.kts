@@ -74,7 +74,6 @@ kotlin {
             implementation(libs.coilCompose)
             implementation(libs.coilNetworkKtor)
             implementation(libs.emojiCore)
-            implementation(libs.emojiComposeM3)
             implementation(libs.navigation3Ui)
             implementation(libs.koinCore)
             implementation(libs.koinAnnotations)

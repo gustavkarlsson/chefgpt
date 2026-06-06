@@ -121,7 +121,6 @@ coilNetworkKtor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref 
 
 # Emoji
 emojiCore = { module = "org.kodein.emoji:emoji-kt", version.ref = "emoji" }
-emojiComposeM3 = { module = "org.kodein.emoji:emoji-compose-m3", version.ref = "emoji" }
 
 # Misc
 bcrypt = { module = "at.favre.lib:bcrypt", version.ref = "bcrypt" }
