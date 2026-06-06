@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.onErr
+import com.github.michaelbull.result.onOk
+import io.ktor.http.ContentType
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,6 +15,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.io.files.Path
 import org.kodein.emoji.Emoji
 import org.koin.core.annotation.InjectedParam
 import se.gustavkarlsson.chefgpt.ChefGptClient
@@ -35,6 +38,8 @@ class IngredientsViewModel(
         // Latest ingredients reported by the backend stream.
         val backendIngredients: List<ApiIngredient> = emptyList(),
         val inputText: String = "",
+        // True while an image is being scanned for ingredients by the backend.
+        val scanningImage: Boolean = false,
         // Resolves ingredient emoji; null until the emoji catalog has loaded.
         val emojiResolver: IngredientEmojiResolver? = null,
     )
@@ -52,9 +57,12 @@ class IngredientsViewModel(
         // Ingredients that have previously been in store, most recently modified last.
         val previouslyInStore: List<Ingredient>,
         val inputText: String,
+        // True while an image is being scanned for ingredients.
+        val scanningImage: Boolean,
         val onClickIngredient: (Ingredient) -> Unit,
         val onDestroyIngredient: (Ingredient) -> Unit,
         val onClickBack: () -> Unit,
+        val onScanImageSelected: (Path) -> Unit,
     ) {
         val onInputChange: (String) -> Unit
             get() = { text -> innerState.update { it.copy(inputText = text) } }
@@ -114,9 +122,11 @@ class IngredientsViewModel(
             inStore = sorted.filter { it.inInventory },
             previouslyInStore = sorted.filterNot { it.inInventory },
             inputText = inputText,
+            scanningImage = scanningImage,
             onClickIngredient = ::onClickIngredient,
             onDestroyIngredient = ::destroyIngredient,
             onClickBack = { navigator.pop() },
+            onScanImageSelected = ::scanImage,
         )
     }
 
@@ -142,6 +152,22 @@ class IngredientsViewModel(
             client
                 .removeIngredient(route.sessionId, ingredient.id, destroy = true)
                 .onErr { log.e { "Failed to destroy ingredient '${ingredient.name}': ${it.errorBody}" } }
+        }
+    }
+
+    private fun scanImage(image: Path) {
+        if (innerState.value.scanningImage) return
+        innerState.update { it.copy(scanningImage = true) }
+        viewModelScope.launch {
+            try {
+                val extension = image.toString().substringAfterLast('.')
+                client
+                    .scanIngredients(route.sessionId, image, ContentType("image", extension))
+                    .onOk { count -> log.i { "Scan found $count ingredient(s)" } }
+                    .onErr { log.e { "Failed to scan ingredients: ${it.errorBody}" } }
+            } finally {
+                innerState.update { it.copy(scanningImage = false) }
+            }
         }
     }
 
