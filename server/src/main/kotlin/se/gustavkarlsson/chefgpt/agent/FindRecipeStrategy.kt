@@ -5,53 +5,36 @@ import ai.koog.agents.core.agent.entity.AIAgentGraphStrategy
 import ai.koog.agents.core.dsl.builder.node
 import ai.koog.agents.core.dsl.builder.strategy
 import ai.koog.agents.core.dsl.extension.nodeDoNothing
-import ai.koog.agents.core.dsl.extension.nodeExecuteTool
-import ai.koog.agents.core.dsl.extension.nodeLLMSendToolResult
-import ai.koog.agents.core.dsl.extension.onAssistantMessage
-import ai.koog.agents.core.dsl.extension.onReasoningMessage
-import ai.koog.agents.core.dsl.extension.onToolCall
+import ai.koog.agents.core.dsl.extension.nodeExecuteTools
+import ai.koog.agents.core.dsl.extension.nodeLLMSendToolResults
+import ai.koog.agents.core.dsl.extension.onTextMessage
+import ai.koog.agents.core.dsl.extension.onToolCalls
 import ai.koog.prompt.message.Message
 
 fun findRecipeStrategy(): AIAgentGraphStrategy<Unit, Unit> =
     strategy("find-recipe") {
         val nodeExecuteLLM by nodeExecuteLLM("executeLLM")
-        val response by nodeDoNothing<Message.Response>("response")
-        val nodeExecuteTool by nodeExecuteTool("executeTool") // Seems to append the message by itself?
-        val nodeLLMSendToolResult by nodeLLMSendToolResult("llmSendToolResult")
-        val nodeSendReasoningBackToLLM by nodeSendReasoningBackToLLM("sendReasoningBackToLLM")
+        val response by nodeDoNothing<Message.Assistant>("response")
+        val nodeExecuteTool by nodeExecuteTools("executeTool")
+        val nodeLLMSendToolResult by nodeLLMSendToolResults("llmSendToolResult")
 
         edge(nodeStart forwardTo nodeExecuteLLM)
         edge(nodeExecuteLLM forwardTo response)
 
-        // Reasoning loops around as long as it's reasoning
-        edge(response forwardTo nodeSendReasoningBackToLLM onReasoningMessage { true })
-        edge(nodeSendReasoningBackToLLM forwardTo response)
-
-        // Tool calls are evaluated by the LLM
-        edge(response forwardTo nodeExecuteTool onToolCall { true })
+        // Tool calls are executed and the results fed back to the LLM
+        edge(response forwardTo nodeExecuteTool onToolCalls { true })
         edge(nodeExecuteTool forwardTo nodeLLMSendToolResult)
         edge(nodeLLMSendToolResult forwardTo response)
 
-        // Assistant message means we are done
-        edge(response forwardTo nodeFinish onAssistantMessage { true } transformed {})
+        // A plain-text assistant message means we are done
+        edge(response forwardTo nodeFinish onTextMessage { true } transformed {})
     }
 
 private fun nodeExecuteLLM(name: String) =
-    node<Unit, Message.Response>(name) { message ->
+    node<Unit, Message.Assistant>(name) {
         llm
             .writeSession {
                 // Message should have already been appended to history when this runs
-                requestLLM()
-            }
-    }
-
-private fun nodeSendReasoningBackToLLM(name: String) =
-    node<Message.Reasoning, Message.Response>(name) { reasoning ->
-        llm
-            .writeSession {
-                appendPrompt {
-                    message(reasoning)
-                }
                 requestLLM()
             }
     }

@@ -1,12 +1,12 @@
 package se.gustavkarlsson.chefgpt.chats
 
 import ai.koog.prompt.message.AttachmentContent
-import ai.koog.prompt.message.ContentPart
+import ai.koog.prompt.message.AttachmentSource
 import ai.koog.prompt.message.Message
+import ai.koog.prompt.message.MessagePart
 import ai.koog.prompt.message.RequestMetaInfo
 import se.gustavkarlsson.chefgpt.api.ApiAction
 import se.gustavkarlsson.chefgpt.api.ApiAgentMessage
-import se.gustavkarlsson.chefgpt.api.ApiAgentReasoning
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserJoined
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
@@ -39,42 +39,45 @@ private fun KoogMessage.toApiOrNull(
 ): ApiEvent? =
     when (this) {
         is KoogMessage.User -> {
-            ApiUserMessage(
-                id = id,
-                timestamp = timestamp,
-                text = content.takeIf { it.isNotBlank() },
-                imageUrl = imageUrlOrNull(),
-            )
+            val text = textContent().takeIf { it.isNotBlank() }
+            val imageUrl = imageUrlOrNull()
+            // Tool-result-only user messages carry no displayable content
+            if (text == null && imageUrl == null) {
+                null
+            } else {
+                ApiUserMessage(
+                    id = id,
+                    timestamp = timestamp,
+                    text = text,
+                    imageUrl = imageUrl,
+                )
+            }
         }
 
         is KoogMessage.Assistant -> {
-            ApiAgentMessage(
-                id = id,
-                timestamp = timestamp,
-                text = content,
-            )
-        }
-
-        is KoogMessage.Reasoning -> {
-            ApiAgentReasoning(
-                id = id,
-                timestamp = timestamp,
-                text = content,
-            )
+            textContent()
+                .takeIf { it.isNotBlank() }
+                ?.let { text ->
+                    ApiAgentMessage(
+                        id = id,
+                        timestamp = timestamp,
+                        text = text,
+                    )
+                }
         }
 
         is KoogMessage.System -> {
             null
         }
-
-        is KoogMessage.Tool -> {
-            null
-        }
     }
 
 private fun KoogMessage.User.imageUrlOrNull(): ImageUrl? {
-    val imagePart = parts.filterIsInstance<ContentPart.Image>().firstOrNull() ?: return null
-    val content = imagePart.content
+    val attachment = parts.filterIsInstance<MessagePart.Attachment>().firstOrNull() ?: return null
+    val source = attachment.source
+    require(source is AttachmentSource.Image) {
+        "Only image attachments are supported"
+    }
+    val content = source.content
     require(content is AttachmentContent.URL) {
         "Only URL images are supported"
     }
@@ -90,14 +93,18 @@ fun ApiAction.createEvent(): Event =
         is ApiUserSendsMessage -> {
             val parts =
                 buildList {
-                    text?.let { add(ContentPart.Text(it)) }
+                    text?.let { add(MessagePart.Text(it)) }
                     imageUrl?.let { imageUrl ->
                         val format =
                             imageUrl.value
                                 .substringAfterLast('.')
                                 .substringBefore('?')
                                 .ifEmpty { "jpeg" }
-                        add(ContentPart.Image(AttachmentContent.URL(imageUrl.value), format))
+                        add(
+                            MessagePart.Attachment(
+                                AttachmentSource.Image(AttachmentContent.URL(imageUrl.value), format),
+                            ),
+                        )
                     }
                 }
             val koogMessage = Message.User(parts, RequestMetaInfo(Clock.System.now()))
