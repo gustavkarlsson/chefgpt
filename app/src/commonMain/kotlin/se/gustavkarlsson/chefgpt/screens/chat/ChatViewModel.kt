@@ -9,13 +9,16 @@ import com.github.michaelbull.result.onErr
 import com.github.michaelbull.result.onOk
 import io.ktor.http.ContentType
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -23,6 +26,7 @@ import kotlinx.io.files.Path
 import org.koin.core.annotation.InjectedParam
 import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.api.ApiEvent
+import se.gustavkarlsson.chefgpt.api.ApiIngredient
 import se.gustavkarlsson.chefgpt.api.ApiUserJoined
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
@@ -34,6 +38,18 @@ import se.gustavkarlsson.chefgpt.navigation.Route
 import kotlin.time.Duration.Companion.seconds
 
 private val log = Logger.withTag("${ChatViewModel::class.simpleName}")
+
+sealed interface IngredientChange {
+    val name: String
+
+    data class Added(
+        override val name: String,
+    ) : IngredientChange
+
+    data class Removed(
+        override val name: String,
+    ) : IngredientChange
+}
 
 // TODO Fix error handling
 class ChatViewModel(
@@ -75,10 +91,26 @@ class ChatViewModel(
             .map { it.toViewState() }
             .stateIn(viewModelScope, SharingStarted.Eagerly, innerState.value.toViewState())
 
+    private val ingredientChangeChannel = Channel<IngredientChange>(Channel.UNLIMITED)
+    val ingredientChanges: Flow<IngredientChange> = ingredientChangeChannel.receiveAsFlow()
+
     init {
         viewModelScope.launch {
-            client.listenToIngredients(conversation.sessionId).collect {
-                log.i { "Received ingredients: $it" }
+            // Skip the first emission so the initial inventory doesn't flash as changes.
+            var previous: List<ApiIngredient>? = null
+            client.listenToIngredients(conversation.sessionId).collect { ingredients ->
+                val current = ingredients.filter { it.inInventory }
+                previous?.let { prev ->
+                    val previousIds = prev.map { it.id }.toSet()
+                    val currentIds = current.map { it.id }.toSet()
+                    current
+                        .filter { it.id !in previousIds }
+                        .forEach { ingredientChangeChannel.send(IngredientChange.Added(it.name)) }
+                    prev
+                        .filter { it.id !in currentIds }
+                        .forEach { ingredientChangeChannel.send(IngredientChange.Removed(it.name)) }
+                }
+                previous = current
             }
         }
         viewModelScope.launch {

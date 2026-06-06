@@ -1,5 +1,6 @@
 package se.gustavkarlsson.chefgpt.screens.chat
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.hoverable
@@ -39,10 +40,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
@@ -55,6 +59,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.mikepenz.markdown.m3.Markdown
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
 import org.koin.compose.viewmodel.koinViewModel
@@ -70,16 +77,20 @@ import se.gustavkarlsson.chefgpt.api.ApiUserMessage
 import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.pickImageFile
 import se.gustavkarlsson.chefgpt.screens.chat.ChatViewModel.ViewState
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun ChatScreen(chat: Route.Chat) {
     val viewModel = koinViewModel<ChatViewModel> { parametersOf(chat) }
     val viewState by viewModel.viewState.collectAsState()
-    Content(viewState)
+    Content(viewState, viewModel.ingredientChanges)
 }
 
 @Composable
-private fun Content(viewState: ViewState) {
+private fun Content(
+    viewState: ViewState,
+    ingredientChanges: Flow<IngredientChange>,
+) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -100,12 +111,10 @@ private fun Content(viewState: ViewState) {
                 ) {
                 }
                 Spacer(Modifier.weight(1f))
-                IconButton(onClick = viewState.onClickIngredients) {
-                    Icon(
-                        imageVector = Icons.Default.Kitchen,
-                        contentDescription = "Ingredients",
-                    )
-                }
+                IngredientButton(
+                    ingredientChanges = ingredientChanges,
+                    onClick = viewState.onClickIngredients,
+                )
             }
         },
     ) { paddingValues ->
@@ -128,6 +137,58 @@ private fun Content(viewState: ViewState) {
                 onImageAttached = viewState.onImageAttached,
                 onImageCleared = viewState.onImageCleared,
                 modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+// FIXME make this animation prettier
+private val FLASH_VISIBLE = 1500.milliseconds
+private val FLASH_GAP = 400.milliseconds
+
+@Composable
+private fun IngredientButton(
+    ingredientChanges: Flow<IngredientChange>,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    // The queue buffers changes so they flash one at a time, even when several
+    // ingredients are added or removed in quick succession.
+    val queue = remember { Channel<IngredientChange>(Channel.UNLIMITED) }
+    LaunchedEffect(ingredientChanges) {
+        ingredientChanges.collect { queue.send(it) }
+    }
+
+    var current by remember { mutableStateOf<IngredientChange?>(null) }
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(queue) {
+        for (change in queue) {
+            current = change
+            visible = true
+            delay(FLASH_VISIBLE)
+            visible = false
+            delay(FLASH_GAP)
+        }
+    }
+    val alpha by animateFloatAsState(if (visible) 1f else 0f)
+
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
+        current?.let { change ->
+            Text(
+                text = change.name,
+                color =
+                    when (change) {
+                        is IngredientChange.Added -> Color.Green
+                        is IngredientChange.Removed -> Color.Red
+                    },
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.alpha(alpha),
+            )
+        }
+        IconButton(onClick = onClick) {
+            Icon(
+                imageVector = Icons.Default.Kitchen,
+                contentDescription = "Ingredients",
             )
         }
     }
