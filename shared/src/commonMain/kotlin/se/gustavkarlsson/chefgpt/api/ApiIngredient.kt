@@ -7,6 +7,7 @@ import kotlin.time.Instant
 @Serializable
 @SerialName("api-ingredient")
 data class ApiIngredient(
+    val id: IngredientId,
     val name: String,
     val lastModified: Instant,
     val inInventory: Boolean,

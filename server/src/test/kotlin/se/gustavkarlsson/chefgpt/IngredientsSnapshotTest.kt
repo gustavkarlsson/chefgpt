@@ -30,9 +30,10 @@ class IngredientsSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            addIngredients(sessionId, "tomato", "basil")
+            val ingredients = addIngredients(sessionId, "tomato", "basil")
+            val tomatoId = ingredients.first { it.name == "tomato" }.id
 
-            client.delete("/ingredients/tomato") {
+            client.delete("/ingredients/$tomatoId") {
                 header("Session-Id", sessionId)
             }
         }
@@ -42,7 +43,7 @@ class IngredientsSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.delete("/ingredients/tomato") {
+            client.delete("/ingredients/11111111-1111-1111-1111-111111111111") {
                 header("Session-Id", sessionId)
             }
         }

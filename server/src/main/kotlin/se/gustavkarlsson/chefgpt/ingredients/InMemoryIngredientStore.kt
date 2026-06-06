@@ -4,7 +4,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.updateAndGet
 import se.gustavkarlsson.chefgpt.api.ApiIngredient
+import se.gustavkarlsson.chefgpt.api.IngredientId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Clock
@@ -30,43 +32,53 @@ class InMemoryIngredientStore(
     ): List<ApiIngredient> {
         val now = Clock.System.now()
         val normalized = ingredients.map { it.trim().lowercase() }.distinct()
-        val preUpdate =
-            storedIngredients(userId).getAndUpdate { current ->
+        var addedNames: List<String> = emptyList()
+        val updated =
+            storedIngredients(userId).updateAndGet { current ->
+                addedNames = normalized.filter { current[it]?.inInventory != true }
                 current +
-                    normalized
-                        .filter { current[it]?.inInventory != true }
-                        .associateWith { ApiIngredient(it, now, inInventory = true) }
+                    addedNames.associateWith { name ->
+                        ApiIngredient(
+                            id = current[name]?.id ?: IngredientId.random(),
+                            name = name,
+                            lastModified = now,
+                            inInventory = true,
+                        )
+                    }
             }
-        return normalized
-            .filter { preUpdate[it]?.inInventory != true }
-            .map { ApiIngredient(it, now, inInventory = true) }
+        return addedNames.map { updated.getValue(it) }
     }
 
     override suspend fun removeIngredients(
         userId: UserId,
-        ingredients: List<String>,
+        ids: List<IngredientId>,
     ): List<ApiIngredient> {
         val now = Clock.System.now()
-        val normalized = ingredients.map { it.trim().lowercase() }.distinct()
+        val idSet = ids.toSet()
         val preUpdate =
             storedIngredients(userId).getAndUpdate { current ->
                 current +
-                    normalized
-                        .mapNotNull { current[it]?.takeIf(ApiIngredient::inInventory) }
+                    current.values
+                        .filter { it.id in idSet && it.inInventory }
                         .associate { it.name to it.copy(inInventory = false, lastModified = now) }
             }
-        return normalized
-            .mapNotNull { preUpdate[it]?.takeIf(ApiIngredient::inInventory) }
+        return preUpdate.values
+            .filter { it.id in idSet && it.inInventory }
             .map { it.copy(inInventory = false, lastModified = now) }
     }
 
     override suspend fun destroyIngredients(
         userId: UserId,
-        ingredients: List<String>,
+        ids: List<IngredientId>,
     ): List<ApiIngredient> {
-        val normalized = ingredients.map { it.trim().lowercase() }.distinct()
-        val preUpdate = storedIngredients(userId).getAndUpdate { it - normalized.toSet() }
-        return normalized.mapNotNull { preUpdate[it] }
+        val idSet = ids.toSet()
+        val preUpdate =
+            storedIngredients(userId).getAndUpdate {
+                it.filterValues { ingredient ->
+                    ingredient.id !in idSet
+                }
+            }
+        return preUpdate.values.filter { it.id in idSet }
     }
 
     private fun storedIngredients(userId: UserId): MutableStateFlow<Map<String, ApiIngredient>> =

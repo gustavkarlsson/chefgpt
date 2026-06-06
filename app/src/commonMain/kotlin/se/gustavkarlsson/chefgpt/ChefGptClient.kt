@@ -46,6 +46,7 @@ import se.gustavkarlsson.chefgpt.api.ApiIngredient
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.api.ImageUrl
+import se.gustavkarlsson.chefgpt.api.IngredientId
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 import se.gustavkarlsson.chefgpt.sessions.UserCredentials
 import se.gustavkarlsson.chefgpt.util.sseTyped
@@ -213,13 +214,13 @@ class ChefGptClient(
 
     suspend fun removeIngredient(
         sessionId: SessionId,
-        name: String,
+        id: IngredientId,
         destroy: Boolean = false,
     ): Result<Unit, ErrorResponse> {
         val response =
-            httpClient.delete("$baseUrl/ingredients/${name.encodeURLPathPart()}") {
+            httpClient.delete("$baseUrl/ingredients/$id") {
                 sessionIdHeader(sessionId)
-                if (destroy) parameter("destroy", true)
+                parameter("destroy", destroy)
             }
         return response.toResultSafe {}
     }

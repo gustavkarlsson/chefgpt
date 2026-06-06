@@ -3,6 +3,7 @@ package se.gustavkarlsson.chefgpt.ingredients
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import se.gustavkarlsson.chefgpt.api.ApiIngredient
+import se.gustavkarlsson.chefgpt.api.IngredientId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -14,6 +15,11 @@ class InMemoryIngredientStoreTest {
     private val store = InMemoryIngredientStore()
 
     private val List<ApiIngredient>.names get() = map { it.name }
+
+    private suspend fun ids(vararg names: String): List<IngredientId> {
+        val wanted = names.toSet()
+        return store.getIngredients(userId).filter { it.name in wanted }.map { it.id }
+    }
 
     @Test
     fun `getIngredients returns empty list for new user`() =
@@ -85,14 +91,14 @@ class InMemoryIngredientStoreTest {
         }
 
     @Test
-    fun `addIngredients restores an ingredient that was removed from inventory`() =
+    fun `addIngredients keeps the same id when restoring a removed ingredient`() =
         runTest {
-            store.addIngredients(userId, listOf("tomato"))
-            store.removeIngredients(userId, listOf("tomato"))
+            val added = store.addIngredients(userId, listOf("tomato")).single()
+            store.removeIngredients(userId, listOf(added.id))
 
-            val added = store.addIngredients(userId, listOf("tomato"))
+            val restored = store.addIngredients(userId, listOf("tomato")).single()
 
-            assertEquals(listOf("tomato"), added.names)
+            assertEquals(added.id, restored.id)
             assertTrue(store.getIngredients(userId).single().inInventory)
         }
 
@@ -101,7 +107,7 @@ class InMemoryIngredientStoreTest {
         runTest {
             store.addIngredients(userId, listOf("tomato"))
 
-            val removed = store.removeIngredients(userId, listOf("tomato"))
+            val removed = store.removeIngredients(userId, ids("tomato"))
 
             assertEquals(listOf("tomato"), removed.names)
             assertTrue(removed.none { it.inInventory })
@@ -111,7 +117,7 @@ class InMemoryIngredientStoreTest {
     fun `removeIngredients keeps the ingredient in the store but out of inventory`() =
         runTest {
             store.addIngredients(userId, listOf("tomato"))
-            store.removeIngredients(userId, listOf("tomato"))
+            store.removeIngredients(userId, ids("tomato"))
 
             val ingredient = store.getIngredients(userId).single()
 
@@ -122,7 +128,7 @@ class InMemoryIngredientStoreTest {
     @Test
     fun `removeIngredients returns empty list when ingredient does not exist`() =
         runTest {
-            val removed = store.removeIngredients(userId, listOf("tomato"))
+            val removed = store.removeIngredients(userId, listOf(IngredientId.random()))
 
             assertTrue(removed.isEmpty())
         }
@@ -131,9 +137,9 @@ class InMemoryIngredientStoreTest {
     fun `removeIngredients returns empty list when ingredient already out of inventory`() =
         runTest {
             store.addIngredients(userId, listOf("tomato"))
-            store.removeIngredients(userId, listOf("tomato"))
+            store.removeIngredients(userId, ids("tomato"))
 
-            val removed = store.removeIngredients(userId, listOf("tomato"))
+            val removed = store.removeIngredients(userId, ids("tomato"))
 
             assertTrue(removed.isEmpty())
         }
@@ -142,7 +148,7 @@ class InMemoryIngredientStoreTest {
     fun `removeIngredients only affects specified ingredients`() =
         runTest {
             store.addIngredients(userId, listOf("tomato", "pepper"))
-            store.removeIngredients(userId, listOf("tomato"))
+            store.removeIngredients(userId, ids("tomato"))
 
             val inInventory = store.getIngredients(userId).filter { it.inInventory }
 
@@ -153,7 +159,7 @@ class InMemoryIngredientStoreTest {
     fun `destroyIngredients removes the ingredient from storage`() =
         runTest {
             store.addIngredients(userId, listOf("tomato"))
-            store.destroyIngredients(userId, listOf("tomato"))
+            store.destroyIngredients(userId, ids("tomato"))
 
             assertTrue(store.getIngredients(userId).isEmpty())
         }
@@ -163,7 +169,7 @@ class InMemoryIngredientStoreTest {
         runTest {
             store.addIngredients(userId, listOf("tomato"))
 
-            val destroyed = store.destroyIngredients(userId, listOf("tomato"))
+            val destroyed = store.destroyIngredients(userId, ids("tomato"))
 
             assertEquals(listOf("tomato"), destroyed.names)
         }
@@ -171,7 +177,7 @@ class InMemoryIngredientStoreTest {
     @Test
     fun `destroyIngredients returns empty list when ingredient does not exist`() =
         runTest {
-            val destroyed = store.destroyIngredients(userId, listOf("tomato"))
+            val destroyed = store.destroyIngredients(userId, listOf(IngredientId.random()))
 
             assertTrue(destroyed.isEmpty())
         }
@@ -180,9 +186,9 @@ class InMemoryIngredientStoreTest {
     fun `destroyIngredients removes ingredients even when out of inventory`() =
         runTest {
             store.addIngredients(userId, listOf("tomato"))
-            store.removeIngredients(userId, listOf("tomato"))
+            store.removeIngredients(userId, ids("tomato"))
 
-            val destroyed = store.destroyIngredients(userId, listOf("tomato"))
+            val destroyed = store.destroyIngredients(userId, ids("tomato"))
 
             assertEquals(listOf("tomato"), destroyed.names)
             assertTrue(store.getIngredients(userId).isEmpty())

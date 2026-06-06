@@ -120,8 +120,8 @@ private fun Content(viewState: ViewState) {
 private fun LazyGridScope.ingredientSection(
     title: String?,
     ingredients: List<Ingredient>,
-    onClickIngredient: (String) -> Unit,
-    onDestroyIngredient: ((String) -> Unit)? = null,
+    onClickIngredient: (Ingredient) -> Unit,
+    onDestroyIngredient: ((Ingredient) -> Unit)? = null,
 ) {
     if (ingredients.isEmpty()) return
     if (title != null) {
@@ -134,11 +134,11 @@ private fun LazyGridScope.ingredientSection(
             )
         }
     }
-    items(items = ingredients, key = { it.name }) { ingredient ->
+    items(items = ingredients, key = { it.id }) { ingredient ->
         IngredientCard(
             ingredient = ingredient,
-            onClick = { onClickIngredient(ingredient.name) },
-            onDestroy = onDestroyIngredient?.let { { it(ingredient.name) } },
+            onClick = { onClickIngredient(ingredient) },
+            onDestroy = onDestroyIngredient?.let { { it(ingredient) } },
             modifier = Modifier.animateItem(),
         )
     }

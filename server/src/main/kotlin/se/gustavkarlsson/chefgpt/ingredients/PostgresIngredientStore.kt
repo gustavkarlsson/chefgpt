@@ -4,13 +4,16 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import se.gustavkarlsson.chefgpt.api.ApiIngredient
+import se.gustavkarlsson.chefgpt.api.IngredientId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.postgres.DatabaseAccess
 import se.gustavkarlsson.chefgpt.util.RepoSyncer
 import java.time.OffsetDateTime
+import java.util.UUID
 import kotlin.time.Instant
 import kotlin.time.toKotlinInstant
 import kotlin.uuid.toJavaUuid
+import kotlin.uuid.toKotlinUuid
 
 class PostgresIngredientStore(
     private val db: DatabaseAccess,
@@ -22,7 +25,7 @@ class PostgresIngredientStore(
             ingredientQueries
                 .selectByUserId(userId.value.toJavaUuid())
                 .executeAsList()
-                .map { ApiIngredient(it.name, it.last_modified.toKotlinInstant(), it.in_inventory) }
+                .map { toApiIngredient(it.id, it.name, it.last_modified, it.in_inventory) }
         }
 
     override fun streamIngredients(userId: UserId): Flow<List<ApiIngredient>> =
@@ -33,7 +36,7 @@ class PostgresIngredientStore(
                     ingredientQueries
                         .selectByUserId(userId.value.toJavaUuid())
                         .executeAsList()
-                        .map { ApiIngredient(it.name, it.last_modified.toKotlinInstant(), it.in_inventory) }
+                        .map { toApiIngredient(it.id, it.name, it.last_modified, it.in_inventory) }
                 }
             }.distinctUntilChanged()
 
@@ -58,7 +61,7 @@ class PostgresIngredientStore(
                                 ingredientQueries
                                     .upsert(userId.value.toJavaUuid(), ingredient)
                                     .executeAsOne()
-                                    .let { ApiIngredient(it.name, it.last_modified.toKotlinInstant(), it.in_inventory) }
+                                    .let { toApiIngredient(it.id, it.name, it.last_modified, it.in_inventory) }
                             }
                         }
                 }
@@ -71,19 +74,17 @@ class PostgresIngredientStore(
 
     override suspend fun removeIngredients(
         userId: UserId,
-        ingredients: List<String>,
+        ids: List<IngredientId>,
     ): List<ApiIngredient> {
         val removed =
             db.use {
                 ingredientQueries.transactionWithResult {
-                    ingredients
-                        .map { it.trim().lowercase() }
-                        .mapNotNull { ingredient ->
-                            ingredientQueries
-                                .softRemoveByUserIdAndName(userId.value.toJavaUuid(), ingredient)
-                                .executeAsOneOrNull()
-                                ?.let { ApiIngredient(it.name, it.last_modified.toKotlinInstant(), it.in_inventory) }
-                        }
+                    ids.mapNotNull { id ->
+                        ingredientQueries
+                            .softRemoveByUserIdAndId(userId.value.toJavaUuid(), id.value.toJavaUuid())
+                            .executeAsOneOrNull()
+                            ?.let { toApiIngredient(it.id, it.name, it.last_modified, it.in_inventory) }
+                    }
                 }
             }
         if (removed.isNotEmpty()) {
@@ -94,19 +95,17 @@ class PostgresIngredientStore(
 
     override suspend fun destroyIngredients(
         userId: UserId,
-        ingredients: List<String>,
+        ids: List<IngredientId>,
     ): List<ApiIngredient> {
         val destroyed =
             db.use {
                 ingredientQueries.transactionWithResult {
-                    ingredients
-                        .map { it.trim().lowercase() }
-                        .mapNotNull { ingredient ->
-                            ingredientQueries
-                                .destroyByUserIdAndName(userId.value.toJavaUuid(), ingredient)
-                                .executeAsOneOrNull()
-                                ?.let { ApiIngredient(it.name, it.last_modified.toKotlinInstant(), it.in_inventory) }
-                        }
+                    ids.mapNotNull { id ->
+                        ingredientQueries
+                            .destroyByUserIdAndId(userId.value.toJavaUuid(), id.value.toJavaUuid())
+                            .executeAsOneOrNull()
+                            ?.let { toApiIngredient(it.id, it.name, it.last_modified, it.in_inventory) }
+                    }
                 }
             }
         if (destroyed.isNotEmpty()) {
@@ -115,5 +114,12 @@ class PostgresIngredientStore(
         return destroyed
     }
 }
+
+private fun toApiIngredient(
+    id: UUID,
+    name: String,
+    lastModified: OffsetDateTime,
+    inInventory: Boolean,
+): ApiIngredient = ApiIngredient(IngredientId(id.toKotlinUuid()), name, lastModified.toKotlinInstant(), inInventory)
 
 private fun OffsetDateTime.toKotlinInstant(): Instant = toInstant().toKotlinInstant()
