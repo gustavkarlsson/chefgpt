@@ -167,11 +167,14 @@ class IngredientsViewModel(
     private fun addIngredient(name: String) {
         val trimmed = name.trim()
         if (trimmed.isBlank()) return
-        innerState.update { it.copy(inputText = "", overrides = it.overrides + (trimmed to true)) }
+        innerState.update { it.copy(inputText = "") }
         viewModelScope.launch {
+            // Turn a pasted emoji glyph into its alias (e.g. "🍌" -> "banana") so the backend stores a name.
+            val resolved = emojiResolverFactory.create().resolveAlias(trimmed) ?: trimmed
+            innerState.update { it.copy(overrides = it.overrides + (resolved to true)) }
             client
-                .addIngredient(route.sessionId, trimmed)
-                .onErr { log.e { "Failed to add ingredient '$trimmed': ${it.errorBody}" } }
+                .addIngredient(route.sessionId, resolved)
+                .onErr { log.e { "Failed to add ingredient '$resolved': ${it.errorBody}" } }
         }
     }
 }

@@ -39,4 +39,25 @@ class IngredientEmojiResolverTest {
         val emptyResolver = runBlocking { IngredientEmojiResolver.Factory(isSupported = { false }).create() }
         assertNull(emptyResolver.resolve("apple"))
     }
+
+    @Test
+    fun `resolves an alias from an emoji glyph`() {
+        assertEquals("banana", resolver.resolveAlias("🍌"))
+    }
+
+    @Test
+    fun `ignores surrounding whitespace when resolving an alias`() {
+        assertEquals("banana", resolver.resolveAlias("  🍌 "))
+    }
+
+    @Test
+    fun `returns null when resolving an alias from non-emoji text`() {
+        assertNull(resolver.resolveAlias("banana"))
+    }
+
+    @Test
+    fun `resolves an alias even when the emoji is unsupported by the platform`() {
+        val emptyResolver = runBlocking { IngredientEmojiResolver.Factory(isSupported = { false }).create() }
+        assertEquals("banana", emptyResolver.resolveAlias("🍌"))
+    }
 }

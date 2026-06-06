@@ -18,6 +18,7 @@ import se.gustavkarlsson.chefgpt.IoOrDefault
  */
 class IngredientEmojiResolver internal constructor(
     private val byAlias: Map<String, Emoji>,
+    private val aliasByEmoji: Map<String, String>,
 ) {
     private val cache = mutableMapOf<String, Emoji?>()
 
@@ -27,6 +28,12 @@ class IngredientEmojiResolver internal constructor(
         } else {
             parseEmojiAliasOrNull(name, byAlias.keys)?.let(byAlias::get).also { cache[name] = it }
         }
+
+    /**
+     * Returns the short-code alias for a UTF-8 emoji glyph (e.g. "🍌" -> "banana"), or `null` if [emoji] is not a
+     * known emoji. Independent of platform support, so a glyph still maps even when it doesn't render natively.
+     */
+    fun resolveAlias(emoji: String): String? = aliasByEmoji[emoji]
 
     /**
      * Loads and processes the Emoji.kt catalog to build [IngredientEmojiResolver] instances.
@@ -51,7 +58,8 @@ class IngredientEmojiResolver internal constructor(
 
         private suspend fun build(): IngredientEmojiResolver =
             withContext(dispatcher) {
-                val supported = Emoji.list().filter { isSupported?.invoke(it) ?: true }
+                val all = Emoji.list()
+                val supported = all.filter { isSupported?.invoke(it) ?: true }
                 val byAlias =
                     buildMap {
                         fun addIfAbsent(
@@ -73,7 +81,16 @@ class IngredientEmojiResolver internal constructor(
                             }
                         }
                     }
-                IngredientEmojiResolver(byAlias)
+                // Reverse lookup spans the full catalog (not just [supported]) so a glyph maps to its alias
+                // regardless of whether the platform can render it.
+                val aliasByEmoji =
+                    buildMap {
+                        all.forEach { emoji ->
+                            val alias = emoji.details.aliases.firstOrNull() ?: return@forEach
+                            if (!containsKey(emoji.details.string)) put(emoji.details.string, alias)
+                        }
+                    }
+                IngredientEmojiResolver(byAlias, aliasByEmoji)
             }
     }
 }
