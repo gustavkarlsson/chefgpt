@@ -127,6 +127,26 @@ class ChefGptClient(
         }
     }
 
+    // Uploads the image to the ingredient scanner. The server blocks until the
+    // scanning agent has produced a result, so this call can take a while.
+    // Returns how many ingredients were found in the image.
+    suspend fun scanIngredients(
+        sessionId: SessionId,
+        data: Path,
+        contentType: ContentType,
+    ): Result<Int, ErrorResponse> {
+        val response =
+            httpClient.post("$baseUrl/ingredients/scan") {
+                sessionIdHeader(sessionId)
+                contentType(contentType)
+                accept(ContentType.Text.Plain)
+                setBody(data.byteReadChannel())
+            }
+        return response.toResultSafe {
+            response.bodyAsText().toInt()
+        }
+    }
+
     suspend fun createChat(sessionId: SessionId): Result<ApiChat, ErrorResponse> {
         val response =
             httpClient.post("$baseUrl/chats") {

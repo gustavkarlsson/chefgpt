@@ -20,7 +20,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -31,6 +33,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -43,11 +46,14 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
+import kotlinx.io.files.Path
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatar
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatarModel
 import se.gustavkarlsson.chefgpt.navigation.Route
+import se.gustavkarlsson.chefgpt.pickImageFile
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsViewModel.Ingredient
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsViewModel.ViewState
 
@@ -117,8 +123,10 @@ private fun Content(viewState: ViewState) {
 
             IngredientInput(
                 inputText = viewState.inputText,
+                scanningImage = viewState.scanningImage,
                 onInputChange = viewState.onInputChange,
                 onClickAdd = viewState.onClickAdd,
+                onScanImageSelected = viewState.onScanImageSelected,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -207,8 +215,10 @@ private fun IngredientCard(
 @Composable
 private fun IngredientInput(
     inputText: String,
+    scanningImage: Boolean,
     onInputChange: (String) -> Unit,
     onClickAdd: (() -> Unit)?,
+    onScanImageSelected: (Path) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -244,6 +254,26 @@ private fun IngredientInput(
                 placeholder = { Text("Add an ingredient...") },
                 singleLine = true,
             )
+            val scope = rememberCoroutineScope()
+            if (scanningImage) {
+                // Scanning can take a while; show progress in place of the camera button.
+                Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                }
+            } else {
+                IconButton(
+                    onClick = {
+                        scope.launch {
+                            pickImageFile()?.let(onScanImageSelected)
+                        }
+                    },
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CameraAlt,
+                        contentDescription = "Scan ingredients from image",
+                    )
+                }
+            }
             IconButton(
                 onClick = { onClickAdd?.invoke() },
                 enabled = onClickAdd != null,
