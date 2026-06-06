@@ -133,6 +133,47 @@ class InMemoryChatRepositoryTest {
         }
 
     @Test
+    fun `rename sets the chat name`() =
+        runTest {
+            val chat = repo.create(userId)
+
+            repo.rename(userId, chat.id, "Weeknight pasta")
+
+            assertEquals("Weeknight pasta", repo.get(userId, chat.id)?.name)
+        }
+
+    @Test
+    fun `rename returns true when chat exists`() =
+        runTest {
+            val chat = repo.create(userId)
+
+            assertTrue(repo.rename(userId, chat.id, "Weeknight pasta"))
+        }
+
+    @Test
+    fun `rename returns false when chat does not exist`() =
+        runTest {
+            assertFalse(repo.rename(userId, ChatId.random(), "Weeknight pasta"))
+        }
+
+    @Test
+    fun `rename returns false when chat belongs to another user`() =
+        runTest {
+            val chat = repo.create(userId)
+
+            assertFalse(repo.rename(otherUserId, chat.id, "Weeknight pasta"))
+        }
+
+    @Test
+    fun `rename does not affect another user's chat`() =
+        runTest {
+            val chat = repo.create(userId)
+            repo.rename(otherUserId, chat.id, "Weeknight pasta")
+
+            assertNull(repo.get(userId, chat.id)?.name)
+        }
+
+    @Test
     fun `stream emits empty list for new user`() =
         runTest {
             val chats = repo.stream(userId).first()

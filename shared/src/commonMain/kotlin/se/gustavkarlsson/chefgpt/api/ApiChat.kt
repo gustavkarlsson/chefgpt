@@ -9,4 +9,5 @@ import kotlin.time.Instant
 data class ApiChat(
     val id: ChatId,
     val createdAt: Instant,
+    val name: String? = null,
 )

@@ -47,4 +47,4 @@ class ApiChatRepository(
             }
 }
 
-private fun ApiChat.toChat(): Chat = Chat(id, createdAt)
+private fun ApiChat.toChat(): Chat = Chat(id, createdAt, name)

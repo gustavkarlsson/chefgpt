@@ -44,4 +44,24 @@ class InMemoryChatRepository : ChatRepository {
         }
         return removed
     }
+
+    override suspend fun rename(
+        userId: UserId,
+        chatId: ChatId,
+        name: String,
+    ): Boolean {
+        val flow = storage[userId] ?: return false
+        var renamed = false
+        flow.update { chats ->
+            chats.map { chat ->
+                if (chat.id == chatId) {
+                    renamed = true
+                    chat.copy(name = name)
+                } else {
+                    chat
+                }
+            }
+        }
+        return renamed
+    }
 }

@@ -6,6 +6,7 @@ import ai.koog.prompt.message.Message
 import ai.koog.prompt.message.MessagePart
 import ai.koog.prompt.message.RequestMetaInfo
 import se.gustavkarlsson.chefgpt.api.ApiAction
+import se.gustavkarlsson.chefgpt.api.ApiAgentChatNamed
 import se.gustavkarlsson.chefgpt.api.ApiAgentMessage
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserJoined
@@ -30,6 +31,14 @@ fun Event.toApiOrNull(): ApiEvent? =
 
         is Event.Message -> {
             message.toApiOrNull(id, timestamp)
+        }
+
+        is Event.ChatNamed -> {
+            ApiAgentChatNamed(
+                id = id,
+                timestamp = timestamp,
+                name = name,
+            )
         }
     }
 

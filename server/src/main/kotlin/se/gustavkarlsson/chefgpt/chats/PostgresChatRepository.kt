@@ -44,6 +44,26 @@ class PostgresChatRepository(
         return deleted
     }
 
+    override suspend fun rename(
+        userId: UserId,
+        chatId: ChatId,
+        name: String,
+    ): Boolean {
+        val renamed =
+            db.use {
+                chatQueries
+                    .renameByUserIdAndChatId(
+                        name = name,
+                        user_id = userId.value.toJavaUuid(),
+                        id = chatId.value.toJavaUuid(),
+                    ).executeAsOneOrNull() != null
+            }
+        if (renamed) {
+            syncer.notifyChange(userId)
+        }
+        return renamed
+    }
+
     override fun stream(userId: UserId): Flow<List<Chat>> =
         syncer
             .notifications(userId)
@@ -52,7 +72,9 @@ class PostgresChatRepository(
                     chatQueries
                         .selectByUserId(user_id = userId.value.toJavaUuid())
                         .executeAsList()
-                        .map { row -> Chat(ChatId(row.id.toKotlinUuid()), row.created_at.toKotlinInstant()) }
+                        .map { row ->
+                            Chat(ChatId(row.id.toKotlinUuid()), row.created_at.toKotlinInstant(), row.name)
+                        }
                 }
             }.distinctUntilChanged()
 
@@ -64,7 +86,7 @@ class PostgresChatRepository(
             chatQueries
                 .selectByUserIdAndChatId(user_id = userId.value.toJavaUuid(), id = chatId.value.toJavaUuid())
                 .executeAsOneOrNull()
-                ?.let { row -> Chat(ChatId(row.id.toKotlinUuid()), row.created_at.toKotlinInstant()) }
+                ?.let { row -> Chat(ChatId(row.id.toKotlinUuid()), row.created_at.toKotlinInstant(), row.name) }
         }
 
     override suspend fun contains(

@@ -12,6 +12,12 @@ interface ChatRepository {
         chatId: ChatId,
     ): Boolean
 
+    suspend fun rename(
+        userId: UserId,
+        chatId: ChatId,
+        name: String,
+    ): Boolean
+
     fun stream(userId: UserId): Flow<List<Chat>>
 
     suspend operator fun get(

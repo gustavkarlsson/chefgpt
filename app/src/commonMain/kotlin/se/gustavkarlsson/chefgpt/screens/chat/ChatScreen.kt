@@ -59,6 +59,7 @@ import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import se.gustavkarlsson.chefgpt.api.ApiAgentChatNamed
 import se.gustavkarlsson.chefgpt.api.ApiAgentEvent
 import se.gustavkarlsson.chefgpt.api.ApiAgentMessage
 import se.gustavkarlsson.chefgpt.api.ApiAgentReasoning
@@ -168,6 +169,7 @@ private fun MessageBubble(event: ApiEvent) {
     val isUser =
         when (event) {
             is ApiSystemEvent -> return
+            is ApiAgentChatNamed -> return
             is ApiAgentEvent -> false
             is ApiUserEvent -> true
         }
@@ -219,6 +221,7 @@ private fun MessageBubble(event: ApiEvent) {
                     when (event) {
                         is ApiAgentMessage -> event.text
                         is ApiAgentReasoning -> event.text
+                        is ApiAgentChatNamed -> null
                         is ApiUserMessage -> event.text
                     }
                 text?.let {

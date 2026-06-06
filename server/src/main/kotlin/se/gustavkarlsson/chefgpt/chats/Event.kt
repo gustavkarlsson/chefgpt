@@ -30,4 +30,12 @@ sealed interface Event {
         override val timestamp: Instant,
         val joinId: JoinId,
     ) : Event
+
+    @Serializable
+    @SerialName("chat-named")
+    data class ChatNamed(
+        override val id: EventId,
+        override val timestamp: Instant,
+        val name: String,
+    ) : Event
 }

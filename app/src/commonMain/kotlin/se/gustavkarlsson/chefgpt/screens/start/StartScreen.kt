@@ -141,11 +141,15 @@ private fun ChatItem(
     onClick: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    val formatted =
-        chat.createdAt
-            .toString()
-            .replace("T", " ")
-            .take(19)
+    val title =
+        chat.name ?: run {
+            val formatted =
+                chat.createdAt
+                    .toString()
+                    .replace("T", " ")
+                    .take(19)
+            "Chat from $formatted"
+        }
     Row(
         modifier =
             Modifier
@@ -155,7 +159,7 @@ private fun ChatItem(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = "Chat from $formatted",
+            text = title,
             style = MaterialTheme.typography.bodyMedium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

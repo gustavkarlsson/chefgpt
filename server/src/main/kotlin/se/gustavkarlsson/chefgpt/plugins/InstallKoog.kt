@@ -38,6 +38,11 @@ fun Application.installKoog() {
                     If there are too few results, suggest that the user updates their ingredients.
 
                     When the used has picked a recipe, send the recipe to them.
+
+                    As soon as you understand what the user wants to do in this chat,
+                    give the chat a short, descriptive name using the nameChat tool.
+                    Only name the chat once you have enough context, and feel free to
+                    rename it later if the topic changes.
                     """.trimIndent(),
                 )
             }
