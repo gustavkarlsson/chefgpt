@@ -6,6 +6,7 @@ import org.koin.dsl.module
 import se.gustavkarlsson.chefgpt.agent.AiAgent
 import se.gustavkarlsson.chefgpt.agent.FakeAiAgent
 import se.gustavkarlsson.chefgpt.agent.KoogAiAgent
+import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventRepository
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 
@@ -16,7 +17,9 @@ fun Application.createAiAgentModule() =
             when (val type = config.property("bindings.agent").getString()) {
                 "llm" -> {
                     val ingredientStore = get<IngredientStore>()
-                    KoogAiAgent(ingredientStore)
+                    val chatRepository = get<ChatRepository>()
+                    val eventRepository = get<EventRepository>()
+                    KoogAiAgent(ingredientStore, chatRepository, eventRepository)
                 }
 
                 "fake" -> {

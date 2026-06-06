@@ -8,6 +8,12 @@ DELETE FROM chat
 WHERE user_id = ? AND id = ?
 RETURNING id;
 
+renameByUserIdAndChatId:
+UPDATE chat
+SET name = ?
+WHERE user_id = ? AND id = ?
+RETURNING id;
+
 selectByUserId:
 SELECT *
 FROM chat

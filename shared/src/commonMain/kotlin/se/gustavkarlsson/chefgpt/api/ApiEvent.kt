@@ -64,6 +64,20 @@ data class ApiAgentReasoning(
 }
 
 @Serializable
+@SerialName("api-agent-chat-named")
+data class ApiAgentChatNamed(
+    override val id: EventId,
+    override val timestamp: Instant,
+    val name: String,
+) : ApiAgentEvent {
+    init {
+        require(name.isNotBlank()) {
+            "Name must not be blank"
+        }
+    }
+}
+
+@Serializable
 @SerialName("api-user-joined")
 data class ApiUserJoined(
     override val id: EventId,

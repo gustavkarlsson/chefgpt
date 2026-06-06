@@ -74,4 +74,4 @@ suspend fun ApplicationCall.getChatId(): Result<ChatId, ResponseData<ApiError>> 
         }
 }
 
-fun Chat.toApi(): ApiChat = ApiChat(id, createdAt)
+fun Chat.toApi(): ApiChat = ApiChat(id, createdAt, name)
