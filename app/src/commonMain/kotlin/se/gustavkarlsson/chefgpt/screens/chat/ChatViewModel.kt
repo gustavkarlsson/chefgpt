@@ -60,6 +60,7 @@ class ChatViewModel(
         val onClickSend: (() -> Unit)?,
         val onImageCleared: (() -> Unit)?,
         val onClickBack: () -> Unit,
+        val onClickIngredients: () -> Unit,
     ) {
         val onUserTextChanged: (String) -> Unit
             get() = { text -> innerState.update { it.copy(userText = text) } }
@@ -117,6 +118,7 @@ class ChatViewModel(
                     null
                 },
             onClickBack = { navigator.pop() },
+            onClickIngredients = { navigator.push(Route.Ingredients(chat.sessionId)) },
         )
 
     private fun State.allowsSend(): Boolean =

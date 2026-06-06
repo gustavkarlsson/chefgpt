@@ -55,6 +55,7 @@ class StartViewModel(
             val onClickNewChat: () -> Unit,
             val onClickChat: (Chat) -> Unit,
             val onClickDeleteChat: (Chat) -> Unit,
+            val onClickIngredients: () -> Unit,
             val onClickLogout: () -> Unit,
         ) : ViewState
     }
@@ -135,6 +136,7 @@ class StartViewModel(
                 onClickNewChat = { onClickNewChat(sessionCredentials) },
                 onClickChat = { chat -> navigator.push(Route.Chat(sessionCredentials.sessionId, chat.id)) },
                 onClickDeleteChat = { chat -> onClickDeleteChat(sessionCredentials, chat) },
+                onClickIngredients = { navigator.push(Route.Ingredients(sessionCredentials.sessionId)) },
                 onClickLogout = { onClickLogout() },
             )
         }

@@ -20,6 +20,7 @@ import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.screens.chat.ChatScreen
+import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsScreen
 import se.gustavkarlsson.chefgpt.screens.start.StartScreen
 import se.gustavkarlsson.chefgpt.theme.ChefGptTheme
 
@@ -54,6 +55,7 @@ fun App() {
                 entryProvider {
                     entry<Route.Start> { StartScreen() }
                     entry<Route.Chat> { key -> ChatScreen(key) }
+                    entry<Route.Ingredients> { key -> IngredientsScreen(key) }
                 },
         )
     }
