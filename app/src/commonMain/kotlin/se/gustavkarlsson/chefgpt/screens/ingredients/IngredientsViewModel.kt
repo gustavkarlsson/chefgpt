@@ -34,8 +34,6 @@ class IngredientsViewModel(
     private data class State(
         // Latest ingredients reported by the backend stream.
         val backendIngredients: List<ApiIngredient> = emptyList(),
-        // Optimistic inventory overrides by name, dropped once the backend agrees.
-        val overrides: Map<String, Boolean> = emptyMap(),
         val inputText: String = "",
         // Resolves ingredient emoji; null until the emoji catalog has loaded.
         val emojiResolver: IngredientEmojiResolver? = null,
@@ -81,16 +79,7 @@ class IngredientsViewModel(
             while (true) {
                 try {
                     client.listenToIngredients(route.sessionId).collect { ingredients ->
-                        innerState.update { state ->
-                            state.copy(
-                                backendIngredients = ingredients,
-                                // Drop overrides the backend has caught up with.
-                                overrides =
-                                    state.overrides.filterNot { (name, inInventory) ->
-                                        ingredients.firstOrNull { it.name == name }?.inInventory == inInventory
-                                    },
-                            )
-                        }
+                        innerState.update { it.copy(backendIngredients = ingredients) }
                     }
                     log.e { "Ingredient stream ended" }
                 } catch (e: CancellationException) {
@@ -116,7 +105,7 @@ class IngredientsViewModel(
                         Ingredient(
                             id = it.id,
                             name = it.name,
-                            inInventory = overrides[it.name] ?: it.inInventory,
+                            inInventory = it.inInventory,
                             emoji = emojiResolver.resolve(it.name),
                         )
                     }
@@ -134,7 +123,6 @@ class IngredientsViewModel(
     private fun onClickIngredient(ingredient: Ingredient) {
         val target = !ingredient.inInventory
         // Creation is by name; removal is by id.
-        innerState.update { it.copy(overrides = it.overrides + (ingredient.name to target)) }
         viewModelScope.launch {
             val result =
                 if (target) {
@@ -150,13 +138,6 @@ class IngredientsViewModel(
     }
 
     private fun destroyIngredient(ingredient: Ingredient) {
-        // Optimistically drop it entirely; the backend stream will confirm.
-        innerState.update {
-            it.copy(
-                backendIngredients = it.backendIngredients.filterNot { stored -> stored.id == ingredient.id },
-                overrides = it.overrides - ingredient.name,
-            )
-        }
         viewModelScope.launch {
             client
                 .removeIngredient(route.sessionId, ingredient.id, destroy = true)
@@ -171,7 +152,6 @@ class IngredientsViewModel(
         viewModelScope.launch {
             // Turn a pasted emoji glyph into its alias (e.g. "🍌" -> "banana") so the backend stores a name.
             val resolved = emojiResolverFactory.create().resolveAlias(trimmed) ?: trimmed
-            innerState.update { it.copy(overrides = it.overrides + (resolved to true)) }
             client
                 .addIngredient(route.sessionId, resolved)
                 .onErr { log.e { "Failed to add ingredient '$resolved': ${it.errorBody}" } }
