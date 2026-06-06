@@ -14,9 +14,9 @@ fun Route.putIngredientRoute() {
         val ingredientStore = get<IngredientStore>()
         val userId = call.requireSession().user.id
         val name = call.parameters.getOrFail("name")
-        val added = ingredientStore.addIngredients(userId, listOf(name))
-        if (added.isNotEmpty()) {
-            call.respond(HttpStatusCode.Created)
+        val added = ingredientStore.addIngredients(userId, listOf(name)).singleOrNull()
+        if (added != null) {
+            call.respond(HttpStatusCode.Created, added)
         } else {
             call.respond(HttpStatusCode.NoContent)
         }

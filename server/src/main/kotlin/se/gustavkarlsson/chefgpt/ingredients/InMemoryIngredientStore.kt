@@ -4,44 +4,83 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.updateAndGet
+import se.gustavkarlsson.chefgpt.api.ApiIngredient
+import se.gustavkarlsson.chefgpt.api.IngredientId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Clock
 
 class InMemoryIngredientStore(
-    private val storage: ConcurrentHashMap<UserId, MutableStateFlow<Set<String>>> = ConcurrentHashMap(),
+    private val storage: ConcurrentHashMap<UserId, MutableStateFlow<Map<String, ApiIngredient>>> = ConcurrentHashMap(),
 ) : IngredientStore {
-    override suspend fun getIngredients(userId: UserId): List<String> = storage[userId]?.value.orEmpty().toList()
+    override suspend fun getIngredients(userId: UserId): List<ApiIngredient> =
+        storage[userId]
+            ?.value
+            ?.values
+            ?.toList()
+            .orEmpty()
 
-    override fun streamIngredients(userId: UserId): Flow<List<String>> =
+    override fun streamIngredients(userId: UserId): Flow<List<ApiIngredient>> =
         storage
-            .getOrPut(userId) { MutableStateFlow(emptySet()) }
-            .map { it.toList() }
+            .getOrPut(userId) { MutableStateFlow(emptyMap()) }
+            .map { it.values.toList() }
 
     override suspend fun addIngredients(
         userId: UserId,
         ingredients: List<String>,
-    ): List<String> {
-        val storedIngredients = storage.getOrPut(userId) { MutableStateFlow(emptySet()) }
-        val normalized = ingredients.map { it.trim().lowercase() }.toSet()
-        val preUpdate = storedIngredients.getAndUpdate { it + normalized }
-        val added = normalized - preUpdate
-        return added.toList()
+    ): List<ApiIngredient> {
+        val now = Clock.System.now()
+        val normalized = ingredients.map { it.trim().lowercase() }.distinct()
+        var addedNames: List<String> = emptyList()
+        val updated =
+            storedIngredients(userId).updateAndGet { current ->
+                addedNames = normalized.filter { current[it]?.inInventory != true }
+                current +
+                    addedNames.associateWith { name ->
+                        ApiIngredient(
+                            id = current[name]?.id ?: IngredientId.random(),
+                            name = name,
+                            lastModified = now,
+                            inInventory = true,
+                        )
+                    }
+            }
+        return addedNames.map { updated.getValue(it) }
     }
 
     override suspend fun removeIngredients(
         userId: UserId,
-        ingredients: List<String>,
-    ): List<String> {
-        val storedIngredients = storage.getOrPut(userId) { MutableStateFlow(emptySet()) }
-        val normalized = ingredients.map { it.trim().lowercase() }.toSet()
-        val preUpdate = storedIngredients.getAndUpdate { it - normalized }
-        val removed = normalized intersect preUpdate
-        return removed.toList()
+        ids: List<IngredientId>,
+    ): List<ApiIngredient> {
+        val now = Clock.System.now()
+        val idSet = ids.toSet()
+        val preUpdate =
+            storedIngredients(userId).getAndUpdate { current ->
+                current +
+                    current.values
+                        .filter { it.id in idSet && it.inInventory }
+                        .associate { it.name to it.copy(inInventory = false, lastModified = now) }
+            }
+        return preUpdate.values
+            .filter { it.id in idSet && it.inInventory }
+            .map { it.copy(inInventory = false, lastModified = now) }
     }
 
-    override suspend fun clearIngredients(userId: UserId): List<String> {
-        val storedIngredients = storage.getOrPut(userId) { MutableStateFlow(emptySet()) }
-        val preUpdate = storedIngredients.getAndUpdate { emptySet() }
-        return preUpdate.toList()
+    override suspend fun destroyIngredients(
+        userId: UserId,
+        ids: List<IngredientId>,
+    ): List<ApiIngredient> {
+        val idSet = ids.toSet()
+        val preUpdate =
+            storedIngredients(userId).getAndUpdate {
+                it.filterValues { ingredient ->
+                    ingredient.id !in idSet
+                }
+            }
+        return preUpdate.values.filter { it.id in idSet }
     }
+
+    private fun storedIngredients(userId: UserId): MutableStateFlow<Map<String, ApiIngredient>> =
+        storage.getOrPut(userId) { MutableStateFlow(emptyMap()) }
 }

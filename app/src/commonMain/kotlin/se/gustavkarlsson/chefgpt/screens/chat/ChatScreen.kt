@@ -1,5 +1,8 @@
 package se.gustavkarlsson.chefgpt.screens.chat
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.hoverable
@@ -14,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -39,10 +43,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
@@ -53,8 +60,12 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
 import coil3.compose.AsyncImage
 import com.mikepenz.markdown.m3.Markdown
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
 import org.koin.compose.viewmodel.koinViewModel
@@ -67,19 +78,25 @@ import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiSystemEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserMessage
+import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatar
+import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatarModel
 import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.pickImageFile
 import se.gustavkarlsson.chefgpt.screens.chat.ChatViewModel.ViewState
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun ChatScreen(chat: Route.Chat) {
     val viewModel = koinViewModel<ChatViewModel> { parametersOf(chat) }
     val viewState by viewModel.viewState.collectAsState()
-    Content(viewState)
+    Content(viewState, viewModel.ingredientChanges)
 }
 
 @Composable
-private fun Content(viewState: ViewState) {
+private fun Content(
+    viewState: ViewState,
+    ingredientChanges: Flow<IngredientChange>,
+) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -100,12 +117,10 @@ private fun Content(viewState: ViewState) {
                 ) {
                 }
                 Spacer(Modifier.weight(1f))
-                IconButton(onClick = viewState.onClickIngredients) {
-                    Icon(
-                        imageVector = Icons.Default.Kitchen,
-                        contentDescription = "Ingredients",
-                    )
-                }
+                IngredientButton(
+                    ingredientChanges = ingredientChanges,
+                    onClick = viewState.onClickIngredients,
+                )
             }
         },
     ) { paddingValues ->
@@ -128,6 +143,72 @@ private fun Content(viewState: ViewState) {
                 onImageAttached = viewState.onImageAttached,
                 onImageCleared = viewState.onImageCleared,
                 modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+// How long an ingredient avatar travels onto/off the button, plus the fade applied at each end of that travel
+// (kept well under half the travel so it reads as a quick fade-in then fade-out while moving), and the pause
+// between queued changes. Avatars start/end this far toward the start edge (RTL-aware) of the button.
+private val TRAVEL = 500.milliseconds
+private val FADE = 140.milliseconds
+private val CHANGE_GAP = 100.milliseconds
+private val TRAVEL_DISTANCE = 48.dp
+
+@Composable
+private fun IngredientButton(
+    ingredientChanges: Flow<IngredientChange>,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    // The queue buffers changes so they animate one at a time, even when several
+    // ingredients are added or removed in quick succession.
+    val queue = remember { Channel<IngredientChange>(Channel.UNLIMITED) }
+    LaunchedEffect(ingredientChanges) {
+        ingredientChanges.collect { queue.send(it) }
+    }
+
+    var current by remember { mutableStateOf<IngredientChange?>(null) }
+    val progress = remember { Animatable(0f) }
+    LaunchedEffect(queue) {
+        for (change in queue) {
+            current = change
+            progress.snapTo(0f)
+            progress.animateTo(1f, tween(TRAVEL.inWholeMilliseconds.toInt(), easing = LinearEasing))
+            delay(CHANGE_GAP)
+        }
+    }
+
+    Box(contentAlignment = Alignment.Center, modifier = modifier) {
+        current?.let { change ->
+            val p = progress.value
+            // Added travels onto the button (start edge -> center); removed travels off it (center -> start edge).
+            val (from, to) =
+                when (change) {
+                    is IngredientChange.Added -> -TRAVEL_DISTANCE to 0.dp
+                    is IngredientChange.Removed -> 0.dp to -TRAVEL_DISTANCE
+                }
+            val fade = (FADE / TRAVEL).toFloat()
+            val alpha =
+                when {
+                    p < fade -> p / fade
+                    p > 1f - fade -> (1f - p) / fade
+                    else -> 1f
+                }.coerceIn(0f, 1f)
+            EmojiAvatar(
+                model = EmojiAvatarModel.of(change.emoji, change.name),
+                modifier =
+                    Modifier
+                        .align(Alignment.Center)
+                        .offset(x = lerp(from, to, p))
+                        .alpha(alpha),
+            )
+        }
+        IconButton(onClick = onClick) {
+            Icon(
+                imageVector = Icons.Default.Kitchen,
+                contentDescription = "Ingredients",
             )
         }
     }

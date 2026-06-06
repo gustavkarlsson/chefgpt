@@ -10,6 +10,7 @@ bcrypt = "0.10.2"
 coil = "3.4.0"
 composeHotReload = "1.0.0"
 composeMultiplatform = "1.10.3"
+emoji = "2.4.0"
 flyway = "12.2.0"
 jvmToolchain = "21" # Jetbrains Hot-Reload needs this
 kermit = "2.1.0"
@@ -117,6 +118,9 @@ slf4jApi = { module = "org.slf4j:slf4j-api", version.ref = "slf4jSimple" }
 # Coil
 coilCompose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 coilNetworkKtor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
+
+# Emoji
+emojiCore = { module = "org.kodein.emoji:emoji-kt", version.ref = "emoji" }
 
 # Misc
 bcrypt = { module = "at.favre.lib:bcrypt", version.ref = "bcrypt" }

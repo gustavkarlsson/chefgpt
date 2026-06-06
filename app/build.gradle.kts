@@ -73,6 +73,7 @@ kotlin {
             implementation(libs.kotlinxSerializationJson)
             implementation(libs.coilCompose)
             implementation(libs.coilNetworkKtor)
+            implementation(libs.emojiCore)
             implementation(libs.navigation3Ui)
             implementation(libs.koinCore)
             implementation(libs.koinAnnotations)

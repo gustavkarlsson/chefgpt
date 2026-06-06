@@ -1,23 +1,21 @@
 package se.gustavkarlsson.chefgpt.screens.ingredients
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.hoverable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -33,11 +31,9 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isShiftPressed
@@ -49,6 +45,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatar
+import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatarModel
 import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsViewModel.Ingredient
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsViewModel.ViewState
@@ -89,19 +87,32 @@ private fun Content(viewState: ViewState) {
                     .fillMaxSize()
                     .padding(paddingValues),
         ) {
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(100.dp),
-                modifier = Modifier.weight(1f).fillMaxWidth(),
-                contentPadding = PaddingValues(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(items = viewState.ingredients, key = { it.name }) { ingredient ->
-                    IngredientCard(
-                        ingredient = ingredient,
-                        onClick = { viewState.onClickIngredient(ingredient.name) },
+            val gridState = rememberLazyGridState()
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                LazyVerticalGrid(
+                    state = gridState,
+                    columns = GridCells.FixedSize(100.dp),
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    ingredientSection(
+                        title = null,
+                        ingredients = viewState.inStore,
+                        onClickIngredient = viewState.onClickIngredient,
+                    )
+                    ingredientSection(
+                        title = "Previously in store",
+                        ingredients = viewState.previouslyInStore,
+                        onClickIngredient = viewState.onClickIngredient,
+                        onDestroyIngredient = viewState.onDestroyIngredient,
                     )
                 }
+                IngredientScrollbar(
+                    gridState = gridState,
+                    modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                )
             }
 
             IngredientInput(
@@ -114,29 +125,59 @@ private fun Content(viewState: ViewState) {
     }
 }
 
+private fun LazyGridScope.ingredientSection(
+    title: String?,
+    ingredients: List<Ingredient>,
+    onClickIngredient: (Ingredient) -> Unit,
+    onDestroyIngredient: ((Ingredient) -> Unit)? = null,
+) {
+    if (ingredients.isEmpty()) return
+    if (title != null) {
+        stickyHeader(key = title) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(vertical = 8.dp),
+            )
+        }
+    }
+    items(items = ingredients, key = { it.id }) { ingredient ->
+        IngredientCard(
+            ingredient = ingredient,
+            onClick = { onClickIngredient(ingredient) },
+            onDestroy = onDestroyIngredient?.let { { it(ingredient) } },
+            modifier = Modifier.animateItem(),
+        )
+    }
+}
+
 @Composable
 private fun IngredientCard(
     ingredient: Ingredient,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onDestroy: (() -> Unit)? = null,
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isHovered by interactionSource.collectIsHoveredAsState()
     Surface(
         modifier =
-            Modifier
+            modifier
                 .size(100.dp)
-                .hoverable(interactionSource = interactionSource)
                 .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
-        Box {
+        Box(modifier = Modifier.fillMaxSize()) {
             Column(
-                modifier = Modifier.fillMaxSize().padding(8.dp),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .alpha(if (ingredient.inInventory) 1f else 0.5f)
+                        .padding(8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                IngredientImage(ingredient.name)
+                EmojiAvatar(EmojiAvatarModel.of(ingredient.emoji, ingredient.name))
                 Text(
                     text = ingredient.name,
                     style = MaterialTheme.typography.bodySmall,
@@ -146,52 +187,19 @@ private fun IngredientCard(
                     modifier = Modifier.padding(top = 4.dp),
                 )
             }
-            // Removed cards get a persistent gray overlay; a non-removed card shows
-            // only the trash icon on hover to signal that a click will remove it.
-            if (ingredient.removed || isHovered) {
-                Box(
-                    modifier =
-                        Modifier
-                            .matchParentSize()
-                            .then(
-                                if (ingredient.removed) {
-                                    Modifier.background(Color.Black.copy(alpha = 0.5f))
-                                } else {
-                                    Modifier
-                                },
-                            ),
-                    contentAlignment = Alignment.Center,
+            if (onDestroy != null) {
+                IconButton(
+                    onClick = onDestroy,
+                    modifier = Modifier.align(Alignment.BottomEnd).size(32.dp),
                 ) {
                     Icon(
                         imageVector = Icons.Default.Delete,
-                        contentDescription = if (ingredient.removed) "Removed" else "Remove",
-                        tint = if (ingredient.removed) Color.White else Color.Black,
+                        contentDescription = "Delete",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(18.dp),
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun IngredientImage(name: String) {
-    val emoji = ingredientEmoji(name)
-    if (emoji != null) {
-        Text(text = emoji, style = MaterialTheme.typography.headlineLarge)
-    } else {
-        Box(
-            modifier =
-                Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(colorForName(name)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = name.take(1).uppercase(),
-                style = MaterialTheme.typography.titleLarge,
-                color = Color.White,
-            )
         }
     }
 }

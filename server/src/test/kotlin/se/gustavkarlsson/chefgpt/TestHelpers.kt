@@ -9,6 +9,7 @@ import io.ktor.client.request.put
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.testing.ApplicationTestBuilder
 import se.gustavkarlsson.chefgpt.api.ApiChat
+import se.gustavkarlsson.chefgpt.api.ApiIngredient
 
 const val VALID_USERNAME = "testuser"
 const val VALID_PASSWORD = "Test123!"
@@ -46,15 +47,16 @@ suspend fun ApplicationTestBuilder.createChat(sessionId: String): ApiChat {
 suspend fun ApplicationTestBuilder.addIngredients(
     sessionId: String,
     vararg ingredients: String,
-) {
+): List<ApiIngredient> {
     val client =
         createClient {
             expectSuccess = true
             install(ContentNegotiation) { json() }
         }
-    for (ingredient in ingredients) {
-        client.put("/ingredients/$ingredient") {
-            header("Session-Id", sessionId)
-        }
+    return ingredients.map { ingredient ->
+        client
+            .put("/ingredients/$ingredient") {
+                header("Session-Id", sessionId)
+            }.body<ApiIngredient>()
     }
 }
