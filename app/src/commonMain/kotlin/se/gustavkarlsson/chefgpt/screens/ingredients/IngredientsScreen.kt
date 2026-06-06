@@ -54,18 +54,16 @@ import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatar
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatarModel
 import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.pickImageFile
-import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsViewModel.Ingredient
-import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsViewModel.ViewState
 
 @Composable
 fun IngredientsScreen(route: Route.Ingredients) {
     val viewModel = koinViewModel<IngredientsViewModel> { parametersOf(route) }
-    val viewState by viewModel.viewState.collectAsState()
-    Content(viewState)
+    val uiState by viewModel.uiState.collectAsState()
+    Content(uiState)
 }
 
 @Composable
-private fun Content(viewState: ViewState) {
+private fun Content(uiState: UiState) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -73,7 +71,7 @@ private fun Content(viewState: ViewState) {
                 modifier = Modifier.padding(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(onClick = viewState.onClickBack) {
+                IconButton(onClick = uiState.onClickBack) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
@@ -105,14 +103,14 @@ private fun Content(viewState: ViewState) {
                 ) {
                     ingredientSection(
                         title = null,
-                        ingredients = viewState.inStore,
-                        onClickIngredient = viewState.onClickIngredient,
+                        ingredients = uiState.inStore,
+                        onClickIngredient = uiState.onClickIngredient,
                     )
                     ingredientSection(
                         title = "Previously in store",
-                        ingredients = viewState.previouslyInStore,
-                        onClickIngredient = viewState.onClickIngredient,
-                        onDestroyIngredient = viewState.onDestroyIngredient,
+                        ingredients = uiState.previouslyInStore,
+                        onClickIngredient = uiState.onClickIngredient,
+                        onDestroyIngredient = uiState.onDestroyIngredient,
                     )
                 }
                 IngredientScrollbar(
@@ -122,11 +120,11 @@ private fun Content(viewState: ViewState) {
             }
 
             IngredientInput(
-                inputText = viewState.inputText,
-                scanningImage = viewState.scanningImage,
-                onInputChange = viewState.onInputChange,
-                onClickAdd = viewState.onClickAdd,
-                onScanImageSelected = viewState.onScanImageSelected,
+                inputText = uiState.inputText,
+                scanningImage = uiState.scanningImage,
+                onInputChange = uiState.onInputChange,
+                onClickAdd = uiState.onClickAdd,
+                onScanImageSelected = uiState.onScanImageSelected,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -135,9 +133,9 @@ private fun Content(viewState: ViewState) {
 
 private fun LazyGridScope.ingredientSection(
     title: String?,
-    ingredients: List<Ingredient>,
-    onClickIngredient: (Ingredient) -> Unit,
-    onDestroyIngredient: ((Ingredient) -> Unit)? = null,
+    ingredients: List<UiIngredient>,
+    onClickIngredient: (UiIngredient) -> Unit,
+    onDestroyIngredient: ((UiIngredient) -> Unit)? = null,
 ) {
     if (ingredients.isEmpty()) return
     if (title != null) {
@@ -162,7 +160,7 @@ private fun LazyGridScope.ingredientSection(
 
 @Composable
 private fun IngredientCard(
-    ingredient: Ingredient,
+    ingredient: UiIngredient,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     onDestroy: (() -> Unit)? = null,

@@ -34,49 +34,44 @@ class IngredientsViewModel(
     private val emojiResolverFactory: IngredientEmojiResolver.Factory,
     @InjectedParam private val route: Route.Ingredients,
 ) : ViewModel() {
-    private data class State(
-        // Latest ingredients reported by the backend stream.
-        val backendIngredients: List<ApiIngredient> = emptyList(),
-        val inputText: String = "",
-        // True while an image is being scanned for ingredients by the backend.
-        val scanningImage: Boolean = false,
-        // Resolves ingredient emoji; null until the emoji catalog has loaded.
-        val emojiResolver: IngredientEmojiResolver? = null,
-    )
-
-    data class Ingredient(
-        val id: IngredientId,
-        val name: String,
-        val inInventory: Boolean,
-        val emoji: Emoji?,
-    )
-
-    inner class ViewState(
-        // Ingredients currently in store, most recently modified last.
-        val inStore: List<Ingredient>,
-        // Ingredients that have previously been in store, most recently modified last.
-        val previouslyInStore: List<Ingredient>,
-        val inputText: String,
-        // True while an image is being scanned for ingredients.
-        val scanningImage: Boolean,
-        val onClickIngredient: (Ingredient) -> Unit,
-        val onDestroyIngredient: (Ingredient) -> Unit,
-        val onClickBack: () -> Unit,
-        val onScanImageSelected: (Path) -> Unit,
-    ) {
-        val onInputChange: (String) -> Unit
-            get() = { text -> innerState.update { it.copy(inputText = text) } }
-
-        val onClickAdd: (() -> Unit)?
-            get() = if (inputText.isNotBlank()) ({ addIngredient(inputText) }) else null
-    }
-
     private val innerState = MutableStateFlow(State())
 
-    val viewState: StateFlow<ViewState> =
+    val uiState: StateFlow<UiState> =
         innerState
-            .map { it.toViewState() }
-            .stateIn(viewModelScope, SharingStarted.Eagerly, innerState.value.toViewState())
+            .map { it.toUiState() }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, innerState.value.toUiState())
+
+    private fun State.toUiState(): UiState {
+        // Hold off on showing ingredients until the emoji catalog is ready, so each renders with its emoji.
+        val sorted =
+            if (emojiResolver == null) {
+                emptyList()
+            } else {
+                backendIngredients
+                    .sortedBy { it.lastModified }
+                    .map { it.toUiIngredient(emojiResolver) }
+            }
+        return UiState(
+            inStore = sorted.filter { it.inInventory },
+            previouslyInStore = sorted.filterNot { it.inInventory },
+            inputText = inputText,
+            scanningImage = scanningImage,
+            onClickIngredient = ::onClickIngredient,
+            onDestroyIngredient = ::destroyIngredient,
+            onInputChange = { text -> innerState.update { it.copy(inputText = text) } },
+            onClickAdd = if (inputText.isNotBlank()) ({ addIngredient(inputText) }) else null,
+            onClickBack = { navigator.pop() },
+            onScanImageSelected = ::scanImage,
+        )
+    }
+
+    private fun ApiIngredient.toUiIngredient(resolver: IngredientEmojiResolver): UiIngredient =
+        UiIngredient(
+            id = id,
+            name = name,
+            inInventory = inInventory,
+            emoji = resolver.resolve(name),
+        )
 
     init {
         viewModelScope.launch {
@@ -101,36 +96,7 @@ class IngredientsViewModel(
         }
     }
 
-    private fun State.toViewState(): ViewState {
-        // Hold off on showing ingredients until the emoji catalog is ready, so each renders with its emoji.
-        val sorted =
-            if (emojiResolver == null) {
-                emptyList()
-            } else {
-                backendIngredients
-                    .sortedBy { it.lastModified }
-                    .map {
-                        Ingredient(
-                            id = it.id,
-                            name = it.name,
-                            inInventory = it.inInventory,
-                            emoji = emojiResolver.resolve(it.name),
-                        )
-                    }
-            }
-        return ViewState(
-            inStore = sorted.filter { it.inInventory },
-            previouslyInStore = sorted.filterNot { it.inInventory },
-            inputText = inputText,
-            scanningImage = scanningImage,
-            onClickIngredient = ::onClickIngredient,
-            onDestroyIngredient = ::destroyIngredient,
-            onClickBack = { navigator.pop() },
-            onScanImageSelected = ::scanImage,
-        )
-    }
-
-    private fun onClickIngredient(ingredient: Ingredient) {
+    private fun onClickIngredient(ingredient: UiIngredient) {
         val target = !ingredient.inInventory
         // Creation is by name; removal is by id.
         viewModelScope.launch {
@@ -147,7 +113,7 @@ class IngredientsViewModel(
         }
     }
 
-    private fun destroyIngredient(ingredient: Ingredient) {
+    private fun destroyIngredient(ingredient: UiIngredient) {
         viewModelScope.launch {
             client
                 .removeIngredient(route.sessionId, ingredient.id, destroy = true)
@@ -156,7 +122,7 @@ class IngredientsViewModel(
     }
 
     private fun scanImage(image: Path) {
-        if (innerState.value.scanningImage) return
+        if (innerState.value.scanningImage) return // Already scanning
         innerState.update { it.copy(scanningImage = true) }
         viewModelScope.launch {
             try {
@@ -184,3 +150,36 @@ class IngredientsViewModel(
         }
     }
 }
+
+private data class State(
+    // Latest ingredients reported by the backend stream.
+    val backendIngredients: List<ApiIngredient> = emptyList(),
+    val inputText: String = "",
+    // True while an image is being scanned for ingredients by the backend.
+    val scanningImage: Boolean = false,
+    // Resolves ingredient emoji; null until the emoji catalog has loaded.
+    val emojiResolver: IngredientEmojiResolver? = null,
+)
+
+data class UiState(
+    // Ingredients currently in store, most recently modified last.
+    val inStore: List<UiIngredient>,
+    // Ingredients that have previously been in store, most recently modified last.
+    val previouslyInStore: List<UiIngredient>,
+    val inputText: String,
+    // True while an image is being scanned for ingredients.
+    val scanningImage: Boolean,
+    val onClickIngredient: (UiIngredient) -> Unit,
+    val onDestroyIngredient: (UiIngredient) -> Unit,
+    val onInputChange: (String) -> Unit,
+    val onClickAdd: (() -> Unit)?,
+    val onClickBack: () -> Unit,
+    val onScanImageSelected: (Path) -> Unit,
+)
+
+data class UiIngredient(
+    val id: IngredientId,
+    val name: String,
+    val inInventory: Boolean,
+    val emoji: Emoji?,
+)
