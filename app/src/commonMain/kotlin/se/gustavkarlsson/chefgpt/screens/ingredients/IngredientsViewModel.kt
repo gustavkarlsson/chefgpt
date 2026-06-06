@@ -13,10 +13,12 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.kodein.emoji.Emoji
 import org.koin.core.annotation.InjectedParam
 import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.api.ApiIngredient
 import se.gustavkarlsson.chefgpt.api.IngredientId
+import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.navigation.Route
 import kotlin.time.Duration.Companion.seconds
@@ -26,6 +28,7 @@ private val log = Logger.withTag("${IngredientsViewModel::class.simpleName}")
 class IngredientsViewModel(
     private val client: ChefGptClient,
     private val navigator: Navigator,
+    private val emojiResolverFactory: IngredientEmojiResolver.Factory,
     @InjectedParam private val route: Route.Ingredients,
 ) : ViewModel() {
     private data class State(
@@ -34,12 +37,15 @@ class IngredientsViewModel(
         // Optimistic inventory overrides by name, dropped once the backend agrees.
         val overrides: Map<String, Boolean> = emptyMap(),
         val inputText: String = "",
+        // Resolves ingredient emoji; null until the emoji catalog has loaded.
+        val emojiResolver: IngredientEmojiResolver? = null,
     )
 
     data class Ingredient(
         val id: IngredientId,
         val name: String,
         val inInventory: Boolean,
+        val emoji: Emoji?,
     )
 
     inner class ViewState(
@@ -68,6 +74,10 @@ class IngredientsViewModel(
 
     init {
         viewModelScope.launch {
+            val resolver = emojiResolverFactory.create()
+            innerState.update { it.copy(emojiResolver = resolver) }
+        }
+        viewModelScope.launch {
             while (true) {
                 try {
                     client.listenToIngredients(route.sessionId).collect { ingredients ->
@@ -95,10 +105,22 @@ class IngredientsViewModel(
     }
 
     private fun State.toViewState(): ViewState {
+        // Hold off on showing ingredients until the emoji catalog is ready, so each renders with its emoji.
         val sorted =
-            backendIngredients
-                .sortedBy { it.lastModified }
-                .map { Ingredient(id = it.id, name = it.name, inInventory = overrides[it.name] ?: it.inInventory) }
+            if (emojiResolver == null) {
+                emptyList()
+            } else {
+                backendIngredients
+                    .sortedBy { it.lastModified }
+                    .map {
+                        Ingredient(
+                            id = it.id,
+                            name = it.name,
+                            inInventory = overrides[it.name] ?: it.inInventory,
+                            emoji = emojiResolver.resolve(it.name),
+                        )
+                    }
+            }
         return ViewState(
             inStore = sorted.filter { it.inInventory },
             previouslyInStore = sorted.filterNot { it.inInventory },

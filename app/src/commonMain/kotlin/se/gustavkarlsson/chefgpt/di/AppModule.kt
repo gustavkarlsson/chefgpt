@@ -35,7 +35,7 @@ val singletonModule =
         single<SessionRepositoryImpl>() bind SessionRepository::class
         single<ApiChatRepository>() bind ChatRepository::class
         single<ApiConversationFactory>() bind ConversationFactory::class
-        single<IngredientEmojiResolver>()
+        single<IngredientEmojiResolver.Factory>()
     }
 
 // TODO Consider adding a viewModelScope and providing more VM-scoped dependencies

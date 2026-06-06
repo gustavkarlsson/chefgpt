@@ -31,7 +31,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -47,10 +46,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.kodein.emoji.Emoji
-import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
 import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsViewModel.Ingredient
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsViewModel.ViewState
@@ -174,7 +171,7 @@ private fun IngredientCard(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                IngredientImage(ingredient.name)
+                IngredientImage(emoji = ingredient.emoji, name = ingredient.name)
                 Text(
                     text = ingredient.name,
                     style = MaterialTheme.typography.bodySmall,
@@ -202,13 +199,12 @@ private fun IngredientCard(
 }
 
 @Composable
-private fun IngredientImage(name: String) {
-    // TODO Move emoji resolution to VM
-    val resolver = koinInject<IngredientEmojiResolver>()
-    val emoji by produceState<Emoji?>(null, name) { value = resolver.resolve(name) }
-    val resolved = emoji
-    if (resolved != null) {
-        Text(text = resolved.details.string, style = MaterialTheme.typography.headlineLarge)
+private fun IngredientImage(
+    emoji: Emoji?,
+    name: String,
+) {
+    if (emoji != null) {
+        Text(text = emoji.details.string, style = MaterialTheme.typography.headlineLarge)
     } else {
         Box(
             modifier =
