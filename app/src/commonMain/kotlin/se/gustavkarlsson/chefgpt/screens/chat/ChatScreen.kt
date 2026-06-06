@@ -1,6 +1,8 @@
 package se.gustavkarlsson.chefgpt.screens.chat
 
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.hoverable
@@ -15,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -57,6 +60,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
 import coil3.compose.AsyncImage
 import com.mikepenz.markdown.m3.Markdown
 import kotlinx.coroutines.channels.Channel
@@ -74,6 +78,8 @@ import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiSystemEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserMessage
+import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatar
+import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatarModel
 import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.pickImageFile
 import se.gustavkarlsson.chefgpt.screens.chat.ChatViewModel.ViewState
@@ -142,9 +148,13 @@ private fun Content(
     }
 }
 
-// FIXME make this animation prettier
-private val FLASH_VISIBLE = 1500.milliseconds
-private val FLASH_GAP = 400.milliseconds
+// How long an ingredient avatar travels onto/off the button, plus the fade applied at each end of that travel
+// (kept well under half the travel so it reads as a quick fade-in then fade-out while moving), and the pause
+// between queued changes. Avatars start/end this far toward the start edge (RTL-aware) of the button.
+private val TRAVEL = 500.milliseconds
+private val FADE = 140.milliseconds
+private val CHANGE_GAP = 100.milliseconds
+private val TRAVEL_DISTANCE = 48.dp
 
 @Composable
 private fun IngredientButton(
@@ -152,7 +162,7 @@ private fun IngredientButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // The queue buffers changes so they flash one at a time, even when several
+    // The queue buffers changes so they animate one at a time, even when several
     // ingredients are added or removed in quick succession.
     val queue = remember { Channel<IngredientChange>(Channel.UNLIMITED) }
     LaunchedEffect(ingredientChanges) {
@@ -160,29 +170,39 @@ private fun IngredientButton(
     }
 
     var current by remember { mutableStateOf<IngredientChange?>(null) }
-    var visible by remember { mutableStateOf(false) }
+    val progress = remember { Animatable(0f) }
     LaunchedEffect(queue) {
         for (change in queue) {
             current = change
-            visible = true
-            delay(FLASH_VISIBLE)
-            visible = false
-            delay(FLASH_GAP)
+            progress.snapTo(0f)
+            progress.animateTo(1f, tween(TRAVEL.inWholeMilliseconds.toInt(), easing = LinearEasing))
+            delay(CHANGE_GAP)
         }
     }
-    val alpha by animateFloatAsState(if (visible) 1f else 0f)
 
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
+    Box(contentAlignment = Alignment.Center, modifier = modifier) {
         current?.let { change ->
-            Text(
-                text = change.name,
-                color =
-                    when (change) {
-                        is IngredientChange.Added -> Color.Green
-                        is IngredientChange.Removed -> Color.Red
-                    },
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.alpha(alpha),
+            val p = progress.value
+            // Added travels onto the button (start edge -> center); removed travels off it (center -> start edge).
+            val (from, to) =
+                when (change) {
+                    is IngredientChange.Added -> -TRAVEL_DISTANCE to 0.dp
+                    is IngredientChange.Removed -> 0.dp to -TRAVEL_DISTANCE
+                }
+            val fade = (FADE / TRAVEL).toFloat()
+            val alpha =
+                when {
+                    p < fade -> p / fade
+                    p > 1f - fade -> (1f - p) / fade
+                    else -> 1f
+                }.coerceIn(0f, 1f)
+            EmojiAvatar(
+                model = EmojiAvatarModel.of(change.emoji, change.name),
+                modifier =
+                    Modifier
+                        .align(Alignment.Center)
+                        .offset(x = lerp(from, to, p))
+                        .alpha(alpha),
             )
         }
         IconButton(onClick = onClick) {

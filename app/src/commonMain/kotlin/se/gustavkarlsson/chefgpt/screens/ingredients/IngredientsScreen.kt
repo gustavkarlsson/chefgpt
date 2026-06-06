@@ -1,12 +1,13 @@
 package se.gustavkarlsson.chefgpt.screens.ingredients
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -15,7 +16,8 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -34,8 +36,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isShiftPressed
@@ -45,13 +45,13 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import org.kodein.emoji.Emoji
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatar
+import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatarModel
 import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsViewModel.Ingredient
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsViewModel.ViewState
-import kotlin.math.absoluteValue
 
 @Composable
 fun IngredientsScreen(route: Route.Ingredients) {
@@ -89,23 +89,31 @@ private fun Content(viewState: ViewState) {
                     .fillMaxSize()
                     .padding(paddingValues),
         ) {
-            LazyVerticalGrid(
-                columns = GridCells.FixedSize(100.dp),
-                modifier = Modifier.weight(1f).fillMaxWidth(),
-                contentPadding = PaddingValues(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                ingredientSection(
-                    title = null,
-                    ingredients = viewState.inStore,
-                    onClickIngredient = viewState.onClickIngredient,
-                )
-                ingredientSection(
-                    title = "Previously in store",
-                    ingredients = viewState.previouslyInStore,
-                    onClickIngredient = viewState.onClickIngredient,
-                    onDestroyIngredient = viewState.onDestroyIngredient,
+            val gridState = rememberLazyGridState()
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                LazyVerticalGrid(
+                    state = gridState,
+                    columns = GridCells.FixedSize(100.dp),
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    ingredientSection(
+                        title = null,
+                        ingredients = viewState.inStore,
+                        onClickIngredient = viewState.onClickIngredient,
+                    )
+                    ingredientSection(
+                        title = "Previously in store",
+                        ingredients = viewState.previouslyInStore,
+                        onClickIngredient = viewState.onClickIngredient,
+                        onDestroyIngredient = viewState.onDestroyIngredient,
+                    )
+                }
+                VerticalScrollbar(
+                    adapter = rememberScrollbarAdapter(gridState),
+                    modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
                 )
             }
 
@@ -171,7 +179,7 @@ private fun IngredientCard(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                IngredientImage(emoji = ingredient.emoji, name = ingredient.name)
+                EmojiAvatar(EmojiAvatarModel.of(ingredient.emoji, ingredient.name))
                 Text(
                     text = ingredient.name,
                     style = MaterialTheme.typography.bodySmall,
@@ -196,50 +204,6 @@ private fun IngredientCard(
             }
         }
     }
-}
-
-@Composable
-private fun IngredientImage(
-    emoji: Emoji?,
-    name: String,
-) {
-    if (emoji != null) {
-        Text(text = emoji.details.string, style = MaterialTheme.typography.headlineLarge)
-    } else {
-        Box(
-            modifier =
-                Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(colorForName(name)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = name.take(1).uppercase(),
-                style = MaterialTheme.typography.titleLarge,
-                color = Color.White,
-            )
-        }
-    }
-}
-
-private val avatarColors: List<Color> =
-    listOf(
-        Color(0xFFE57373),
-        Color(0xFF64B5F6),
-        Color(0xFF81C784),
-        Color(0xFFFFB74D),
-        Color(0xFFBA68C8),
-        Color(0xFF4DB6AC),
-        Color(0xFFF06292),
-        Color(0xFF7986CB),
-        Color(0xFFA1887F),
-        Color(0xFF9575CD),
-    )
-
-private fun colorForName(name: String): Color {
-    val index = name.lowercase().hashCode().absoluteValue % avatarColors.size
-    return avatarColors[index]
 }
 
 @Composable
