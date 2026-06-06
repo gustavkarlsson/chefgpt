@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.core.annotation.InjectedParam
 import se.gustavkarlsson.chefgpt.ChefGptClient
+import se.gustavkarlsson.chefgpt.api.ApiIngredient
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.navigation.Route
 import kotlin.time.Duration.Companion.seconds
@@ -28,21 +29,25 @@ class IngredientsViewModel(
 ) : ViewModel() {
     private data class State(
         // Latest ingredients reported by the backend stream.
-        val backendIngredients: Set<String> = emptySet(),
-        // Locally removed ingredients, kept visible in a "removed" state.
-        val removed: Set<String> = emptySet(),
+        val backendIngredients: List<ApiIngredient> = emptyList(),
+        // Optimistic inventory overrides by name, dropped once the backend agrees.
+        val overrides: Map<String, Boolean> = emptyMap(),
         val inputText: String = "",
     )
 
     data class Ingredient(
         val name: String,
-        val removed: Boolean,
+        val inInventory: Boolean,
     )
 
     inner class ViewState(
-        val ingredients: List<Ingredient>,
+        // Ingredients currently in store, most recently modified last.
+        val inStore: List<Ingredient>,
+        // Ingredients that have previously been in store, most recently modified last.
+        val previouslyInStore: List<Ingredient>,
         val inputText: String,
         val onClickIngredient: (String) -> Unit,
+        val onDestroyIngredient: (String) -> Unit,
         val onClickBack: () -> Unit,
     ) {
         val onInputChange: (String) -> Unit
@@ -64,7 +69,16 @@ class IngredientsViewModel(
             while (true) {
                 try {
                     client.listenToIngredients(route.sessionId).collect { ingredients ->
-                        innerState.update { it.copy(backendIngredients = ingredients.toSet()) }
+                        innerState.update { state ->
+                            state.copy(
+                                backendIngredients = ingredients,
+                                // Drop overrides the backend has caught up with.
+                                overrides =
+                                    state.overrides.filterNot { (name, inInventory) ->
+                                        ingredients.firstOrNull { it.name == name }?.inInventory == inInventory
+                                    },
+                            )
+                        }
                     }
                     log.e { "Ingredient stream ended" }
                 } catch (e: CancellationException) {
@@ -78,39 +92,60 @@ class IngredientsViewModel(
         }
     }
 
-    private fun State.toViewState(): ViewState =
-        ViewState(
-            ingredients =
-                (backendIngredients + removed)
-                    .sortedBy { it.lowercase() }
-                    .map { Ingredient(name = it, removed = it in removed) },
+    private fun State.toViewState(): ViewState {
+        val sorted =
+            backendIngredients
+                .sortedBy { it.lastModified }
+                .map { Ingredient(name = it.name, inInventory = overrides[it.name] ?: it.inInventory) }
+        return ViewState(
+            inStore = sorted.filter { it.inInventory },
+            previouslyInStore = sorted.filterNot { it.inInventory },
             inputText = inputText,
             onClickIngredient = ::onClickIngredient,
+            onDestroyIngredient = ::destroyIngredient,
             onClickBack = { navigator.pop() },
         )
+    }
 
     private fun onClickIngredient(name: String) {
-        val wasRemoved = name in innerState.value.removed
-        if (wasRemoved) {
-            // Optimistically restore so the card doesn't flicker before the stream catches up.
-            innerState.update {
-                it.copy(removed = it.removed - name, backendIngredients = it.backendIngredients + name)
+        val state = innerState.value
+        val current =
+            state.overrides[name] ?: state.backendIngredients.firstOrNull { it.name == name }?.inInventory ?: return
+        val target = !current
+        innerState.update { it.copy(overrides = it.overrides + (name to target)) }
+        viewModelScope.launch {
+            val result =
+                if (target) {
+                    client.addIngredient(route.sessionId, name)
+                } else {
+                    client.removeIngredient(route.sessionId, name)
+                }
+            result.onErr {
+                val verb = if (target) "add" else "remove"
+                log.e { "Failed to $verb ingredient '$name': ${it.errorBody}" }
             }
-            addIngredient(name)
-        } else {
-            innerState.update { it.copy(removed = it.removed + name) }
-            viewModelScope.launch {
-                client
-                    .removeIngredient(route.sessionId, name)
-                    .onErr { log.e { "Failed to remove ingredient '$name': ${it.errorBody}" } }
-            }
+        }
+    }
+
+    private fun destroyIngredient(name: String) {
+        // Optimistically drop it entirely; the backend stream will confirm.
+        innerState.update {
+            it.copy(
+                backendIngredients = it.backendIngredients.filterNot { ingredient -> ingredient.name == name },
+                overrides = it.overrides - name,
+            )
+        }
+        viewModelScope.launch {
+            client
+                .removeIngredient(route.sessionId, name, destroy = true)
+                .onErr { log.e { "Failed to destroy ingredient '$name': ${it.errorBody}" } }
         }
     }
 
     private fun addIngredient(name: String) {
         val trimmed = name.trim()
         if (trimmed.isBlank()) return
-        innerState.update { it.copy(removed = it.removed - trimmed, inputText = "") }
+        innerState.update { it.copy(inputText = "", overrides = it.overrides + (trimmed to true)) }
         viewModelScope.launch {
             client
                 .addIngredient(route.sessionId, trimmed)

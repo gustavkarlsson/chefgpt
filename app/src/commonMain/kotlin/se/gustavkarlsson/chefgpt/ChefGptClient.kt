@@ -42,6 +42,7 @@ import se.gustavkarlsson.chefgpt.api.ApiAction
 import se.gustavkarlsson.chefgpt.api.ApiChat
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiEvent
+import se.gustavkarlsson.chefgpt.api.ApiIngredient
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.api.ImageUrl
@@ -185,9 +186,9 @@ class ChefGptClient(
         }
 
     // TODO Error handling
-    fun listenToIngredients(sessionId: SessionId): Flow<List<String>> =
+    fun listenToIngredients(sessionId: SessionId): Flow<List<ApiIngredient>> =
         channelFlow {
-            httpClient.sseTyped<List<String>>(
+            httpClient.sseTyped<List<ApiIngredient>>(
                 json = json,
                 eventType = "ingredients",
                 request = {
@@ -213,10 +214,12 @@ class ChefGptClient(
     suspend fun removeIngredient(
         sessionId: SessionId,
         name: String,
+        destroy: Boolean = false,
     ): Result<Unit, ErrorResponse> {
         val response =
             httpClient.delete("$baseUrl/ingredients/${name.encodeURLPathPart()}") {
                 sessionIdHeader(sessionId)
+                if (destroy) parameter("destroy", true)
             }
         return response.toResultSafe {}
     }
