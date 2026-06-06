@@ -26,7 +26,7 @@ Here are the key concepts and the order in which they should appear in the file:
 ### Inside ViewModel class
 
 1. **`private val innerState = MutableStateFlow(State())`**.
-2. **`val UiState: StateFlow<UiState>`** — derived from `innerState` via `toUiState()`.
+2. **`val uiState: StateFlow<UiState>`** — derived from `innerState` via `toUiState()`.
 3. **`private fun State.toUiState(): UiState`** — pure mapping from state to UI state, wiring callbacks.
 4. **Private state to UI state mapping functions** — to avoid making `toUiState` too complex, it can be broken down into smaller functions declared right after it.
 5. **`init { ... }`** — Perform init logic such as launching long-running collectors.
@@ -35,7 +35,7 @@ Here are the key concepts and the order in which they should appear in the file:
 ### Top-level after ViewModel class
 
 1. **`private data class State`** — the single source of truth for state in the ViewModel. All properties are immutable (mutation is done via copy functions); every field has a default unless they are set via ViewModel constructor arguments.
-2. **`UiState`** — what the UI renders. UI-friendly data + callbacks. Never exposes domain/api types; map them to view-local types. Use sealed interface hierarchies when multiple different states are needed. The structure should match the intended UI so that parts of the UiState can be passed to composables.
+2. **`UiState`** — what the UI renders: UI-friendly data + callbacks. See the *State vs UiState* section below.
 3. **Public UI models** — additional models that are part of `UiState`; same guidelines apply.
 
 ## Example
@@ -66,7 +66,7 @@ class ExampleViewModel(
                     UiState.Loaded(
                         ingredients = it.map { it.toItem() },
                         inputText = inputText,
-                        onClickSave = ::saveIngredients,
+                        onClickSave = if (savingIngredients) null else ::saveIngredients,
                         onClickBack = { navigator.pop() },
                     )
                 },
@@ -87,7 +87,10 @@ class ExampleViewModel(
 
     private fun loadIngredients() {
         viewModelScope.launch {
-            val ingredients = repository.loadIngredients(route.sessionId)
+            val ingredients =
+                repository
+                    .loadIngredients(route.sessionId)
+                    .map { it.take(MAX_INGREDIENTS) }
             innerState.update { it.copy(ingredients = ingredients) }
         }
     }
@@ -96,27 +99,25 @@ class ExampleViewModel(
         val previousState = innerState.getAndUpdate {
             it.copy(savingIngredients = true)
         }
-        if (!previousState.savingIngredients && previousState.ingredients?.isOk == true) {
-            viewModelScope.launch {
-                try {
-                    val ingredients = previousState.ingredients.get().orEmpty()
-                    repository
-                        .save(ingredients)
-                        .onOk { log.i { "Saved ${ingredients.size} ingredients" } }
-                        .onErr { log.e { "Failed to save ${ingredients.size} ingredients: ${it.errorBody}" } }
-                } finally {
-                    innerState.update { it.copy(savingIngredients = false) }
-                }
+        if (previousState.savingIngredients) return // Already saving
+        viewModelScope.launch {
+            try {
+                val ingredients = previousState.ingredients?.get() ?: return@launch // No ingredients to save
+                repository
+                    .save(ingredients)
+                    .onOk { log.i { "Saved ${ingredients.size} ingredients" } }
+                    .onErr { log.e { "Failed to save ${ingredients.size} ingredients: ${it.errorBody}" } }
+            } finally {
+                innerState.update { it.copy(savingIngredients = false) }
             }
         }
     }
 
     private fun removeIngredient(id: IngredientId) {
-        innerState.update { it.copy(inputText = "") }
         viewModelScope.launch {
             repository
                 .remove(id)
-                .onErr { log.e { "Failed to add '$name': ${it.errorBody}" } }
+                .onErr { log.e { "Failed to remove '$id': ${it.errorBody}" } }
         }
     }
 }
@@ -171,7 +172,7 @@ UiState is the ViewModel's contract with the UI. It contains data that's ready t
 
 The data should be prepared in a way that the UI has to perform a minimal amount of logic. Sorting, filtering, and other transformations should be done in the ViewModel, not the UI.
 The structure should mimic the UI hierarchy. If a part of the UI can be in different mutually exclusive states, use a `sealed interface` hierarchy for the state. If UI components are nested inside other components, use nested properties in the UI state.
-If parts of the UI is not always present, use nullable properties in the UI state.
+If parts of the UI are not always present, use nullable properties in the UI state.
 
 ## Callbacks
 
@@ -201,7 +202,7 @@ If parts of the UI is not always present, use nullable properties in the UI stat
 ## Avoiding unwanted async operations
 
 To avoid unwanted async operations due to accidental double-clicks and similar, introduce a flag in the state to indicate that an operation is in progress, and use that flag to disable the callback.
-This flag should be set to `true` before starting the operation and set to `false` in a `finally` block after the operation completes.  The try-finally block might need to run in the new coroutine.
+This flag should be set to `true` before starting the operation and set to `false` in a `finally` block after the operation completes. The try-finally block might need to run in the new coroutine.
 
 ## Conventions
 
