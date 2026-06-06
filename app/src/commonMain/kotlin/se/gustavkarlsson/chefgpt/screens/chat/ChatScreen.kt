@@ -28,6 +28,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Kitchen
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -83,7 +84,7 @@ private fun Content(viewState: ViewState) {
         modifier = Modifier.fillMaxSize(),
         topBar = {
             Row(
-                modifier = Modifier.padding(4.dp),
+                modifier = Modifier.fillMaxWidth().padding(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = viewState.onClickBack) {
@@ -97,6 +98,13 @@ private fun Content(viewState: ViewState) {
                     shape = CircleShape,
                     modifier = Modifier.size(16.dp),
                 ) {
+                }
+                Spacer(Modifier.weight(1f))
+                IconButton(onClick = viewState.onClickIngredients) {
+                    Icon(
+                        imageVector = Icons.Default.Kitchen,
+                        contentDescription = "Ingredients",
+                    )
                 }
             }
         },

@@ -16,6 +16,7 @@ import se.gustavkarlsson.chefgpt.chats.ConversationFactory
 import se.gustavkarlsson.chefgpt.chats.EventHistoryStore
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.screens.chat.ChatViewModel
+import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsViewModel
 import se.gustavkarlsson.chefgpt.screens.start.StartViewModel
 import se.gustavkarlsson.chefgpt.sessions.LastSessionFileStore
 import se.gustavkarlsson.chefgpt.sessions.SessionRepository
@@ -40,6 +41,7 @@ val viewModelModule =
     module {
         viewModel<StartViewModel>()
         viewModel<ChatViewModel>()
+        viewModel<IngredientsViewModel>()
     }
 
 val nativeModule =

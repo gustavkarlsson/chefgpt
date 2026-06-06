@@ -19,4 +19,10 @@ sealed interface Route : NavKey {
         val sessionId: SessionId,
         val chatId: ChatId,
     ) : Route
+
+    @Serializable
+    @SerialName("ingredients")
+    data class Ingredients(
+        val sessionId: SessionId,
+    ) : Route
 }

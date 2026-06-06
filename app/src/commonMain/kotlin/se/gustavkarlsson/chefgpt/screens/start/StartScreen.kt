@@ -85,6 +85,7 @@ private fun Content(viewState: ViewState) {
                         LoggedInContent(
                             username = viewState.username,
                             onClickNewChat = viewState.onClickNewChat,
+                            onClickIngredients = viewState.onClickIngredients,
                             onClickLogout = viewState.onClickLogout,
                         )
                     }
@@ -218,6 +219,7 @@ private fun LoggedOutContent(
 private fun LoggedInContent(
     username: String,
     onClickNewChat: () -> Unit,
+    onClickIngredients: () -> Unit,
     onClickLogout: () -> Unit,
 ) {
     Text(
@@ -232,6 +234,12 @@ private fun LoggedInContent(
     )
     Button(onClick = onClickNewChat) {
         Text("New chat")
+    }
+    OutlinedButton(
+        onClick = onClickIngredients,
+        modifier = Modifier.padding(top = 8.dp),
+    ) {
+        Text("My ingredients")
     }
     OutlinedButton(
         onClick = onClickLogout,
