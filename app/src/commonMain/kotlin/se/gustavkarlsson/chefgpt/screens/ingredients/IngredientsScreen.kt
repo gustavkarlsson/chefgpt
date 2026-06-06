@@ -1,6 +1,5 @@
 package se.gustavkarlsson.chefgpt.screens.ingredients
 
-import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,7 +16,6 @@ import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -111,8 +109,8 @@ private fun Content(viewState: ViewState) {
                         onDestroyIngredient = viewState.onDestroyIngredient,
                     )
                 }
-                VerticalScrollbar(
-                    adapter = rememberScrollbarAdapter(gridState),
+                IngredientScrollbar(
+                    gridState = gridState,
                     modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
                 )
             }

@@ -33,7 +33,7 @@ class IngredientEmojiResolver internal constructor(
      * Returns the short-code alias for a UTF-8 emoji glyph (e.g. "🍌" -> "banana"), or `null` if [emoji] is not a
      * known emoji. Independent of platform support, so a glyph still maps even when it doesn't render natively.
      */
-    fun resolveAlias(emoji: String): String? = aliasByEmoji[emoji]
+    fun resolveAlias(emoji: String): String? = aliasByEmoji[emoji.trim()]
 
     /**
      * Loads and processes the Emoji.kt catalog to build [IngredientEmojiResolver] instances.
