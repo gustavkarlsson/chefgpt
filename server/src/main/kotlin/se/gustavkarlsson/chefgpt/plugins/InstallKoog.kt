@@ -5,6 +5,7 @@ import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.agent.EventBackedChatMemory
+import se.gustavkarlsson.chefgpt.recipes.RecipeClient
 
 fun Application.installKoog() {
     val anthropicApiKey = environment.config.property("anthropic.apiKey").getString()
@@ -13,6 +14,11 @@ fun Application.installKoog() {
             anthropic(apiKey = anthropicApiKey)
         }
         agentConfig {
+            // Recipe tools are not user-scoped, so they can live in the global plugin config.
+            // User-scoped tools (the ingredient store) are registered per-call in KoogAiAgent.
+            registerTools {
+                tools(get<RecipeClient>())
+            }
             prompt {
                 system(
                     """
