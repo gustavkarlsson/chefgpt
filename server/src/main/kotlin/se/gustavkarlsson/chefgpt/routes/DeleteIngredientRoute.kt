@@ -15,7 +15,13 @@ fun Route.deleteIngredientRoute() {
         val ingredientStore = get<IngredientStore>()
         val userId = call.requireSession().user.id
         val name = call.parameters.getOrFail("name")
-        val removed = ingredientStore.removeIngredients(userId, listOf(name))
+        val destroy = call.request.queryParameters["destroy"].toBoolean()
+        val removed =
+            if (destroy) {
+                ingredientStore.destroyIngredients(userId, listOf(name))
+            } else {
+                ingredientStore.removeIngredients(userId, listOf(name))
+            }
         if (removed.isNotEmpty()) {
             call.respond(HttpStatusCode.NoContent)
         } else {

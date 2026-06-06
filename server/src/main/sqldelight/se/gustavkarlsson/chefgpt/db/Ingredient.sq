@@ -3,18 +3,31 @@ SELECT *
 FROM ingredient
 WHERE user_id = ?;
 
-insert:
+selectByUserIdAndName:
+SELECT *
+FROM ingredient
+WHERE user_id = ? AND name = ?;
+
+upsert:
 INSERT INTO ingredient (user_id, name)
 VALUES (?, ?)
-ON CONFLICT DO NOTHING
-RETURNING name;
+ON CONFLICT (user_id, name) DO UPDATE
+    SET in_inventory = TRUE, last_modified = now()
+RETURNING name, in_inventory, last_modified;
 
-deleteByUserIdAndName:
+softRemoveByUserIdAndName:
+UPDATE ingredient
+SET in_inventory = FALSE, last_modified = now()
+WHERE user_id = ? AND name = ? AND in_inventory = TRUE
+RETURNING name, in_inventory, last_modified;
+
+softClearByUserId:
+UPDATE ingredient
+SET in_inventory = FALSE, last_modified = now()
+WHERE user_id = ? AND in_inventory = TRUE
+RETURNING name, in_inventory, last_modified;
+
+destroyByUserIdAndName:
 DELETE FROM ingredient
 WHERE user_id = ? AND name = ?
-RETURNING name;
-
-deleteByUserId:
-DELETE FROM ingredient
-WHERE user_id = ?
-RETURNING name;
+RETURNING name, in_inventory, last_modified;

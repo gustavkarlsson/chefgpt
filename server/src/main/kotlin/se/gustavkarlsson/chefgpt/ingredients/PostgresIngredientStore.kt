@@ -3,9 +3,13 @@ package se.gustavkarlsson.chefgpt.ingredients
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import se.gustavkarlsson.chefgpt.api.ApiIngredient
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.postgres.DatabaseAccess
 import se.gustavkarlsson.chefgpt.util.RepoSyncer
+import java.time.OffsetDateTime
+import kotlin.time.Instant
+import kotlin.time.toKotlinInstant
 import kotlin.uuid.toJavaUuid
 
 class PostgresIngredientStore(
@@ -13,15 +17,15 @@ class PostgresIngredientStore(
 ) : IngredientStore {
     private val syncer = RepoSyncer<UserId>()
 
-    override suspend fun getIngredients(userId: UserId): List<String> =
+    override suspend fun getIngredients(userId: UserId): List<ApiIngredient> =
         db.use {
             ingredientQueries
                 .selectByUserId(userId.value.toJavaUuid())
                 .executeAsList()
-                .map { it.name }
+                .map { ApiIngredient(it.name, it.last_modified.toKotlinInstant(), it.in_inventory) }
         }
 
-    override fun streamIngredients(userId: UserId): Flow<List<String>> =
+    override fun streamIngredients(userId: UserId): Flow<List<ApiIngredient>> =
         syncer
             .notifications(userId)
             .map {
@@ -29,25 +33,33 @@ class PostgresIngredientStore(
                     ingredientQueries
                         .selectByUserId(userId.value.toJavaUuid())
                         .executeAsList()
-                        .map { it.name }
+                        .map { ApiIngredient(it.name, it.last_modified.toKotlinInstant(), it.in_inventory) }
                 }
             }.distinctUntilChanged()
 
     override suspend fun addIngredients(
         userId: UserId,
         ingredients: List<String>,
-    ): List<String> {
+    ): List<ApiIngredient> {
         val added =
             db.use {
                 ingredientQueries.transactionWithResult {
                     ingredients
                         .map { it.trim().lowercase() }
+                        .distinct()
                         .mapNotNull { ingredient ->
-                            ingredientQueries
-                                .insert(
-                                    user_id = userId.value.toJavaUuid(),
-                                    name = ingredient,
-                                ).executeAsOneOrNull()
+                            val existing =
+                                ingredientQueries
+                                    .selectByUserIdAndName(userId.value.toJavaUuid(), ingredient)
+                                    .executeAsOneOrNull()
+                            if (existing?.in_inventory == true) {
+                                null
+                            } else {
+                                ingredientQueries
+                                    .upsert(userId.value.toJavaUuid(), ingredient)
+                                    .executeAsOne()
+                                    .let { ApiIngredient(it.name, it.last_modified.toKotlinInstant(), it.in_inventory) }
+                            }
                         }
                 }
             }
@@ -60,7 +72,7 @@ class PostgresIngredientStore(
     override suspend fun removeIngredients(
         userId: UserId,
         ingredients: List<String>,
-    ): List<String> {
+    ): List<ApiIngredient> {
         val removed =
             db.use {
                 ingredientQueries.transactionWithResult {
@@ -68,8 +80,9 @@ class PostgresIngredientStore(
                         .map { it.trim().lowercase() }
                         .mapNotNull { ingredient ->
                             ingredientQueries
-                                .deleteByUserIdAndName(userId.value.toJavaUuid(), ingredient)
+                                .softRemoveByUserIdAndName(userId.value.toJavaUuid(), ingredient)
                                 .executeAsOneOrNull()
+                                ?.let { ApiIngredient(it.name, it.last_modified.toKotlinInstant(), it.in_inventory) }
                         }
                 }
             }
@@ -79,16 +92,28 @@ class PostgresIngredientStore(
         return removed
     }
 
-    override suspend fun clearIngredients(userId: UserId): List<String> {
-        val removed =
+    override suspend fun destroyIngredients(
+        userId: UserId,
+        ingredients: List<String>,
+    ): List<ApiIngredient> {
+        val destroyed =
             db.use {
-                ingredientQueries
-                    .deleteByUserId(userId.value.toJavaUuid())
-                    .executeAsList()
+                ingredientQueries.transactionWithResult {
+                    ingredients
+                        .map { it.trim().lowercase() }
+                        .mapNotNull { ingredient ->
+                            ingredientQueries
+                                .destroyByUserIdAndName(userId.value.toJavaUuid(), ingredient)
+                                .executeAsOneOrNull()
+                                ?.let { ApiIngredient(it.name, it.last_modified.toKotlinInstant(), it.in_inventory) }
+                        }
+                }
             }
-        if (removed.isNotEmpty()) {
+        if (destroyed.isNotEmpty()) {
             syncer.notifyChange(userId)
         }
-        return removed
+        return destroyed
     }
 }
+
+private fun OffsetDateTime.toKotlinInstant(): Instant = toInstant().toKotlinInstant()
