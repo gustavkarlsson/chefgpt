@@ -14,6 +14,7 @@ import se.gustavkarlsson.chefgpt.chats.ApiConversationFactory
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.ConversationFactory
 import se.gustavkarlsson.chefgpt.chats.EventHistoryStore
+import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.screens.chat.ChatViewModel
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsViewModel
@@ -34,6 +35,7 @@ val singletonModule =
         single<SessionRepositoryImpl>() bind SessionRepository::class
         single<ApiChatRepository>() bind ChatRepository::class
         single<ApiConversationFactory>() bind ConversationFactory::class
+        single<IngredientEmojiResolver>()
     }
 
 // TODO Consider adding a viewModelScope and providing more VM-scoped dependencies

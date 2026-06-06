@@ -31,6 +31,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -45,11 +46,16 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import org.kodein.emoji.Emoji
+import org.kodein.emoji.compose.NotoImageEmoji
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
 import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsViewModel.Ingredient
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsViewModel.ViewState
+import kotlin.math.absoluteValue
 
 @Composable
 fun IngredientsScreen(route: Route.Ingredients) {
@@ -198,9 +204,11 @@ private fun IngredientCard(
 
 @Composable
 private fun IngredientImage(name: String) {
-    val emoji = ingredientEmoji(name)
-    if (emoji != null) {
-        Text(text = emoji, style = MaterialTheme.typography.headlineLarge)
+    val resolver = koinInject<IngredientEmojiResolver>()
+    val emoji by produceState<Emoji?>(null, name) { value = resolver.resolve(name) }
+    val resolved = emoji
+    if (resolved != null) {
+        NotoImageEmoji(emoji = resolved, modifier = Modifier.size(48.dp))
     } else {
         Box(
             modifier =
@@ -217,6 +225,25 @@ private fun IngredientImage(name: String) {
             )
         }
     }
+}
+
+private val avatarColors: List<Color> =
+    listOf(
+        Color(0xFFE57373),
+        Color(0xFF64B5F6),
+        Color(0xFF81C784),
+        Color(0xFFFFB74D),
+        Color(0xFFBA68C8),
+        Color(0xFF4DB6AC),
+        Color(0xFFF06292),
+        Color(0xFF7986CB),
+        Color(0xFFA1887F),
+        Color(0xFF9575CD),
+    )
+
+private fun colorForName(name: String): Color {
+    val index = name.lowercase().hashCode().absoluteValue % avatarColors.size
+    return avatarColors[index]
 }
 
 @Composable

@@ -25,15 +25,15 @@ private val diacriticFolds =
     }
 
 /**
- * Attempts to parse an emoji identifier (e.g. "banana") from the given [text] (e.g. "banana-split" or "bananas").
- * Valid emoji identifiers are passed in [database].
+ * Attempts to parse an emoji alias (e.g. "banana") from the given [text] (e.g. "banana-split" or "bananas").
+ * Valid emoji aliass are passed in [database].
  *
  * The [database] entries are always singular, contain only English-alphabet letters (no diacritics), and may be
  * hyphenated where the hyphen stands in for whitespace (e.g. "water-melon" matches the input "water melon").
  *
  * Breaks the input into words and tries to find the best match based on common English language rules.
  */
-fun parseEmojiIdentifierOrNull(
+fun parseEmojiAliasOrNull(
     text: String,
     database: Set<String>,
 ): String? {
