@@ -63,7 +63,7 @@ fun ChatScreen(route: Route.Chat) {
 - All composables should have a `Modifier` parameter.
 - `Modifier` is first optional parameter, placed immediately after any required arguments (excluding any trailing content lambda). It's always defaulted to `Modifier` which is the empty modifier.
 - When setting a modifier as an argument, always place it first in the named argument list (despite the parameter not being first).
-- Lazy lists: stable string keys (`key = { it.id.toString() }`) on items. Don't animate items (`Modifier.animateItem()`, `AnimatedVisibility`, etc.) unless the user explicitly asks for it.
+- Lazy lists: stable string keys (`key = { it.id.toString() }`) on items. Don't animate items unless the user explicitly asks for it.
 - Every `Icon` and `Image` needs a `contentDescription`.
 - Modern Kotlin, immutable data, no more code than necessary.
 
