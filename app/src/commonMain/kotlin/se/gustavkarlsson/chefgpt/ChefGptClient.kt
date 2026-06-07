@@ -19,8 +19,8 @@ import io.ktor.client.request.basicAuth
 import io.ktor.client.request.delete
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
+import io.ktor.client.request.patch
 import io.ktor.client.request.post
-import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.request.url
 import io.ktor.client.statement.HttpResponse
@@ -28,7 +28,6 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
-import io.ktor.http.encodeURLPathPart
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.utils.io.ByteReadChannel
@@ -43,6 +42,8 @@ import se.gustavkarlsson.chefgpt.api.ApiChat
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiIngredient
+import se.gustavkarlsson.chefgpt.api.ApiIngredientUpdate
+import se.gustavkarlsson.chefgpt.api.ApiNewIngredient
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.api.ImageUrl
@@ -221,26 +222,40 @@ class ChefGptClient(
             }
         }
 
-    suspend fun addIngredient(
+    suspend fun createIngredient(
         sessionId: SessionId,
         name: String,
     ): Result<Unit, ErrorResponse> {
         val response =
-            httpClient.put("$baseUrl/ingredients/${name.encodeURLPathPart()}") {
+            httpClient.post("$baseUrl/ingredients") {
+                sessionIdHeader(sessionId)
+                contentType(ContentType.Application.Json)
+                setBody(ApiNewIngredient(name))
+            }
+        return response.toResultSafe {}
+    }
+
+    suspend fun destroyIngredient(
+        sessionId: SessionId,
+        ingredientId: IngredientId,
+    ): Result<Unit, ErrorResponse> {
+        val response =
+            httpClient.delete("$baseUrl/ingredients/$ingredientId") {
                 sessionIdHeader(sessionId)
             }
         return response.toResultSafe {}
     }
 
-    suspend fun removeIngredient(
+    suspend fun setIngredientInventory(
         sessionId: SessionId,
-        id: IngredientId,
-        destroy: Boolean = false,
+        ingredientId: IngredientId,
+        inInventory: Boolean,
     ): Result<Unit, ErrorResponse> {
         val response =
-            httpClient.delete("$baseUrl/ingredients/$id") {
+            httpClient.patch("$baseUrl/ingredients/$ingredientId") {
                 sessionIdHeader(sessionId)
-                parameter("destroy", destroy)
+                contentType(ContentType.Application.Json)
+                setBody(ApiIngredientUpdate(inInventory))
             }
         return response.toResultSafe {}
     }

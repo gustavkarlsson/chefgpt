@@ -11,19 +11,21 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
-import org.kodein.emoji.Emoji
 import org.koin.core.annotation.InjectedParam
 import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.api.ApiIngredient
 import se.gustavkarlsson.chefgpt.api.IngredientId
+import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatarModel
 import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.navigation.Route
+import se.gustavkarlsson.chefgpt.sessions.SessionId
 import kotlin.time.Duration.Companion.seconds
 
 private val log = Logger.withTag("${IngredientsViewModel::class.simpleName}")
@@ -31,9 +33,11 @@ private val log = Logger.withTag("${IngredientsViewModel::class.simpleName}")
 class IngredientsViewModel(
     private val client: ChefGptClient,
     private val navigator: Navigator,
-    private val emojiResolverFactory: IngredientEmojiResolver.Factory,
-    @InjectedParam private val route: Route.Ingredients,
+    emojiResolverFactory: IngredientEmojiResolver.Factory,
+    @InjectedParam route: Route.Ingredients,
 ) : ViewModel() {
+    private val sessionId: SessionId = route.sessionId
+
     private val innerState = MutableStateFlow(State())
 
     val uiState: StateFlow<UiState> =
@@ -41,37 +45,38 @@ class IngredientsViewModel(
             .map { it.toUiState() }
             .stateIn(viewModelScope, SharingStarted.Eagerly, innerState.value.toUiState())
 
-    private fun State.toUiState(): UiState {
-        // Hold off on showing ingredients until the emoji catalog is ready, so each renders with its emoji.
-        val sorted =
-            if (emojiResolver == null) {
-                emptyList()
-            } else {
-                backendIngredients
-                    .sortedBy { it.lastModified }
-                    .map { it.toUiIngredient(emojiResolver) }
-            }
-        return UiState(
-            inStore = sorted.filter { it.inInventory },
-            previouslyInStore = sorted.filterNot { it.inInventory },
-            inputText = inputText,
-            scanningImage = scanningImage,
-            onClickIngredient = ::onClickIngredient,
-            onDestroyIngredient = ::destroyIngredient,
-            onInputChange = { text -> innerState.update { it.copy(inputText = text) } },
-            onClickAdd = if (inputText.isNotBlank()) ({ addIngredient(inputText) }) else null,
-            onClickBack = { navigator.pop() },
-            onScanImageSelected = ::scanImage,
+    private fun State.toUiState(): UiState =
+        UiState(
+            inInventory = ingredients.toUiIngredients(emojiResolver, inInventory = true),
+            notInInventory = ingredients.toUiIngredients(emojiResolver, inInventory = false),
+            input =
+                UiInput(
+                    text = inputText,
+                    onTextChange = ::updateInputText,
+                    onScanImageSelected = ::scanImage,
+                    onClickAdd = if (inputText.isNotBlank() && emojiResolver != null) ::createIngredient else null,
+                ),
+            onClickBack = navigator::pop,
         )
-    }
 
-    private fun ApiIngredient.toUiIngredient(resolver: IngredientEmojiResolver): UiIngredient =
-        UiIngredient(
-            id = id,
-            name = name,
-            inInventory = inInventory,
-            emoji = resolver.resolve(name),
-        )
+    private fun List<ApiIngredient>.toUiIngredients(
+        emojiResolver: IngredientEmojiResolver?,
+        inInventory: Boolean,
+    ): List<UiIngredient> {
+        if (emojiResolver == null) return emptyList()
+        return this
+            .filter { it.inInventory == inInventory }
+            .sortedBy { it.lastModified }
+            .map { ingredient ->
+                UiIngredient(
+                    id = ingredient.id,
+                    name = ingredient.name,
+                    icon = EmojiAvatarModel.of(emojiResolver.resolve(ingredient.name), ingredient.name),
+                    onClick = if (inInventory) ::removeIngredient else ::addIngredient,
+                    onClickDestroy = if (inInventory) null else ::destroyIngredient,
+                )
+            }
+    }
 
     init {
         viewModelScope.launch {
@@ -81,8 +86,8 @@ class IngredientsViewModel(
         viewModelScope.launch {
             while (true) {
                 try {
-                    client.listenToIngredients(route.sessionId).collect { ingredients ->
-                        innerState.update { it.copy(backendIngredients = ingredients) }
+                    client.listenToIngredients(sessionId).collect { ingredients ->
+                        innerState.update { it.copy(ingredients = ingredients) }
                     }
                     log.e { "Ingredient stream ended" }
                 } catch (e: CancellationException) {
@@ -96,29 +101,55 @@ class IngredientsViewModel(
         }
     }
 
-    private fun onClickIngredient(ingredient: UiIngredient) {
-        val target = !ingredient.inInventory
-        // Creation is by name; removal is by id.
-        viewModelScope.launch {
-            val result =
-                if (target) {
-                    client.addIngredient(route.sessionId, ingredient.name)
+    private fun createIngredient() {
+        val previousState =
+            innerState.getAndUpdate { state ->
+                if (state.inputText.isBlank() || state.emojiResolver == null) {
+                    // Abort if input is blank or emoji resolver is not ready
+                    return
                 } else {
-                    client.removeIngredient(route.sessionId, ingredient.id)
+                    state.copy(inputText = "")
                 }
+            }
+        val trimmed = previousState.inputText.trim()
+        val emojiResolver = checkNotNull(previousState.emojiResolver)
+        viewModelScope.launch {
+            // Turn a pasted emoji glyph into its alias (e.g. "🍌" -> "banana") so the backend stores a name.
+            val name = emojiResolver.resolveAlias(trimmed) ?: trimmed
+            val result = client.createIngredient(sessionId, name)
+            result.onErr { log.e { "Failed to create ingredient '$name': ${it.errorBody}" } }
+        }
+    }
+
+    private fun destroyIngredient(id: IngredientId) {
+        viewModelScope.launch {
+            val result = client.destroyIngredient(sessionId, id)
             result.onErr {
-                val verb = if (target) "add" else "remove"
-                log.e { "Failed to $verb ingredient '${ingredient.name}': ${it.errorBody}" }
+                log.e { "Failed to destroy ingredient $id: ${it.errorBody}" }
             }
         }
     }
 
-    private fun destroyIngredient(ingredient: UiIngredient) {
+    private fun addIngredient(id: IngredientId) {
         viewModelScope.launch {
-            client
-                .removeIngredient(route.sessionId, ingredient.id, destroy = true)
-                .onErr { log.e { "Failed to destroy ingredient '${ingredient.name}': ${it.errorBody}" } }
+            val result = client.setIngredientInventory(sessionId, id, inInventory = true)
+            result.onErr {
+                log.e { "Failed to add ingredient $id: ${it.errorBody}" }
+            }
         }
+    }
+
+    private fun removeIngredient(id: IngredientId) {
+        viewModelScope.launch {
+            val result = client.setIngredientInventory(sessionId, id, inInventory = false)
+            result.onErr {
+                log.e { "Failed to remove ingredient $id: ${it.errorBody}" }
+            }
+        }
+    }
+
+    private fun updateInputText(text: String) {
+        innerState.update { it.copy(inputText = text) }
     }
 
     private fun scanImage(image: Path) {
@@ -128,7 +159,7 @@ class IngredientsViewModel(
             try {
                 val extension = image.toString().substringAfterLast('.')
                 client
-                    .scanIngredients(route.sessionId, image, ContentType("image", extension))
+                    .scanIngredients(sessionId, image, ContentType("image", extension))
                     .onOk { count -> log.i { "Scan found $count ingredient(s)" } }
                     .onErr { log.e { "Failed to scan ingredients: ${it.errorBody}" } }
             } finally {
@@ -136,50 +167,34 @@ class IngredientsViewModel(
             }
         }
     }
-
-    private fun addIngredient(name: String) {
-        val trimmed = name.trim()
-        if (trimmed.isBlank()) return
-        innerState.update { it.copy(inputText = "") }
-        viewModelScope.launch {
-            // Turn a pasted emoji glyph into its alias (e.g. "🍌" -> "banana") so the backend stores a name.
-            val resolved = emojiResolverFactory.create().resolveAlias(trimmed) ?: trimmed
-            client
-                .addIngredient(route.sessionId, resolved)
-                .onErr { log.e { "Failed to add ingredient '$resolved': ${it.errorBody}" } }
-        }
-    }
 }
 
+// TODO Mark updates as "new"
 private data class State(
-    // Latest ingredients reported by the backend stream.
-    val backendIngredients: List<ApiIngredient> = emptyList(),
+    val ingredients: List<ApiIngredient> = emptyList(),
     val inputText: String = "",
-    // True while an image is being scanned for ingredients by the backend.
     val scanningImage: Boolean = false,
-    // Resolves ingredient emoji; null until the emoji catalog has loaded.
-    val emojiResolver: IngredientEmojiResolver? = null,
+    val emojiResolver: IngredientEmojiResolver? = null, // null until the emoji catalog has loaded.
 )
 
 data class UiState(
-    // Ingredients currently in store, most recently modified last.
-    val inStore: List<UiIngredient>,
-    // Ingredients that have previously been in store, most recently modified last.
-    val previouslyInStore: List<UiIngredient>,
-    val inputText: String,
-    // True while an image is being scanned for ingredients.
-    val scanningImage: Boolean,
-    val onClickIngredient: (UiIngredient) -> Unit,
-    val onDestroyIngredient: (UiIngredient) -> Unit,
-    val onInputChange: (String) -> Unit,
-    val onClickAdd: (() -> Unit)?,
+    val inInventory: List<UiIngredient>,
+    val notInInventory: List<UiIngredient>,
+    val input: UiInput,
     val onClickBack: () -> Unit,
-    val onScanImageSelected: (Path) -> Unit,
+)
+
+data class UiInput(
+    val text: String,
+    val onTextChange: (String) -> Unit,
+    val onScanImageSelected: ((Path) -> Unit)?,
+    val onClickAdd: (() -> Unit)?,
 )
 
 data class UiIngredient(
     val id: IngredientId,
     val name: String,
-    val inInventory: Boolean,
-    val emoji: Emoji?,
+    val icon: EmojiAvatarModel,
+    val onClick: (IngredientId) -> Unit,
+    val onClickDestroy: ((IngredientId) -> Unit)?,
 )

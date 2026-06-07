@@ -47,11 +47,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import kotlinx.io.files.Path
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatar
-import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatarModel
 import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.pickImageFile
 
@@ -103,14 +101,13 @@ private fun Content(uiState: UiState) {
                 ) {
                     ingredientSection(
                         title = null,
-                        ingredients = uiState.inStore,
-                        onClickIngredient = uiState.onClickIngredient,
+                        ingredients = uiState.inInventory,
+                        inInventory = true,
                     )
                     ingredientSection(
                         title = "Previously in store",
-                        ingredients = uiState.previouslyInStore,
-                        onClickIngredient = uiState.onClickIngredient,
-                        onDestroyIngredient = uiState.onDestroyIngredient,
+                        ingredients = uiState.notInInventory,
+                        inInventory = false,
                     )
                 }
                 IngredientScrollbar(
@@ -120,12 +117,8 @@ private fun Content(uiState: UiState) {
             }
 
             IngredientInput(
-                inputText = uiState.inputText,
-                scanningImage = uiState.scanningImage,
-                onInputChange = uiState.onInputChange,
-                onClickAdd = uiState.onClickAdd,
-                onScanImageSelected = uiState.onScanImageSelected,
                 modifier = Modifier.fillMaxWidth(),
+                input = uiState.input,
             )
         }
     }
@@ -134,8 +127,7 @@ private fun Content(uiState: UiState) {
 private fun LazyGridScope.ingredientSection(
     title: String?,
     ingredients: List<UiIngredient>,
-    onClickIngredient: (UiIngredient) -> Unit,
-    onDestroyIngredient: ((UiIngredient) -> Unit)? = null,
+    inInventory: Boolean,
 ) {
     if (ingredients.isEmpty()) return
     if (title != null) {
@@ -150,10 +142,9 @@ private fun LazyGridScope.ingredientSection(
     }
     items(items = ingredients, key = { it.id }) { ingredient ->
         IngredientCard(
-            ingredient = ingredient,
-            onClick = { onClickIngredient(ingredient) },
-            onDestroy = onDestroyIngredient?.let { { it(ingredient) } },
             modifier = Modifier.animateItem(),
+            ingredient = ingredient,
+            inInventory = inInventory,
         )
     }
 }
@@ -161,15 +152,14 @@ private fun LazyGridScope.ingredientSection(
 @Composable
 private fun IngredientCard(
     ingredient: UiIngredient,
-    onClick: () -> Unit,
+    inInventory: Boolean,
     modifier: Modifier = Modifier,
-    onDestroy: (() -> Unit)? = null,
 ) {
     Surface(
         modifier =
             modifier
                 .size(100.dp)
-                .clickable(onClick = onClick),
+                .clickable { ingredient.onClick(ingredient.id) },
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
@@ -178,12 +168,12 @@ private fun IngredientCard(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .alpha(if (ingredient.inInventory) 1f else 0.5f)
+                        .alpha(if (inInventory) 1f else 0.5f)
                         .padding(8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                EmojiAvatar(EmojiAvatarModel.of(ingredient.emoji, ingredient.name))
+                EmojiAvatar(ingredient.icon)
                 Text(
                     text = ingredient.name,
                     style = MaterialTheme.typography.bodySmall,
@@ -193,9 +183,9 @@ private fun IngredientCard(
                     modifier = Modifier.padding(top = 4.dp),
                 )
             }
-            if (onDestroy != null) {
+            if (ingredient.onClickDestroy != null) {
                 IconButton(
-                    onClick = onDestroy,
+                    onClick = { ingredient.onClickDestroy(ingredient.id) },
                     modifier = Modifier.align(Alignment.BottomEnd).size(32.dp),
                 ) {
                     Icon(
@@ -212,11 +202,7 @@ private fun IngredientCard(
 
 @Composable
 private fun IngredientInput(
-    inputText: String,
-    scanningImage: Boolean,
-    onInputChange: (String) -> Unit,
-    onClickAdd: (() -> Unit)?,
-    onScanImageSelected: (Path) -> Unit,
+    input: UiInput,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -232,8 +218,8 @@ private fun IngredientInput(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             TextField(
-                value = inputText,
-                onValueChange = onInputChange,
+                value = input.text,
+                onValueChange = input.onTextChange,
                 modifier =
                     Modifier
                         .weight(1f)
@@ -242,7 +228,7 @@ private fun IngredientInput(
                                 if (keyEvent.isShiftPressed) {
                                     false
                                 } else {
-                                    onClickAdd?.invoke()
+                                    input.onClickAdd?.invoke()
                                     true
                                 }
                             } else {
@@ -253,7 +239,7 @@ private fun IngredientInput(
                 singleLine = true,
             )
             val scope = rememberCoroutineScope()
-            if (scanningImage) {
+            if (input.onScanImageSelected == null) {
                 // Scanning can take a while; show progress in place of the camera button.
                 Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp))
@@ -262,7 +248,7 @@ private fun IngredientInput(
                 IconButton(
                     onClick = {
                         scope.launch {
-                            pickImageFile()?.let(onScanImageSelected)
+                            pickImageFile()?.let(input.onScanImageSelected)
                         }
                     },
                 ) {
@@ -273,8 +259,8 @@ private fun IngredientInput(
                 }
             }
             IconButton(
-                onClick = { onClickAdd?.invoke() },
-                enabled = onClickAdd != null,
+                onClick = { input.onClickAdd?.invoke() },
+                enabled = input.onClickAdd != null,
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Send,
