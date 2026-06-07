@@ -3,31 +3,26 @@ SELECT *
 FROM ingredient
 WHERE user_id = ?;
 
-selectByUserIdAndName:
-SELECT *
-FROM ingredient
-WHERE user_id = ? AND name = ?;
-
-upsert:
+create:
 INSERT INTO ingredient (user_id, name)
-VALUES (?, ?)
+SELECT :userId, n.name
+FROM unnest(:names::text[]) AS n(name)
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM ingredient
+    WHERE user_id = :userId AND name = n.name AND in_inventory = TRUE
+)
 ON CONFLICT (user_id, name) DO UPDATE
     SET in_inventory = TRUE, last_modified = now()
 RETURNING id, name, in_inventory, last_modified;
 
-softRemoveByUserIdAndId:
+setInventoryByUserIdAndIds:
 UPDATE ingredient
-SET in_inventory = FALSE, last_modified = now()
-WHERE user_id = ? AND id = ? AND in_inventory = TRUE
+SET in_inventory = :inInventory, last_modified = now()
+WHERE user_id = :userId AND id::text = ANY(:ids::text[])
 RETURNING id, name, in_inventory, last_modified;
 
-softClearByUserId:
-UPDATE ingredient
-SET in_inventory = FALSE, last_modified = now()
-WHERE user_id = ? AND in_inventory = TRUE
-RETURNING id, name, in_inventory, last_modified;
-
-destroyByUserIdAndId:
+destroyByUserIdAndIds:
 DELETE FROM ingredient
-WHERE user_id = ? AND id = ?
+WHERE user_id = :userId AND id::text = ANY(:ids::text[])
 RETURNING id, name, in_inventory, last_modified;
