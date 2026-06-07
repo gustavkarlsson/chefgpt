@@ -74,6 +74,24 @@ The data should be prepared in a way that the UI has to perform a minimal amount
 The structure should mimic the UI hierarchy. If a part of the UI can be in different mutually exclusive states, use a `sealed interface` hierarchy for the state. If UI components are nested inside other components, use nested properties in the UI state.
 If parts of the UI are not always present, use nullable properties in the UI state.
 
+## One-shot events
+
+`UiState` describes *what the UI looks like right now*. Some things aren't state — they're discrete, transient occurrences the UI should react to *once*: a value to animate in, a snackbar to show, a navigation triggered by a stream. These don't belong in `UiState` (there's no "current value" to render, and re-emitting the same state shouldn't replay them).
+
+Expose such events as a separate **`Flow`** alongside `uiState`, backed by a `Channel`:
+
+```kotlin
+private val ingredientChangeChannel = Channel<IngredientChange>(Channel.UNLIMITED)
+val ingredientChanges: Flow<IngredientChange> = ingredientChangeChannel.receiveAsFlow()
+```
+
+- Place the `Channel`/`Flow` pair right after `uiState`.
+- Push to it from collectors or action functions with `channel.send(...)` (or `trySend`).
+- The event type is a public model declared after the ViewModel class, after the UI models.
+- The UI collects this `Flow` separately from `uiState` (see the **screen-ui** skill).
+
+`ChatViewModel` (in `screens/chat/`) is a good example: it streams `ingredientChanges` for an animation while everything renderable stays in `uiState`.
+
 ## Callbacks
 
 - Put in the UiState model closest to the UI component that will trigger the callback.

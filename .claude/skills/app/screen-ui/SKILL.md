@@ -30,6 +30,17 @@ fun IngredientsScreen(route: Route.Ingredients) {
 - Collect `uiState` with `collectAsStateWithLifecycle()`.
 - Delegate immediately to a private, stateless `Content(uiState)`.
 
+If the ViewModel also exposes a one-shot event `Flow` (see the **view-model** skill's *One-shot events* section), pass that `Flow` to `Content` as an extra parameter and `collect` it where it's consumed (typically in a `LaunchedEffect`). It stays separate from `uiState`:
+
+```kotlin
+@Composable
+fun ChatScreen(route: Route.Chat) {
+    val viewModel = koinViewModel<ChatViewModel> { parametersOf(route) }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    Content(uiState, viewModel.ingredientChanges)
+}
+```
+
 ### Content and child composables
 
 - `Content` and all child composables are `private` and **stateless**: they take a `UiState` (or a slice of it) and never reference the ViewModel. This keeps the UI previewable and testable.
