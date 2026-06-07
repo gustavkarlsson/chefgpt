@@ -27,7 +27,7 @@ Here are the key concepts and the order in which they should appear in the file:
 
 1. **Constructor arguments** — only declare them as `val` if necessary to store their value. Always private in that case.
 2. **Private values derived from constructor arguments** — such as navigation parameters (session ID).
-3. **Cancellable job references** — for streams that are cancelled and restarted on demand, hold each `Job` directly in the ViewModel in an atomic reference, not in `State`:
+3. **Cancellable job references** — for async jobs that might need restarting or cancelling, such as streams, hold each `Job` directly in the ViewModel in an atomic reference, not in `State`:
     ```kotlin
     private val sessionJob = atomic<Job?>(null)
     ```
