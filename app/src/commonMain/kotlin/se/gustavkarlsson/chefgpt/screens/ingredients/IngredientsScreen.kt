@@ -1,5 +1,10 @@
 package se.gustavkarlsson.chefgpt.screens.ingredients
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -32,7 +38,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -52,6 +61,7 @@ import org.koin.core.parameter.parametersOf
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatar
 import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.pickImageFile
+import androidx.compose.foundation.lazy.items as lazyItems
 
 @Composable
 fun IngredientsScreen(route: Route.Ingredients) {
@@ -105,17 +115,19 @@ private fun Content(
                     ingredientSection(
                         title = null,
                         ingredients = uiState.inInventory,
-                        inInventory = true,
                     )
                     ingredientSection(
                         title = "Previously in store",
                         ingredients = uiState.notInInventory,
-                        inInventory = false,
                     )
                 }
                 IngredientScrollbar(
                     modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
                     gridState = gridState,
+                )
+                IngredientSuggestions(
+                    modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth(),
+                    suggestions = uiState.suggestions,
                 )
             }
 
@@ -130,7 +142,6 @@ private fun Content(
 private fun LazyGridScope.ingredientSection(
     title: String?,
     ingredients: List<UiIngredient>,
-    inInventory: Boolean,
 ) {
     if (ingredients.isEmpty()) return
     if (title != null) {
@@ -143,11 +154,10 @@ private fun LazyGridScope.ingredientSection(
             )
         }
     }
-    items(items = ingredients, key = { it.id.toString() }) { ingredient ->
+    items(items = ingredients, key = { it.key }) { ingredient ->
         IngredientCard(
             modifier = Modifier.animateItem(),
             ingredient = ingredient,
-            inInventory = inInventory,
         )
     }
 }
@@ -155,14 +165,13 @@ private fun LazyGridScope.ingredientSection(
 @Composable
 private fun IngredientCard(
     ingredient: UiIngredient,
-    inInventory: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Surface(
         modifier =
             modifier
                 .size(100.dp)
-                .clickable { ingredient.onClick(ingredient.id) },
+                .clickable { ingredient.onClick(ingredient.key) },
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
@@ -171,8 +180,8 @@ private fun IngredientCard(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .alpha(if (inInventory) 1f else 0.5f)
-                        .padding(8.dp),
+                        .alpha(if (ingredient.dimmed) 0.5f else 1f)
+                        .padding(horizontal = 4.dp, vertical = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
@@ -181,7 +190,7 @@ private fun IngredientCard(
                     modifier = Modifier.padding(top = 4.dp),
                     text = ingredient.name,
                     style = MaterialTheme.typography.bodySmall,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
                 )
@@ -189,13 +198,48 @@ private fun IngredientCard(
             if (ingredient.onClickDestroy != null) {
                 IconButton(
                     modifier = Modifier.align(Alignment.BottomEnd).size(32.dp),
-                    onClick = { ingredient.onClickDestroy(ingredient.id) },
+                    onClick = { ingredient.onClickDestroy(ingredient.key) },
                 ) {
                     Icon(
                         modifier = Modifier.size(18.dp),
                         imageVector = Icons.Default.Delete,
                         contentDescription = "Delete",
                         tint = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun IngredientSuggestions(
+    suggestions: List<UiIngredient>,
+    modifier: Modifier = Modifier,
+) {
+    // Hold onto the last non-empty list so the panel keeps rendering its cards while it animates out.
+    var lastSuggestions by remember { mutableStateOf(suggestions) }
+    if (suggestions.isNotEmpty()) lastSuggestions = suggestions
+    AnimatedVisibility(
+        visible = suggestions.isNotEmpty(),
+        modifier = modifier,
+        enter = slideInVertically { it } + fadeIn(),
+        exit = slideOutVertically { it } + fadeOut(),
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
+            shadowElevation = 8.dp,
+        ) {
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                lazyItems(items = lastSuggestions, key = { it.key }) { suggestion ->
+                    IngredientCard(
+                        modifier = Modifier.animateItem(),
+                        ingredient = suggestion,
                     )
                 }
             }
