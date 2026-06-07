@@ -40,31 +40,18 @@ class PostgresIngredientStore(
                 }
             }.distinctUntilChanged()
 
-    override suspend fun addIngredients(
+    override suspend fun createIngredients(
         userId: UserId,
         ingredients: List<String>,
     ): List<ApiIngredient> {
+        val names = ingredients.map { it.trim().lowercase() }.distinct()
+        if (names.isEmpty()) return emptyList()
         val added =
             db.use {
-                ingredientQueries.transactionWithResult {
-                    ingredients
-                        .map { it.trim().lowercase() }
-                        .distinct()
-                        .mapNotNull { ingredient ->
-                            val existing =
-                                ingredientQueries
-                                    .selectByUserIdAndName(userId.value.toJavaUuid(), ingredient)
-                                    .executeAsOneOrNull()
-                            if (existing?.in_inventory == true) {
-                                null
-                            } else {
-                                ingredientQueries
-                                    .upsert(userId.value.toJavaUuid(), ingredient)
-                                    .executeAsOne()
-                                    .let { toApiIngredient(it.id, it.name, it.last_modified, it.in_inventory) }
-                            }
-                        }
-                }
+                ingredientQueries
+                    .create(userId.value.toJavaUuid(), names.toTypedArray())
+                    .executeAsList()
+                    .map { toApiIngredient(it.id, it.name, it.last_modified, it.in_inventory) }
             }
         if (added.isNotEmpty()) {
             syncer.notifyChange(userId)
@@ -72,41 +59,36 @@ class PostgresIngredientStore(
         return added
     }
 
-    override suspend fun removeIngredients(
+    override suspend fun setInventory(
         userId: UserId,
         ids: List<IngredientId>,
+        inInventory: Boolean,
     ): List<ApiIngredient> {
-        val removed =
+        if (ids.isEmpty()) return emptyList()
+        val updated =
             db.use {
-                ingredientQueries.transactionWithResult {
-                    ids.mapNotNull { id ->
-                        ingredientQueries
-                            .softRemoveByUserIdAndId(userId.value.toJavaUuid(), id.value.toJavaUuid())
-                            .executeAsOneOrNull()
-                            ?.let { toApiIngredient(it.id, it.name, it.last_modified, it.in_inventory) }
-                    }
-                }
+                ingredientQueries
+                    .setInventoryByUserIdAndIds(inInventory, userId.value.toJavaUuid(), ids.toTextArray())
+                    .executeAsList()
+                    .map { toApiIngredient(it.id, it.name, it.last_modified, it.in_inventory) }
             }
-        if (removed.isNotEmpty()) {
+        if (updated.isNotEmpty()) {
             syncer.notifyChange(userId)
         }
-        return removed
+        return updated
     }
 
     override suspend fun destroyIngredients(
         userId: UserId,
         ids: List<IngredientId>,
     ): List<ApiIngredient> {
+        if (ids.isEmpty()) return emptyList()
         val destroyed =
             db.use {
-                ingredientQueries.transactionWithResult {
-                    ids.mapNotNull { id ->
-                        ingredientQueries
-                            .destroyByUserIdAndId(userId.value.toJavaUuid(), id.value.toJavaUuid())
-                            .executeAsOneOrNull()
-                            ?.let { toApiIngredient(it.id, it.name, it.last_modified, it.in_inventory) }
-                    }
-                }
+                ingredientQueries
+                    .destroyByUserIdAndIds(userId.value.toJavaUuid(), ids.toTextArray())
+                    .executeAsList()
+                    .map { toApiIngredient(it.id, it.name, it.last_modified, it.in_inventory) }
             }
         if (destroyed.isNotEmpty()) {
             syncer.notifyChange(userId)
@@ -123,3 +105,6 @@ private fun toApiIngredient(
 ): ApiIngredient = ApiIngredient(IngredientId(id.toKotlinUuid()), name, lastModified.toKotlinInstant(), inInventory)
 
 private fun OffsetDateTime.toKotlinInstant(): Instant = toInstant().toKotlinInstant()
+
+// pgjdbc has no array encoder for UUID, so ids are passed as text and cast to uuid[] in SQL.
+private fun List<IngredientId>.toTextArray(): Array<String> = map { it.value.toString() }.toTypedArray()

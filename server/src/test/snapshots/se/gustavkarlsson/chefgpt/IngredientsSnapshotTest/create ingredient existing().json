@@ -1,11 +1,18 @@
 {
     "request": {
-        "method": "PUT",
-        "url": "http://localhost/ingredients/tomato",
+        "method": "POST",
+        "url": "http://localhost/ingredients",
         "headers": {
             "Session-Id": "00000000000000000000000000000000",
             "Accept": "application/json",
+            "Content-Type": "application/json",
             "Content-Length": "0"
+        },
+        "body": {
+            "type": "json",
+            "data": {
+                "name": "tomato"
+            }
         }
     },
     "response": {

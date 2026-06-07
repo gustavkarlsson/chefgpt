@@ -1,15 +1,22 @@
 {
     "request": {
-        "method": "PUT",
-        "url": "http://localhost/ingredients/tomato",
+        "method": "PATCH",
+        "url": "http://localhost/ingredients/00000000-0000-0000-0000-000000000000",
         "headers": {
             "Session-Id": "00000000000000000000000000000000",
             "Accept": "application/json",
+            "Content-Type": "application/json",
             "Content-Length": "0"
+        },
+        "body": {
+            "type": "json",
+            "data": {
+                "inInventory": true
+            }
         }
     },
     "response": {
-        "status": 201,
+        "status": 404,
         "headers": {
             "Content-Length": "0",
             "Content-Type": "application/json"
@@ -17,10 +24,8 @@
         "body": {
             "type": "json",
             "data": {
-                "id": "00000000-0000-0000-0000-000000000000",
-                "name": "tomato",
-                "lastModified": "2000-01-01T00:00:00Z",
-                "inInventory": true
+                "type": "ingredient-not-found",
+                "message": "Ingredient not found"
             }
         }
     }

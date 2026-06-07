@@ -25,130 +25,20 @@ Here are the key concepts and the order in which they should appear in the file:
 
 ### Inside ViewModel class
 
-1. **`private val innerState = MutableStateFlow(State())`**.
-2. **`val uiState: StateFlow<UiState>`** — derived from `innerState` via `toUiState()`.
-3. **`private fun State.toUiState(): UiState`** — pure mapping from state to UI state, wiring callbacks.
-4. **Private state to UI state mapping functions** — to avoid making `toUiState` too complex, it can be broken down into smaller functions declared right after it.
-5. **`init { ... }`** — Perform init logic such as launching long-running collectors.
-6. **Private action functions** — Additional utility functions called as part of `init` or UI state callbacks.
+1. **Constructor arguments** — only declare them as `val` if necessary to store their value. Always private in that case.
+2. **Private values derived from constructor arguments** — such as navigation parameters (session ID).
+3. **`private val innerState = MutableStateFlow(State())`**.
+4. **`val uiState: StateFlow<UiState>`** — derived from `innerState` via `toUiState()`.
+5. **`private fun State.toUiState(): UiState`** — pure mapping from state to UI state, wiring callbacks.
+6. **Private state to UI state mapping functions** — to avoid making `toUiState` too complex, it can be broken down into smaller functions declared right after it.
+7. **`init { ... }`** — Perform init logic such as launching long-running collectors.
+8. **Private action functions** — Additional utility functions called as part of `init` or UI state callbacks.
 
 ### Top-level after ViewModel class
 
 1. **`private data class State`** — the single source of truth for state in the ViewModel. All properties are immutable (mutation is done via copy functions); every field has a default unless they are set via ViewModel constructor arguments.
 2. **`UiState`** — what the UI renders: UI-friendly data + callbacks. See the *State vs UiState* section below.
 3. **Public UI models** — additional models that are part of `UiState`; same guidelines apply.
-
-## Example
-
-```kotlin
-private val log = Logger.withTag("${ExampleViewModel::class.simpleName}")
-
-private const val MAX_INGREDIENTS = 10
-
-class ExampleViewModel(
-    private val repository: IngredientsRepository,
-    private val navigator: Navigator,
-    @InjectedParam private val route: Route.Example,
-) : ViewModel() {
-    private val innerState = MutableStateFlow(State())
-
-    val uiState: StateFlow<UiState> =
-        innerState
-            .map { it.toUiState() }
-            .stateIn(viewModelScope, SharingStarted.Eagerly, innerState.value.toUiState())
-
-    private fun State.toUiState(): UiState =
-        if (ingredients == null) {
-            UiState.Loading
-        } else {
-            ingredients.mapBoth(
-                success = {
-                    UiState.Loaded(
-                        ingredients = it.map { it.toItem() },
-                        inputText = inputText,
-                        onClickSave = if (savingIngredients) null else ::saveIngredients,
-                        onClickBack = { navigator.pop() },
-                    )
-                },
-                failure = { UiState.Error(message = "Failed to load ingredients", onClickRetry = ::loadIngredients) },
-            )
-        }
-
-    private fun ApiIngredient.toItem(): UiIngredient {
-        return UiIngredient(
-            name = name,
-            onClickRemove = { removeIngredient(id) },
-        )
-    }
-
-    init {
-        loadIngredients()
-    }
-
-    private fun loadIngredients() {
-        viewModelScope.launch {
-            val ingredients =
-                repository
-                    .loadIngredients(route.sessionId)
-                    .map { it.take(MAX_INGREDIENTS) }
-            innerState.update { it.copy(ingredients = ingredients) }
-        }
-    }
-
-    private fun saveIngredients() {
-        val previousState = innerState.getAndUpdate {
-            it.copy(savingIngredients = true)
-        }
-        if (previousState.savingIngredients) return // Already saving
-        viewModelScope.launch {
-            try {
-                val ingredients = previousState.ingredients?.get() ?: return@launch // No ingredients to save
-                repository
-                    .save(ingredients)
-                    .onOk { log.i { "Saved ${ingredients.size} ingredients" } }
-                    .onErr { log.e { "Failed to save ${ingredients.size} ingredients: ${it.errorBody}" } }
-            } finally {
-                innerState.update { it.copy(savingIngredients = false) }
-            }
-        }
-    }
-
-    private fun removeIngredient(id: IngredientId) {
-        viewModelScope.launch {
-            repository
-                .remove(id)
-                .onErr { log.e { "Failed to remove '$id': ${it.errorBody}" } }
-        }
-    }
-}
-
-private data class State(
-    val ingredients: Result<List<ApiIngredient>, ApiError>? = null,
-    val savingIngredients: Boolean = false,
-    val inputText: String = "",
-)
-
-sealed interface UiState {
-    data object Loading : UiState
-    data class Loaded(
-        val ingredients: List<UiIngredient>,
-        val inputText: String,
-        val onClickSave: (() -> Unit)?,
-        val onClickBack: () -> Unit,
-    ) : UiState
-
-    data class Error(
-        val message: String,
-        val onClickRetry: () -> Unit,
-    ) : UiState
-}
-
-data class UiIngredient(
-    val name: String,
-    val onClickRemove: () -> Unit,
-)
-
-```
 
 ## State vs UiState
 
@@ -180,7 +70,7 @@ If parts of the UI are not always present, use nullable properties in the UI sta
 - Name by interaction: `onClick<Thing>`, `on<Field>Changed`, etc.
 - Type as `() -> Unit` when possible (or `(T) -> Unit` if the input comes from the UI, such as text changes).
 - **Make a callback nullable (`(() -> Unit)?`) to express "disabled"** — return `null` from `toUiState()` (or a `get()`) when the action isn't currently allowed (blank input, not connected, etc.). The UI greys out the control. Don't add separate `enabled` booleans for this.
-- Reference a private function (`::addItem`) for non-trivial actions; inline a lambda for trivial actions such as state updates and navigation.
+- When assigning, NEVER use lambdas, as they will generate a new equals value each time, causing unnecessary recompositions. Instead, use references to private functions (`::addItem`).
 
 ## Actions
 
@@ -197,7 +87,7 @@ If parts of the UI are not always present, use nullable properties in the UI sta
 ## Long-running streams
 
 - Start collectors in `init` on `viewModelScope`.
-- For a stream that should be cancelled and restarted on demand (e.g. login/logout), keep a `Job` in the state and replace it.
+- For a stream that should be cancelled and restarted on demand (e.g. login/logout), keep a `Job` in the state and cancel+replace it.
 
 ## Avoiding unwanted async operations
 
@@ -209,3 +99,7 @@ This flag should be set to `true` before starting the operation and set to `fals
 - Modern Kotlin, immutable data, functional patterns. No more code than necessary.
 - Write unit-tests using the unit-test skill.
 - After changes, run the **verify** skill.
+
+## Example
+
+See `app/src/commonMain/kotlin/se/gustavkarlsson/chefgpt/screens/ingredients/IngredientsViewModel.kt` for a good example.

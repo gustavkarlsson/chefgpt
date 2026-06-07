@@ -47,25 +47,21 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import kotlinx.io.files.Path
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatar
-import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatarModel
 import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.pickImageFile
-import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsViewModel.Ingredient
-import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsViewModel.ViewState
 
 @Composable
 fun IngredientsScreen(route: Route.Ingredients) {
     val viewModel = koinViewModel<IngredientsViewModel> { parametersOf(route) }
-    val viewState by viewModel.viewState.collectAsState()
-    Content(viewState)
+    val uiState by viewModel.uiState.collectAsState()
+    Content(uiState)
 }
 
 @Composable
-private fun Content(viewState: ViewState) {
+private fun Content(uiState: UiState) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -73,7 +69,7 @@ private fun Content(viewState: ViewState) {
                 modifier = Modifier.padding(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(onClick = viewState.onClickBack) {
+                IconButton(onClick = uiState.onClickBack) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
@@ -105,14 +101,13 @@ private fun Content(viewState: ViewState) {
                 ) {
                     ingredientSection(
                         title = null,
-                        ingredients = viewState.inStore,
-                        onClickIngredient = viewState.onClickIngredient,
+                        ingredients = uiState.inInventory,
+                        inInventory = true,
                     )
                     ingredientSection(
                         title = "Previously in store",
-                        ingredients = viewState.previouslyInStore,
-                        onClickIngredient = viewState.onClickIngredient,
-                        onDestroyIngredient = viewState.onDestroyIngredient,
+                        ingredients = uiState.notInInventory,
+                        inInventory = false,
                     )
                 }
                 IngredientScrollbar(
@@ -122,12 +117,8 @@ private fun Content(viewState: ViewState) {
             }
 
             IngredientInput(
-                inputText = viewState.inputText,
-                scanningImage = viewState.scanningImage,
-                onInputChange = viewState.onInputChange,
-                onClickAdd = viewState.onClickAdd,
-                onScanImageSelected = viewState.onScanImageSelected,
                 modifier = Modifier.fillMaxWidth(),
+                input = uiState.input,
             )
         }
     }
@@ -135,9 +126,8 @@ private fun Content(viewState: ViewState) {
 
 private fun LazyGridScope.ingredientSection(
     title: String?,
-    ingredients: List<Ingredient>,
-    onClickIngredient: (Ingredient) -> Unit,
-    onDestroyIngredient: ((Ingredient) -> Unit)? = null,
+    ingredients: List<UiIngredient>,
+    inInventory: Boolean,
 ) {
     if (ingredients.isEmpty()) return
     if (title != null) {
@@ -152,26 +142,24 @@ private fun LazyGridScope.ingredientSection(
     }
     items(items = ingredients, key = { it.id }) { ingredient ->
         IngredientCard(
-            ingredient = ingredient,
-            onClick = { onClickIngredient(ingredient) },
-            onDestroy = onDestroyIngredient?.let { { it(ingredient) } },
             modifier = Modifier.animateItem(),
+            ingredient = ingredient,
+            inInventory = inInventory,
         )
     }
 }
 
 @Composable
 private fun IngredientCard(
-    ingredient: Ingredient,
-    onClick: () -> Unit,
+    ingredient: UiIngredient,
+    inInventory: Boolean,
     modifier: Modifier = Modifier,
-    onDestroy: (() -> Unit)? = null,
 ) {
     Surface(
         modifier =
             modifier
                 .size(100.dp)
-                .clickable(onClick = onClick),
+                .clickable { ingredient.onClick(ingredient.id) },
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
@@ -180,12 +168,12 @@ private fun IngredientCard(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .alpha(if (ingredient.inInventory) 1f else 0.5f)
+                        .alpha(if (inInventory) 1f else 0.5f)
                         .padding(8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                EmojiAvatar(EmojiAvatarModel.of(ingredient.emoji, ingredient.name))
+                EmojiAvatar(ingredient.icon)
                 Text(
                     text = ingredient.name,
                     style = MaterialTheme.typography.bodySmall,
@@ -195,9 +183,9 @@ private fun IngredientCard(
                     modifier = Modifier.padding(top = 4.dp),
                 )
             }
-            if (onDestroy != null) {
+            if (ingredient.onClickDestroy != null) {
                 IconButton(
-                    onClick = onDestroy,
+                    onClick = { ingredient.onClickDestroy(ingredient.id) },
                     modifier = Modifier.align(Alignment.BottomEnd).size(32.dp),
                 ) {
                     Icon(
@@ -214,11 +202,7 @@ private fun IngredientCard(
 
 @Composable
 private fun IngredientInput(
-    inputText: String,
-    scanningImage: Boolean,
-    onInputChange: (String) -> Unit,
-    onClickAdd: (() -> Unit)?,
-    onScanImageSelected: (Path) -> Unit,
+    input: UiInput,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -234,8 +218,8 @@ private fun IngredientInput(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             TextField(
-                value = inputText,
-                onValueChange = onInputChange,
+                value = input.text,
+                onValueChange = input.onTextChange,
                 modifier =
                     Modifier
                         .weight(1f)
@@ -244,7 +228,7 @@ private fun IngredientInput(
                                 if (keyEvent.isShiftPressed) {
                                     false
                                 } else {
-                                    onClickAdd?.invoke()
+                                    input.onClickAdd?.invoke()
                                     true
                                 }
                             } else {
@@ -255,7 +239,7 @@ private fun IngredientInput(
                 singleLine = true,
             )
             val scope = rememberCoroutineScope()
-            if (scanningImage) {
+            if (input.onScanImageSelected == null) {
                 // Scanning can take a while; show progress in place of the camera button.
                 Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp))
@@ -264,7 +248,7 @@ private fun IngredientInput(
                 IconButton(
                     onClick = {
                         scope.launch {
-                            pickImageFile()?.let(onScanImageSelected)
+                            pickImageFile()?.let(input.onScanImageSelected)
                         }
                     },
                 ) {
@@ -275,8 +259,8 @@ private fun IngredientInput(
                 }
             }
             IconButton(
-                onClick = { onClickAdd?.invoke() },
-                enabled = onClickAdd != null,
+                onClick = { input.onClickAdd?.invoke() },
+                enabled = input.onClickAdd != null,
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Send,

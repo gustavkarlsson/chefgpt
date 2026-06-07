@@ -26,7 +26,7 @@ class InMemoryIngredientStore(
             .getOrPut(userId) { MutableStateFlow(emptyMap()) }
             .map { it.values.toList() }
 
-    override suspend fun addIngredients(
+    override suspend fun createIngredients(
         userId: UserId,
         ingredients: List<String>,
     ): List<ApiIngredient> {
@@ -49,22 +49,21 @@ class InMemoryIngredientStore(
         return addedNames.map { updated.getValue(it) }
     }
 
-    override suspend fun removeIngredients(
+    override suspend fun setInventory(
         userId: UserId,
         ids: List<IngredientId>,
+        inInventory: Boolean,
     ): List<ApiIngredient> {
         val now = Clock.System.now()
         val idSet = ids.toSet()
-        val preUpdate =
-            storedIngredients(userId).getAndUpdate { current ->
+        val updated =
+            storedIngredients(userId).updateAndGet { current ->
                 current +
                     current.values
-                        .filter { it.id in idSet && it.inInventory }
-                        .associate { it.name to it.copy(inInventory = false, lastModified = now) }
+                        .filter { it.id in idSet }
+                        .associate { it.name to it.copy(inInventory = inInventory, lastModified = now) }
             }
-        return preUpdate.values
-            .filter { it.id in idSet && it.inInventory }
-            .map { it.copy(inInventory = false, lastModified = now) }
+        return updated.values.filter { it.id in idSet }
     }
 
     override suspend fun destroyIngredients(

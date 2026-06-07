@@ -11,14 +11,17 @@ interface IngredientStore {
     fun streamIngredients(userId: UserId): Flow<List<ApiIngredient>>
 
     // Creation is keyed by name; existing ingredients are matched and restored by name.
-    suspend fun addIngredients(
+    suspend fun createIngredients(
         userId: UserId,
         ingredients: List<String>,
     ): List<ApiIngredient>
 
-    suspend fun removeIngredients(
+    // Sets the store membership of the given existing ingredients by id. Returns
+    // the updated ingredients, skipping any ids that don't belong to the user.
+    suspend fun setInventory(
         userId: UserId,
         ids: List<IngredientId>,
+        inInventory: Boolean,
     ): List<ApiIngredient>
 
     suspend fun destroyIngredients(

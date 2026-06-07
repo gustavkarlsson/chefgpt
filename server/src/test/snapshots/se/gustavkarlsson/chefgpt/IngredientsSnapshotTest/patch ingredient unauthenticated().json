@@ -1,0 +1,23 @@
+{
+    "request": {
+        "method": "PATCH",
+        "url": "http://localhost/ingredients/00000000-0000-0000-0000-000000000000",
+        "headers": {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Content-Length": "0"
+        },
+        "body": {
+            "type": "json",
+            "data": {
+                "inInventory": true
+            }
+        }
+    },
+    "response": {
+        "status": 401,
+        "headers": {
+            "Content-Length": "0"
+        }
+    }
+}

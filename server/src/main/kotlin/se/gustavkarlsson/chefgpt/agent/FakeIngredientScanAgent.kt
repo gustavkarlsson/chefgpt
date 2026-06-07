@@ -15,7 +15,7 @@ class FakeIngredientScanAgent(
         imageUrl: ImageUrl,
     ): Result<Int, String> {
         val found = listOf("tomato", "basil")
-        ingredientStore.addIngredients(userId, found)
+        ingredientStore.createIngredients(userId, found)
         return Ok(found.size)
     }
 }
