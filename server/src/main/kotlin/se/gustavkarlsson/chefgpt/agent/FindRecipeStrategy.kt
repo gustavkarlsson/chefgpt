@@ -7,7 +7,6 @@ import ai.koog.agents.core.dsl.builder.strategy
 import ai.koog.agents.core.dsl.extension.nodeDoNothing
 import ai.koog.agents.core.dsl.extension.nodeExecuteTools
 import ai.koog.agents.core.dsl.extension.nodeLLMSendToolResults
-import ai.koog.agents.core.dsl.extension.onTextMessage
 import ai.koog.agents.core.dsl.extension.onToolCalls
 import ai.koog.prompt.message.Message
 
@@ -26,8 +25,9 @@ fun findRecipeStrategy(): AIAgentGraphStrategy<Unit, Unit> =
         edge(nodeExecuteTool forwardTo nodeLLMSendToolResult)
         edge(nodeLLMSendToolResult forwardTo response)
 
-        // A plain-text assistant message means we are done
-        edge(response forwardTo nodeFinish onTextMessage { true } transformed {})
+        // Anything else means we are done: a plain-text reply, or an empty
+        // assistant message the model occasionally emits with end_turn.
+        edge(response forwardTo nodeFinish transformed {})
     }
 
 private fun nodeExecuteLLM(name: String) =
