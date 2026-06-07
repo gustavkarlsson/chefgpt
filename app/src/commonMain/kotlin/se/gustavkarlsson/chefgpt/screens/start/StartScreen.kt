@@ -38,6 +38,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.koin.compose.viewmodel.koinViewModel
 import se.gustavkarlsson.chefgpt.chats.Chat
+import se.gustavkarlsson.chefgpt.chats.displayName
 import se.gustavkarlsson.chefgpt.screens.start.StartViewModel.ViewState
 
 @Composable
@@ -143,15 +144,7 @@ private fun ChatItem(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val title =
-        chat.name ?: run {
-            val formatted =
-                chat.createdAt
-                    .toString()
-                    .replace("T", " ")
-                    .take(19)
-            "Chat from $formatted"
-        }
+    val title = chat.displayName
     Row(
         modifier =
             modifier
