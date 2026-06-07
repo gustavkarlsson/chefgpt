@@ -27,12 +27,22 @@ Here are the key concepts and the order in which they should appear in the file:
 
 1. **Constructor arguments** — only declare them as `val` if necessary to store their value. Always private in that case.
 2. **Private values derived from constructor arguments** — such as navigation parameters (session ID).
-3. **`private val innerState = MutableStateFlow(State())`**.
-4. **`val uiState: StateFlow<UiState>`** — derived from `innerState` via `toUiState()`.
-5. **`private fun State.toUiState(): UiState`** — pure mapping from state to UI state, wiring callbacks.
-6. **Private state to UI state mapping functions** — to avoid making `toUiState` too complex, it can be broken down into smaller functions declared right after it.
-7. **`init { ... }`** — Perform init logic such as launching long-running collectors.
-8. **Private action functions** — Additional utility functions called as part of `init` or UI state callbacks.
+3. **Cancellable job references** — for async jobs that might need restarting or cancelling, such as streams, hold each `Job` directly in the ViewModel in an atomic reference, not in `State`:
+    ```kotlin
+    private val sessionJob = atomic<Job?>(null)
+    ```
+4. **`private val innerState = MutableStateFlow(State())`**.
+5. **`val uiState: StateFlow<UiState>`** — derived from `innerState` and mapped to a `StateFlow` with a subscription time-limited `SharingStarted`:
+    ```kotlin
+    val uiState: StateFlow<UiState> =
+        innerState
+            .map { it.toUiState() }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), innerState.value.toUiState())
+    ```
+6. **`private fun State.toUiState(): UiState`** — pure mapping from state to UI state, wiring callbacks.
+7. **Private state to UI state mapping functions** — to avoid making `toUiState` too complex, it can be broken down into smaller functions declared right after it.
+8. **`init { ... }`** — Perform init logic such as launching long-running collectors.
+9. **Private action functions** — Additional utility functions called as part of `init` or UI state callbacks.
 
 ### Top-level after ViewModel class
 
@@ -87,7 +97,10 @@ If parts of the UI are not always present, use nullable properties in the UI sta
 ## Long-running streams
 
 - Start collectors in `init` on `viewModelScope`.
-- For a stream that should be cancelled and restarted on demand (e.g. login/logout), keep a `Job` in the state and cancel+replace it.
+- For a stream that should be cancelled and restarted on demand (e.g. login/logout), store its `Job` directly in the ViewModel in an atomic reference (not in `State`). Replace it with an atomic function (e.g. `getAndSet`) and cancel the previous one in the same step, so concurrent calls can't leak a job:
+    ```kotlin
+    sessionJob.getAndSet(viewModelScope.launch { /* collect */ })?.cancel()
+    ```
 
 ## Avoiding unwanted async operations
 
