@@ -1,17 +1,22 @@
 package se.gustavkarlsson.chefgpt.screens.start
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
@@ -23,19 +28,29 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.VerticalDivider
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.layout.AnimatedPane
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
+import androidx.compose.material3.adaptive.layout.PaneAdaptedValue
+import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldDestinationItem
+import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -109,25 +124,56 @@ private fun LoggedOutContent(
     }
 }
 
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 private fun LoggedInContent(
     state: UiState.LoggedIn,
     modifier: Modifier = Modifier,
 ) {
-    Row(modifier = modifier) {
-        ChatSidebar(
-            chats = state.chats,
-            modifier = Modifier.width(260.dp).fillMaxHeight(),
+    val navigator =
+        rememberListDetailPaneScaffoldNavigator<Nothing>(
+            initialDestinationHistory =
+                listOf(ThreePaneScaffoldDestinationItem(ListDetailPaneScaffoldRole.Detail)),
         )
-        VerticalDivider()
-        WelcomePanel(
-            username = state.username,
-            onClickNewChat = state.onClickNewChat,
-            onClickIngredients = state.onClickIngredients,
-            onClickLogout = state.onClickLogout,
-            modifier = Modifier.weight(1f).fillMaxHeight(),
-        )
-    }
+    val scope = rememberCoroutineScope()
+    val listHidden =
+        navigator.scaffoldValue[ListDetailPaneScaffoldRole.List] == PaneAdaptedValue.Hidden
+    ListDetailPaneScaffold(
+        directive = navigator.scaffoldDirective,
+        value = navigator.scaffoldValue,
+        modifier = modifier,
+        listPane = {
+            AnimatedPane {
+                ChatSidebar(
+                    chats = state.chats,
+                    onClickBack =
+                        if (navigator.canNavigateBack()) {
+                            { scope.launch { navigator.navigateBack() } }
+                        } else {
+                            null
+                        },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        },
+        detailPane = {
+            AnimatedPane {
+                WelcomePanel(
+                    username = state.username,
+                    onClickNewChat = state.onClickNewChat,
+                    onClickIngredients = state.onClickIngredients,
+                    onClickLogout = state.onClickLogout,
+                    onClickViewChats =
+                        if (listHidden) {
+                            { scope.launch { navigator.navigateTo(ListDetailPaneScaffoldRole.List) } }
+                        } else {
+                            null
+                        },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        },
+    )
 }
 
 @Composable
@@ -137,36 +183,51 @@ private fun WelcomePanel(
     onClickIngredients: () -> Unit,
     onClickLogout: () -> Unit,
     modifier: Modifier = Modifier,
+    onClickViewChats: (() -> Unit)? = null,
 ) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(
-            text = "Welcome back, $username!",
-            style = MaterialTheme.typography.headlineMedium,
-        )
-        Text(
-            text = "Ready to find your next recipe?",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 8.dp, bottom = 24.dp),
-        )
-        Button(onClick = onClickNewChat) {
-            Text("New chat")
-        }
-        OutlinedButton(
-            onClick = onClickIngredients,
-            modifier = Modifier.padding(top = 8.dp),
+    BoxWithConstraints(modifier = modifier.padding(16.dp)) {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .heightIn(min = maxHeight),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text("My ingredients")
-        }
-        OutlinedButton(
-            onClick = onClickLogout,
-            modifier = Modifier.padding(top = 8.dp),
-        ) {
-            Text("Log out")
+            Spacer(Modifier.weight(1f))
+            Text(
+                text = "Welcome back\n$username!",
+                style = MaterialTheme.typography.headlineMedium,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                text = "Ready to find your next recipe?",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 8.dp, bottom = 24.dp),
+            )
+            Button(onClick = onClickNewChat) {
+                Text("New chat")
+            }
+            AnimatedVisibility(visible = onClickViewChats != null) {
+                OutlinedButton(
+                    onClick = { onClickViewChats?.invoke() },
+                    modifier = Modifier.padding(top = 8.dp),
+                ) {
+                    Text("Previous chats")
+                }
+            }
+            OutlinedButton(
+                onClick = onClickIngredients,
+                modifier = Modifier.padding(top = 8.dp),
+            ) {
+                Text("Ingredients")
+            }
+            Spacer(Modifier.weight(1f))
+            TextButton(onClick = onClickLogout) {
+                Text("Log out")
+            }
         }
     }
 }
@@ -175,17 +236,31 @@ private fun WelcomePanel(
 private fun ChatSidebar(
     chats: List<UiChat>,
     modifier: Modifier = Modifier,
+    onClickBack: (() -> Unit)? = null,
 ) {
     Surface(
         modifier = modifier,
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
     ) {
         Column {
-            Text(
-                text = "Chats",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(16.dp),
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (onClickBack != null) {
+                    IconButton(onClick = onClickBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                        )
+                    }
+                }
+                Text(
+                    text = "Previous chats",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(8.dp),
+                )
+            }
             HorizontalDivider()
             if (chats.isEmpty()) {
                 Text(
