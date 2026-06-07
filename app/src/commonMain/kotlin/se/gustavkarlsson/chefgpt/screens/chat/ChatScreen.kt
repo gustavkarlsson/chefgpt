@@ -299,10 +299,7 @@ private fun MessageList(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(items = reversedMessages, key = { it.id }) { message ->
-            MessageBubble(
-                modifier = Modifier.animateItem(),
-                message = message,
-            )
+            MessageBubble(message = message)
         }
     }
 }
