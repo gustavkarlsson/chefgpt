@@ -127,6 +127,7 @@ private fun ChatSidebar(
                             chat = chat,
                             onClick = { onChatClick(chat) },
                             onDelete = { onChatDelete(chat) },
+                            modifier = Modifier.animateItem(),
                         )
                     }
                 }
@@ -140,6 +141,7 @@ private fun ChatItem(
     chat: Chat,
     onClick: () -> Unit,
     onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val title =
         chat.name ?: run {
@@ -152,7 +154,7 @@ private fun ChatItem(
         }
     Row(
         modifier =
-            Modifier
+            modifier
                 .fillMaxWidth()
                 .clickable(onClick = onClick)
                 .padding(start = 16.dp, top = 4.dp, bottom = 4.dp),
