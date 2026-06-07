@@ -43,7 +43,7 @@ class IngredientsViewModel(
     val uiState: StateFlow<UiState> =
         innerState
             .map { it.toUiState() }
-            .stateIn(viewModelScope, SharingStarted.Eagerly, innerState.value.toUiState())
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), innerState.value.toUiState())
 
     private fun State.toUiState(): UiState =
         UiState(

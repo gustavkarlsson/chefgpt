@@ -28,14 +28,29 @@ Here are the key concepts and the order in which they should appear in the file:
 1. **Constructor arguments** — only declare them as `val` if necessary to store their value. Always private in that case.
 2. **Private values derived from constructor arguments** — such as navigation parameters (session ID).
 3. **`private val innerState = MutableStateFlow(State())`**.
-4. **`val uiState: StateFlow<UiState>`** — derived from `innerState` and mapped to stateFlow with a subscription time-limited SharingStarted:
+4. **`val uiState: StateFlow<UiState>`** — derived from `innerState` and mapped to a `StateFlow` with a subscription time-limited `SharingStarted`:
     ```kotlin
-    val viewState: StateFlow<ViewState> =
+    val uiState: StateFlow<UiState> =
         innerState
-            .map { it.toViewState() }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), innerState.value.toViewState())
+            .map { it.toUiState() }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), innerState.value.toUiState())
     ```
-5. **`private fun State.toUiState(): UiState`** — pure mapping from state to UI state, wiring callbacks.
+5. **`private fun State.toUiState(): UiState`** — pure mapping from state to UI state, wiring callbacks:
+    ```kotlin
+    private fun State.toUiState(): UiState =
+        UiState(
+            inInventory = ingredients.toUiIngredients(emojiResolver, inInventory = true),
+            notInInventory = ingredients.toUiIngredients(emojiResolver, inInventory = false),
+            input =
+                UiInput(
+                    text = inputText,
+                    onTextChange = ::updateInputText,
+                    onScanImageSelected = ::scanImage,
+                    onClickAdd = if (inputText.isNotBlank() && emojiResolver != null) ::createIngredient else null,
+                ),
+            onClickBack = navigator::pop,
+        )
+    ```
 6. **Private state to UI state mapping functions** — to avoid making `toUiState` too complex, it can be broken down into smaller functions declared right after it.
 7. **`init { ... }`** — Perform init logic such as launching long-running collectors.
 8. **Private action functions** — Additional utility functions called as part of `init` or UI state callbacks.

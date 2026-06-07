@@ -27,7 +27,7 @@ fun IngredientsScreen(route: Route.Ingredients) {
 ```
 
 - Resolve the ViewModel with `koinViewModel<T>()`. Pass navigation route args via `{ parametersOf(route) }`.
-- Collect `uiState` with `collectAsState()`.
+- Collect `uiState` with `collectAsStateWithLifecycle()`.
 - Delegate immediately to a private, stateless `Content(uiState)`.
 
 ### Content and child composables
