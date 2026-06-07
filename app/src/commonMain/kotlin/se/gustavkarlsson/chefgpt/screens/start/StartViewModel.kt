@@ -42,13 +42,19 @@ class StartViewModel(
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), innerState.value.toUiState())
 
     private fun State.toUiState(): UiState =
+        UiState(
+            content = toContent(),
+            onClickDebug = ::openDebug,
+        )
+
+    private fun State.toContent(): UiState.Content =
         when {
             !initialized -> {
-                UiState.Loading
+                UiState.Content.Loading
             }
 
             sessionCredentials == null -> {
-                UiState.LoggedOut(
+                UiState.Content.LoggedOut(
                     username = inputUsername,
                     password = inputPassword,
                     onUsernameChange = ::updateUsername,
@@ -59,7 +65,7 @@ class StartViewModel(
             }
 
             else -> {
-                UiState.LoggedIn(
+                UiState.Content.LoggedIn(
                     username = sessionCredentials.username.value,
                     chats = chats.toUiChats(),
                     onClickNewChat = ::createChat,
@@ -201,6 +207,10 @@ class StartViewModel(
         navigator.push(Route.Ingredients(credentials.sessionId))
     }
 
+    private fun openDebug() {
+        navigator.push(Route.Debug)
+    }
+
     private fun logOut() {
         restartChatStream(credentials = null)
         viewModelScope.launch {
@@ -241,25 +251,30 @@ private data class State(
         get() = UserCredentials(inputUsername, inputPassword)
 }
 
-sealed interface UiState {
-    data object Loading : UiState
+data class UiState(
+    val content: Content,
+    val onClickDebug: () -> Unit,
+) {
+    sealed interface Content {
+        data object Loading : Content
 
-    data class LoggedOut(
-        val username: String,
-        val password: String,
-        val onUsernameChange: (String) -> Unit,
-        val onPasswordChange: (String) -> Unit,
-        val onClickRegister: (() -> Unit)?,
-        val onClickLogin: (() -> Unit)?,
-    ) : UiState
+        data class LoggedOut(
+            val username: String,
+            val password: String,
+            val onUsernameChange: (String) -> Unit,
+            val onPasswordChange: (String) -> Unit,
+            val onClickRegister: (() -> Unit)?,
+            val onClickLogin: (() -> Unit)?,
+        ) : Content
 
-    data class LoggedIn(
-        val username: String,
-        val chats: List<UiChat>,
-        val onClickNewChat: () -> Unit,
-        val onClickIngredients: () -> Unit,
-        val onClickLogout: () -> Unit,
-    ) : UiState
+        data class LoggedIn(
+            val username: String,
+            val chats: List<UiChat>,
+            val onClickNewChat: () -> Unit,
+            val onClickIngredients: () -> Unit,
+            val onClickLogout: () -> Unit,
+        ) : Content
+    }
 }
 
 data class UiChat(

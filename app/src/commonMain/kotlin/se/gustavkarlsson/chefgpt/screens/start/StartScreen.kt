@@ -3,6 +3,7 @@ package se.gustavkarlsson.chefgpt.screens.start
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
@@ -66,21 +68,32 @@ private fun Content(
     modifier: Modifier = Modifier,
 ) {
     Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
-        val modifier = Modifier.fillMaxSize().padding(innerPadding)
-        when (uiState) {
-            // Blank screen until we know whether a session exists
-            UiState.Loading -> Unit
+        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            when (val content = uiState.content) {
+                // Blank screen until we know whether a session exists
+                UiState.Content.Loading -> Unit
 
-            is UiState.LoggedOut -> LoggedOutContent(modifier = modifier, state = uiState)
+                is UiState.Content.LoggedOut -> LoggedOutContent(modifier = Modifier.fillMaxSize(), state = content)
 
-            is UiState.LoggedIn -> LoggedInContent(modifier = modifier, state = uiState)
+                is UiState.Content.LoggedIn -> LoggedInContent(modifier = Modifier.fillMaxSize(), state = content)
+            }
+            // Always-available entry point to the debug screen.
+            IconButton(
+                onClick = uiState.onClickDebug,
+                modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Build,
+                    contentDescription = "Debug",
+                )
+            }
         }
     }
 }
 
 @Composable
 private fun LoggedOutContent(
-    state: UiState.LoggedOut,
+    state: UiState.Content.LoggedOut,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -127,7 +140,7 @@ private fun LoggedOutContent(
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 private fun LoggedInContent(
-    state: UiState.LoggedIn,
+    state: UiState.Content.LoggedIn,
     modifier: Modifier = Modifier,
 ) {
     val navigator =

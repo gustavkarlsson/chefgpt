@@ -14,9 +14,11 @@ import se.gustavkarlsson.chefgpt.chats.ApiConversationFactory
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.ConversationFactory
 import se.gustavkarlsson.chefgpt.chats.EventHistoryStore
+import se.gustavkarlsson.chefgpt.debug.Settings
 import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.screens.chat.ChatViewModel
+import se.gustavkarlsson.chefgpt.screens.debug.DebugViewModel
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsViewModel
 import se.gustavkarlsson.chefgpt.screens.start.StartViewModel
 import se.gustavkarlsson.chefgpt.sessions.LastSessionFileStore
@@ -25,6 +27,7 @@ import se.gustavkarlsson.chefgpt.sessions.SessionRepositoryImpl
 
 val singletonModule =
     module {
+        single<Settings>()
         single<ChefGptClient>()
         // TODO Should be activity retained scoped for Android.
         single<Navigator>()
@@ -42,6 +45,7 @@ val viewModelModule =
         viewModel<StartViewModel>()
         viewModel<ChatViewModel>()
         viewModel<IngredientsViewModel>()
+        viewModel<DebugViewModel>()
     }
 
 val nativeModule =

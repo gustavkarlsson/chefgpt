@@ -25,4 +25,8 @@ sealed interface Route : NavKey {
     data class Ingredients(
         val sessionId: SessionId,
     ) : Route
+
+    @Serializable
+    @SerialName("debug")
+    data object Debug : Route
 }
