@@ -35,22 +35,7 @@ Here are the key concepts and the order in which they should appear in the file:
             .map { it.toUiState() }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), innerState.value.toUiState())
     ```
-5. **`private fun State.toUiState(): UiState`** — pure mapping from state to UI state, wiring callbacks:
-    ```kotlin
-    private fun State.toUiState(): UiState =
-        UiState(
-            inInventory = ingredients.toUiIngredients(emojiResolver, inInventory = true),
-            notInInventory = ingredients.toUiIngredients(emojiResolver, inInventory = false),
-            input =
-                UiInput(
-                    text = inputText,
-                    onTextChange = ::updateInputText,
-                    onScanImageSelected = ::scanImage,
-                    onClickAdd = if (inputText.isNotBlank() && emojiResolver != null) ::createIngredient else null,
-                ),
-            onClickBack = navigator::pop,
-        )
-    ```
+5. **`private fun State.toUiState(): UiState`** — pure mapping from state to UI state, wiring callbacks.
 6. **Private state to UI state mapping functions** — to avoid making `toUiState` too complex, it can be broken down into smaller functions declared right after it.
 7. **`init { ... }`** — Perform init logic such as launching long-running collectors.
 8. **Private action functions** — Additional utility functions called as part of `init` or UI state callbacks.
