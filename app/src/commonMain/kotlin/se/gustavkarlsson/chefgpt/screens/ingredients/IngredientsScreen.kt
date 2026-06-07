@@ -140,7 +140,7 @@ private fun LazyGridScope.ingredientSection(
             )
         }
     }
-    items(items = ingredients, key = { it.id }) { ingredient ->
+    items(items = ingredients, key = { it.id.toString() }) { ingredient ->
         IngredientCard(
             modifier = Modifier.animateItem(),
             ingredient = ingredient,
