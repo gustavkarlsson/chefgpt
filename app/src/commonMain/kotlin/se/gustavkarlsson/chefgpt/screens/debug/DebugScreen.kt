@@ -2,11 +2,17 @@ package se.gustavkarlsson.chefgpt.screens.debug
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -25,7 +31,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
-import androidx.compose.foundation.lazy.items as lazyItems
 
 @Composable
 fun DebugScreen() {
@@ -43,7 +48,11 @@ private fun Content(
         modifier = modifier.fillMaxSize(),
         topBar = {
             Row(
-                modifier = Modifier.padding(4.dp),
+                modifier =
+                    Modifier
+                        .windowInsetsPadding(
+                            WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                        ).padding(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = uiState.onClickBack) {
@@ -61,9 +70,10 @@ private fun Content(
         },
     ) { paddingValues ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(paddingValues),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = paddingValues,
         ) {
-            lazyItems(uiState.items, key = { it.title }) { item ->
+            items(uiState.items, key = { it.title }) { item ->
                 DebugItemRow(item)
             }
         }
