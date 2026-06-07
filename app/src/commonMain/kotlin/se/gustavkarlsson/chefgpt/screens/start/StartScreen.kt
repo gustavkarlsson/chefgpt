@@ -26,7 +26,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -36,71 +35,145 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
-import se.gustavkarlsson.chefgpt.chats.Chat
-import se.gustavkarlsson.chefgpt.chats.displayName
-import se.gustavkarlsson.chefgpt.screens.start.StartViewModel.ViewState
 
 @Composable
 fun StartScreen() {
     val viewModel = koinViewModel<StartViewModel>()
-    val viewState by viewModel.viewState.collectAsState()
-    Content(viewState)
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    Content(uiState)
 }
 
 @Composable
-private fun Content(viewState: ViewState) {
-    Scaffold { innerPadding ->
-        when (viewState) {
-            is ViewState.LoggedOut -> {
-                Column(
-                    modifier = Modifier.fillMaxSize().padding(innerPadding),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    LoggedOutContent(
-                        username = viewState.username,
-                        password = viewState.password,
-                        onUsernameChange = viewState.onUsernameChange,
-                        onPasswordChange = viewState.onPasswordChange,
-                        onClickRegister = viewState.onClickRegister,
-                        onClickLogin = viewState.onClickLogin,
-                    )
-                }
-            }
+private fun Content(
+    uiState: UiState,
+    modifier: Modifier = Modifier,
+) {
+    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+        val modifier = Modifier.fillMaxSize().padding(innerPadding)
+        when (uiState) {
+            // Blank screen until we know whether a session exists
+            UiState.Loading -> Unit
 
-            is ViewState.LoggedIn -> {
-                Row(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-                    ChatSidebar(
-                        chats = viewState.chats,
-                        onChatClick = viewState.onClickChat,
-                        onChatDelete = viewState.onClickDeleteChat,
-                        modifier = Modifier.width(260.dp).fillMaxHeight(),
-                    )
-                    VerticalDivider()
-                    Column(
-                        modifier = Modifier.weight(1f).fillMaxHeight(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                    ) {
-                        LoggedInContent(
-                            username = viewState.username,
-                            onClickNewChat = viewState.onClickNewChat,
-                            onClickIngredients = viewState.onClickIngredients,
-                            onClickLogout = viewState.onClickLogout,
-                        )
-                    }
-                }
-            }
+            is UiState.LoggedOut -> LoggedOutContent(modifier = modifier, state = uiState)
+
+            is UiState.LoggedIn -> LoggedInContent(modifier = modifier, state = uiState)
+        }
+    }
+}
+
+@Composable
+private fun LoggedOutContent(
+    state: UiState.LoggedOut,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            text = "Welcome to ChefGPT",
+            style = MaterialTheme.typography.headlineMedium,
+        )
+        Text(
+            text = "Sign in to get started",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 8.dp, bottom = 24.dp),
+        )
+        val usernameFocusRequester = remember { FocusRequester() }
+        LaunchedEffect(Unit) { usernameFocusRequester.requestFocus() }
+        OutlinedTextField(
+            value = state.username,
+            onValueChange = state.onUsernameChange,
+            label = { Text("Username") },
+            singleLine = true,
+            modifier = Modifier.focusRequester(usernameFocusRequester),
+        )
+        OutlinedTextField(
+            value = state.password,
+            onValueChange = state.onPasswordChange,
+            label = { Text("Password") },
+            singleLine = true,
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
+        )
+        Button(onClick = { state.onClickRegister?.invoke() }, enabled = state.onClickRegister != null) {
+            Text("Register")
+        }
+        Button(onClick = { state.onClickLogin?.invoke() }, enabled = state.onClickLogin != null) {
+            Text("Sign in")
+        }
+    }
+}
+
+@Composable
+private fun LoggedInContent(
+    state: UiState.LoggedIn,
+    modifier: Modifier = Modifier,
+) {
+    Row(modifier = modifier) {
+        ChatSidebar(
+            chats = state.chats,
+            modifier = Modifier.width(260.dp).fillMaxHeight(),
+        )
+        VerticalDivider()
+        WelcomePanel(
+            username = state.username,
+            onClickNewChat = state.onClickNewChat,
+            onClickIngredients = state.onClickIngredients,
+            onClickLogout = state.onClickLogout,
+            modifier = Modifier.weight(1f).fillMaxHeight(),
+        )
+    }
+}
+
+@Composable
+private fun WelcomePanel(
+    username: String,
+    onClickNewChat: () -> Unit,
+    onClickIngredients: () -> Unit,
+    onClickLogout: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            text = "Welcome back, $username!",
+            style = MaterialTheme.typography.headlineMedium,
+        )
+        Text(
+            text = "Ready to find your next recipe?",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 8.dp, bottom = 24.dp),
+        )
+        Button(onClick = onClickNewChat) {
+            Text("New chat")
+        }
+        OutlinedButton(
+            onClick = onClickIngredients,
+            modifier = Modifier.padding(top = 8.dp),
+        ) {
+            Text("My ingredients")
+        }
+        OutlinedButton(
+            onClick = onClickLogout,
+            modifier = Modifier.padding(top = 8.dp),
+        ) {
+            Text("Log out")
         }
     }
 }
 
 @Composable
 private fun ChatSidebar(
-    chats: List<Chat>,
-    onChatClick: (Chat) -> Unit,
-    onChatDelete: (Chat) -> Unit,
+    chats: List<UiChat>,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -126,8 +199,6 @@ private fun ChatSidebar(
                     items(chats, key = { it.id.toString() }) { chat ->
                         ChatItem(
                             chat = chat,
-                            onClick = { onChatClick(chat) },
-                            onDelete = { onChatDelete(chat) },
                             modifier = Modifier.animateItem(),
                         )
                     }
@@ -139,111 +210,30 @@ private fun ChatSidebar(
 
 @Composable
 private fun ChatItem(
-    chat: Chat,
-    onClick: () -> Unit,
-    onDelete: () -> Unit,
+    chat: UiChat,
     modifier: Modifier = Modifier,
 ) {
-    val title = chat.displayName
     Row(
         modifier =
             modifier
                 .fillMaxWidth()
-                .clickable(onClick = onClick)
+                .clickable { chat.onClick(chat.id) }
                 .padding(start = 16.dp, top = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = title,
+            text = chat.title,
             style = MaterialTheme.typography.bodyMedium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
-        IconButton(onClick = onDelete) {
+        IconButton(onClick = { chat.onClickDelete(chat.id) }) {
             Icon(
                 imageVector = Icons.Default.Delete,
                 contentDescription = "Delete chat",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-    }
-}
-
-@Composable
-private fun LoggedOutContent(
-    username: String,
-    password: String,
-    onUsernameChange: (String) -> Unit,
-    onPasswordChange: (String) -> Unit,
-    onClickRegister: (() -> Unit)?,
-    onClickLogin: (() -> Unit)?,
-) {
-    Text(
-        text = "Welcome to ChefGPT",
-        style = MaterialTheme.typography.headlineMedium,
-    )
-    Text(
-        text = "Sign in to get started",
-        style = MaterialTheme.typography.bodyLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(top = 8.dp, bottom = 24.dp),
-    )
-    val usernameFocusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) { usernameFocusRequester.requestFocus() }
-    OutlinedTextField(
-        value = username,
-        onValueChange = onUsernameChange,
-        label = { Text("Username") },
-        singleLine = true,
-        modifier = Modifier.focusRequester(usernameFocusRequester),
-    )
-    OutlinedTextField(
-        value = password,
-        onValueChange = onPasswordChange,
-        label = { Text("Password") },
-        singleLine = true,
-        visualTransformation = PasswordVisualTransformation(),
-        modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
-    )
-    Button(onClick = { onClickRegister?.invoke() }, enabled = onClickRegister != null) {
-        Text("Register")
-    }
-    Button(onClick = { onClickLogin?.invoke() }, enabled = onClickLogin != null) {
-        Text("Sign in")
-    }
-}
-
-@Composable
-private fun LoggedInContent(
-    username: String,
-    onClickNewChat: () -> Unit,
-    onClickIngredients: () -> Unit,
-    onClickLogout: () -> Unit,
-) {
-    Text(
-        text = "Welcome back, $username!",
-        style = MaterialTheme.typography.headlineMedium,
-    )
-    Text(
-        text = "Ready to find your next recipe?",
-        style = MaterialTheme.typography.bodyLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(top = 8.dp, bottom = 24.dp),
-    )
-    Button(onClick = onClickNewChat) {
-        Text("New chat")
-    }
-    OutlinedButton(
-        onClick = onClickIngredients,
-        modifier = Modifier.padding(top = 8.dp),
-    ) {
-        Text("My ingredients")
-    }
-    OutlinedButton(
-        onClick = onClickLogout,
-        modifier = Modifier.padding(top = 8.dp),
-    ) {
-        Text("Log out")
     }
 }

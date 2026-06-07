@@ -61,9 +61,12 @@ fun IngredientsScreen(route: Route.Ingredients) {
 }
 
 @Composable
-private fun Content(uiState: UiState) {
+private fun Content(
+    uiState: UiState,
+    modifier: Modifier = Modifier,
+) {
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         topBar = {
             Row(
                 modifier = Modifier.padding(4.dp),

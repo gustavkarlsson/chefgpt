@@ -80,7 +80,7 @@ If parts of the UI are not always present, use nullable properties in the UI sta
 - Name by interaction: `onClick<Thing>`, `on<Field>Changed`, etc.
 - Type as `() -> Unit` when possible (or `(T) -> Unit` if the input comes from the UI, such as text changes).
 - **Make a callback nullable (`(() -> Unit)?`) to express "disabled"** — return `null` from `toUiState()` (or a `get()`) when the action isn't currently allowed (blank input, not connected, etc.). The UI greys out the control. Don't add separate `enabled` booleans for this.
-- When assigning, NEVER use lambdas, as they will generate a new equals value each time, causing unnecessary recompositions. Instead, use references to private functions (`::addItem`).
+- When assigning callbacks **into the `UiState` hierarchy**, NEVER use lambdas, as they will generate a new equals value each time, causing unnecessary recompositions. Instead, use references to private functions (`::addItem`).
 
 ## Actions
 

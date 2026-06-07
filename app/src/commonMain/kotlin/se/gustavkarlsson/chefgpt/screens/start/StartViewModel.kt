@@ -5,9 +5,8 @@ import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.onErr
 import com.github.michaelbull.result.onOk
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -15,8 +14,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.chats.Chat
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
+import se.gustavkarlsson.chefgpt.chats.displayName
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.sessions.RegisterError
@@ -31,204 +32,177 @@ class StartViewModel(
     private val sessionRepository: SessionRepository,
     private val navigator: Navigator,
 ) : ViewModel() {
-    // TODO Split into loading, logging in, and logging out states
-    private data class State(
-        val sessionCredentials: SessionCredentials? = null,
-        val chats: List<Chat> = emptyList(),
-        val inputUsername: String = "",
-        val inputPassword: String = "",
-    )
+    private val streamChatsJob = atomic<Job?>(null)
 
-    sealed interface ViewState {
-        data class LoggedOut(
-            val username: String,
-            val password: String,
-            val onUsernameChange: (String) -> Unit,
-            val onPasswordChange: (String) -> Unit,
-            val onClickRegister: (() -> Unit)?,
-            val onClickLogin: (() -> Unit)?,
-        ) : ViewState
+    private val innerState = MutableStateFlow(State())
 
-        data class LoggedIn(
-            val username: String,
-            val chats: List<Chat>,
-            val onClickNewChat: () -> Unit,
-            val onClickChat: (Chat) -> Unit,
-            val onClickDeleteChat: (Chat) -> Unit,
-            val onClickIngredients: () -> Unit,
-            val onClickLogout: () -> Unit,
-        ) : ViewState
-    }
+    val uiState: StateFlow<UiState> =
+        innerState
+            .map { it.toUiState() }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), innerState.value.toUiState())
 
-    private var streamChatsJob: Job = Job().apply { complete() }
+    private fun State.toUiState(): UiState =
+        when {
+            !initialized -> {
+                UiState.Loading
+            }
 
-    // TODO Synchronize
-    private fun replaceStreamChatsJob(
-        reason: String,
-        work: (suspend CoroutineScope.() -> Unit)?,
-    ) {
-        streamChatsJob.cancel(reason)
-        if (work != null) {
-            streamChatsJob = viewModelScope.launch(block = work)
+            sessionCredentials == null -> {
+                UiState.LoggedOut(
+                    username = inputUsername,
+                    password = inputPassword,
+                    onUsernameChange = ::updateUsername,
+                    onPasswordChange = ::updatePassword,
+                    onClickRegister = if (canAuthenticate) ::register else null,
+                    onClickLogin = if (canAuthenticate) ::logIn else null,
+                )
+            }
+
+            else -> {
+                UiState.LoggedIn(
+                    username = sessionCredentials.username.value,
+                    chats = chats.toUiChats(),
+                    onClickNewChat = ::createChat,
+                    onClickIngredients = ::openIngredients,
+                    onClickLogout = ::logOut,
+                )
+            }
         }
-    }
+
+    private val State.canAuthenticate: Boolean
+        get() = inputUsername.isNotBlank() && inputPassword.isNotBlank() && !authenticating
+
+    private fun List<Chat>.toUiChats(): List<UiChat> =
+        map { chat ->
+            UiChat(
+                id = chat.id,
+                title = chat.displayName,
+                onClick = ::openChat,
+                onClickDelete = ::deleteChat,
+            )
+        }
 
     init {
         viewModelScope.launch {
             // Ignore errors, as we can just start with a fresh session
             sessionRepository
                 .getCurrentSession()
-                .onOk { lastCredentials ->
-                    if (lastCredentials != null) {
-                        innerState.update { it.copy(sessionCredentials = lastCredentials) }
-                        replaceStreamChatsJob("Loaded last session") {
-                            streamChats(lastCredentials)
-                        }
-                    }
-                }
-        }
-    }
-
-    private val innerState = MutableStateFlow(State())
-
-    val viewState: StateFlow<ViewState> =
-        innerState
-            .map { it.toViewState() }
-            .stateIn(viewModelScope, SharingStarted.Eagerly, innerState.value.toViewState())
-
-    private suspend fun streamChats(credentials: SessionCredentials) {
-        chatRepository
-            .stream(credentials.sessionId)
-            .collect { chats ->
-                innerState.update {
-                    it.copy(
-                        sessionCredentials = credentials,
-                        chats = chats,
-                    )
-                }
-            }
-    }
-
-    private fun State.toViewState(): ViewState =
-        if (sessionCredentials == null) {
-            ViewState.LoggedOut(
-                username = inputUsername,
-                password = inputPassword,
-                onUsernameChange = { innerState.value = innerState.value.copy(inputUsername = it) },
-                onPasswordChange = { innerState.value = innerState.value.copy(inputPassword = it) },
-                onClickRegister =
-                    if (inputUsername.isNotBlank() && inputPassword.isNotBlank()) {
-                        { onClickRegister(inputUsername, inputPassword) }
-                    } else {
-                        null
-                    },
-                onClickLogin =
-                    if (inputUsername.isNotBlank() && inputPassword.isNotBlank()) {
-                        { onClickLogin(this.inputUsername, this.inputPassword) }
-                    } else {
-                        null
-                    },
-            )
-        } else {
-            ViewState.LoggedIn(
-                username = sessionCredentials.username.value,
-                chats = chats,
-                onClickNewChat = { onClickNewChat(sessionCredentials) },
-                onClickChat = { chat -> navigator.push(Route.Chat(sessionCredentials.sessionId, chat.id)) },
-                onClickDeleteChat = { chat -> onClickDeleteChat(sessionCredentials, chat) },
-                onClickIngredients = { navigator.push(Route.Ingredients(sessionCredentials.sessionId)) },
-                onClickLogout = { onClickLogout() },
-            )
-        }
-
-    private fun onClickRegister(
-        inputUsername: String,
-        inputPassword: String,
-    ) {
-        viewModelScope.launch {
-            sessionRepository
-                .register(UserCredentials(inputUsername, inputPassword))
                 .onOk { credentials ->
-                    log.i { "Registered as '$inputUsername'" }
-                    replaceStreamChatsJob("Registered new user") {
-                        streamChats(credentials)
+                    if (credentials != null) {
+                        innerState.update { it.copy(sessionCredentials = credentials) }
+                        restartChatStream(credentials)
                     }
-                    innerState.update {
-                        it.copy(sessionCredentials = credentials)
-                    }
-                }.onErr { error ->
-                    // TODO Show correct feedback message based on the error
-                    //  Modify state?
-                    when (error) {
-                        is RegisterError.ServerError -> {
-                            log.i {
-                                "Registration failed for '$inputUsername': ${error.response.errorBody}"
+                }
+            innerState.update { it.copy(initialized = true) }
+        }
+    }
+
+    private fun updateUsername(username: String) {
+        innerState.update { it.copy(inputUsername = username) }
+    }
+
+    private fun updatePassword(password: String) {
+        innerState.update { it.copy(inputPassword = password) }
+    }
+
+    private fun register() {
+        val state = innerState.value
+        if (state.authenticating) return
+        val username = state.inputUsername
+        innerState.update { it.copy(authenticating = true) }
+        viewModelScope.launch {
+            try {
+                sessionRepository
+                    .register(state.inputCredentials)
+                    .onOk { onAuthenticated(username, it, "Registered") }
+                    .onErr { error ->
+                        // TODO Show correct feedback message based on the error
+                        when (error) {
+                            is RegisterError.ServerError -> {
+                                log.i { "Registration failed for '$username': ${error.response.errorBody}" }
+                            }
+
+                            RegisterError.StorageFailed -> {
+                                log.e { "Registration succeeded but failed to save session for '$username'" }
                             }
                         }
-
-                        RegisterError.StorageFailed -> {
-                            log.e { "Registration succeeded but failed to save session for '$inputUsername'" }
-                        }
                     }
-                }
+            } finally {
+                innerState.update { it.copy(authenticating = false) }
+            }
         }
     }
 
-    private fun onClickLogin(
-        inputUsername: String,
-        inputPassword: String,
-    ) {
+    private fun logIn() {
+        val state = innerState.value
+        if (state.authenticating) return
+        val username = state.inputUsername
+        innerState.update { it.copy(authenticating = true) }
         viewModelScope.launch {
-            sessionRepository
-                .login(UserCredentials(inputUsername, inputPassword))
-                .onOk { credentials ->
-                    log.i { "Logged in as '$inputUsername'" }
-                    replaceStreamChatsJob("Logged in user") {
-                        streamChats(credentials)
+            try {
+                sessionRepository
+                    .login(state.inputCredentials)
+                    .onOk { onAuthenticated(username, it, "Logged in") }
+                    .onErr {
+                        // TODO Show correct feedback message based on the status code
+                        log.i { "Login failed for '$username': ${it.errorBody}" }
                     }
-                    innerState.update {
-                        it.copy(sessionCredentials = credentials)
-                    }
-                }.onErr { errorResponse ->
-                    // TODO Show correct feedback message based on the status code
-                    //  Modify state?
-                    log.i { "Login failed for '$inputUsername': ${errorResponse.errorBody}" }
-                }
+            } finally {
+                innerState.update { it.copy(authenticating = false) }
+            }
         }
     }
 
-    private fun onClickNewChat(sessionCredentials: SessionCredentials) {
+    private fun onAuthenticated(
+        username: String,
+        credentials: SessionCredentials,
+        action: String,
+    ) {
+        log.i { "$action as '$username'" }
+        innerState.update { it.copy(sessionCredentials = credentials) }
+        restartChatStream(credentials)
+    }
+
+    private fun createChat() {
+        val credentials = innerState.value.sessionCredentials ?: return
         viewModelScope.launch {
             chatRepository
-                .create(sessionCredentials.sessionId)
+                .create(credentials.sessionId)
                 .onOk { chat ->
                     log.i { "Chat created: ${chat.id}" }
-                    navigator.push(Route.Chat(sessionCredentials.sessionId, chat.id))
-                }.onErr { errorResponse ->
+                    navigator.push(Route.Chat(credentials.sessionId, chat.id))
+                }.onErr {
                     // TODO Show user-friendly error
-                    log.e { "Failed to create chat: ${errorResponse.errorBody}" }
+                    log.e { "Failed to create chat: ${it.errorBody}" }
                 }
         }
     }
 
-    private fun onClickDeleteChat(
-        sessionCredentials: SessionCredentials,
-        chat: Chat,
-    ) {
+    private fun openChat(chatId: ChatId) {
+        val credentials = innerState.value.sessionCredentials ?: return
+        navigator.push(Route.Chat(credentials.sessionId, chatId))
+    }
+
+    private fun deleteChat(chatId: ChatId) {
+        val credentials = innerState.value.sessionCredentials ?: return
         viewModelScope.launch {
             chatRepository
-                .delete(sessionCredentials.sessionId, chat.id)
-                .onOk {
-                    log.i { "Chat deleted: ${chat.id}" }
-                }.onErr { errorResponse ->
+                .delete(credentials.sessionId, chatId)
+                .onOk { log.i { "Chat deleted: $chatId" } }
+                .onErr {
                     // TODO Show user-friendly error
-                    log.e { "Failed to delete chat: ${errorResponse.errorBody}" }
+                    log.e { "Failed to delete chat: ${it.errorBody}" }
                 }
         }
     }
 
-    private fun onClickLogout() {
-        replaceStreamChatsJob("Logging out", work = null)
+    private fun openIngredients() {
+        val credentials = innerState.value.sessionCredentials ?: return
+        navigator.push(Route.Ingredients(credentials.sessionId))
+    }
+
+    private fun logOut() {
+        restartChatStream(credentials = null)
         viewModelScope.launch {
             // TODO Handle failure to log out?
             sessionRepository.logOut()
@@ -242,4 +216,55 @@ class StartViewModel(
             )
         }
     }
+
+    private fun restartChatStream(credentials: SessionCredentials?) {
+        val job = credentials?.let { creds -> viewModelScope.launch { streamChats(creds) } }
+        streamChatsJob.getAndSet(job)?.cancel()
+    }
+
+    private suspend fun streamChats(credentials: SessionCredentials) {
+        chatRepository
+            .stream(credentials.sessionId)
+            .collect { chats -> innerState.update { it.copy(chats = chats) } }
+    }
 }
+
+private data class State(
+    val initialized: Boolean = false,
+    val sessionCredentials: SessionCredentials? = null,
+    val chats: List<Chat> = emptyList(),
+    val inputUsername: String = "",
+    val inputPassword: String = "",
+    val authenticating: Boolean = false,
+) {
+    val inputCredentials: UserCredentials
+        get() = UserCredentials(inputUsername, inputPassword)
+}
+
+sealed interface UiState {
+    data object Loading : UiState
+
+    data class LoggedOut(
+        val username: String,
+        val password: String,
+        val onUsernameChange: (String) -> Unit,
+        val onPasswordChange: (String) -> Unit,
+        val onClickRegister: (() -> Unit)?,
+        val onClickLogin: (() -> Unit)?,
+    ) : UiState
+
+    data class LoggedIn(
+        val username: String,
+        val chats: List<UiChat>,
+        val onClickNewChat: () -> Unit,
+        val onClickIngredients: () -> Unit,
+        val onClickLogout: () -> Unit,
+    ) : UiState
+}
+
+data class UiChat(
+    val id: ChatId,
+    val title: String,
+    val onClick: (ChatId) -> Unit,
+    val onClickDelete: (ChatId) -> Unit,
+)
