@@ -265,7 +265,9 @@ class ChatViewModel(
                 conversation.events().collect { eventResult ->
                     eventResult
                         .onOk { event ->
-                            innerState.update { it.copy(events = it.events + event) }
+                            // Reconnecting replays the full history, so upsert by id to avoid
+                            // duplicate events (and duplicate LazyColumn keys) on resume.
+                            innerState.update { it.copy(events = it.events.upsert(event)) }
                         }.onErr { errorResponse ->
                             log.e { "Failed to stream events: $errorResponse" }
                         }
@@ -274,6 +276,12 @@ class ChatViewModel(
             conversation.sendAction(ApiUserJoinedChat(joinId))
             // Waits until the launch job is done
         }
+}
+
+// Replaces the event with the same id if present, preserving order; otherwise appends.
+private fun List<ApiEvent>.upsert(event: ApiEvent): List<ApiEvent> {
+    val index = indexOfFirst { it.id == event.id }
+    return if (index < 0) this + event else toMutableList().also { it[index] = event }
 }
 
 private data class State(
