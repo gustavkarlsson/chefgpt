@@ -32,8 +32,11 @@ import se.gustavkarlsson.chefgpt.api.ApiUserJoined
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.JoinId
+import se.gustavkarlsson.chefgpt.chats.Chat
+import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.Conversation
 import se.gustavkarlsson.chefgpt.chats.ConversationFactory
+import se.gustavkarlsson.chefgpt.chats.displayName
 import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.navigation.Route
@@ -60,14 +63,16 @@ sealed interface IngredientChange {
 class ChatViewModel(
     private val client: ChefGptClient,
     conversationFactory: ConversationFactory,
+    private val chatRepository: ChatRepository,
     private val navigator: Navigator,
     private val emojiResolverFactory: IngredientEmojiResolver.Factory,
-    @InjectedParam private val chat: Route.Chat,
+    @InjectedParam private val route: Route.Chat,
 ) : ViewModel() {
-    private val conversation: Conversation = conversationFactory.create(chat.sessionId, chat.chatId)
+    private val conversation: Conversation = conversationFactory.create(route.sessionId, route.chatId)
 
     private data class State(
         val joinId: JoinId? = null,
+        val chat: Chat? = null,
         val events: List<ApiEvent> = emptyList(),
         val userText: String = "",
         val attachedImage: Path? = null,
@@ -76,6 +81,7 @@ class ChatViewModel(
     // TODO Don't make inner, but make it data
     inner class ViewState(
         val connected: Boolean,
+        val name: String,
         val events: List<ApiEvent>,
         val userText: String,
         val attachedImage: Path?,
@@ -101,6 +107,12 @@ class ChatViewModel(
     val ingredientChanges: Flow<IngredientChange> = ingredientChangeChannel.receiveAsFlow()
 
     init {
+        viewModelScope.launch {
+            chatRepository.stream(conversation.sessionId).collect { chats ->
+                val chat = chats.firstOrNull { it.id == conversation.chatId }
+                innerState.update { it.copy(chat = chat) }
+            }
+        }
         viewModelScope.launch {
             val emojiResolver = emojiResolverFactory.create()
             // Skip the first emission so the initial inventory doesn't flash as changes.
@@ -149,6 +161,7 @@ class ChatViewModel(
     private fun State.toViewState(): ViewState =
         ViewState(
             connected = joinId != null,
+            name = chat?.displayName.orEmpty(),
             events = events,
             userText = userText,
             attachedImage = attachedImage,
@@ -165,7 +178,7 @@ class ChatViewModel(
                     null
                 },
             onClickBack = { navigator.pop() },
-            onClickIngredients = { navigator.push(Route.Ingredients(chat.sessionId)) },
+            onClickIngredients = { navigator.push(Route.Ingredients(route.sessionId)) },
         )
 
     private fun State.allowsSend(): Boolean =
