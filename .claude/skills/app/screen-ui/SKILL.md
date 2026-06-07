@@ -21,7 +21,7 @@ A public `@Composable fun <Screen>Screen(...)` that wires the ViewModel to the U
 @Composable
 fun IngredientsScreen(route: Route.Ingredients) {
     val viewModel = koinViewModel<IngredientsViewModel> { parametersOf(route) }
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     Content(uiState)
 }
 ```
@@ -34,8 +34,8 @@ fun IngredientsScreen(route: Route.Ingredients) {
 
 - `Content` and all child composables are `private` and **stateless**: they take a `UiState` (or a slice of it) and never reference the ViewModel. This keeps the UI previewable and testable.
 - Break the UI into small private composables, each taking only the slice of state it renders. Mirror the `UiState` hierarchy.
-- A child takes plain data + callbacks, not the whole `UiState`, when that keeps it focused (see `ChatSidebar`, `LoggedOutContent`).
-- For `sealed interface` UiState variants, branch with `when` and render a composable per case (see `StartScreen`'s `LoggedOut`/`LoggedIn`).
+- A child takes plain data + callbacks, not the whole `UiState`, when that keeps it focused.
+- For `sealed interface` UiState variants, branch with `when` and render a composable per case (e.g. `Loading`, `Loaded`, `Error`).
 
 ## Callbacks
 
@@ -49,10 +49,11 @@ fun IngredientsScreen(route: Route.Ingredients) {
 ## Conventions
 
 - Material3 only. Use `MaterialTheme.typography` / `MaterialTheme.colorScheme`, never hard-coded styles or colors.
-- `Modifier` is the last parameter, defaulting to `Modifier`. Apply caller modifiers first.
+- `Modifier` is first optional parameter, placed immediately after any required arguments (excluding any trailing content lambda). It's always defaulted to `Modifier` which is the empty modifier. Apply caller modifiers first.
+- When setting a modifier as an argument, always place it first in the named argument list (despite the parameter not being first).
 - Lazy lists: stable string keys (`key = { it.id.toString() }`) and `Modifier.animateItem()` on items.
-- Every `Icon` needs a `contentDescription`.
-- Modern Kotlin, immutable data, no more code than necessary. Use imports, never fully qualified references.
+- Every `Icon` and `Image` needs a `contentDescription`.
+- Modern Kotlin, immutable data, no more code than necessary.
 
 ## Wiring a new screen
 
@@ -62,11 +63,6 @@ When adding a whole new screen (not editing an existing one), three places conne
 3. `di/AppModule.kt` — register the ViewModel in `viewModelModule` (`viewModel<XViewModel>()`).
 
 The ViewModel itself is built with the **view-model** skill.
-
-## Completing
-
-- Write unit-tests using the unit-test skill where the UI has testable logic.
-- After changes, run the **verify** skill.
 
 ## Example
 

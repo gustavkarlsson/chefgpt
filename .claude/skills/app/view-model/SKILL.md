@@ -28,7 +28,13 @@ Here are the key concepts and the order in which they should appear in the file:
 1. **Constructor arguments** — only declare them as `val` if necessary to store their value. Always private in that case.
 2. **Private values derived from constructor arguments** — such as navigation parameters (session ID).
 3. **`private val innerState = MutableStateFlow(State())`**.
-4. **`val uiState: StateFlow<UiState>`** — derived from `innerState` via `toUiState()`.
+4. **`val uiState: StateFlow<UiState>`** — derived from `innerState` and mapped to stateFlow with a subscription time-limited SharingStarted:
+    ```kotlin
+    val viewState: StateFlow<ViewState> =
+        innerState
+            .map { it.toViewState() }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), innerState.value.toViewState())
+    ```
 5. **`private fun State.toUiState(): UiState`** — pure mapping from state to UI state, wiring callbacks.
 6. **Private state to UI state mapping functions** — to avoid making `toUiState` too complex, it can be broken down into smaller functions declared right after it.
 7. **`init { ... }`** — Perform init logic such as launching long-running collectors.
