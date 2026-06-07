@@ -3,6 +3,7 @@ package se.gustavkarlsson.chefgpt
 import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Result
+import com.github.michaelbull.result.flatMap
 import com.github.michaelbull.result.flatMapEither
 import com.github.michaelbull.result.mapError
 import com.github.michaelbull.result.runCatching
@@ -53,6 +54,8 @@ import se.gustavkarlsson.chefgpt.sessions.UserCredentials
 import se.gustavkarlsson.chefgpt.util.sseTyped
 import io.ktor.client.plugins.logging.Logger as KtorLogger
 
+private val log = Logger.withTag("${ChefGptClient::class.simpleName}")
+
 class ChefGptClient(
     private val baseUrl: String = SERVER_BASE_URL,
     developmentMode: Boolean = false,
@@ -90,43 +93,42 @@ class ChefGptClient(
             }
         }
 
-    suspend fun register(credentials: UserCredentials): Result<SessionId, ErrorResponse> {
-        val response =
-            httpClient.post("$baseUrl/register") {
-                basicAuth(credentials.userName.value, credentials.password.value)
-            }
-        return response.toResultSafe {
-            SessionId(response.headers["Session-Id"]!!)
-        }
-    }
+    suspend fun register(credentials: UserCredentials): Result<SessionId, ClientError> =
+        request(
+            send = {
+                post("$baseUrl/register") {
+                    basicAuth(credentials.userName.value, credentials.password.value)
+                }
+            },
+            readSafe = { SessionId(headers["Session-Id"]!!) },
+        )
 
-    suspend fun login(credentials: UserCredentials): Result<SessionId, ErrorResponse> {
-        val response =
-            httpClient.post("$baseUrl/login") {
-                basicAuth(credentials.userName.value, credentials.password.value)
-            }
-        return response.toResultSafe {
-            SessionId(response.headers["Session-Id"]!!)
-        }
-    }
+    suspend fun login(credentials: UserCredentials): Result<SessionId, ClientError> =
+        request(
+            send = {
+                post("$baseUrl/login") {
+                    basicAuth(credentials.userName.value, credentials.password.value)
+                }
+            },
+            readSafe = { SessionId(headers["Session-Id"]!!) },
+        )
 
     suspend fun uploadImage(
         sessionId: SessionId,
         data: Path,
         contentType: ContentType,
-    ): Result<ImageUrl, ErrorResponse> {
-        val response =
-            httpClient.post("$baseUrl/images") {
-                sessionIdHeader(sessionId)
-                contentType(contentType)
-                accept(ContentType.Text.Plain)
-                setBody(data.byteReadChannel())
-            }
-        return response.toResultSafe {
-            val urlString = response.bodyAsText()
-            ImageUrl(urlString)
-        }
-    }
+    ): Result<ImageUrl, ClientError> =
+        request(
+            send = {
+                post("$baseUrl/images") {
+                    sessionIdHeader(sessionId)
+                    contentType(contentType)
+                    accept(ContentType.Text.Plain)
+                    setBody(data.byteReadChannel())
+                }
+            },
+            readSafe = { ImageUrl(bodyAsText()) },
+        )
 
     // Uploads the image to the ingredient scanner. The server blocks until the
     // scanning agent has produced a result, so this call can take a while.
@@ -135,41 +137,43 @@ class ChefGptClient(
         sessionId: SessionId,
         data: Path,
         contentType: ContentType,
-    ): Result<Int, ErrorResponse> {
-        val response =
-            httpClient.post("$baseUrl/ingredients/scan") {
-                sessionIdHeader(sessionId)
-                contentType(contentType)
-                accept(ContentType.Text.Plain)
-                setBody(data.byteReadChannel())
-            }
-        return response.toResultSafe {
-            response.bodyAsText().toInt()
-        }
-    }
+    ): Result<Int, ClientError> =
+        request(
+            send = {
+                post("$baseUrl/ingredients/scan") {
+                    sessionIdHeader(sessionId)
+                    contentType(contentType)
+                    accept(ContentType.Text.Plain)
+                    setBody(data.byteReadChannel())
+                }
+            },
+            readSafe = { bodyAsText().toInt() },
+        )
 
-    suspend fun createChat(sessionId: SessionId): Result<ApiChat, ErrorResponse> {
-        val response =
-            httpClient.post("$baseUrl/chats") {
-                sessionIdHeader(sessionId)
-                accept(ContentType.Application.Json)
-            }
-        return response.toResultSafe {
-            response.body<ApiChat>()
-        }
-    }
+    suspend fun createChat(sessionId: SessionId): Result<ApiChat, ClientError> =
+        request(
+            send = {
+                post("$baseUrl/chats") {
+                    sessionIdHeader(sessionId)
+                    accept(ContentType.Application.Json)
+                }
+            },
+            readSafe = { body<ApiChat>() },
+        )
 
     suspend fun deleteChat(
         sessionId: SessionId,
         chatId: ChatId,
-    ): Result<Unit, ErrorResponse> {
-        val response =
-            httpClient.delete("$baseUrl/chats/$chatId") {
-                sessionIdHeader(sessionId)
-                accept(ContentType.Application.Json)
-            }
-        return response.toResultSafe {}
-    }
+    ): Result<Unit, ClientError> =
+        request(
+            send = {
+                delete("$baseUrl/chats/$chatId") {
+                    sessionIdHeader(sessionId)
+                    accept(ContentType.Application.Json)
+                }
+            },
+            readSafe = {},
+        )
 
     fun listenToChats(sessionId: SessionId): Flow<List<ApiChat>> =
         channelFlow {
@@ -225,61 +229,81 @@ class ChefGptClient(
     suspend fun createIngredient(
         sessionId: SessionId,
         name: String,
-    ): Result<Unit, ErrorResponse> {
-        val response =
-            httpClient.post("$baseUrl/ingredients") {
-                sessionIdHeader(sessionId)
-                contentType(ContentType.Application.Json)
-                setBody(ApiNewIngredient(name))
-            }
-        return response.toResultSafe {}
-    }
+    ): Result<Unit, ClientError> =
+        request(
+            send = {
+                post("$baseUrl/ingredients") {
+                    sessionIdHeader(sessionId)
+                    contentType(ContentType.Application.Json)
+                    setBody(ApiNewIngredient(name))
+                }
+            },
+            readSafe = {},
+        )
 
     suspend fun destroyIngredient(
         sessionId: SessionId,
         ingredientId: IngredientId,
-    ): Result<Unit, ErrorResponse> {
-        val response =
-            httpClient.delete("$baseUrl/ingredients/$ingredientId") {
-                sessionIdHeader(sessionId)
-            }
-        return response.toResultSafe {}
-    }
+    ): Result<Unit, ClientError> =
+        request(
+            send = {
+                delete("$baseUrl/ingredients/$ingredientId") {
+                    sessionIdHeader(sessionId)
+                }
+            },
+            readSafe = {},
+        )
 
     suspend fun setIngredientInventory(
         sessionId: SessionId,
         ingredientId: IngredientId,
         inInventory: Boolean,
-    ): Result<Unit, ErrorResponse> {
-        val response =
-            httpClient.patch("$baseUrl/ingredients/$ingredientId") {
-                sessionIdHeader(sessionId)
-                contentType(ContentType.Application.Json)
-                setBody(ApiIngredientUpdate(inInventory))
-            }
-        return response.toResultSafe {}
-    }
+    ): Result<Unit, ClientError> =
+        request(
+            send = {
+                patch("$baseUrl/ingredients/$ingredientId") {
+                    sessionIdHeader(sessionId)
+                    contentType(ContentType.Application.Json)
+                    setBody(ApiIngredientUpdate(inInventory))
+                }
+            },
+            readSafe = {},
+        )
 
     suspend fun sendAction(
         sessionId: SessionId,
         chatId: ChatId,
         action: ApiAction,
-    ): Result<Unit, ErrorResponse> {
-        val response =
-            httpClient.post("$baseUrl/chats/$chatId/actions") {
-                sessionIdHeader(sessionId)
-                contentType(ContentType.Application.Json)
-                setBody(action)
-            }
-        return response.toResultSafe {}
-    }
+    ): Result<Unit, ClientError> =
+        request(
+            send = {
+                post("$baseUrl/chats/$chatId/actions") {
+                    sessionIdHeader(sessionId)
+                    contentType(ContentType.Application.Json)
+                    setBody(action)
+                }
+            },
+            readSafe = {},
+        )
+
+    // Runs the request, turning any failure — connection problems included —
+    // into a ClientError rather than letting it propagate as a crash.
+    private suspend fun <T> request(
+        send: suspend HttpClient.() -> HttpResponse,
+        readSafe: suspend HttpResponse.() -> T,
+    ): Result<T, ClientError> =
+        runCatching { httpClient.send() }
+            .mapError { error ->
+                log.e(error) { "Request failed" }
+                ClientError.Other
+            }.flatMap { response -> response.toResultSafe(readSafe) }
 
     override fun close() {
         httpClient.close()
     }
 }
 
-private suspend fun <T> HttpResponse.toResultSafe(readSafe: suspend HttpResponse.() -> T): Result<T, ErrorResponse> =
+private suspend fun <T> HttpResponse.toResultSafe(readSafe: suspend HttpResponse.() -> T): Result<T, ClientError> =
     if (status.isSuccess()) {
         runCatching { readSafe() }.mapError { null }
     } else {
@@ -288,7 +312,7 @@ private suspend fun <T> HttpResponse.toResultSafe(readSafe: suspend HttpResponse
             failure = { Err(null) }, // Throwables become null failure data
         )
     }.mapError { body ->
-        ErrorResponse(status, body)
+        ClientError.Http(status, body)
     }
 
 private fun HttpRequestBuilder.sessionIdHeader(sessionId: SessionId) {
@@ -300,7 +324,13 @@ private fun Path.byteReadChannel(): ByteReadChannel {
     return ByteReadChannel(source.buffered())
 }
 
-data class ErrorResponse(
-    val status: HttpStatusCode,
-    val errorBody: ApiError? = null,
-)
+sealed interface ClientError {
+    // The server responded with a non-success status.
+    data class Http(
+        val status: HttpStatusCode,
+        val errorBody: ApiError? = null,
+    ) : ClientError
+
+    // The request never produced a usable response (e.g. connection failure).
+    data object Other : ClientError
+}

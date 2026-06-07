@@ -9,7 +9,7 @@ import com.github.michaelbull.result.map
 import com.github.michaelbull.result.mapError
 import com.github.michaelbull.result.onOk
 import se.gustavkarlsson.chefgpt.ChefGptClient
-import se.gustavkarlsson.chefgpt.ErrorResponse
+import se.gustavkarlsson.chefgpt.ClientError
 
 private val log = Logger.withTag("${SessionRepositoryImpl::class.simpleName}")
 
@@ -34,7 +34,7 @@ class SessionRepositoryImpl(
                 }
             }
 
-    override suspend fun login(credentials: UserCredentials): Result<SessionCredentials, ErrorResponse> =
+    override suspend fun login(credentials: UserCredentials): Result<SessionCredentials, ClientError> =
         client
             .login(credentials)
             .map { SessionCredentials(credentials.userName, it) }

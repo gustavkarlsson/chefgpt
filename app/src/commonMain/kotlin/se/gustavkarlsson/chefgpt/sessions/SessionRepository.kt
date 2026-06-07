@@ -1,11 +1,11 @@
 package se.gustavkarlsson.chefgpt.sessions
 
 import com.github.michaelbull.result.Result
-import se.gustavkarlsson.chefgpt.ErrorResponse
+import se.gustavkarlsson.chefgpt.ClientError
 
 sealed interface RegisterError {
     data class ServerError(
-        val response: ErrorResponse,
+        val error: ClientError,
     ) : RegisterError
 
     data object StorageFailed : RegisterError
@@ -16,7 +16,7 @@ interface SessionRepository {
 
     suspend fun register(credentials: UserCredentials): Result<SessionCredentials, RegisterError>
 
-    suspend fun login(credentials: UserCredentials): Result<SessionCredentials, ErrorResponse>
+    suspend fun login(credentials: UserCredentials): Result<SessionCredentials, ClientError>
 
     suspend fun logOut(): Boolean
 }

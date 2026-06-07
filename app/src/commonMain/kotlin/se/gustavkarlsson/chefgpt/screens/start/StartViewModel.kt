@@ -119,7 +119,7 @@ class StartViewModel(
                         // TODO Show correct feedback message based on the error
                         when (error) {
                             is RegisterError.ServerError -> {
-                                log.i { "Registration failed for '$username': ${error.response.errorBody}" }
+                                log.i { "Registration failed for '$username': ${error.error}" }
                             }
 
                             RegisterError.StorageFailed -> {
@@ -145,7 +145,7 @@ class StartViewModel(
                     .onOk { onAuthenticated(username, it, "Logged in") }
                     .onErr {
                         // TODO Show correct feedback message based on the status code
-                        log.i { "Login failed for '$username': ${it.errorBody}" }
+                        log.i { "Login failed for '$username': $it" }
                     }
             } finally {
                 innerState.update { it.copy(authenticating = false) }
@@ -173,7 +173,7 @@ class StartViewModel(
                     navigator.push(Route.Chat(credentials.sessionId, chat.id))
                 }.onErr {
                     // TODO Show user-friendly error
-                    log.e { "Failed to create chat: ${it.errorBody}" }
+                    log.e { "Failed to create chat: $it" }
                 }
         }
     }
@@ -191,7 +191,7 @@ class StartViewModel(
                 .onOk { log.i { "Chat deleted: $chatId" } }
                 .onErr {
                     // TODO Show user-friendly error
-                    log.e { "Failed to delete chat: ${it.errorBody}" }
+                    log.e { "Failed to delete chat: $it" }
                 }
         }
     }

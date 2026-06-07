@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.transformWhile
 import se.gustavkarlsson.chefgpt.ChefGptClient
-import se.gustavkarlsson.chefgpt.ErrorResponse
+import se.gustavkarlsson.chefgpt.ClientError
 import se.gustavkarlsson.chefgpt.api.ApiAction
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ChatId
@@ -37,7 +37,7 @@ private class ApiConversation(
     private val client: ChefGptClient,
     private val history: EventHistoryStore,
 ) : Conversation {
-    override suspend fun sendAction(action: ApiAction): Result<Unit, ErrorResponse> =
+    override suspend fun sendAction(action: ApiAction): Result<Unit, ClientError> =
         client.sendAction(sessionId, chatId, action)
 
     override fun events(): Flow<Result<ApiEvent, EventStreamError>> =

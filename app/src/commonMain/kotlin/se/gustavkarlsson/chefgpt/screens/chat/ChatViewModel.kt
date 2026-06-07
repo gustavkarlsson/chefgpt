@@ -248,10 +248,10 @@ class ChatViewModel(
                 Ok(null)
             }.map { imageUrl ->
                 conversation.sendAction(ApiUserSendsMessage(lastState.userText, imageUrl))
-            }.onErr { errorResponse ->
+            }.onErr { error ->
                 // TODO Show message?
                 //  Modify state?
-                log.e { "Failed to send message: ${errorResponse.errorBody}" }
+                log.e { "Failed to send message: $error" }
             }
         }
     }
