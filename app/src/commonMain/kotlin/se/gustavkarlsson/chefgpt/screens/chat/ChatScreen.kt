@@ -31,6 +31,7 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Kitchen
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -56,6 +57,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
@@ -121,10 +123,21 @@ private fun Content(
                     .fillMaxSize()
                     .padding(paddingValues),
         ) {
-            MessageList(
-                modifier = Modifier.weight(1f),
-                messages = uiState.messages,
-            )
+            when (val content = uiState.content) {
+                is UiContent.Empty -> {
+                    EmptyState(
+                        modifier = Modifier.weight(1f),
+                        content = content,
+                    )
+                }
+
+                is UiContent.Messages -> {
+                    MessageList(
+                        modifier = Modifier.weight(1f),
+                        messages = content.messages,
+                    )
+                }
+            }
 
             MessageInput(
                 modifier = Modifier.fillMaxWidth(),
@@ -207,6 +220,55 @@ private fun IngredientButton(
             Icon(
                 imageVector = Icons.Default.Kitchen,
                 contentDescription = "Ingredients",
+            )
+        }
+    }
+}
+
+@Composable
+private fun EmptyState(
+    content: UiContent.Empty,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(horizontal = 32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(
+            imageVector = Icons.Default.Restaurant,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.primary,
+        )
+        Text(
+            modifier = Modifier.padding(top = 16.dp),
+            text = content.headline,
+            style = MaterialTheme.typography.headlineSmall,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            modifier = Modifier.padding(top = 8.dp),
+            text = content.description,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Surface(
+            modifier = Modifier.padding(top = 24.dp),
+            onClick = { content.onClickPrompt?.invoke(content.examplePrompt) },
+            enabled = content.onClickPrompt != null,
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+        ) {
+            Text(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                text = content.examplePrompt,
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
             )
         }
     }

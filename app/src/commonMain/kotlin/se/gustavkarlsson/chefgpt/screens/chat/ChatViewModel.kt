@@ -46,11 +46,24 @@ import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.sessions.SessionId
+import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 
 private val log = Logger.withTag("${ChatViewModel::class.simpleName}")
 
 private val RECONNECT_DELAY = 1.seconds
+
+private const val EMPTY_HEADLINE = "What are you cooking today?"
+private const val EMPTY_DESCRIPTION =
+    "Describe what you'd like help with and I'll lend a hand in the kitchen."
+private val EXAMPLE_PROMPTS =
+    listOf(
+        "What can I make with chicken, rice, and broccoli?",
+        "Suggest a quick vegetarian dinner for two",
+        "I'm craving something sweet. What can I make with what I already have?",
+        "How do I make fluffy pancakes from scratch?",
+        "Give me a dessert idea using only pantry staples",
+    )
 
 // TODO Fix error handling
 class ChatViewModel(
@@ -63,6 +76,16 @@ class ChatViewModel(
 ) : ViewModel() {
     private val sessionId: SessionId = route.sessionId
     private val conversation: Conversation = conversationFactory.create(sessionId, route.chatId)
+
+    // One example prompt per chat, chosen deterministically from the chat ID so it stays stable.
+    private val examplePrompt: String =
+        EXAMPLE_PROMPTS.random(
+            Random(
+                conversation.chatId.value
+                    .hashCode()
+                    .toLong(),
+            ),
+        )
 
     private val innerState = MutableStateFlow(State())
 
@@ -80,7 +103,7 @@ class ChatViewModel(
         UiState(
             title = chat?.displayName.orEmpty(),
             connected = isConnected(),
-            messages = events.toUiMessages(),
+            content = toUiContent(),
             input =
                 UiInput(
                     text = userText,
@@ -93,6 +116,22 @@ class ChatViewModel(
             onClickBack = navigator::pop,
             onClickIngredients = ::openIngredients,
         )
+
+    // No messages yet: invite the user to describe what they want help cooking, with examples.
+    // The example prompts can be tapped to submit them, but only once we're joined and able to send.
+    private fun State.toUiContent(): UiContent {
+        val messages = events.toUiMessages()
+        return if (messages.isEmpty()) {
+            UiContent.Empty(
+                headline = EMPTY_HEADLINE,
+                description = EMPTY_DESCRIPTION,
+                examplePrompt = examplePrompt,
+                onClickPrompt = if (isJoined()) ::submitPrompt else null,
+            )
+        } else {
+            UiContent.Messages(messages)
+        }
+    }
 
     private fun List<ApiEvent>.toUiMessages(): List<UiMessage> =
         mapNotNull { event ->
@@ -107,10 +146,12 @@ class ChatViewModel(
 
     private fun State.isConnected(): Boolean = joinId != null
 
+    // The join ID has been acknowledged by the backend, so actions can be sent.
+    private fun State.isJoined(): Boolean = joinId in events.filterIsInstance<ApiUserJoined>().map { it.joinId }
+
     private fun State.canSend(): Boolean =
         when {
-            // Not yet connected: the join ID hasn't been acknowledged by the backend.
-            joinId !in events.filterIsInstance<ApiUserJoined>().map { it.joinId } -> false
+            !isJoined() -> false
 
             // Nothing to send.
             else -> userText.isNotBlank() || attachedImage != null
@@ -184,6 +225,11 @@ class ChatViewModel(
         navigator.push(Route.Ingredients(sessionId))
     }
 
+    private fun submitPrompt(prompt: String) {
+        updateUserText(prompt)
+        sendMessage()
+    }
+
     private fun sendMessage() {
         viewModelScope.launch {
             // TODO what prevents the user from quickly sending two messages in a row?
@@ -241,11 +287,25 @@ private data class State(
 data class UiState(
     val title: String,
     val connected: Boolean,
-    val messages: List<UiMessage>,
+    val content: UiContent,
     val input: UiInput,
     val onClickBack: () -> Unit,
     val onClickIngredients: () -> Unit,
 )
+
+sealed interface UiContent {
+    data class Empty(
+        val headline: String,
+        val description: String,
+        val examplePrompt: String,
+        // Null until joined, so the prompt can't be submitted before we can send.
+        val onClickPrompt: ((String) -> Unit)?,
+    ) : UiContent
+
+    data class Messages(
+        val messages: List<UiMessage>,
+    ) : UiContent
+}
 
 data class UiInput(
     val text: String,
