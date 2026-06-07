@@ -238,7 +238,7 @@ private fun MessageList(
         reverseLayout = true,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        items(items = reversedEvents, key = { it.id }) { event ->
+        items(items = reversedEvents, key = { it.id.toString() }) { event ->
             MessageBubble(event)
         }
     }
