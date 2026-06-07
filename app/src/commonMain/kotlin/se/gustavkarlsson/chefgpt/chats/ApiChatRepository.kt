@@ -8,7 +8,7 @@ import com.github.michaelbull.result.onOk
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import se.gustavkarlsson.chefgpt.ChefGptClient
-import se.gustavkarlsson.chefgpt.ErrorResponse
+import se.gustavkarlsson.chefgpt.ClientError
 import se.gustavkarlsson.chefgpt.api.ApiChat
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.sessions.SessionId
@@ -18,7 +18,7 @@ private val log = Logger.withTag("${ApiChatRepository::class.simpleName}")
 class ApiChatRepository(
     private val client: ChefGptClient,
 ) : ChatRepository {
-    override suspend fun create(sessionId: SessionId): Result<Chat, ErrorResponse> =
+    override suspend fun create(sessionId: SessionId): Result<Chat, ClientError> =
         client
             .createChat(sessionId)
             .onOk {
@@ -37,7 +37,7 @@ class ApiChatRepository(
     override suspend fun delete(
         sessionId: SessionId,
         chatId: ChatId,
-    ): Result<Unit, ErrorResponse> =
+    ): Result<Unit, ClientError> =
         client
             .deleteChat(sessionId, chatId)
             .onOk {

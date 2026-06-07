@@ -146,7 +146,7 @@ class IngredientsViewModel(
     private fun create(name: String) {
         viewModelScope.launch {
             val result = client.createIngredient(sessionId, name)
-            result.onErr { log.e { "Failed to create ingredient '$name': ${it.errorBody}" } }
+            result.onErr { log.e { "Failed to create ingredient '$name': $it" } }
         }
     }
 
@@ -155,7 +155,7 @@ class IngredientsViewModel(
         viewModelScope.launch {
             val result = client.destroyIngredient(sessionId, id)
             result.onErr {
-                log.e { "Failed to destroy ingredient $id: ${it.errorBody}" }
+                log.e { "Failed to destroy ingredient $id: $it" }
             }
         }
     }
@@ -165,7 +165,7 @@ class IngredientsViewModel(
         viewModelScope.launch {
             val result = client.setIngredientInventory(sessionId, id, inInventory = true)
             result.onErr {
-                log.e { "Failed to add ingredient $id: ${it.errorBody}" }
+                log.e { "Failed to add ingredient $id: $it" }
             }
         }
     }
@@ -175,7 +175,7 @@ class IngredientsViewModel(
         viewModelScope.launch {
             val result = client.setIngredientInventory(sessionId, id, inInventory = false)
             result.onErr {
-                log.e { "Failed to remove ingredient $id: ${it.errorBody}" }
+                log.e { "Failed to remove ingredient $id: $it" }
             }
         }
     }
@@ -193,7 +193,7 @@ class IngredientsViewModel(
                 client
                     .scanIngredients(sessionId, image, ContentType("image", extension))
                     .onOk { count -> log.i { "Scan found $count ingredient(s)" } }
-                    .onErr { log.e { "Failed to scan ingredients: ${it.errorBody}" } }
+                    .onErr { log.e { "Failed to scan ingredients: $it" } }
             } finally {
                 innerState.update { it.copy(scanningImage = false) }
             }
