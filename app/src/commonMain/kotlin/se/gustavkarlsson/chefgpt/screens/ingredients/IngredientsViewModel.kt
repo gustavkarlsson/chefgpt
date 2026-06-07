@@ -23,6 +23,7 @@ import se.gustavkarlsson.chefgpt.api.ApiIngredient
 import se.gustavkarlsson.chefgpt.api.IngredientId
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatarModel
 import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
+import se.gustavkarlsson.chefgpt.ingredients.IngredientWords
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.sessions.SessionId
@@ -49,6 +50,7 @@ class IngredientsViewModel(
         UiState(
             inInventory = ingredients.toUiIngredients(emojiResolver, inInventory = true),
             notInInventory = ingredients.toUiIngredients(emojiResolver, inInventory = false),
+            suggestions = toSuggestions(),
             input =
                 UiInput(
                     text = inputText,
@@ -58,6 +60,24 @@ class IngredientsViewModel(
                 ),
             onClickBack = navigator::pop,
         )
+
+    private fun State.toSuggestions(): List<UiIngredient> {
+        if (inputText.isBlank() || emojiResolver == null) return emptyList()
+        val existing = ingredients.mapTo(mutableSetOf()) { it.name.lowercase() }
+        return IngredientWords
+            .match(inputText)
+            .filterNot { it in existing }
+            .map { name ->
+                UiIngredient(
+                    key = name,
+                    name = name,
+                    icon = EmojiAvatarModel.of(emojiResolver.resolve(name), name),
+                    dimmed = false,
+                    onClick = ::addSuggestion,
+                    onClickDestroy = null,
+                )
+            }
+    }
 
     private fun List<ApiIngredient>.toUiIngredients(
         emojiResolver: IngredientEmojiResolver?,
@@ -69,9 +89,10 @@ class IngredientsViewModel(
             .sortedBy { it.lastModified }
             .map { ingredient ->
                 UiIngredient(
-                    id = ingredient.id,
+                    key = ingredient.id.toString(),
                     name = ingredient.name,
                     icon = EmojiAvatarModel.of(emojiResolver.resolve(ingredient.name), ingredient.name),
+                    dimmed = !inInventory,
                     onClick = if (inInventory) ::removeIngredient else ::addIngredient,
                     onClickDestroy = if (inInventory) null else ::destroyIngredient,
                 )
@@ -113,15 +134,24 @@ class IngredientsViewModel(
             }
         val trimmed = previousState.inputText.trim()
         val emojiResolver = checkNotNull(previousState.emojiResolver)
+        // Turn a pasted emoji glyph into its alias (e.g. "🍌" -> "banana") so the backend stores a name.
+        create(emojiResolver.resolveAlias(trimmed) ?: trimmed)
+    }
+
+    private fun addSuggestion(name: String) {
+        innerState.update { it.copy(inputText = "") }
+        create(name)
+    }
+
+    private fun create(name: String) {
         viewModelScope.launch {
-            // Turn a pasted emoji glyph into its alias (e.g. "🍌" -> "banana") so the backend stores a name.
-            val name = emojiResolver.resolveAlias(trimmed) ?: trimmed
             val result = client.createIngredient(sessionId, name)
             result.onErr { log.e { "Failed to create ingredient '$name': ${it.errorBody}" } }
         }
     }
 
-    private fun destroyIngredient(id: IngredientId) {
+    private fun destroyIngredient(key: String) {
+        val id = IngredientId.parse(key)
         viewModelScope.launch {
             val result = client.destroyIngredient(sessionId, id)
             result.onErr {
@@ -130,7 +160,8 @@ class IngredientsViewModel(
         }
     }
 
-    private fun addIngredient(id: IngredientId) {
+    private fun addIngredient(key: String) {
+        val id = IngredientId.parse(key)
         viewModelScope.launch {
             val result = client.setIngredientInventory(sessionId, id, inInventory = true)
             result.onErr {
@@ -139,7 +170,8 @@ class IngredientsViewModel(
         }
     }
 
-    private fun removeIngredient(id: IngredientId) {
+    private fun removeIngredient(key: String) {
+        val id = IngredientId.parse(key)
         viewModelScope.launch {
             val result = client.setIngredientInventory(sessionId, id, inInventory = false)
             result.onErr {
@@ -180,6 +212,7 @@ private data class State(
 data class UiState(
     val inInventory: List<UiIngredient>,
     val notInInventory: List<UiIngredient>,
+    val suggestions: List<UiIngredient>,
     val input: UiInput,
     val onClickBack: () -> Unit,
 )
@@ -192,9 +225,11 @@ data class UiInput(
 )
 
 data class UiIngredient(
-    val id: IngredientId,
+    // Stable identity and click argument: the ingredient id for stored items, the word itself for suggestions.
+    val key: String,
     val name: String,
     val icon: EmojiAvatarModel,
-    val onClick: (IngredientId) -> Unit,
-    val onClickDestroy: ((IngredientId) -> Unit)?,
+    val dimmed: Boolean,
+    val onClick: (String) -> Unit,
+    val onClickDestroy: ((String) -> Unit)?,
 )
