@@ -11,12 +11,13 @@ import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.writeString
+import se.gustavkarlsson.chefgpt.APP_STORAGE_DIR
 import se.gustavkarlsson.chefgpt.IoOrDefault
 
 private val log = Logger.withTag("${LastSessionFileStore::class.simpleName}")
 
 class LastSessionFileStore(
-    private val file: Path = Path("session.txt"),
+    private val file: Path = Path("$APP_STORAGE_DIR/session.txt"),
 ) {
     suspend fun load(): Result<SessionCredentials?, Unit> =
         withContext(Dispatchers.IoOrDefault) {

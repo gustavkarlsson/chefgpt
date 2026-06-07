@@ -28,9 +28,7 @@ val singletonModule =
         single<ChefGptClient>()
         // TODO Should be activity retained scoped for Android.
         single<Navigator>()
-        // TODO Get path depending on platform
         single<LastSessionFileStore>()
-        // TODO Get path depending on platform
         single<EventHistoryStore>()
         single<SessionRepositoryImpl>() bind SessionRepository::class
         single<ApiChatRepository>() bind ChatRepository::class

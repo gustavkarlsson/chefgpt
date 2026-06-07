@@ -54,7 +54,7 @@ import se.gustavkarlsson.chefgpt.util.sseTyped
 import io.ktor.client.plugins.logging.Logger as KtorLogger
 
 class ChefGptClient(
-    private val baseUrl: String = "http://localhost:8080",
+    private val baseUrl: String = SERVER_BASE_URL,
     developmentMode: Boolean = false,
 ) : AutoCloseable {
     private val json =
