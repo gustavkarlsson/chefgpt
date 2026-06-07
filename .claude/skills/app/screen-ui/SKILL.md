@@ -49,7 +49,8 @@ fun IngredientsScreen(route: Route.Ingredients) {
 ## Conventions
 
 - Material3 only. Use `MaterialTheme.typography` / `MaterialTheme.colorScheme`, never hard-coded styles or colors.
-- `Modifier` is first optional parameter, placed immediately after any required arguments (excluding any trailing content lambda). It's always defaulted to `Modifier` which is the empty modifier. Apply caller modifiers first.
+- All composables should have a `Modifier` parameter.
+- `Modifier` is first optional parameter, placed immediately after any required arguments (excluding any trailing content lambda). It's always defaulted to `Modifier` which is the empty modifier.
 - When setting a modifier as an argument, always place it first in the named argument list (despite the parameter not being first).
 - Lazy lists: stable string keys (`key = { it.id.toString() }`) and `Modifier.animateItem()` on items.
 - Every `Icon` and `Image` needs a `contentDescription`.

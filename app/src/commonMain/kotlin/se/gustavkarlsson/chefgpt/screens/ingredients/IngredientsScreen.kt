@@ -76,9 +76,9 @@ private fun Content(uiState: UiState) {
                     )
                 }
                 Text(
+                    modifier = Modifier.padding(start = 8.dp),
                     text = "Ingredients",
                     style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(start = 8.dp),
                 )
             }
         },
@@ -92,9 +92,9 @@ private fun Content(uiState: UiState) {
             val gridState = rememberLazyGridState()
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 LazyVerticalGrid(
+                    modifier = Modifier.fillMaxSize(),
                     state = gridState,
                     columns = GridCells.FixedSize(100.dp),
-                    modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -111,8 +111,8 @@ private fun Content(uiState: UiState) {
                     )
                 }
                 IngredientScrollbar(
-                    gridState = gridState,
                     modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                    gridState = gridState,
                 )
             }
 
@@ -133,10 +133,10 @@ private fun LazyGridScope.ingredientSection(
     if (title != null) {
         stickyHeader(key = title) {
             Text(
+                modifier = Modifier.padding(vertical = 8.dp),
                 text = title,
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(vertical = 8.dp),
             )
         }
     }
@@ -175,24 +175,24 @@ private fun IngredientCard(
             ) {
                 EmojiAvatar(ingredient.icon)
                 Text(
+                    modifier = Modifier.padding(top = 4.dp),
                     text = ingredient.name,
                     style = MaterialTheme.typography.bodySmall,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
             if (ingredient.onClickDestroy != null) {
                 IconButton(
-                    onClick = { ingredient.onClickDestroy(ingredient.id) },
                     modifier = Modifier.align(Alignment.BottomEnd).size(32.dp),
+                    onClick = { ingredient.onClickDestroy(ingredient.id) },
                 ) {
                     Icon(
+                        modifier = Modifier.size(18.dp),
                         imageVector = Icons.Default.Delete,
                         contentDescription = "Delete",
                         tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(18.dp),
                     )
                 }
             }
