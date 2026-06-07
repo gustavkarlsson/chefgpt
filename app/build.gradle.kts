@@ -125,8 +125,14 @@ android {
         }
     }
     buildTypes {
+        getByName("debug") {
+            // Allow plain-HTTP traffic so debug builds can reach the local dev server.
+            manifestPlaceholders["usesCleartextTraffic"] = "true"
+        }
         getByName("release") {
             isMinifyEnabled = false
+            // Release builds must talk to the server over HTTPS only.
+            manifestPlaceholders["usesCleartextTraffic"] = "false"
         }
     }
 }
