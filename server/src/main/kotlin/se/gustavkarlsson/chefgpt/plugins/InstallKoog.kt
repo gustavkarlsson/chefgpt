@@ -35,6 +35,15 @@ fun Application.installKoog() {
                     and other context to suggest some recipes.
                     Present each recipe found with a super short description and URL.
 
+                    When searching for recipes, keep the search broad to begin with.
+                    Only pass the arguments you actually need — typically just the query.
+                    Leave optional filters (cuisine, diet, intolerances, meal
+                    type, ready time, etc.) unset unless the user has explicitly
+                    asked to narrow things down that way. Over-filtering leads to
+                    too few or no results.
+                    If the user asked you to narrow things down and there are no results,
+                    broaden the search and let the user know once you have results.
+
                     If there are too few results, suggest that the user updates their ingredients.
 
                     When the user has picked a recipe, send the recipe to them.
