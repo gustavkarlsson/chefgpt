@@ -84,13 +84,14 @@ import androidx.compose.foundation.lazy.items as lazyItems
 fun IngredientsScreen(route: Route.Ingredients) {
     val viewModel = koinViewModel<IngredientsViewModel> { parametersOf(route) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    Content(uiState, viewModel.snackbarMessages)
+    Content(uiState, viewModel.snackbarMessages, viewModel.focusInputEvents)
 }
 
 @Composable
 private fun Content(
     uiState: UiState,
     snackbarMessages: Flow<SnackbarMessage>,
+    focusInputEvents: Flow<Unit>,
     modifier: Modifier = Modifier,
 ) {
     val snackbarHostState = rememberSnackbarHostState(snackbarMessages)
@@ -126,6 +127,7 @@ private fun Content(
             IngredientInput(
                 modifier = Modifier.fillMaxWidth(),
                 input = uiState.input,
+                focusInputEvents = focusInputEvents,
             )
         },
     ) { paddingValues ->
@@ -267,6 +269,7 @@ private fun IngredientSuggestions(
 @Composable
 private fun IngredientInput(
     input: UiInput,
+    focusInputEvents: Flow<Unit>,
     modifier: Modifier = Modifier,
 ) {
     Surface(modifier = modifier) {
@@ -278,8 +281,8 @@ private fun IngredientInput(
                     ).padding(bottom = 16.dp, top = 4.dp),
         ) {
             val focusRequester = remember { FocusRequester() }
-            LaunchedEffect(input.autoFocus) {
-                if (input.autoFocus) focusRequester.requestFocus()
+            LaunchedEffect(focusInputEvents) {
+                focusInputEvents.collect { focusRequester.requestFocus() }
             }
             IngredientSuggestions(
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
