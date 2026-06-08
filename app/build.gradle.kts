@@ -62,6 +62,7 @@ kotlin {
             implementation(libs.composeMaterial3AdaptiveLayout)
             implementation(libs.composeMaterial3AdaptiveNavigation)
             implementation(libs.composeUi)
+            implementation(libs.composeUiBackhandler)
             implementation(libs.composeComponentsResources)
             implementation(libs.composeUiToolingPreview)
             implementation(libs.androidxLifecycleViewmodelCompose)
