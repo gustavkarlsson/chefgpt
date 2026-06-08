@@ -29,6 +29,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Kitchen
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -128,22 +129,69 @@ private fun Content(
             )
         },
     ) { paddingValues ->
-        LazyVerticalGrid(
-            modifier = Modifier.fillMaxWidth(),
-            columns = GridCells.FixedSize(100.dp),
-            contentPadding = paddingValues + PaddingValues(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            ingredientSection(
-                title = null,
-                ingredients = uiState.inInventory,
-            )
-            ingredientSection(
-                title = uiState.secondSection.title,
-                ingredients = uiState.secondSection.ingredients,
-            )
+        when (val content = uiState.content) {
+            is UiContent.Loading -> {
+                // Render blank until the first ingredients arrive.
+            }
+
+            is UiContent.Empty -> {
+                EmptyState(
+                    content = content,
+                    modifier = Modifier.padding(paddingValues),
+                )
+            }
+
+            is UiContent.Ingredients -> {
+                LazyVerticalGrid(
+                    modifier = Modifier.fillMaxWidth(),
+                    columns = GridCells.FixedSize(100.dp),
+                    contentPadding = paddingValues + PaddingValues(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    ingredientSection(
+                        title = null,
+                        ingredients = content.inInventory,
+                    )
+                    ingredientSection(
+                        title = content.secondSection.title,
+                        ingredients = content.secondSection.ingredients,
+                    )
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun EmptyState(
+    content: UiContent.Empty,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.fillMaxSize().padding(horizontal = 32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(
+            imageVector = Icons.Default.Kitchen,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.primary,
+        )
+        Text(
+            modifier = Modifier.padding(top = 16.dp),
+            text = content.headline,
+            style = MaterialTheme.typography.headlineSmall,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            modifier = Modifier.padding(top = 8.dp),
+            text = content.description,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
