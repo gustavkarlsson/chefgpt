@@ -50,9 +50,9 @@ class IngredientsViewModel(
         UiState(
             inInventory = ingredients.toUiIngredients(emojiResolver, inInventory = true),
             notInInventory = ingredients.toUiIngredients(emojiResolver, inInventory = false),
-            suggestions = toSuggestions(),
             input =
                 UiInput(
+                    suggestions = toSuggestions(),
                     text = inputText,
                     onTextChange = ::updateInputText,
                     onScanImageSelected = ::scanImage,
@@ -212,12 +212,12 @@ private data class State(
 data class UiState(
     val inInventory: List<UiIngredient>,
     val notInInventory: List<UiIngredient>,
-    val suggestions: List<UiIngredient>,
     val input: UiInput,
     val onClickBack: () -> Unit,
 )
 
 data class UiInput(
+    val suggestions: List<UiIngredient>,
     val text: String,
     val onTextChange: (String) -> Unit,
     val onScanImageSelected: ((Path) -> Unit)?,

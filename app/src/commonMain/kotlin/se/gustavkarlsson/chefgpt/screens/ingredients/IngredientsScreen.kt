@@ -1,27 +1,34 @@
 package se.gustavkarlsson.chefgpt.screens.ingredients
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -50,6 +57,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
@@ -58,6 +66,7 @@ import org.koin.core.parameter.parametersOf
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatar
 import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.pickImageFile
+import se.gustavkarlsson.chefgpt.plus
 import androidx.compose.foundation.lazy.items as lazyItems
 
 @Composable
@@ -76,7 +85,11 @@ private fun Content(
         modifier = modifier.fillMaxSize(),
         topBar = {
             Row(
-                modifier = Modifier.padding(4.dp),
+                modifier =
+                    Modifier
+                        .windowInsetsPadding(
+                            WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                        ).padding(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = uiState.onClickBack) {
@@ -92,45 +105,27 @@ private fun Content(
                 )
             }
         },
-    ) { paddingValues ->
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-        ) {
-            val gridState = rememberLazyGridState()
-            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                LazyVerticalGrid(
-                    modifier = Modifier.fillMaxSize(),
-                    state = gridState,
-                    columns = GridCells.FixedSize(100.dp),
-                    contentPadding = PaddingValues(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    ingredientSection(
-                        title = null,
-                        ingredients = uiState.inInventory,
-                    )
-                    ingredientSection(
-                        title = "Previously in store",
-                        ingredients = uiState.notInInventory,
-                    )
-                }
-                IngredientScrollbar(
-                    modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
-                    gridState = gridState,
-                )
-                IngredientSuggestions(
-                    modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth(),
-                    suggestions = uiState.suggestions,
-                )
-            }
-
+        bottomBar = {
             IngredientInput(
                 modifier = Modifier.fillMaxWidth(),
                 input = uiState.input,
+            )
+        },
+    ) { paddingValues ->
+        LazyVerticalGrid(
+            modifier = Modifier.fillMaxWidth(),
+            columns = GridCells.FixedSize(100.dp),
+            contentPadding = paddingValues + PaddingValues(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            ingredientSection(
+                title = null,
+                ingredients = uiState.inInventory,
+            )
+            ingredientSection(
+                title = "Previously in store",
+                ingredients = uiState.notInInventory,
             )
         }
     }
@@ -165,10 +160,7 @@ private fun IngredientCard(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier =
-            modifier
-                .size(100.dp)
-                .clickable { ingredient.onClick(ingredient.key) },
+        modifier = modifier.size(100.dp).clickable { ingredient.onClick(ingredient.key) },
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
@@ -213,32 +205,32 @@ private fun IngredientCard(
 private fun IngredientSuggestions(
     suggestions: List<UiIngredient>,
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
 ) {
     // Hold onto the last non-empty list so the panel keeps rendering its cards while it animates out.
     var lastSuggestions by remember { mutableStateOf(suggestions) }
     if (suggestions.isNotEmpty()) lastSuggestions = suggestions
+    val animationSpec =
+        spring(
+            stiffness = Spring.StiffnessHigh,
+            visibilityThreshold = IntSize.VisibilityThreshold,
+        )
     AnimatedVisibility(
         visible = suggestions.isNotEmpty(),
         modifier = modifier,
-        enter = slideInVertically { it } + fadeIn(),
-        exit = slideOutVertically { it } + fadeOut(),
+        enter = expandVertically(animationSpec, expandFrom = Alignment.Bottom) + fadeIn(),
+        exit = shrinkVertically(animationSpec, shrinkTowards = Alignment.Bottom) + fadeOut(),
     ) {
-        Surface(
+        LazyRow(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
-            shadowElevation = 8.dp,
+            contentPadding = contentPadding,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                lazyItems(items = lastSuggestions, key = { it.key }) { suggestion ->
-                    IngredientCard(
-                        modifier = Modifier.animateItem(),
-                        ingredient = suggestion,
-                    )
-                }
+            lazyItems(items = lastSuggestions, key = { it.key }) { suggestion ->
+                IngredientCard(
+                    modifier = Modifier.animateItem(),
+                    ingredient = suggestion,
+                )
             }
         }
     }
@@ -249,55 +241,65 @@ private fun IngredientInput(
     input: UiInput,
     modifier: Modifier = Modifier,
 ) {
-    Surface(
-        modifier = modifier,
-        shadowElevation = 8.dp,
-    ) {
-        Row(
+    Surface(modifier = modifier) {
+        Column(
             modifier =
                 Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    .windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
+                    ).padding(bottom = 16.dp, top = 4.dp),
         ) {
-            TextField(
-                value = input.text,
-                onValueChange = input.onTextChange,
-                modifier = Modifier.weight(1f),
-                placeholder = { Text("Add an ingredient...") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = { input.onClickAdd?.invoke() }),
+            IngredientSuggestions(
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                contentPadding =
+                    WindowInsets.safeDrawing
+                        .only(WindowInsetsSides.Horizontal)
+                        .asPaddingValues() + PaddingValues(horizontal = 16.dp),
+                suggestions = input.suggestions,
             )
-            val scope = rememberCoroutineScope()
-            if (input.onScanImageSelected == null) {
-                // Scanning can take a while; show progress in place of the camera button.
-                Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                TextField(
+                    value = input.text,
+                    onValueChange = input.onTextChange,
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("Add an ingredient...") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { input.onClickAdd?.invoke() }),
+                )
+                val scope = rememberCoroutineScope()
+                if (input.onScanImageSelected == null) {
+                    // Scanning can take a while; show progress in place of the camera button.
+                    Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    }
+                } else {
+                    IconButton(
+                        onClick = {
+                            scope.launch {
+                                pickImageFile()?.let(input.onScanImageSelected)
+                            }
+                        },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CameraAlt,
+                            contentDescription = "Scan ingredients from image",
+                        )
+                    }
                 }
-            } else {
                 IconButton(
-                    onClick = {
-                        scope.launch {
-                            pickImageFile()?.let(input.onScanImageSelected)
-                        }
-                    },
+                    onClick = { input.onClickAdd?.invoke() },
+                    enabled = input.onClickAdd != null,
                 ) {
                     Icon(
-                        imageVector = Icons.Default.CameraAlt,
-                        contentDescription = "Scan ingredients from image",
+                        imageVector = Icons.AutoMirrored.Filled.Send,
+                        contentDescription = "Add",
                     )
                 }
-            }
-            IconButton(
-                onClick = { input.onClickAdd?.invoke() },
-                enabled = input.onClickAdd != null,
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Send,
-                    contentDescription = "Add",
-                )
             }
         }
     }
