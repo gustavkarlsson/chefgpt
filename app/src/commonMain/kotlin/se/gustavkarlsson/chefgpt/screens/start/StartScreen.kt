@@ -55,7 +55,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -162,7 +164,9 @@ private fun LoggedInContent(
             progress.collect { backEvent -> navigator.seekBack(fraction = backEvent.progress) }
             navigator.navigateBack()
         } catch (_: CancellationException) {
-            navigator.seekBack(fraction = 0f)
+            // The gesture was cancelled, which also cancels this coroutine; settle the pane back
+            // to rest in a non-cancellable scope so the rewind animation actually runs.
+            withContext(NonCancellable) { navigator.seekBack(fraction = 0f) }
         }
     }
     ListDetailPaneScaffold(
