@@ -1,6 +1,5 @@
 package se.gustavkarlsson.chefgpt.screens.chat
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.Ok
@@ -13,13 +12,8 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.getAndUpdate
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
@@ -45,9 +39,8 @@ import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatarModel
 import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.navigation.Route
+import se.gustavkarlsson.chefgpt.screens.StateViewModel
 import se.gustavkarlsson.chefgpt.sessions.SessionId
-import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessage
-import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessages
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 
@@ -75,7 +68,7 @@ class ChatViewModel(
     private val navigator: Navigator,
     private val emojiResolverFactory: IngredientEmojiResolver.Factory,
     @InjectedParam private val route: Route.Chat,
-) : ViewModel() {
+) : StateViewModel<State, UiState>() {
     private val sessionId: SessionId = route.sessionId
     private val conversation: Conversation = conversationFactory.create(sessionId, route.chatId)
 
@@ -89,22 +82,14 @@ class ChatViewModel(
             ),
         )
 
-    private val innerState = MutableStateFlow(State())
-
-    val uiState: StateFlow<UiState> =
-        innerState
-            .map { it.toUiState() }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), innerState.value.toUiState())
+    override fun createInitialState() = State()
 
     // Discrete add/remove events that the UI animates one at a time; transient, so they live
     // outside UiState rather than as state.
     private val ingredientChangeChannel = Channel<IngredientChange>(Channel.UNLIMITED)
     val ingredientChanges: Flow<IngredientChange> = ingredientChangeChannel.receiveAsFlow()
 
-    private val snackbar = SnackbarMessages()
-    val snackbarMessages: Flow<SnackbarMessage> = snackbar.messages
-
-    private fun State.toUiState(): UiState =
+    override fun State.toUiState(): UiState =
         UiState(
             title = chat?.displayName.orEmpty(),
             connected = isConnected(),
@@ -255,7 +240,7 @@ class ChatViewModel(
                 conversation.sendAction(ApiUserSendsMessage(lastState.userText, imageUrl))
             }.onErr { error ->
                 log.e { "Failed to send message: $error" }
-                snackbar.show("Couldn't send message", isError = true)
+                showSnackbar("Couldn't send message", isError = true)
             }
         }
     }
@@ -288,7 +273,7 @@ private fun List<ApiEvent>.upsert(event: ApiEvent): List<ApiEvent> {
     return if (index < 0) this + event else toMutableList().also { it[index] = event }
 }
 
-private data class State(
+data class State(
     val joinId: JoinId? = null,
     val chat: Chat? = null,
     val events: List<ApiEvent> = emptyList(),

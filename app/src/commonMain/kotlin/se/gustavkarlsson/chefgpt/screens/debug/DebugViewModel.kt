@@ -1,31 +1,21 @@
 package se.gustavkarlsson.chefgpt.screens.debug
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import se.gustavkarlsson.chefgpt.BASE_URL_HINT
 import se.gustavkarlsson.chefgpt.SERVER_BASE_URL
 import se.gustavkarlsson.chefgpt.debug.Settings
 import se.gustavkarlsson.chefgpt.navigation.Navigator
+import se.gustavkarlsson.chefgpt.screens.StateViewModel
 
 class DebugViewModel(
     private val settings: Settings,
     private val navigator: Navigator,
-) : ViewModel() {
-    private val innerState = MutableStateFlow(State(baseUrl = SERVER_BASE_URL))
+) : StateViewModel<State, UiState>() {
+    override fun createInitialState() = State(baseUrl = SERVER_BASE_URL)
 
-    val uiState: StateFlow<UiState> =
-        innerState
-            .map { it.toUiState() }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), innerState.value.toUiState())
-
-    private fun State.toUiState(): UiState =
+    override fun State.toUiState(): UiState =
         UiState(
             items =
                 buildList {
@@ -55,7 +45,7 @@ class DebugViewModel(
     }
 }
 
-private data class State(
+data class State(
     val baseUrl: String,
 )
 

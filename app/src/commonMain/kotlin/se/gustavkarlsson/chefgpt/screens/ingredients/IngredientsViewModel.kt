@@ -1,6 +1,5 @@
 package se.gustavkarlsson.chefgpt.screens.ingredients
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.onErr
@@ -8,13 +7,7 @@ import com.github.michaelbull.result.onOk
 import io.ktor.http.ContentType
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.getAndUpdate
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
@@ -27,9 +20,8 @@ import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
 import se.gustavkarlsson.chefgpt.ingredients.IngredientWords
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.navigation.Route
+import se.gustavkarlsson.chefgpt.screens.StateViewModel
 import se.gustavkarlsson.chefgpt.sessions.SessionId
-import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessage
-import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessages
 import kotlin.time.Duration.Companion.seconds
 
 private val log = Logger.withTag("${IngredientsViewModel::class.simpleName}")
@@ -39,21 +31,12 @@ class IngredientsViewModel(
     private val navigator: Navigator,
     emojiResolverFactory: IngredientEmojiResolver.Factory,
     @InjectedParam route: Route.Ingredients,
-) : ViewModel() {
+) : StateViewModel<State, UiState>() {
     private val sessionId: SessionId = route.sessionId
 
-    private val innerState = MutableStateFlow(State())
+    override fun createInitialState() = State()
 
-    val uiState: StateFlow<UiState> =
-        innerState
-            .map { it.toUiState() }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), innerState.value.toUiState())
-
-    // Transient error messages surfaced as snackbars; not state, so they live outside UiState.
-    private val snackbar = SnackbarMessages()
-    val snackbarMessages: Flow<SnackbarMessage> = snackbar.messages
-
-    private fun State.toUiState(): UiState =
+    override fun State.toUiState(): UiState =
         UiState(
             inInventory =
                 ingredients.toUiIngredients(
@@ -175,7 +158,7 @@ class IngredientsViewModel(
             val result = client.createIngredient(sessionId, name)
             result.onErr {
                 log.e { "Failed to create ingredient '$name': $it" }
-                snackbar.show("Couldn't add $name", isError = true)
+                showSnackbar("Couldn't add $name", isError = true)
             }
         }
     }
@@ -186,7 +169,7 @@ class IngredientsViewModel(
             val result = client.destroyIngredient(sessionId, id)
             result.onErr {
                 log.e { "Failed to destroy ingredient $id: $it" }
-                snackbar.show("Couldn't delete ingredient", isError = true)
+                showSnackbar("Couldn't delete ingredient", isError = true)
             }
         }
     }
@@ -197,7 +180,7 @@ class IngredientsViewModel(
             val result = client.setIngredientInventory(sessionId, id, inInventory = true)
             result.onErr {
                 log.e { "Failed to add ingredient $id: $it" }
-                snackbar.show("Couldn't move ingredient to your inventory", isError = true)
+                showSnackbar("Couldn't move ingredient to your inventory", isError = true)
             }
         }
     }
@@ -208,7 +191,7 @@ class IngredientsViewModel(
             val result = client.setIngredientInventory(sessionId, id, inInventory = false)
             result.onErr {
                 log.e { "Failed to remove ingredient $id: $it" }
-                snackbar.show("Couldn't remove ingredient from your inventory", isError = true)
+                showSnackbar("Couldn't remove ingredient from your inventory", isError = true)
             }
         }
     }
@@ -228,7 +211,7 @@ class IngredientsViewModel(
                     .onOk { count -> log.i { "Scan found $count ingredient(s)" } }
                     .onErr {
                         log.e { "Failed to scan ingredients: $it" }
-                        snackbar.show("Couldn't scan ingredients from the image", isError = true)
+                        showSnackbar("Couldn't scan ingredients from the image", isError = true)
                     }
             } finally {
                 innerState.update { it.copy(scanningImage = false) }
@@ -237,7 +220,7 @@ class IngredientsViewModel(
     }
 }
 
-private data class State(
+data class State(
     val ingredients: List<ApiIngredient> = emptyList(),
     val inputText: String = "",
     val scanningImage: Boolean = false,
