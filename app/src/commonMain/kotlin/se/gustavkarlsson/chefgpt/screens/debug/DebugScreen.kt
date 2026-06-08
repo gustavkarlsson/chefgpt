@@ -81,7 +81,15 @@ private fun Content(
             modifier = Modifier.fillMaxSize(),
             contentPadding = paddingValues,
         ) {
-            items(uiState.items, key = { it.title }) { item ->
+            items(
+                items = uiState.items,
+                key = { item ->
+                    when (item) {
+                        is UiDebugItem.Labeled -> item.title
+                        is UiDebugItem.Note -> "note"
+                    }
+                },
+            ) { item ->
                 DebugItemRow(item)
             }
         }
@@ -91,6 +99,33 @@ private fun Content(
 @Composable
 private fun DebugItemRow(
     item: UiDebugItem,
+    modifier: Modifier = Modifier,
+) {
+    when (item) {
+        is UiDebugItem.Note -> NoteRow(item, modifier)
+        is UiDebugItem.Labeled -> LabeledItemRow(item, modifier)
+    }
+}
+
+@Composable
+private fun NoteRow(
+    item: UiDebugItem.Note,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = item.text,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+    )
+}
+
+@Composable
+private fun LabeledItemRow(
+    item: UiDebugItem.Labeled,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -109,7 +144,7 @@ private fun DebugItemRow(
             modifier = Modifier.weight(1f),
         )
         when (item) {
-            is UiDebugItem.TextField -> {
+            is UiDebugItem.Labeled.TextField -> {
                 OutlinedTextField(
                     value = item.value,
                     onValueChange = item.onValueChange,
@@ -126,14 +161,14 @@ private fun DebugItemRow(
                 )
             }
 
-            is UiDebugItem.Toggle -> {
+            is UiDebugItem.Labeled.Toggle -> {
                 Switch(
                     checked = item.checked,
                     onCheckedChange = item.onCheckedChange,
                 )
             }
 
-            is UiDebugItem.Button -> {
+            is UiDebugItem.Labeled.Button -> {
                 Button(onClick = item.onClick) {
                     Text(item.label)
                 }

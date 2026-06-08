@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import se.gustavkarlsson.chefgpt.BASE_URL_HINT
 import se.gustavkarlsson.chefgpt.SERVER_BASE_URL
 import se.gustavkarlsson.chefgpt.debug.Settings
 import se.gustavkarlsson.chefgpt.navigation.Navigator
@@ -27,13 +28,18 @@ class DebugViewModel(
     private fun State.toUiState(): UiState =
         UiState(
             items =
-                listOf(
-                    UiDebugItem.TextField(
-                        title = "Server base URL",
-                        value = baseUrl,
-                        onValueChange = ::updateBaseUrl,
-                    ),
-                ),
+                buildList {
+                    add(
+                        UiDebugItem.Labeled.TextField(
+                            title = "Server base URL",
+                            value = baseUrl,
+                            onValueChange = ::updateBaseUrl,
+                        ),
+                    )
+                    BASE_URL_HINT?.let { hint ->
+                        add(UiDebugItem.Note(text = hint))
+                    }
+                },
             onClickBack = navigator::pop,
         )
 
@@ -59,24 +65,30 @@ data class UiState(
 )
 
 sealed interface UiDebugItem {
-    val title: String
-
-    data class TextField(
-        override val title: String,
-        val value: String,
-        val onValueChange: (String) -> Unit,
-        val placeholder: String? = null,
+    data class Note(
+        val text: String,
     ) : UiDebugItem
 
-    data class Toggle(
-        override val title: String,
-        val checked: Boolean,
-        val onCheckedChange: (Boolean) -> Unit,
-    ) : UiDebugItem
+    sealed interface Labeled : UiDebugItem {
+        val title: String
 
-    data class Button(
-        override val title: String,
-        val label: String,
-        val onClick: () -> Unit,
-    ) : UiDebugItem
+        data class TextField(
+            override val title: String,
+            val value: String,
+            val onValueChange: (String) -> Unit,
+            val placeholder: String? = null,
+        ) : Labeled
+
+        data class Toggle(
+            override val title: String,
+            val checked: Boolean,
+            val onCheckedChange: (Boolean) -> Unit,
+        ) : Labeled
+
+        data class Button(
+            override val title: String,
+            val label: String,
+            val onClick: () -> Unit,
+        ) : Labeled
+    }
 }
