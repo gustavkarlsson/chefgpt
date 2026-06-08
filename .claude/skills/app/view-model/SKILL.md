@@ -9,6 +9,28 @@ Their names match their accompanying screen. Some examples:
 - `SettingsScreen` -> `SettingsViewModel`
 - `LoginScreen` -> `LoginViewModel`
 
+## Base class
+
+ViewModels extend the abstract `StateViewModel<State, UiState>` in
+`app/src/commonMain/kotlin/se/gustavkarlsson/chefgpt/screens/StateViewModel.kt`,
+which owns the shared boilerplate: the `innerState` holder, the
+`innerState → uiState` mapping pipeline, and the `StateFlow` exposure.
+
+The two type parameters are the ViewModel's `State` and `UiState` types (both
+must be non-null). Subclasses provide two functions:
+
+- `protected abstract fun createInitialState(): State` — builds the initial state.
+- `protected abstract fun State.toUiState(): UiState` — the pure state-to-UI mapping.
+
+`innerState` is inherited (`protected`); mutate it with `innerState.update { }`
+as usual. `uiState` is inherited and public. The base also provides
+`snackbarMessages` and `showSnackbar(...)` (see *Snackbars* below).
+
+**Init-order rule:** the base creates `innerState` and the `uiState` seed
+lazily, so `createInitialState()`/`toUiState()` may reference constructor-injected
+dependencies. Do not, however, make `createInitialState()` depend on subclass
+properties that are assigned in `init`/initializers.
+
 ## Structure
 
 All view models should follow the same structure and patterns.
@@ -25,28 +47,23 @@ Here are the key concepts and the order in which they should appear in the file:
 
 ### Inside ViewModel class
 
+The class extends `StateViewModel<State, UiState>()`.
+
 1. **Constructor arguments** — only declare them as `val` if necessary to store their value. Always private in that case.
 2. **Private values derived from constructor arguments** — such as navigation parameters (session ID).
 3. **Cancellable job references** — for async jobs that might need restarting or cancelling, such as streams, hold each `Job` directly in the ViewModel in an atomic reference, not in `State`:
     ```kotlin
     private val sessionJob = atomic<Job?>(null)
     ```
-4. **`private val innerState = MutableStateFlow(State())`**.
-5. **`val uiState: StateFlow<UiState>`** — derived from `innerState` and mapped to a `StateFlow` with a subscription time-limited `SharingStarted`:
-    ```kotlin
-    val uiState: StateFlow<UiState> =
-        innerState
-            .map { it.toUiState() }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), innerState.value.toUiState())
-    ```
-6. **`private fun State.toUiState(): UiState`** — pure mapping from state to UI state, wiring callbacks.
-7. **Private state to UI state mapping functions** — to avoid making `toUiState` too complex, it can be broken down into smaller functions declared right after it.
-8. **`init { ... }`** — Perform init logic such as launching long-running collectors.
-9. **Private action functions** — Additional utility functions called as part of `init` or UI state callbacks.
+4. **`override fun createInitialState(): State`** — usually `State()`, or `State(...)` when a field has no default.
+5. **`override fun State.toUiState(): UiState`** — pure mapping from state to UI state, wiring callbacks. (`innerState` and `uiState` are inherited from the base.)
+6. **Private state to UI state mapping functions** — to avoid making `toUiState` too complex, it can be broken down into smaller functions declared right after it.
+7. **`init { ... }`** — Perform init logic such as launching long-running collectors.
+8. **Private action functions** — Additional utility functions called as part of `init` or UI state callbacks.
 
 ### Top-level after ViewModel class
 
-1. **`private data class State`** — the single source of truth for state in the ViewModel. All properties are immutable (mutation is done via copy functions); every field has a default unless they are set via ViewModel constructor arguments.
+1. **`data class State`** — a public top-level class (it is the base class's `S` generic argument, so it cannot be `private`). The single source of truth for state in the ViewModel. All properties are immutable (mutation is done via copy functions); every field has a default unless they are set via ViewModel constructor arguments.
 2. **`UiState`** — what the UI renders: UI-friendly data + callbacks. See the *State vs UiState* section below.
 3. **Public UI models** — additional models that are part of `UiState`; same guidelines apply.
 
@@ -54,7 +71,7 @@ Here are the key concepts and the order in which they should appear in the file:
 
 ### State
 
-State is internal and holds raw unprocessed data such as:
+State is internal to the ViewModel (conceptually, even though it is a public type) and holds raw unprocessed data such as:
 - Backend data
 - Text field state
 - Async results
@@ -94,20 +111,17 @@ val ingredientChanges: Flow<IngredientChange> = ingredientChangeChannel.receiveA
 
 ### Snackbars
 
-Snackbars (e.g. for surfacing backend errors) are one-shot events, but don't hand-roll a `Channel` for them — use the reusable `SnackbarMessages` helper (`se.gustavkarlsson.chefgpt.snackbar`). Hold one instance, expose its `messages` flow after `uiState`, and call `show(...)` from action functions or collectors:
+Snackbars (e.g. for surfacing backend errors) are one-shot events, but don't hand-roll a `Channel` for them — the base `StateViewModel` already provides this. It exposes a public `snackbarMessages: Flow<SnackbarMessage>` and a `protected fun showSnackbar(...)`. Just call `showSnackbar(...)` from action functions or collectors; no field to declare:
 
 ```kotlin
-private val snackbar = SnackbarMessages()
-val snackbarMessages: Flow<SnackbarMessage> = snackbar.messages
-
 // ...in an error branch:
 result.onErr {
     log.e { "Failed to add $name: $it" }
-    snackbar.show("Couldn't add $name", isError = true)
+    showSnackbar("Couldn't add $name", isError = true)
 }
 ```
 
-`show` takes `text`, `isError` (error-styled, and stays until dismissed by default), `dismissText` (defaults to `"OK"`), and `duration`; pass a prebuilt `SnackbarMessage` to the other overload if you have one. The UI renders it via `rememberSnackbarHostState` + `SnackbarMessageHost` (see the **screen-ui** skill). `IngredientsViewModel` (in `screens/ingredients/`) is the reference example.
+`showSnackbar(text, isError)` covers the common case (`isError = true` is error-styled and stays until dismissed). For full control over `dismissText` (defaults to `"OK"`) or `duration`, pass a prebuilt `SnackbarMessage` to the other overload. The UI renders it via `rememberSnackbarHostState` + `SnackbarMessageHost` (see the **screen-ui** skill). `IngredientsViewModel` (in `screens/ingredients/`) is the reference example.
 
 ## Callbacks
 
@@ -150,4 +164,9 @@ This flag should be set to `true` before starting the operation and set to `fals
 
 ## Example
 
-See `app/src/commonMain/kotlin/se/gustavkarlsson/chefgpt/screens/ingredients/IngredientsViewModel.kt` for a good example.
+See `app/src/commonMain/kotlin/se/gustavkarlsson/chefgpt/screens/ingredients/IngredientsViewModel.kt` for a good example of the overall structure and patterns.
+
+Note: the existing ViewModels predate the `StateViewModel` base class and have
+not yet been migrated to it — they still declare `innerState`/`uiState`/`State`
+by hand with a `private` `State`. New ViewModels should extend `StateViewModel`
+as described under *Base class* above.

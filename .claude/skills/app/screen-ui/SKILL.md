@@ -41,6 +41,33 @@ fun ChatScreen(route: Route.Chat) {
 }
 ```
 
+### Snackbars
+
+Every ViewModel exposes `snackbarMessages: Flow<SnackbarMessage>` from the base `StateViewModel` (see the **view-model** skill's *Snackbars* section). If the screen surfaces snackbars, pass that `Flow` into `Content`, turn it into a host state with `rememberSnackbarHostState(...)`, and render it through the `Scaffold`'s `snackbarHost` with `SnackbarMessageHost` (all from `se.gustavkarlsson.chefgpt.snackbar`):
+
+```kotlin
+@Composable
+fun IngredientsScreen(route: Route.Ingredients) {
+    val viewModel = koinViewModel<IngredientsViewModel> { parametersOf(route) }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    Content(uiState, viewModel.snackbarMessages)
+}
+
+@Composable
+private fun Content(
+    uiState: UiState,
+    snackbarMessages: Flow<SnackbarMessage>,
+    modifier: Modifier = Modifier,
+) {
+    val snackbarHostState = rememberSnackbarHostState(snackbarMessages)
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        snackbarHost = { SnackbarMessageHost(snackbarHostState) },
+        // ...
+    ) { /* ... */ }
+}
+```
+
 ### Content and child composables
 
 - `Content` and all child composables are `private` and **stateless**: they take a `UiState` (or a slice of it) and never reference the ViewModel. This keeps the UI previewable and testable.

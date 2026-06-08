@@ -1,18 +1,11 @@
 package se.gustavkarlsson.chefgpt.screens.start
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.onErr
 import com.github.michaelbull.result.onOk
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import se.gustavkarlsson.chefgpt.api.ChatId
@@ -21,12 +14,11 @@ import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.displayName
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.navigation.Route
+import se.gustavkarlsson.chefgpt.screens.StateViewModel
 import se.gustavkarlsson.chefgpt.sessions.RegisterError
 import se.gustavkarlsson.chefgpt.sessions.SessionCredentials
 import se.gustavkarlsson.chefgpt.sessions.SessionRepository
 import se.gustavkarlsson.chefgpt.sessions.UserCredentials
-import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessage
-import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessages
 
 private val log = Logger.withTag("${StartViewModel::class.simpleName}")
 
@@ -34,20 +26,12 @@ class StartViewModel(
     private val chatRepository: ChatRepository,
     private val sessionRepository: SessionRepository,
     private val navigator: Navigator,
-) : ViewModel() {
+) : StateViewModel<State, UiState>() {
     private val streamChatsJob = atomic<Job?>(null)
 
-    private val innerState = MutableStateFlow(State())
+    override fun createInitialState() = State()
 
-    val uiState: StateFlow<UiState> =
-        innerState
-            .map { it.toUiState() }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), innerState.value.toUiState())
-
-    private val snackbar = SnackbarMessages()
-    val snackbarMessages: Flow<SnackbarMessage> = snackbar.messages
-
-    private fun State.toUiState(): UiState =
+    override fun State.toUiState(): UiState =
         UiState(
             content = toContent(),
             onClickDebug = ::openDebug,
@@ -131,12 +115,12 @@ class StartViewModel(
                         when (error) {
                             is RegisterError.ServerError -> {
                                 log.i { "Registration failed for '$username': ${error.error}" }
-                                snackbar.show("Registration failed", isError = true)
+                                showSnackbar("Registration failed", isError = true)
                             }
 
                             RegisterError.StorageFailed -> {
                                 log.e { "Registration succeeded but failed to save session for '$username'" }
-                                snackbar.show("Couldn't save your session", isError = true)
+                                showSnackbar("Couldn't save your session", isError = true)
                             }
                         }
                     }
@@ -158,7 +142,7 @@ class StartViewModel(
                     .onOk { onAuthenticated(username, it, "Logged in") }
                     .onErr {
                         log.i { "Login failed for '$username': $it" }
-                        snackbar.show("Login failed", isError = true)
+                        showSnackbar("Login failed", isError = true)
                     }
             } finally {
                 innerState.update { it.copy(authenticating = false) }
@@ -186,7 +170,7 @@ class StartViewModel(
                     navigator.push(Route.Chat(credentials.sessionId, chat.id))
                 }.onErr {
                     log.e { "Failed to create chat: $it" }
-                    snackbar.show("Couldn't create chat", isError = true)
+                    showSnackbar("Couldn't create chat", isError = true)
                 }
         }
     }
@@ -204,7 +188,7 @@ class StartViewModel(
                 .onOk { log.i { "Chat deleted: $chatId" } }
                 .onErr {
                     log.e { "Failed to delete chat: $it" }
-                    snackbar.show("Couldn't delete chat", isError = true)
+                    showSnackbar("Couldn't delete chat", isError = true)
                 }
         }
     }
@@ -246,7 +230,7 @@ class StartViewModel(
     }
 }
 
-private data class State(
+data class State(
     val initialized: Boolean = false,
     val sessionCredentials: SessionCredentials? = null,
     val chats: List<Chat> = emptyList(),
