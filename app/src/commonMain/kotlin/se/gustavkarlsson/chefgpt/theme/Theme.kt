@@ -5,6 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 
@@ -109,8 +110,10 @@ fun ChefGptTheme(
             lightScheme
         }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        content = content,
-    )
+    MaterialTheme(colorScheme = colorScheme) {
+        CompositionLocalProvider(
+            LocalMarkdownTypography provides rememberScaledMarkdownTypography(),
+            content = content,
+        )
+    }
 }
