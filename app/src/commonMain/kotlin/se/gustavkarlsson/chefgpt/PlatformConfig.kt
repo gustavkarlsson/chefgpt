@@ -6,3 +6,6 @@ expect val SERVER_BASE_URL: String
 
 // Writable directory where the app persists local state (last session, event history).
 expect val APP_STORAGE_DIR: String
+
+// Optional hint shown under the base URL field. Null on platforms where it doesn't apply.
+expect val BASE_URL_HINT: String?
