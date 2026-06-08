@@ -38,8 +38,8 @@ import se.gustavkarlsson.chefgpt.chats.displayName
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatarModel
 import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
 import se.gustavkarlsson.chefgpt.navigation.Navigator
-import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
+import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsScreen
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
@@ -67,10 +67,10 @@ class ChatViewModel(
     private val chatRepository: ChatRepository,
     private val navigator: Navigator,
     private val emojiResolverFactory: IngredientEmojiResolver.Factory,
-    @InjectedParam private val route: Route.Chat,
+    @InjectedParam private val screen: ChatScreen,
 ) : StateViewModel<State, UiState>() {
-    private val sessionId: SessionId = route.sessionId
-    private val conversation: Conversation = conversationFactory.create(sessionId, route.chatId)
+    private val sessionId: SessionId = screen.sessionId
+    private val conversation: Conversation = conversationFactory.create(sessionId, screen.chatId)
 
     // One example prompt per chat, chosen deterministically from the chat ID so it stays stable.
     private val examplePrompt: String =
@@ -212,7 +212,7 @@ class ChatViewModel(
     }
 
     private fun openIngredients() {
-        navigator.push(Route.Ingredients(sessionId))
+        navigator.push(IngredientsScreen(sessionId))
     }
 
     private fun submitPrompt(prompt: String) {

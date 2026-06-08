@@ -13,8 +13,10 @@ import se.gustavkarlsson.chefgpt.chats.Chat
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.displayName
 import se.gustavkarlsson.chefgpt.navigation.Navigator
-import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
+import se.gustavkarlsson.chefgpt.screens.chat.ChatScreen
+import se.gustavkarlsson.chefgpt.screens.debug.DebugScreen
+import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsScreen
 import se.gustavkarlsson.chefgpt.sessions.RegisterError
 import se.gustavkarlsson.chefgpt.sessions.SessionCredentials
 import se.gustavkarlsson.chefgpt.sessions.SessionRepository
@@ -167,7 +169,7 @@ class StartViewModel(
                 .create(credentials.sessionId)
                 .onOk { chat ->
                     log.i { "Chat created: ${chat.id}" }
-                    navigator.push(Route.Chat(credentials.sessionId, chat.id))
+                    navigator.push(ChatScreen(credentials.sessionId, chat.id))
                 }.onErr {
                     log.e { "Failed to create chat: $it" }
                     showSnackbar("Couldn't create chat", isError = true)
@@ -177,7 +179,7 @@ class StartViewModel(
 
     private fun openChat(chatId: ChatId) {
         val credentials = innerState.value.sessionCredentials ?: return
-        navigator.push(Route.Chat(credentials.sessionId, chatId))
+        navigator.push(ChatScreen(credentials.sessionId, chatId))
     }
 
     private fun deleteChat(chatId: ChatId) {
@@ -195,11 +197,11 @@ class StartViewModel(
 
     private fun openIngredients() {
         val credentials = innerState.value.sessionCredentials ?: return
-        navigator.push(Route.Ingredients(credentials.sessionId))
+        navigator.push(IngredientsScreen(credentials.sessionId))
     }
 
     private fun openDebug() {
-        navigator.push(Route.Debug)
+        navigator.push(DebugScreen())
     }
 
     private fun logOut() {

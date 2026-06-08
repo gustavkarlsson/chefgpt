@@ -56,21 +56,32 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatar
-import se.gustavkarlsson.chefgpt.navigation.Route
+import se.gustavkarlsson.chefgpt.navigation.Screen
+import se.gustavkarlsson.chefgpt.navigation.Screen.Id
 import se.gustavkarlsson.chefgpt.pickImageFile
 import se.gustavkarlsson.chefgpt.plus
+import se.gustavkarlsson.chefgpt.sessions.SessionId
 import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessage
 import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessageHost
 import se.gustavkarlsson.chefgpt.snackbar.rememberSnackbarHostState
 
-@Composable
-fun IngredientsScreen(route: Route.Ingredients) {
-    val viewModel = koinViewModel<IngredientsViewModel> { parametersOf(route) }
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    Content(uiState, viewModel.snackbarMessages, viewModel.focusInputEvents)
+@Serializable
+@SerialName("ingredients")
+data class IngredientsScreen(
+    val sessionId: SessionId,
+    override val id: Id = Id.new(),
+) : Screen {
+    @Composable
+    override fun Content() {
+        val viewModel = koinViewModel<IngredientsViewModel> { parametersOf(this) }
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+        Content(uiState, viewModel.snackbarMessages, viewModel.focusInputEvents)
+    }
 }
 
 @Composable

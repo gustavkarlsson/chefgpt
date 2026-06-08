@@ -80,23 +80,36 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatar
-import se.gustavkarlsson.chefgpt.navigation.Route
+import se.gustavkarlsson.chefgpt.navigation.Screen
+import se.gustavkarlsson.chefgpt.navigation.Screen.Id
 import se.gustavkarlsson.chefgpt.pickImageFile
 import se.gustavkarlsson.chefgpt.plus
+import se.gustavkarlsson.chefgpt.sessions.SessionId
 import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessage
 import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessageHost
 import se.gustavkarlsson.chefgpt.snackbar.rememberSnackbarHostState
 import se.gustavkarlsson.chefgpt.theme.LocalMarkdownTypography
 import kotlin.time.Duration.Companion.milliseconds
 
-@Composable
-fun ChatScreen(route: Route.Chat) {
-    val viewModel = koinViewModel<ChatViewModel> { parametersOf(route) }
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    Content(uiState, viewModel.ingredientChanges, viewModel.snackbarMessages)
+@Serializable
+@SerialName("chat")
+data class ChatScreen(
+    val sessionId: SessionId,
+    val chatId: ChatId,
+    override val id: Id = Id.new(),
+) : Screen {
+    @Composable
+    override fun Content() {
+        val viewModel = koinViewModel<ChatViewModel> { parametersOf(this) }
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+        Content(uiState, viewModel.ingredientChanges, viewModel.snackbarMessages)
+    }
 }
 
 @Composable
