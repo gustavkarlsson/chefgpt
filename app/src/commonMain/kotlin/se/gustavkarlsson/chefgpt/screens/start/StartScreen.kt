@@ -46,7 +46,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.backhandler.BackHandler
+import androidx.compose.ui.backhandler.PredictiveBackHandler
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -54,6 +54,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -153,8 +154,16 @@ private fun LoggedInContent(
     val scope = rememberCoroutineScope()
     val listHidden =
         navigator.scaffoldValue[ListDetailPaneScaffoldRole.List] == PaneAdaptedValue.Hidden
-    BackHandler(enabled = navigator.canNavigateBack()) {
-        scope.launch { navigator.navigateBack() }
+    // Drive the scaffold's predictive back animation from the system back gesture, finalizing the
+    // navigation when committed and rewinding when cancelled. Also handles plain back presses.
+    @Suppress("DEPRECATION")
+    PredictiveBackHandler(enabled = navigator.canNavigateBack()) { progress ->
+        try {
+            progress.collect { backEvent -> navigator.seekBack(fraction = backEvent.progress) }
+            navigator.navigateBack()
+        } catch (_: CancellationException) {
+            navigator.seekBack(fraction = 0f)
+        }
     }
     ListDetailPaneScaffold(
         directive = navigator.scaffoldDirective,
