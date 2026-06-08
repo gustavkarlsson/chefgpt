@@ -58,6 +58,9 @@ fun Application.installKoog() {
                     you, network requests, HTTP, status or error codes, or any other
                     implementation detail. If something goes wrong, apologize plainly and
                     suggest trying again, without exposing what happened behind the scenes.
+
+                    Never use any Markdown headers larger than ###. If you need a
+                    header, use ### or smaller (####, etc.) — never # or ##.
                     """.trimIndent(),
                 )
             }
