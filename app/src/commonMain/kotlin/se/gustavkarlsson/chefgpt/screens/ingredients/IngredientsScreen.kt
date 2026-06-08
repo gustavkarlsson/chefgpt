@@ -196,6 +196,7 @@ private fun IngredientCard(
                     modifier = Modifier.padding(top = 4.dp),
                     text = ingredient.name,
                     style = MaterialTheme.typography.bodySmall,
+                    minLines = 2,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
