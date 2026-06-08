@@ -57,6 +57,7 @@ class IngredientsViewModel(
                     onTextChange = ::updateInputText,
                     onScanImageSelected = ::scanImage,
                     onClickAdd = if (inputText.isNotBlank() && emojiResolver != null) ::createIngredient else null,
+                    autoFocus = ingredients.isEmpty(),
                 ),
             onClickBack = navigator::pop,
         )
@@ -222,6 +223,7 @@ data class UiInput(
     val onTextChange: (String) -> Unit,
     val onScanImageSelected: ((Path) -> Unit)?,
     val onClickAdd: (() -> Unit)?,
+    val autoFocus: Boolean,
 )
 
 data class UiIngredient(
