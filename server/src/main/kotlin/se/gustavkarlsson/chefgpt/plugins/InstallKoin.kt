@@ -13,6 +13,7 @@ import se.gustavkarlsson.chefgpt.setup.createImageUploaderModule
 import se.gustavkarlsson.chefgpt.setup.createIngredientStoreModule
 import se.gustavkarlsson.chefgpt.setup.createJsonModule
 import se.gustavkarlsson.chefgpt.setup.createRecipeClientModule
+import se.gustavkarlsson.chefgpt.setup.createRecipeStoreModule
 import se.gustavkarlsson.chefgpt.setup.createSessionStorageModule
 import se.gustavkarlsson.chefgpt.setup.createUserRepositoryModule
 
@@ -28,6 +29,7 @@ fun Application.installKoin(extraKoinModules: List<Module> = emptyList()) {
             createJsonModule(),
             createSessionStorageModule(),
             createRecipeClientModule(),
+            createRecipeStoreModule(),
             createUserRepositoryModule(),
             createIngredientStoreModule(),
         )
