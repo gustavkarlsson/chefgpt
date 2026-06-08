@@ -48,8 +48,18 @@ class IngredientsViewModel(
 
     private fun State.toUiState(): UiState =
         UiState(
-            inInventory = ingredients.toUiIngredients(emojiResolver, inInventory = true),
-            notInInventory = ingredients.toUiIngredients(emojiResolver, inInventory = false),
+            inInventory =
+                ingredients.toUiIngredients(
+                    emojiResolver,
+                    inInventory = true,
+                    baseline = baselineInInventory,
+                ),
+            notInInventory =
+                ingredients.toUiIngredients(
+                    emojiResolver,
+                    inInventory = false,
+                    baseline = baselineInInventory,
+                ),
             input =
                 UiInput(
                     suggestions = toSuggestions(),
@@ -74,6 +84,7 @@ class IngredientsViewModel(
                     name = name,
                     icon = EmojiAvatarModel.of(emojiResolver.resolve(name), name),
                     dimmed = false,
+                    isNew = false,
                     onClick = ::addSuggestion,
                     onClickDestroy = null,
                 )
@@ -83,6 +94,7 @@ class IngredientsViewModel(
     private fun List<ApiIngredient>.toUiIngredients(
         emojiResolver: IngredientEmojiResolver?,
         inInventory: Boolean,
+        baseline: Set<IngredientId>?,
     ): List<UiIngredient> {
         if (emojiResolver == null) return emptyList()
         return this
@@ -94,6 +106,7 @@ class IngredientsViewModel(
                     name = ingredient.name,
                     icon = EmojiAvatarModel.of(emojiResolver.resolve(ingredient.name), ingredient.name),
                     dimmed = !inInventory,
+                    isNew = inInventory && baseline != null && ingredient.id !in baseline,
                     onClick = if (inInventory) ::removeIngredient else ::addIngredient,
                     onClickDestroy = if (inInventory) null else ::destroyIngredient,
                 )
@@ -109,7 +122,13 @@ class IngredientsViewModel(
             while (true) {
                 try {
                     client.listenToIngredients(sessionId).collect { ingredients ->
-                        innerState.update { it.copy(ingredients = ingredients) }
+                        innerState.update { state ->
+                            // The first emission establishes the baseline of what was already in stock.
+                            val baseline =
+                                state.baselineInInventory
+                                    ?: ingredients.filter { it.inInventory }.mapTo(mutableSetOf()) { it.id }
+                            state.copy(ingredients = ingredients, baselineInInventory = baseline)
+                        }
                     }
                     log.e { "Ingredient stream ended" }
                 } catch (e: CancellationException) {
@@ -202,12 +221,14 @@ class IngredientsViewModel(
     }
 }
 
-// TODO Mark updates as "new"
 private data class State(
     val ingredients: List<ApiIngredient> = emptyList(),
     val inputText: String = "",
     val scanningImage: Boolean = false,
     val emojiResolver: IngredientEmojiResolver? = null, // null until the emoji catalog has loaded.
+    // Ids in the inventory when the screen opened (first stream emission). Anything in stock now but
+    // absent here is "new"; an ingredient removed and re-added returns to the baseline, so it isn't.
+    val baselineInInventory: Set<IngredientId>? = null,
 )
 
 data class UiState(
@@ -232,6 +253,7 @@ data class UiIngredient(
     val name: String,
     val icon: EmojiAvatarModel,
     val dimmed: Boolean,
+    val isNew: Boolean,
     val onClick: (String) -> Unit,
     val onClickDestroy: ((String) -> Unit)?,
 )
