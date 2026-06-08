@@ -6,8 +6,11 @@ import com.github.michaelbull.result.onErr
 import com.github.michaelbull.result.onOk
 import io.ktor.http.ContentType
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.getAndUpdate
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
@@ -34,12 +37,17 @@ class IngredientsViewModel(
 ) : StateViewModel<State, UiState>() {
     private val sessionId: SessionId = route.sessionId
 
+    // One-shot events telling the UI to focus the input, fired whenever the ingredient
+    // list goes empty (including the first load arriving empty).
+    private val focusInputChannel = Channel<Unit>(Channel.UNLIMITED)
+    val focusInputEvents: Flow<Unit> = focusInputChannel.receiveAsFlow()
+
     override fun createInitialState() = State()
 
     override fun State.toUiState(): UiState =
         UiState(
             inInventory =
-                ingredients.toUiIngredients(
+                ingredients.orEmpty().toUiIngredients(
                     emojiResolver,
                     inInventory = true,
                     baseline = baselineInInventory,
@@ -53,7 +61,7 @@ class IngredientsViewModel(
                     IngredientSection(
                         title = "Previously in store",
                         ingredients =
-                            ingredients.toUiIngredients(
+                            ingredients.orEmpty().toUiIngredients(
                                 emojiResolver,
                                 inInventory = false,
                                 baseline = baselineInInventory,
@@ -66,7 +74,6 @@ class IngredientsViewModel(
                     onTextChange = ::updateInputText,
                     onScanImageSelected = ::scanImage,
                     onClickAdd = if (inputText.isNotBlank() && emojiResolver != null) ::createIngredient else null,
-                    autoFocus = ingredients.isEmpty(),
                 ),
             onClickBack = navigator::pop,
         )
@@ -79,6 +86,7 @@ class IngredientsViewModel(
         // Previously in-store ingredients that match can be moved straight back into the inventory.
         val previouslyInStore =
             ingredients
+                .orEmpty()
                 .filterNot { it.inInventory }
                 .filter { it.name.lowercase().contains(needle) }
                 .sortedBy { it.lastModified }
@@ -95,7 +103,7 @@ class IngredientsViewModel(
                 }
 
         // Catalog words we don't know about yet become brand new ingredients when tapped.
-        val existing = ingredients.mapTo(mutableSetOf()) { it.name.lowercase() }
+        val existing = ingredients.orEmpty().mapTo(mutableSetOf()) { it.name.lowercase() }
         val newWords =
             IngredientWords
                 .match(inputText)
@@ -146,12 +154,17 @@ class IngredientsViewModel(
             while (true) {
                 try {
                     client.listenToIngredients(sessionId).collect { ingredients ->
-                        innerState.update { state ->
-                            // The first emission establishes the baseline of what was already in stock.
-                            val baseline =
-                                state.baselineInInventory
-                                    ?: ingredients.filter { it.inInventory }.mapTo(mutableSetOf()) { it.id }
-                            state.copy(ingredients = ingredients, baselineInInventory = baseline)
+                        val previous =
+                            innerState.getAndUpdate { state ->
+                                // The first emission establishes the baseline of what was already in stock.
+                                val baseline =
+                                    state.baselineInInventory
+                                        ?: ingredients.filter { it.inInventory }.mapTo(mutableSetOf()) { it.id }
+                                state.copy(ingredients = ingredients, baselineInInventory = baseline)
+                            }
+                        // Fire whenever the list transitions to empty; previous is null until the first load.
+                        if (ingredients.isEmpty() && previous.ingredients?.isEmpty() != true) {
+                            focusInputChannel.send(Unit)
                         }
                     }
                     log.e { "Ingredient stream ended" }
@@ -255,7 +268,7 @@ class IngredientsViewModel(
 }
 
 data class State(
-    val ingredients: List<ApiIngredient> = emptyList(),
+    val ingredients: List<ApiIngredient>? = null, // null until the first ingredient emission arrives.
     val inputText: String = "",
     val scanningImage: Boolean = false,
     val emojiResolver: IngredientEmojiResolver? = null, // null until the emoji catalog has loaded.
@@ -281,7 +294,6 @@ data class UiInput(
     val onTextChange: (String) -> Unit,
     val onScanImageSelected: ((Path) -> Unit)?,
     val onClickAdd: (() -> Unit)?,
-    val autoFocus: Boolean,
 )
 
 data class UiIngredient(
