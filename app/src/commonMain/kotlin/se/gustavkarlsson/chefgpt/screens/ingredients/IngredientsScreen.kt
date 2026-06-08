@@ -84,25 +84,28 @@ private fun Content(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            Row(
-                modifier =
-                    Modifier
-                        .windowInsetsPadding(
-                            WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-                        ).padding(4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(onClick = uiState.onClickBack) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
+            Surface(color = MaterialTheme.colorScheme.background) {
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .windowInsetsPadding(
+                                WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                            ).padding(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(onClick = uiState.onClickBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                        )
+                    }
+                    Text(
+                        modifier = Modifier.padding(start = 8.dp),
+                        text = "Ingredients",
+                        style = MaterialTheme.typography.titleLarge,
                     )
                 }
-                Text(
-                    modifier = Modifier.padding(start = 8.dp),
-                    text = "Ingredients",
-                    style = MaterialTheme.typography.titleLarge,
-                )
             }
         },
         bottomBar = {

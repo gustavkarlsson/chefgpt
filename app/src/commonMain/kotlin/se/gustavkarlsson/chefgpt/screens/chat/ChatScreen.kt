@@ -99,32 +99,35 @@ private fun Content(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            Row(
-                modifier =
-                    Modifier
-                        .windowInsetsPadding(
-                            WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-                        ).padding(4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(onClick = uiState.onClickBack) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
+            Surface(color = MaterialTheme.colorScheme.background) {
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .windowInsetsPadding(
+                                WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                            ).padding(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(onClick = uiState.onClickBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                        )
+                    }
+                    ConnectionIndicator(connected = uiState.connected)
+                    Text(
+                        modifier = Modifier.weight(1f).padding(start = 8.dp),
+                        text = uiState.title,
+                        style = MaterialTheme.typography.titleLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    IngredientButton(
+                        ingredientChanges = ingredientChanges,
+                        onClick = uiState.onClickIngredients,
                     )
                 }
-                ConnectionIndicator(connected = uiState.connected)
-                Text(
-                    modifier = Modifier.weight(1f).padding(start = 8.dp),
-                    text = uiState.title,
-                    style = MaterialTheme.typography.titleLarge,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                IngredientButton(
-                    ingredientChanges = ingredientChanges,
-                    onClick = uiState.onClickIngredients,
-                )
             }
         },
         bottomBar = {
