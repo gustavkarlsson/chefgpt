@@ -13,31 +13,49 @@ UI lives alongside its ViewModel in `app/src/commonMain/kotlin/se/gustavkarlsson
 
 ## Structure
 
-### Entry point composable
+### Screen data class
 
-A public `@Composable fun <Screen>Screen(...)` that wires the ViewModel to the UI and nothing else:
+A screen is a `@Serializable data class` implementing the `Screen` interface (`navigation/Screen.kt`). It holds the navigation args as properties, carries a stable `id`, and exposes a `Content()` composable that wires the ViewModel to the UI and nothing else:
 
 ```kotlin
-@Composable
-fun IngredientsScreen(route: Route.Ingredients) {
-    val viewModel = koinViewModel<IngredientsViewModel> { parametersOf(route) }
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    Content(uiState)
+@Serializable
+@SerialName("ingredients")
+data class IngredientsScreen(
+    val sessionId: SessionId,
+    override val id: Id = Id.new(),
+) : Screen {
+    @Composable
+    override fun Content() {
+        val viewModel = koinViewModel<IngredientsViewModel> { parametersOf(this) }
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+        Content(uiState)
+    }
 }
 ```
 
-- Resolve the ViewModel with `koinViewModel<T>()`. Pass navigation route args via `{ parametersOf(route) }`.
+- `@Serializable` + `@SerialName("<screen>")` — the screen is persisted in the back stack, so the serial name must be stable and unique.
+- Declare navigation args as `val` properties (e.g. `sessionId`). A screen with no args is still a `data class` (not a `data object`) because of the `id`.
+- `override val id: Id = Id.new()` — last, always defaulted. `Id` distinguishes two back-stack entries of the same screen type; never set it manually.
+- Resolve the ViewModel with `koinViewModel<T>()`. Pass the screen itself to the ViewModel via `{ parametersOf(this) }` — the ViewModel reads its nav args off the screen (see the **view-model** skill).
 - Collect `uiState` with `collectAsStateWithLifecycle()`.
 - Delegate immediately to a private, stateless `Content(uiState)`.
 
 If the ViewModel also exposes a one-shot event `Flow` (see the **view-model** skill's *One-shot events* section), pass that `Flow` to `Content` as an extra parameter and `collect` it where it's consumed (typically in a `LaunchedEffect`). It stays separate from `uiState`:
 
 ```kotlin
-@Composable
-fun ChatScreen(route: Route.Chat) {
-    val viewModel = koinViewModel<ChatViewModel> { parametersOf(route) }
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    Content(uiState, viewModel.ingredientChanges)
+@Serializable
+@SerialName("chat")
+data class ChatScreen(
+    val sessionId: SessionId,
+    val chatId: ChatId,
+    override val id: Id = Id.new(),
+) : Screen {
+    @Composable
+    override fun Content() {
+        val viewModel = koinViewModel<ChatViewModel> { parametersOf(this) }
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+        Content(uiState, viewModel.ingredientChanges)
+    }
 }
 ```
 
@@ -46,11 +64,18 @@ fun ChatScreen(route: Route.Chat) {
 Every ViewModel exposes `snackbarMessages: Flow<SnackbarMessage>` from the base `StateViewModel` (see the **view-model** skill's *Snackbars* section). If the screen surfaces snackbars, pass that `Flow` into `Content`, turn it into a host state with `rememberSnackbarHostState(...)`, and render it through the `Scaffold`'s `snackbarHost` with `SnackbarMessageHost` (all from `se.gustavkarlsson.chefgpt.snackbar`):
 
 ```kotlin
-@Composable
-fun IngredientsScreen(route: Route.Ingredients) {
-    val viewModel = koinViewModel<IngredientsViewModel> { parametersOf(route) }
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    Content(uiState, viewModel.snackbarMessages)
+@Serializable
+@SerialName("ingredients")
+data class IngredientsScreen(
+    val sessionId: SessionId,
+    override val id: Id = Id.new(),
+) : Screen {
+    @Composable
+    override fun Content() {
+        val viewModel = koinViewModel<IngredientsViewModel> { parametersOf(this) }
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+        Content(uiState, viewModel.snackbarMessages)
+    }
 }
 
 @Composable
@@ -96,10 +121,11 @@ private fun Content(
 
 ## Wiring a new screen
 
-When adding a whole new screen (not editing an existing one), three places connect it:
-1. `navigation/Route.kt` — add a `@Serializable` route (`data object` or `data class` with nav args).
-2. `App.kt` — register it in the `entryProvider` (`entry<Route.X> { key -> XScreen(key) }`).
-3. `di/AppModule.kt` — register the ViewModel in `viewModelModule` (`viewModel<XViewModel>()`).
+When adding a whole new screen (not editing an existing one):
+1. Define the `XScreen` data class as above, implementing `Screen` (`@Serializable`, `@SerialName`, nav-arg `val`s, defaulted `id`, `Content()`).
+2. `di/AppModule.kt` — register the ViewModel in `viewModelModule` (`viewModel<XViewModel>()`).
+
+That's it. There is no per-screen registration in `App.kt`: `NavDisplay`'s `entryProvider` is generic and renders any screen through `screen.Content()`, keyed by `screen.id.value`. To navigate to the new screen, call `navigator.push(XScreen(...))` from a ViewModel (see the **view-model** skill).
 
 The ViewModel itself is built with the **view-model** skill.
 
