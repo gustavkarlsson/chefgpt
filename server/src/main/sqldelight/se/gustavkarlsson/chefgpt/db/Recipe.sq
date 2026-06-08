@@ -1,0 +1,14 @@
+selectByUserId:
+SELECT *
+FROM recipe
+WHERE user_id = ?;
+
+insert:
+INSERT INTO recipe (user_id, title, url, image_url)
+VALUES (?, ?, ?, ?)
+RETURNING id, title, url, image_url;
+
+deleteByUserIdAndId:
+DELETE FROM recipe
+WHERE user_id = ? AND id = ?
+RETURNING id;

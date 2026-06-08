@@ -8,14 +8,17 @@ import se.gustavkarlsson.chefgpt.routes.createChatRoute
 import se.gustavkarlsson.chefgpt.routes.createIngredientRoute
 import se.gustavkarlsson.chefgpt.routes.deleteChatRoute
 import se.gustavkarlsson.chefgpt.routes.deleteIngredientRoute
+import se.gustavkarlsson.chefgpt.routes.deleteRecipeRoute
 import se.gustavkarlsson.chefgpt.routes.imagesRoute
 import se.gustavkarlsson.chefgpt.routes.loginRoute
 import se.gustavkarlsson.chefgpt.routes.patchIngredientRoute
 import se.gustavkarlsson.chefgpt.routes.registerRoute
+import se.gustavkarlsson.chefgpt.routes.saveRecipeRoute
 import se.gustavkarlsson.chefgpt.routes.scanIngredientsRoute
 import se.gustavkarlsson.chefgpt.routes.streamChatEventsRoute
 import se.gustavkarlsson.chefgpt.routes.streamChatsRoute
 import se.gustavkarlsson.chefgpt.routes.streamIngredientsRoute
+import se.gustavkarlsson.chefgpt.routes.streamRecipesRoute
 
 // TODO set timeouts
 fun Application.installRouting() {
@@ -34,6 +37,9 @@ fun Application.installRouting() {
             deleteChatRoute()
             streamChatEventsRoute()
             chatActionsRoute()
+            streamRecipesRoute()
+            saveRecipeRoute()
+            deleteRecipeRoute()
         }
     }
 }
