@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AppThemeBase resolves to its night variant automatically, so the
+         splash background also follows the system theme on Android 12+. -->
+    <style name="AppTheme" parent="AppThemeBase">
+        <item name="android:windowSplashScreenBackground">@color/windowBackground</item>
+    </style>
+</resources>
