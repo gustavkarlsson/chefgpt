@@ -86,6 +86,7 @@ import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatar
 import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.pickImageFile
 import se.gustavkarlsson.chefgpt.plus
+import se.gustavkarlsson.chefgpt.theme.LocalMarkdownTypography
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
@@ -377,6 +378,7 @@ private fun MessageText(
 ) {
     Markdown(
         content = text,
+        typography = LocalMarkdownTypography.current,
         modifier = modifier.padding(12.dp),
     )
 }
