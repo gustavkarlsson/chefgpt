@@ -10,6 +10,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -316,12 +317,12 @@ private fun MessageBubble(
     modifier: Modifier = Modifier,
 ) {
     val fromUser = message is UiMessage.User
-    Box(modifier = modifier.fillMaxWidth()) {
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         Surface(
             modifier =
                 Modifier
                     .align(if (fromUser) Alignment.CenterEnd else Alignment.CenterStart)
-                    .widthIn(max = 400.dp)
+                    .widthIn(max = minOf(400.dp, maxWidth * 0.8f))
                     .padding(4.dp),
             shape = RoundedCornerShape(12.dp),
             color =
