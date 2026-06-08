@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Matches backgroundDark in the Compose color scheme -->
+    <color name="windowBackground">#0E1415</color>
+</resources>
