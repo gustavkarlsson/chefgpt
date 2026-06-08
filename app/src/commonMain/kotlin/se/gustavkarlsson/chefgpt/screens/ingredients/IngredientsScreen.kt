@@ -1,13 +1,5 @@
 package se.gustavkarlsson.chefgpt.screens.ingredients
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.VisibilityThreshold
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,7 +9,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
@@ -25,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -50,10 +40,8 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -64,7 +52,6 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.Flow
@@ -78,7 +65,6 @@ import se.gustavkarlsson.chefgpt.plus
 import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessage
 import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessageHost
 import se.gustavkarlsson.chefgpt.snackbar.rememberSnackbarHostState
-import androidx.compose.foundation.lazy.items as lazyItems
 
 @Composable
 fun IngredientsScreen(route: Route.Ingredients) {
@@ -141,8 +127,8 @@ private fun Content(
                 ingredients = uiState.inInventory,
             )
             ingredientSection(
-                title = "Previously in store",
-                ingredients = uiState.notInInventory,
+                title = uiState.secondSection.title,
+                ingredients = uiState.secondSection.ingredients,
             )
         }
     }
@@ -230,41 +216,6 @@ private fun IngredientCard(
 }
 
 @Composable
-private fun IngredientSuggestions(
-    suggestions: List<UiIngredient>,
-    modifier: Modifier = Modifier,
-    contentPadding: PaddingValues = PaddingValues(),
-) {
-    // Hold onto the last non-empty list so the panel keeps rendering its cards while it animates out.
-    var lastSuggestions by remember { mutableStateOf(suggestions) }
-    if (suggestions.isNotEmpty()) lastSuggestions = suggestions
-    val animationSpec =
-        spring(
-            stiffness = Spring.StiffnessHigh,
-            visibilityThreshold = IntSize.VisibilityThreshold,
-        )
-    AnimatedVisibility(
-        visible = suggestions.isNotEmpty(),
-        modifier = modifier,
-        enter = expandVertically(animationSpec, expandFrom = Alignment.Bottom) + fadeIn(),
-        exit = shrinkVertically(animationSpec, shrinkTowards = Alignment.Bottom) + fadeOut(),
-    ) {
-        LazyRow(
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = contentPadding,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            lazyItems(items = lastSuggestions, key = { it.key }) { suggestion ->
-                IngredientCard(
-                    modifier = Modifier.animateItem(),
-                    ingredient = suggestion,
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun IngredientInput(
     input: UiInput,
     modifier: Modifier = Modifier,
@@ -281,14 +232,6 @@ private fun IngredientInput(
             LaunchedEffect(input.autoFocus) {
                 if (input.autoFocus) focusRequester.requestFocus()
             }
-            IngredientSuggestions(
-                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                contentPadding =
-                    WindowInsets.safeDrawing
-                        .only(WindowInsetsSides.Horizontal)
-                        .asPaddingValues() + PaddingValues(horizontal = 16.dp),
-                suggestions = input.suggestions,
-            )
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,

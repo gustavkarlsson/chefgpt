@@ -44,15 +44,24 @@ class IngredientsViewModel(
                     inInventory = true,
                     baseline = baselineInInventory,
                 ),
-            notInInventory =
-                ingredients.toUiIngredients(
-                    emojiResolver,
-                    inInventory = false,
-                    baseline = baselineInInventory,
-                ),
+            // While the user is typing, the second section shows matching suggestions; otherwise it
+            // falls back to the ingredients that were previously in store.
+            secondSection =
+                if (inputText.isNotBlank()) {
+                    IngredientSection(title = "Suggestions", ingredients = toSuggestions())
+                } else {
+                    IngredientSection(
+                        title = "Previously in store",
+                        ingredients =
+                            ingredients.toUiIngredients(
+                                emojiResolver,
+                                inInventory = false,
+                                baseline = baselineInInventory,
+                            ),
+                    )
+                },
             input =
                 UiInput(
-                    suggestions = toSuggestions(),
                     text = inputText,
                     onTextChange = ::updateInputText,
                     onScanImageSelected = ::scanImage,
@@ -63,22 +72,47 @@ class IngredientsViewModel(
         )
 
     private fun State.toSuggestions(): List<UiIngredient> {
-        if (inputText.isBlank() || emojiResolver == null) return emptyList()
+        val emojiResolver = emojiResolver ?: return emptyList()
+        if (inputText.isBlank()) return emptyList()
+        val needle = inputText.trim().lowercase()
+
+        // Previously in-store ingredients that match can be moved straight back into the inventory.
+        val previouslyInStore =
+            ingredients
+                .filterNot { it.inInventory }
+                .filter { it.name.lowercase().contains(needle) }
+                .sortedBy { it.lastModified }
+                .map { ingredient ->
+                    UiIngredient(
+                        key = ingredient.id.toString(),
+                        name = ingredient.name,
+                        icon = EmojiAvatarModel.of(emojiResolver.resolve(ingredient.name), ingredient.name),
+                        dimmed = false,
+                        isNew = false,
+                        onClick = ::addIngredient,
+                        onClickDestroy = null,
+                    )
+                }
+
+        // Catalog words we don't know about yet become brand new ingredients when tapped.
         val existing = ingredients.mapTo(mutableSetOf()) { it.name.lowercase() }
-        return IngredientWords
-            .match(inputText)
-            .filterNot { it in existing }
-            .map { name ->
-                UiIngredient(
-                    key = name,
-                    name = name,
-                    icon = EmojiAvatarModel.of(emojiResolver.resolve(name), name),
-                    dimmed = false,
-                    isNew = false,
-                    onClick = ::addSuggestion,
-                    onClickDestroy = null,
-                )
-            }
+        val newWords =
+            IngredientWords
+                .match(inputText)
+                .filterNot { it in existing }
+                .map { name ->
+                    UiIngredient(
+                        key = name,
+                        name = name,
+                        icon = EmojiAvatarModel.of(emojiResolver.resolve(name), name),
+                        dimmed = false,
+                        isNew = false,
+                        onClick = ::addSuggestion,
+                        onClickDestroy = null,
+                    )
+                }
+
+        return previouslyInStore + newWords
     }
 
     private fun List<ApiIngredient>.toUiIngredients(
@@ -232,13 +266,17 @@ data class State(
 
 data class UiState(
     val inInventory: List<UiIngredient>,
-    val notInInventory: List<UiIngredient>,
+    val secondSection: IngredientSection,
     val input: UiInput,
     val onClickBack: () -> Unit,
 )
 
+data class IngredientSection(
+    val title: String,
+    val ingredients: List<UiIngredient>,
+)
+
 data class UiInput(
-    val suggestions: List<UiIngredient>,
     val text: String,
     val onTextChange: (String) -> Unit,
     val onScanImageSelected: ((Path) -> Unit)?,
