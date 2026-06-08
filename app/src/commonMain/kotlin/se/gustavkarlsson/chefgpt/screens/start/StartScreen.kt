@@ -167,7 +167,7 @@ private fun LoggedInContent(
     }
     ListDetailPaneScaffold(
         directive = navigator.scaffoldDirective,
-        value = navigator.scaffoldValue,
+        scaffoldState = navigator.scaffoldState,
         modifier = modifier,
         listPane = {
             AnimatedPane {
