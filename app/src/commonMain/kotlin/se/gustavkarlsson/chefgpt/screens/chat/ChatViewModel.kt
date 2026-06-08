@@ -46,6 +46,8 @@ import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.sessions.SessionId
+import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessage
+import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessages
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 
@@ -98,6 +100,9 @@ class ChatViewModel(
     // outside UiState rather than as state.
     private val ingredientChangeChannel = Channel<IngredientChange>(Channel.UNLIMITED)
     val ingredientChanges: Flow<IngredientChange> = ingredientChangeChannel.receiveAsFlow()
+
+    private val snackbar = SnackbarMessages()
+    val snackbarMessages: Flow<SnackbarMessage> = snackbar.messages
 
     private fun State.toUiState(): UiState =
         UiState(
@@ -249,9 +254,8 @@ class ChatViewModel(
             }.map { imageUrl ->
                 conversation.sendAction(ApiUserSendsMessage(lastState.userText, imageUrl))
             }.onErr { error ->
-                // TODO Show message?
-                //  Modify state?
                 log.e { "Failed to send message: $error" }
+                snackbar.show("Couldn't send message", isError = true)
             }
         }
     }

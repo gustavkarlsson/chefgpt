@@ -76,22 +76,28 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import se.gustavkarlsson.chefgpt.plus
+import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessage
+import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessageHost
+import se.gustavkarlsson.chefgpt.snackbar.rememberSnackbarHostState
 
 @Composable
 fun StartScreen() {
     val viewModel = koinViewModel<StartViewModel>()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    Content(uiState)
+    Content(uiState, viewModel.snackbarMessages)
 }
 
 @Composable
 private fun Content(
     uiState: UiState,
+    snackbarMessages: Flow<SnackbarMessage>,
     modifier: Modifier = Modifier,
 ) {
+    val snackbarHostState = rememberSnackbarHostState(snackbarMessages)
     Surface(color = MaterialTheme.colorScheme.background) {
         Box(modifier = modifier.fillMaxSize()) {
             when (val content = uiState.content) {
@@ -112,6 +118,10 @@ private fun Content(
                     contentDescription = "Debug",
                 )
             }
+            SnackbarMessageHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.align(Alignment.BottomCenter).safeDrawingPadding(),
+            )
         }
     }
 }
