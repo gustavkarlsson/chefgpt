@@ -8,6 +8,7 @@ import com.github.michaelbull.result.onOk
 import io.ktor.http.ContentType
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -27,6 +28,8 @@ import se.gustavkarlsson.chefgpt.ingredients.IngredientWords
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.sessions.SessionId
+import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessage
+import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessages
 import kotlin.time.Duration.Companion.seconds
 
 private val log = Logger.withTag("${IngredientsViewModel::class.simpleName}")
@@ -45,6 +48,10 @@ class IngredientsViewModel(
         innerState
             .map { it.toUiState() }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), innerState.value.toUiState())
+
+    // Transient error messages surfaced as snackbars; not state, so they live outside UiState.
+    private val snackbar = SnackbarMessages()
+    val snackbarMessages: Flow<SnackbarMessage> = snackbar.messages
 
     private fun State.toUiState(): UiState =
         UiState(
@@ -166,7 +173,10 @@ class IngredientsViewModel(
     private fun create(name: String) {
         viewModelScope.launch {
             val result = client.createIngredient(sessionId, name)
-            result.onErr { log.e { "Failed to create ingredient '$name': $it" } }
+            result.onErr {
+                log.e { "Failed to create ingredient '$name': $it" }
+                snackbar.show("Couldn't add $name", isError = true)
+            }
         }
     }
 
@@ -176,6 +186,7 @@ class IngredientsViewModel(
             val result = client.destroyIngredient(sessionId, id)
             result.onErr {
                 log.e { "Failed to destroy ingredient $id: $it" }
+                snackbar.show("Couldn't delete ingredient", isError = true)
             }
         }
     }
@@ -186,6 +197,7 @@ class IngredientsViewModel(
             val result = client.setIngredientInventory(sessionId, id, inInventory = true)
             result.onErr {
                 log.e { "Failed to add ingredient $id: $it" }
+                snackbar.show("Couldn't move ingredient to your inventory", isError = true)
             }
         }
     }
@@ -196,6 +208,7 @@ class IngredientsViewModel(
             val result = client.setIngredientInventory(sessionId, id, inInventory = false)
             result.onErr {
                 log.e { "Failed to remove ingredient $id: $it" }
+                snackbar.show("Couldn't remove ingredient from your inventory", isError = true)
             }
         }
     }
@@ -213,7 +226,10 @@ class IngredientsViewModel(
                 client
                     .scanIngredients(sessionId, image, ContentType("image", extension))
                     .onOk { count -> log.i { "Scan found $count ingredient(s)" } }
-                    .onErr { log.e { "Failed to scan ingredients: $it" } }
+                    .onErr {
+                        log.e { "Failed to scan ingredients: $it" }
+                        snackbar.show("Couldn't scan ingredients from the image", isError = true)
+                    }
             } finally {
                 innerState.update { it.copy(scanningImage = false) }
             }

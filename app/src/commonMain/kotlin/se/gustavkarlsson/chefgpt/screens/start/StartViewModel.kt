@@ -7,6 +7,7 @@ import com.github.michaelbull.result.onErr
 import com.github.michaelbull.result.onOk
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -24,6 +25,8 @@ import se.gustavkarlsson.chefgpt.sessions.RegisterError
 import se.gustavkarlsson.chefgpt.sessions.SessionCredentials
 import se.gustavkarlsson.chefgpt.sessions.SessionRepository
 import se.gustavkarlsson.chefgpt.sessions.UserCredentials
+import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessage
+import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessages
 
 private val log = Logger.withTag("${StartViewModel::class.simpleName}")
 
@@ -40,6 +43,9 @@ class StartViewModel(
         innerState
             .map { it.toUiState() }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), innerState.value.toUiState())
+
+    private val snackbar = SnackbarMessages()
+    val snackbarMessages: Flow<SnackbarMessage> = snackbar.messages
 
     private fun State.toUiState(): UiState =
         UiState(
@@ -122,14 +128,15 @@ class StartViewModel(
                     .register(state.inputCredentials)
                     .onOk { onAuthenticated(username, it, "Registered") }
                     .onErr { error ->
-                        // TODO Show correct feedback message based on the error
                         when (error) {
                             is RegisterError.ServerError -> {
                                 log.i { "Registration failed for '$username': ${error.error}" }
+                                snackbar.show("Registration failed", isError = true)
                             }
 
                             RegisterError.StorageFailed -> {
                                 log.e { "Registration succeeded but failed to save session for '$username'" }
+                                snackbar.show("Couldn't save your session", isError = true)
                             }
                         }
                     }
@@ -150,8 +157,8 @@ class StartViewModel(
                     .login(state.inputCredentials)
                     .onOk { onAuthenticated(username, it, "Logged in") }
                     .onErr {
-                        // TODO Show correct feedback message based on the status code
                         log.i { "Login failed for '$username': $it" }
+                        snackbar.show("Login failed", isError = true)
                     }
             } finally {
                 innerState.update { it.copy(authenticating = false) }
@@ -178,8 +185,8 @@ class StartViewModel(
                     log.i { "Chat created: ${chat.id}" }
                     navigator.push(Route.Chat(credentials.sessionId, chat.id))
                 }.onErr {
-                    // TODO Show user-friendly error
                     log.e { "Failed to create chat: $it" }
+                    snackbar.show("Couldn't create chat", isError = true)
                 }
         }
     }
@@ -196,8 +203,8 @@ class StartViewModel(
                 .delete(credentials.sessionId, chatId)
                 .onOk { log.i { "Chat deleted: $chatId" } }
                 .onErr {
-                    // TODO Show user-friendly error
                     log.e { "Failed to delete chat: $it" }
+                    snackbar.show("Couldn't delete chat", isError = true)
                 }
         }
     }

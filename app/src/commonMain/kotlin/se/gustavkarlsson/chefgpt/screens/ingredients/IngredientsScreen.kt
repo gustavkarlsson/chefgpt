@@ -67,6 +67,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -74,22 +75,28 @@ import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatar
 import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.pickImageFile
 import se.gustavkarlsson.chefgpt.plus
+import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessage
+import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessageHost
+import se.gustavkarlsson.chefgpt.snackbar.rememberSnackbarHostState
 import androidx.compose.foundation.lazy.items as lazyItems
 
 @Composable
 fun IngredientsScreen(route: Route.Ingredients) {
     val viewModel = koinViewModel<IngredientsViewModel> { parametersOf(route) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    Content(uiState)
+    Content(uiState, viewModel.snackbarMessages)
 }
 
 @Composable
 private fun Content(
     uiState: UiState,
+    snackbarMessages: Flow<SnackbarMessage>,
     modifier: Modifier = Modifier,
 ) {
+    val snackbarHostState = rememberSnackbarHostState(snackbarMessages)
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        snackbarHost = { SnackbarMessageHost(snackbarHostState) },
         topBar = {
             Surface(color = MaterialTheme.colorScheme.background) {
                 Row(

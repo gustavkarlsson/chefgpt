@@ -86,6 +86,9 @@ import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatar
 import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.pickImageFile
 import se.gustavkarlsson.chefgpt.plus
+import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessage
+import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessageHost
+import se.gustavkarlsson.chefgpt.snackbar.rememberSnackbarHostState
 import se.gustavkarlsson.chefgpt.theme.LocalMarkdownTypography
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -93,17 +96,20 @@ import kotlin.time.Duration.Companion.milliseconds
 fun ChatScreen(route: Route.Chat) {
     val viewModel = koinViewModel<ChatViewModel> { parametersOf(route) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    Content(uiState, viewModel.ingredientChanges)
+    Content(uiState, viewModel.ingredientChanges, viewModel.snackbarMessages)
 }
 
 @Composable
 private fun Content(
     uiState: UiState,
     ingredientChanges: Flow<IngredientChange>,
+    snackbarMessages: Flow<SnackbarMessage>,
     modifier: Modifier = Modifier,
 ) {
+    val snackbarHostState = rememberSnackbarHostState(snackbarMessages)
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        snackbarHost = { SnackbarMessageHost(snackbarHostState) },
         topBar = {
             Surface(color = MaterialTheme.colorScheme.background) {
                 Row(

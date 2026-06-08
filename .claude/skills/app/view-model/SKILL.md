@@ -92,6 +92,23 @@ val ingredientChanges: Flow<IngredientChange> = ingredientChangeChannel.receiveA
 
 `ChatViewModel` (in `screens/chat/`) is a good example: it streams `ingredientChanges` for an animation while everything renderable stays in `uiState`.
 
+### Snackbars
+
+Snackbars (e.g. for surfacing backend errors) are one-shot events, but don't hand-roll a `Channel` for them — use the reusable `SnackbarMessages` helper (`se.gustavkarlsson.chefgpt.snackbar`). Hold one instance, expose its `messages` flow after `uiState`, and call `show(...)` from action functions or collectors:
+
+```kotlin
+private val snackbar = SnackbarMessages()
+val snackbarMessages: Flow<SnackbarMessage> = snackbar.messages
+
+// ...in an error branch:
+result.onErr {
+    log.e { "Failed to add $name: $it" }
+    snackbar.show("Couldn't add $name", isError = true)
+}
+```
+
+`show` takes `text`, `isError` (error-styled, and stays until dismissed by default), `dismissText` (defaults to `"OK"`), and `duration`; pass a prebuilt `SnackbarMessage` to the other overload if you have one. The UI renders it via `rememberSnackbarHostState` + `SnackbarMessageHost` (see the **screen-ui** skill). `IngredientsViewModel` (in `screens/ingredients/`) is the reference example.
+
 ## Callbacks
 
 - Put in the UiState model closest to the UI component that will trigger the callback.
