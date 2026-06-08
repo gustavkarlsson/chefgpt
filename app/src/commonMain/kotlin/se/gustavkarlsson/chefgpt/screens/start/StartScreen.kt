@@ -1,10 +1,6 @@
 package se.gustavkarlsson.chefgpt.screens.start
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.slideInHorizontally
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,10 +36,7 @@ import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
 import androidx.compose.material3.adaptive.layout.PaneAdaptedValue
-import androidx.compose.material3.adaptive.layout.PaneMotion
 import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldDestinationItem
-import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldPaneScope
-import androidx.compose.material3.adaptive.layout.calculateDefaultEnterTransition
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -53,19 +46,15 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.backhandler.PredictiveBackHandler
+import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -164,25 +153,16 @@ private fun LoggedInContent(
     val scope = rememberCoroutineScope()
     val listHidden =
         navigator.scaffoldValue[ListDetailPaneScaffoldRole.List] == PaneAdaptedValue.Hidden
-    // Drive the scaffold's predictive back animation from the system back gesture, finalizing the
-    // navigation when committed and rewinding when cancelled. Also handles plain back presses.
     @Suppress("DEPRECATION")
-    PredictiveBackHandler(enabled = navigator.canNavigateBack()) { progress ->
-        try {
-            progress.collect { backEvent -> navigator.seekBack(fraction = backEvent.progress) }
-            navigator.navigateBack()
-        } catch (_: CancellationException) {
-            // The gesture was cancelled, which also cancels this coroutine; settle the pane back
-            // to rest in a non-cancellable scope so the rewind animation actually runs.
-            withContext(NonCancellable) { navigator.seekBack(fraction = 0f) }
-        }
+    BackHandler(enabled = navigator.canNavigateBack()) {
+        scope.launch { navigator.navigateBack() }
     }
     ListDetailPaneScaffold(
         directive = navigator.scaffoldDirective,
-        scaffoldState = navigator.scaffoldState,
+        value = navigator.scaffoldValue,
         modifier = modifier,
         listPane = {
-            AnimatedPane(enterTransition = nonBouncyEnterTransition()) {
+            AnimatedPane {
                 ChatSidebar(
                     chats = state.chats,
                     onClickBack =
@@ -196,7 +176,7 @@ private fun LoggedInContent(
             }
         },
         detailPane = {
-            AnimatedPane(enterTransition = nonBouncyEnterTransition()) {
+            AnimatedPane {
                 WelcomePanel(
                     username = state.username,
                     onClickNewChat = state.onClickNewChat,
@@ -213,18 +193,6 @@ private fun LoggedInContent(
             }
         },
     )
-}
-
-// The default pane enter transition uses an under-damped spring that overshoots, which reads as a
-// bounce as the entering pane settles. Rebuild the same slide with the same stiffness but no bounce.
-@OptIn(ExperimentalMaterial3AdaptiveApi::class)
-private fun ThreePaneScaffoldPaneScope.nonBouncyEnterTransition(): EnterTransition {
-    val spec = spring<IntOffset>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = 380f)
-    return when (paneMotion) {
-        PaneMotion.EnterFromLeft, PaneMotion.EnterFromLeftDelayed -> slideInHorizontally(spec) { -it }
-        PaneMotion.EnterFromRight, PaneMotion.EnterFromRightDelayed -> slideInHorizontally(spec) { it }
-        else -> motionDataProvider.calculateDefaultEnterTransition(paneRole)
-    }
 }
 
 @Composable
