@@ -39,13 +39,13 @@ class IngredientsViewModel(
     override fun State.toUiState(): UiState =
         UiState(
             inInventory =
-                ingredients.toUiIngredients(
+                ingredients.orEmpty().toUiIngredients(
                     emojiResolver,
                     inInventory = true,
                     baseline = baselineInInventory,
                 ),
             notInInventory =
-                ingredients.toUiIngredients(
+                ingredients.orEmpty().toUiIngredients(
                     emojiResolver,
                     inInventory = false,
                     baseline = baselineInInventory,
@@ -57,14 +57,15 @@ class IngredientsViewModel(
                     onTextChange = ::updateInputText,
                     onScanImageSelected = ::scanImage,
                     onClickAdd = if (inputText.isNotBlank() && emojiResolver != null) ::createIngredient else null,
-                    autoFocus = ingredients.isEmpty(),
+                    // Autofocus only once the first set has loaded and turned out to be empty.
+                    autoFocus = ingredients?.isEmpty() == true,
                 ),
             onClickBack = navigator::pop,
         )
 
     private fun State.toSuggestions(): List<UiIngredient> {
         if (inputText.isBlank() || emojiResolver == null) return emptyList()
-        val existing = ingredients.mapTo(mutableSetOf()) { it.name.lowercase() }
+        val existing = ingredients.orEmpty().mapTo(mutableSetOf()) { it.name.lowercase() }
         return IngredientWords
             .match(inputText)
             .filterNot { it in existing }
@@ -221,7 +222,7 @@ class IngredientsViewModel(
 }
 
 data class State(
-    val ingredients: List<ApiIngredient> = emptyList(),
+    val ingredients: List<ApiIngredient>? = null, // null until the first ingredient emission arrives.
     val inputText: String = "",
     val scanningImage: Boolean = false,
     val emojiResolver: IngredientEmojiResolver? = null, // null until the emoji catalog has loaded.
