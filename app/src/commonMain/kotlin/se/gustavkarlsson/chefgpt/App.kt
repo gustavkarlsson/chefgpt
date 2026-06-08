@@ -17,6 +17,7 @@ import coil3.map.Mapper
 import kotlinx.io.files.Path
 import org.koin.compose.koinInject
 import se.gustavkarlsson.chefgpt.api.ImageUrl
+import se.gustavkarlsson.chefgpt.navigation.NavigationTransitions
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.theme.ChefGptTheme
 
@@ -47,6 +48,9 @@ fun App() {
                     rememberSaveableStateHolderNavEntryDecorator(),
                     rememberViewModelStoreNavEntryDecorator(),
                 ),
+            transitionSpec = NavigationTransitions.transitionSpec,
+            popTransitionSpec = NavigationTransitions.popTransitionSpec,
+            predictivePopTransitionSpec = NavigationTransitions.predictivePopTransitionSpec,
             entryProvider = { screen ->
                 NavEntry(key = screen, contentKey = screen.id.value) { screen.Content() }
             },
