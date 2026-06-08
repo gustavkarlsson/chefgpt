@@ -79,6 +79,7 @@ import org.koin.core.parameter.parametersOf
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatar
 import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.pickImageFile
+import se.gustavkarlsson.chefgpt.plus
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
@@ -132,26 +133,20 @@ private fun Content(
             )
         },
     ) { paddingValues ->
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-        ) {
-            when (val content = uiState.content) {
-                is UiContent.Empty -> {
-                    EmptyState(
-                        modifier = Modifier.fillMaxSize(),
-                        content = content,
-                    )
-                }
+        when (val content = uiState.content) {
+            is UiContent.Empty -> {
+                EmptyState(
+                    modifier = Modifier.fillMaxSize().padding(paddingValues),
+                    content = content,
+                )
+            }
 
-                is UiContent.Messages -> {
-                    MessageList(
-                        modifier = Modifier.fillMaxSize(),
-                        messages = content.messages,
-                    )
-                }
+            is UiContent.Messages -> {
+                MessageList(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = paddingValues,
+                    messages = content.messages,
+                )
             }
         }
     }
@@ -288,6 +283,7 @@ private fun EmptyState(
 private fun MessageList(
     messages: List<UiMessage>,
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
 ) {
     val listState = rememberLazyListState()
 
@@ -304,7 +300,7 @@ private fun MessageList(
     LazyColumn(
         modifier = modifier.fillMaxWidth(),
         state = listState,
-        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 16.dp),
+        contentPadding = contentPadding + PaddingValues(horizontal = 8.dp, vertical = 16.dp),
         reverseLayout = true,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
