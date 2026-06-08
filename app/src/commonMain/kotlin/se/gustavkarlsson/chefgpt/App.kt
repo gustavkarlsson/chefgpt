@@ -7,7 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
-import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import coil3.ImageLoader
@@ -17,12 +17,8 @@ import coil3.map.Mapper
 import kotlinx.io.files.Path
 import org.koin.compose.koinInject
 import se.gustavkarlsson.chefgpt.api.ImageUrl
+import se.gustavkarlsson.chefgpt.navigation.NavigationTransitions
 import se.gustavkarlsson.chefgpt.navigation.Navigator
-import se.gustavkarlsson.chefgpt.navigation.Route
-import se.gustavkarlsson.chefgpt.screens.chat.ChatScreen
-import se.gustavkarlsson.chefgpt.screens.debug.DebugScreen
-import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsScreen
-import se.gustavkarlsson.chefgpt.screens.start.StartScreen
 import se.gustavkarlsson.chefgpt.theme.ChefGptTheme
 
 @Composable
@@ -52,13 +48,12 @@ fun App() {
                     rememberSaveableStateHolderNavEntryDecorator(),
                     rememberViewModelStoreNavEntryDecorator(),
                 ),
-            entryProvider =
-                entryProvider {
-                    entry<Route.Start> { StartScreen() }
-                    entry<Route.Chat> { key -> ChatScreen(key) }
-                    entry<Route.Ingredients> { key -> IngredientsScreen(key) }
-                    entry<Route.Debug> { DebugScreen() }
-                },
+            transitionSpec = NavigationTransitions.transitionSpec,
+            popTransitionSpec = NavigationTransitions.popTransitionSpec,
+            predictivePopTransitionSpec = NavigationTransitions.predictivePopTransitionSpec,
+            entryProvider = { screen ->
+                NavEntry(key = screen, contentKey = screen.id.value) { screen.Content() }
+            },
         )
     }
 }

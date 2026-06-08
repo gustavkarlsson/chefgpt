@@ -35,13 +35,23 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
+import se.gustavkarlsson.chefgpt.navigation.Screen
+import se.gustavkarlsson.chefgpt.navigation.Screen.Id
 
-@Composable
-fun DebugScreen() {
-    val viewModel = koinViewModel<DebugViewModel>()
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    Content(uiState)
+@Serializable
+@SerialName("debug")
+data class DebugScreen(
+    override val id: Id = Id.new(),
+) : Screen {
+    @Composable
+    override fun Content() {
+        val viewModel = koinViewModel<DebugViewModel>()
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+        Content(uiState)
+    }
 }
 
 @Composable

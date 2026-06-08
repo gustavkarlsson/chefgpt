@@ -22,7 +22,6 @@ import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatarModel
 import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
 import se.gustavkarlsson.chefgpt.ingredients.IngredientWords
 import se.gustavkarlsson.chefgpt.navigation.Navigator
-import se.gustavkarlsson.chefgpt.navigation.Route
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 import kotlin.time.Duration.Companion.seconds
@@ -33,9 +32,9 @@ class IngredientsViewModel(
     private val client: ChefGptClient,
     private val navigator: Navigator,
     emojiResolverFactory: IngredientEmojiResolver.Factory,
-    @InjectedParam route: Route.Ingredients,
+    @InjectedParam screen: IngredientsScreen,
 ) : StateViewModel<State, UiState>() {
-    private val sessionId: SessionId = route.sessionId
+    private val sessionId: SessionId = screen.sessionId
 
     // One-shot events telling the UI to focus the input, fired whenever the ingredient
     // list goes empty (including the first load arriving empty).

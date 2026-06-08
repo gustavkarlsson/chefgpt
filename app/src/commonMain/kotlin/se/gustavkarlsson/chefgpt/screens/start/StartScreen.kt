@@ -78,17 +78,27 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
+import se.gustavkarlsson.chefgpt.navigation.Screen
+import se.gustavkarlsson.chefgpt.navigation.Screen.Id
 import se.gustavkarlsson.chefgpt.plus
 import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessage
 import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessageHost
 import se.gustavkarlsson.chefgpt.snackbar.rememberSnackbarHostState
 
-@Composable
-fun StartScreen() {
-    val viewModel = koinViewModel<StartViewModel>()
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    Content(uiState, viewModel.snackbarMessages)
+@Serializable
+@SerialName("start")
+data class StartScreen(
+    override val id: Id = Id.new(),
+) : Screen {
+    @Composable
+    override fun Content() {
+        val viewModel = koinViewModel<StartViewModel>()
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+        Content(uiState, viewModel.snackbarMessages)
+    }
 }
 
 @Composable
