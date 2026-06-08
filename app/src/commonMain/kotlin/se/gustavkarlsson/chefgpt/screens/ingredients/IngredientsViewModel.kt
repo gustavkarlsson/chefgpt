@@ -28,6 +28,10 @@ import kotlin.time.Duration.Companion.seconds
 
 private val log = Logger.withTag("${IngredientsViewModel::class.simpleName}")
 
+private const val EMPTY_HEADLINE = "Your kitchen is empty"
+private const val EMPTY_DESCRIPTION =
+    "Type the ingredients you have in the field below and I'll help you cook something up."
+
 class IngredientsViewModel(
     private val client: ChefGptClient,
     private val navigator: Navigator,
@@ -45,28 +49,7 @@ class IngredientsViewModel(
 
     override fun State.toUiState(): UiState =
         UiState(
-            inInventory =
-                ingredients.orEmpty().toUiIngredients(
-                    emojiResolver,
-                    inInventory = true,
-                    baseline = baselineInInventory,
-                ),
-            // While the user is typing, the second section shows matching suggestions; otherwise it
-            // falls back to the ingredients that were previously in store.
-            secondSection =
-                if (inputText.isNotBlank()) {
-                    IngredientSection(title = "Suggestions", ingredients = toSuggestions())
-                } else {
-                    IngredientSection(
-                        title = "Previously in store",
-                        ingredients =
-                            ingredients.orEmpty().toUiIngredients(
-                                emojiResolver,
-                                inInventory = false,
-                                baseline = baselineInInventory,
-                            ),
-                    )
-                },
+            content = toUiContent(),
             input =
                 UiInput(
                     text = inputText,
@@ -76,6 +59,39 @@ class IngredientsViewModel(
                 ),
             onClickBack = navigator::pop,
         )
+
+    // With nothing in stock or suggested, invite the user to type their ingredients into the input.
+    private fun State.toUiContent(): UiContent {
+        // Hold off on the empty state until the first ingredient emission has arrived.
+        if (ingredients == null) return UiContent.Loading
+        val inInventory =
+            ingredients.orEmpty().toUiIngredients(
+                emojiResolver,
+                inInventory = true,
+                baseline = baselineInInventory,
+            )
+        // While the user is typing, the second section shows matching suggestions; otherwise it
+        // falls back to the ingredients that were previously in store.
+        val secondSection =
+            if (inputText.isNotBlank()) {
+                IngredientSection(title = "Suggestions", ingredients = toSuggestions())
+            } else {
+                IngredientSection(
+                    title = "Previously in store",
+                    ingredients =
+                        ingredients.orEmpty().toUiIngredients(
+                            emojiResolver,
+                            inInventory = false,
+                            baseline = baselineInInventory,
+                        ),
+                )
+            }
+        return if (inInventory.isEmpty() && secondSection.ingredients.isEmpty()) {
+            UiContent.Empty(headline = EMPTY_HEADLINE, description = EMPTY_DESCRIPTION)
+        } else {
+            UiContent.Ingredients(inInventory = inInventory, secondSection = secondSection)
+        }
+    }
 
     private fun State.toSuggestions(): List<UiIngredient> {
         val emojiResolver = emojiResolver ?: return emptyList()
@@ -277,11 +293,24 @@ data class State(
 )
 
 data class UiState(
-    val inInventory: List<UiIngredient>,
-    val secondSection: IngredientSection,
+    val content: UiContent,
     val input: UiInput,
     val onClickBack: () -> Unit,
 )
+
+sealed interface UiContent {
+    data object Loading : UiContent
+
+    data class Empty(
+        val headline: String,
+        val description: String,
+    ) : UiContent
+
+    data class Ingredients(
+        val inInventory: List<UiIngredient>,
+        val secondSection: IngredientSection,
+    ) : UiContent
+}
 
 data class IngredientSection(
     val title: String,
