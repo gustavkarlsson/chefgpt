@@ -1,6 +1,10 @@
 package se.gustavkarlsson.chefgpt.screens.start
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,7 +40,10 @@ import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
 import androidx.compose.material3.adaptive.layout.PaneAdaptedValue
+import androidx.compose.material3.adaptive.layout.PaneMotion
 import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldDestinationItem
+import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldPaneScope
+import androidx.compose.material3.adaptive.layout.calculateDefaultEnterTransition
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -52,6 +59,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.CancellationException
@@ -174,7 +182,7 @@ private fun LoggedInContent(
         scaffoldState = navigator.scaffoldState,
         modifier = modifier,
         listPane = {
-            AnimatedPane {
+            AnimatedPane(enterTransition = nonBouncyEnterTransition()) {
                 ChatSidebar(
                     chats = state.chats,
                     onClickBack =
@@ -188,7 +196,7 @@ private fun LoggedInContent(
             }
         },
         detailPane = {
-            AnimatedPane {
+            AnimatedPane(enterTransition = nonBouncyEnterTransition()) {
                 WelcomePanel(
                     username = state.username,
                     onClickNewChat = state.onClickNewChat,
@@ -205,6 +213,18 @@ private fun LoggedInContent(
             }
         },
     )
+}
+
+// The default pane enter transition uses an under-damped spring that overshoots, which reads as a
+// bounce as the entering pane settles. Rebuild the same slide with the same stiffness but no bounce.
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+private fun ThreePaneScaffoldPaneScope.nonBouncyEnterTransition(): EnterTransition {
+    val spec = spring<IntOffset>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = 380f)
+    return when (paneMotion) {
+        PaneMotion.EnterFromLeft, PaneMotion.EnterFromLeftDelayed -> slideInHorizontally(spec) { -it }
+        PaneMotion.EnterFromRight, PaneMotion.EnterFromRightDelayed -> slideInHorizontally(spec) { it }
+        else -> motionDataProvider.calculateDefaultEnterTransition(paneRole)
+    }
 }
 
 @Composable
