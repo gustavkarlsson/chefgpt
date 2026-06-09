@@ -34,6 +34,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
@@ -47,11 +48,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
 import androidx.compose.material3.adaptive.layout.PaneAdaptedValue
 import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldDestinationItem
+import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -64,8 +67,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.backhandler.BackHandler
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -76,6 +81,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.SerialName
@@ -235,14 +241,27 @@ private fun LoggedInContent(
     state: UiState.Content.LoggedIn,
     modifier: Modifier = Modifier,
 ) {
+    val directive =
+        calculatePaneScaffoldDirective(currentWindowAdaptiveInfo()).let { base ->
+            // Allow all three panes to be visible simultaneously on wide screens.
+            // Extra (recipes) collapses before List (chats) by default adapt-strategy priority.
+            if (base.maxHorizontalPartitions >= 2) {
+                base.copy(maxHorizontalPartitions = 3)
+            } else {
+                base
+            }
+        }
     val navigator =
         rememberListDetailPaneScaffoldNavigator<Nothing>(
+            scaffoldDirective = directive,
             initialDestinationHistory =
                 listOf(ThreePaneScaffoldDestinationItem(ListDetailPaneScaffoldRole.Detail)),
         )
     val scope = rememberCoroutineScope()
     val listHidden =
         navigator.scaffoldValue[ListDetailPaneScaffoldRole.List] == PaneAdaptedValue.Hidden
+    val extraHidden =
+        navigator.scaffoldValue[ListDetailPaneScaffoldRole.Extra] == PaneAdaptedValue.Hidden
     @Suppress("DEPRECATION")
     BackHandler(enabled = navigator.canNavigateBack()) {
         scope.launch { navigator.navigateBack() }
@@ -256,6 +275,20 @@ private fun LoggedInContent(
                 ChatSidebar(
                     modifier = Modifier.fillMaxSize(),
                     chats = state.chats,
+                    onClickBack =
+                        if (navigator.canNavigateBack()) {
+                            { scope.launch { navigator.navigateBack() } }
+                        } else {
+                            null
+                        },
+                )
+            }
+        },
+        extraPane = {
+            AnimatedPane {
+                RecipeSidebar(
+                    modifier = Modifier.fillMaxSize(),
+                    recipes = state.recipeSummaries,
                     onClickBack =
                         if (navigator.canNavigateBack()) {
                             { scope.launch { navigator.navigateBack() } }
@@ -279,6 +312,12 @@ private fun LoggedInContent(
                         } else {
                             null
                         },
+                    onClickViewRecipes =
+                        if (extraHidden) {
+                            { scope.launch { navigator.navigateTo(ListDetailPaneScaffoldRole.Extra) } }
+                        } else {
+                            null
+                        },
                 )
             }
         },
@@ -293,6 +332,7 @@ private fun WelcomePanel(
     onClickLogout: () -> Unit,
     modifier: Modifier = Modifier,
     onClickViewChats: (() -> Unit)? = null,
+    onClickViewRecipes: (() -> Unit)? = null,
 ) {
     LazyColumn(
         modifier =
@@ -343,6 +383,23 @@ private fun WelcomePanel(
                     onClick = { onClickViewChats?.invoke() },
                 ) {
                     Text("Previous chats")
+                }
+            }
+        }
+        item {
+            Spacer(Modifier.height(4.dp))
+        }
+        item {
+            AnimatedVisibility(
+                visible = onClickViewRecipes != null,
+                enter = fadeIn() + expandVertically(expandFrom = Alignment.CenterVertically),
+                exit = fadeOut() + shrinkVertically(shrinkTowards = Alignment.CenterVertically),
+            ) {
+                OutlinedButton(
+                    modifier = Modifier.padding(vertical = 4.dp),
+                    onClick = { onClickViewRecipes?.invoke() },
+                ) {
+                    Text("Recipes")
                 }
             }
         }
@@ -487,6 +544,134 @@ private fun ChatItem(
             Icon(
                 imageVector = Icons.Default.Delete,
                 contentDescription = "Delete chat",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun RecipeSidebar(
+    recipes: List<UiRecipeSummary>,
+    modifier: Modifier = Modifier,
+    onClickBack: (() -> Unit)? = null,
+) {
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+    ) {
+        Column {
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .windowInsetsPadding(
+                            WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Top),
+                        ).padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (onClickBack != null) {
+                    IconButton(onClick = onClickBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                        )
+                    }
+                }
+                Text(
+                    text = "Recipes",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(8.dp),
+                )
+            }
+            HorizontalDivider()
+            if (recipes.isEmpty()) {
+                Text(
+                    text = "No saved recipes yet",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier =
+                        Modifier
+                            .windowInsetsPadding(
+                                WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Bottom),
+                            ).padding(16.dp),
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding =
+                        WindowInsets.safeDrawing
+                            .exclude(WindowInsets.ime)
+                            .only(WindowInsetsSides.Bottom)
+                            .asPaddingValues(),
+                ) {
+                    items(recipes, key = { it.id.toString() }) { recipe ->
+                        RecipeItem(
+                            recipe = recipe,
+                            contentPadding = WindowInsets.safeDrawing.only(WindowInsetsSides.Start).asPaddingValues(),
+                            modifier = Modifier.animateItem(),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecipeItem(
+    recipe: UiRecipeSummary,
+    contentPadding: PaddingValues = PaddingValues(),
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(contentPadding)
+                .padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .size(80.dp)
+                    .clip(MaterialTheme.shapes.small),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (recipe.imageUrl != null) {
+                AsyncImage(
+                    model = recipe.imageUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.matchParentSize(),
+                )
+            } else {
+                Surface(
+                    modifier = Modifier.matchParentSize(),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Restaurant,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(24.dp),
+                    )
+                }
+            }
+        }
+        Text(
+            text = recipe.title,
+            style = MaterialTheme.typography.bodyLarge,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        IconButton(onClick = { recipe.onClickDelete(recipe.id) }) {
+            Icon(
+                imageVector = Icons.Default.Delete,
+                contentDescription = "Delete recipe",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
