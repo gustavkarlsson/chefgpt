@@ -17,6 +17,8 @@ import se.gustavkarlsson.chefgpt.chats.EventHistoryStore
 import se.gustavkarlsson.chefgpt.debug.Settings
 import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
 import se.gustavkarlsson.chefgpt.navigation.Navigator
+import se.gustavkarlsson.chefgpt.recipes.ApiRecipeRepository
+import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 import se.gustavkarlsson.chefgpt.screens.chat.ChatViewModel
 import se.gustavkarlsson.chefgpt.screens.debug.DebugViewModel
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsViewModel
@@ -35,6 +37,7 @@ val singletonModule =
         single<EventHistoryStore>()
         single<SessionRepositoryImpl>() bind SessionRepository::class
         single<ApiChatRepository>() bind ChatRepository::class
+        single<ApiRecipeRepository>() bind RecipeRepository::class
         single<ApiConversationFactory>() bind ConversationFactory::class
         single<IngredientEmojiResolver.Factory>()
     }
