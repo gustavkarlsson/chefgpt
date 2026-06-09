@@ -3,6 +3,11 @@ SELECT *
 FROM recipe_summary
 WHERE user_id = ?;
 
+selectByUserIdAndId:
+SELECT *
+FROM recipe_summary
+WHERE user_id = ? AND id = ?;
+
 insert:
 INSERT INTO recipe_summary (user_id, title, spoonacular_id, image_url)
 VALUES (?, ?, ?, ?)

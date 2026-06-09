@@ -177,6 +177,11 @@ class SpoonacularClient(
             .get("https://api.spoonacular.com/recipes/$id/nutritionWidget.json")
             .body()
 
+    override suspend fun getAnalyzedInstructionsById(id: Long): String =
+        client
+            .get("https://api.spoonacular.com/recipes/$id/analyzedInstructions")
+            .body()
+
     override suspend fun getAnalyzedRecipeInstructions(instructions: String): String =
         client
             .post("https://api.spoonacular.com/recipes/analyzeInstructions") {

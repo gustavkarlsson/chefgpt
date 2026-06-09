@@ -9,6 +9,11 @@ import se.gustavkarlsson.chefgpt.auth.UserId
 interface RecipeSummaryStore {
     suspend fun getRecipeSummaries(userId: UserId): List<ApiRecipeSummary>
 
+    suspend fun getRecipeSummary(
+        userId: UserId,
+        id: RecipeSummaryId,
+    ): ApiRecipeSummary?
+
     fun streamRecipeSummaries(userId: UserId): Flow<List<ApiRecipeSummary>>
 
     suspend fun addRecipeSummary(

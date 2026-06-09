@@ -21,6 +21,11 @@ class InMemoryRecipeSummaryStore(
             ?.toList()
             .orEmpty()
 
+    override suspend fun getRecipeSummary(
+        userId: UserId,
+        id: RecipeSummaryId,
+    ): ApiRecipeSummary? = storage[userId]?.value?.get(id)
+
     override fun streamRecipeSummaries(userId: UserId): Flow<List<ApiRecipeSummary>> =
         storedRecipeSummaries(userId).map {
             it.values.toList()

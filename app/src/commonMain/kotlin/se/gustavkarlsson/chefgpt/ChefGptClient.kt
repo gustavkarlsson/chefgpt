@@ -18,6 +18,7 @@ import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.accept
 import io.ktor.client.request.basicAuth
 import io.ktor.client.request.delete
+import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import io.ktor.client.request.patch
@@ -45,6 +46,7 @@ import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiIngredient
 import se.gustavkarlsson.chefgpt.api.ApiIngredientUpdate
 import se.gustavkarlsson.chefgpt.api.ApiNewIngredient
+import se.gustavkarlsson.chefgpt.api.ApiRecipe
 import se.gustavkarlsson.chefgpt.api.ApiRecipeSummary
 import se.gustavkarlsson.chefgpt.api.ApiSaveSpoonacularRecipe
 import se.gustavkarlsson.chefgpt.api.ChatId
@@ -323,6 +325,20 @@ class ChefGptClient(
                 }
             },
             readSafe = {},
+        )
+
+    suspend fun getRecipe(
+        sessionId: SessionId,
+        recipeSummaryId: RecipeSummaryId,
+    ): Result<ApiRecipe, ClientError> =
+        request(
+            send = { baseUrl ->
+                get("$baseUrl/recipe-summaries/$recipeSummaryId") {
+                    sessionIdHeader(sessionId)
+                    accept(ContentType.Application.Json)
+                }
+            },
+            readSafe = { body<ApiRecipe>() },
         )
 
     suspend fun sendAction(
