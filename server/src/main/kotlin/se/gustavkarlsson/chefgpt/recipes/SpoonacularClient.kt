@@ -88,7 +88,7 @@ class SpoonacularClient(
             }.body()
 
     override suspend fun getRecipeInformation(
-        id: Int,
+        id: Long,
         includeNutrition: Boolean,
         addWinePairing: Boolean,
         addTasteData: Boolean,
@@ -101,7 +101,7 @@ class SpoonacularClient(
             }.body()
 
     override suspend fun getRecipeInformationBulk(
-        ids: List<Int>,
+        ids: List<Long>,
         includeNutrition: Boolean,
     ): String =
         client
@@ -111,7 +111,7 @@ class SpoonacularClient(
             }.body()
 
     override suspend fun getSimilarRecipes(
-        id: Int,
+        id: Long,
         number: Int,
     ): String =
         client
@@ -139,13 +139,13 @@ class SpoonacularClient(
                 parameter("number", number)
             }.body()
 
-    override suspend fun summarizeRecipe(id: Int): String =
+    override suspend fun summarizeRecipe(id: Long): String =
         client
             .get("https://api.spoonacular.com/recipes/$id/summary")
             .body()
 
     override suspend fun tasteById(
-        id: Int,
+        id: Long,
         normalize: Boolean,
     ): String =
         client
@@ -153,18 +153,18 @@ class SpoonacularClient(
                 parameter("normalize", normalize)
             }.body()
 
-    override suspend fun equipmentById(id: Int): String =
+    override suspend fun equipmentById(id: Long): String =
         client
             .get("https://api.spoonacular.com/recipes/$id/equipmentWidget.json")
             .body()
 
-    override suspend fun priceBreakdownById(id: Int): String =
+    override suspend fun priceBreakdownById(id: Long): String =
         client
             .get("https://api.spoonacular.com/recipes/$id/priceBreakdownWidget.json")
             .body()
 
     override suspend fun ingredientsById(
-        id: Int,
+        id: Long,
         measure: String,
     ): String =
         client
@@ -172,7 +172,7 @@ class SpoonacularClient(
                 parameter("measure", measure)
             }.body()
 
-    override suspend fun nutritionById(id: Int): String =
+    override suspend fun nutritionById(id: Long): String =
         client
             .get("https://api.spoonacular.com/recipes/$id/nutritionWidget.json")
             .body()

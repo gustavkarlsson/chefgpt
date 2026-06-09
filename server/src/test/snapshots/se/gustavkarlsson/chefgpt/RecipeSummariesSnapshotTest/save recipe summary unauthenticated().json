@@ -1,7 +1,7 @@
 {
     "request": {
         "method": "POST",
-        "url": "http://localhost/recipes",
+        "url": "http://localhost/recipe-summaries",
         "headers": {
             "Accept": "application/json",
             "Content-Type": "application/json",

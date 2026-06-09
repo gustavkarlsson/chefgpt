@@ -3,8 +3,9 @@ package se.gustavkarlsson.chefgpt.recipes
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import se.gustavkarlsson.chefgpt.api.ApiRecipe
-import se.gustavkarlsson.chefgpt.api.RecipeId
+import se.gustavkarlsson.chefgpt.api.ApiRecipeSummary
+import se.gustavkarlsson.chefgpt.api.RecipeSummaryId
+import se.gustavkarlsson.chefgpt.api.SpoonacularId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.postgres.DatabaseAccess
 import se.gustavkarlsson.chefgpt.util.RepoSyncer
@@ -12,49 +13,49 @@ import java.util.UUID
 import kotlin.uuid.toJavaUuid
 import kotlin.uuid.toKotlinUuid
 
-class PostgresRecipeStore(
+class PostgresRecipeSummaryStore(
     private val db: DatabaseAccess,
-) : RecipeStore {
+) : RecipeSummaryStore {
     private val syncer = RepoSyncer<UserId>()
 
-    override suspend fun getRecipes(userId: UserId): List<ApiRecipe> =
+    override suspend fun getRecipeSummaries(userId: UserId): List<ApiRecipeSummary> =
         db.use {
-            recipeQueries
+            recipeSummaryQueries
                 .selectByUserId(userId.value.toJavaUuid())
                 .executeAsList()
-                .map { toApiRecipe(it.id, it.title, it.url, it.image_url) }
+                .map { toApiRecipeSummary(it.id, it.title, it.spoonacular_id, it.image_url) }
         }
 
-    override fun streamRecipes(userId: UserId): Flow<List<ApiRecipe>> =
+    override fun streamRecipeSummaries(userId: UserId): Flow<List<ApiRecipeSummary>> =
         syncer
             .notifications(userId)
-            .map { getRecipes(userId) }
+            .map { getRecipeSummaries(userId) }
             .distinctUntilChanged()
 
-    override suspend fun addRecipe(
+    override suspend fun addRecipeSummary(
         userId: UserId,
         title: String,
-        url: String,
+        spoonacularId: SpoonacularId,
         imageUrl: String?,
-    ): ApiRecipe {
+    ): ApiRecipeSummary {
         val added =
             db.use {
-                recipeQueries
-                    .insert(userId.value.toJavaUuid(), title, url, imageUrl)
+                recipeSummaryQueries
+                    .insert(userId.value.toJavaUuid(), title, spoonacularId.value, imageUrl)
                     .executeAsOne()
-                    .let { toApiRecipe(it.id, it.title, it.url, it.image_url) }
+                    .let { toApiRecipeSummary(it.id, it.title, it.spoonacular_id, it.image_url) }
             }
         syncer.notifyChange(userId)
         return added
     }
 
-    override suspend fun deleteRecipe(
+    override suspend fun deleteRecipeSummary(
         userId: UserId,
-        id: RecipeId,
+        id: RecipeSummaryId,
     ): Boolean {
         val deleted =
             db.use {
-                recipeQueries
+                recipeSummaryQueries
                     .deleteByUserIdAndId(userId.value.toJavaUuid(), id.value.toJavaUuid())
                     .executeAsList()
                     .isNotEmpty()
@@ -66,9 +67,10 @@ class PostgresRecipeStore(
     }
 }
 
-private fun toApiRecipe(
+private fun toApiRecipeSummary(
     id: UUID,
     title: String,
-    url: String,
+    spoonacularId: Long,
     imageUrl: String?,
-): ApiRecipe = ApiRecipe(RecipeId(id.toKotlinUuid()), title, url, imageUrl)
+): ApiRecipeSummary =
+    ApiRecipeSummary(RecipeSummaryId(id.toKotlinUuid()), title, SpoonacularId(spoonacularId), imageUrl)

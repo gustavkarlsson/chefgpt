@@ -11,48 +11,46 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.api.ApiError
-import se.gustavkarlsson.chefgpt.api.ApiSaveRecipe
+import se.gustavkarlsson.chefgpt.api.ApiSaveSpoonacularRecipe
 import se.gustavkarlsson.chefgpt.recipes.RecipeClient
-import se.gustavkarlsson.chefgpt.recipes.RecipeStore
+import se.gustavkarlsson.chefgpt.recipes.RecipeSummaryStore
 import se.gustavkarlsson.chefgpt.requireSession
 
-fun Route.saveRecipeRoute() {
-    post("/recipes") {
-        val recipeStore = get<RecipeStore>()
+fun Route.saveRecipeSummaryRoute() {
+    post("/recipe-summaries") {
+        val recipeSummaryStore = get<RecipeSummaryStore>()
         val recipeClient = get<RecipeClient>()
         val json = get<Json>()
         val userId = call.requireSession().user.id
-        val spoonacularId = call.receive<ApiSaveRecipe>().spoonacularId
+        val spoonacularId = call.receive<ApiSaveSpoonacularRecipe>().spoonacularId
 
-        val recipe = lookUpRecipe(recipeClient, json, spoonacularId)
-        if (recipe == null) {
+        val lookedUp = lookUpRecipeSummary(recipeClient, json, spoonacularId.value)
+        if (lookedUp == null) {
             return@post call.respond(
                 HttpStatusCode.NotFound,
                 ApiError("recipe-not-found", "Recipe not found"),
             )
         }
 
-        val added = recipeStore.addRecipe(userId, recipe.title, recipe.url, recipe.imageUrl)
+        val added = recipeSummaryStore.addRecipeSummary(userId, lookedUp.title, spoonacularId, lookedUp.imageUrl)
         call.respond(HttpStatusCode.Created, added)
     }
 }
 
-private data class LookedUpRecipe(
+private data class LookedUpRecipeSummary(
     val title: String,
-    val url: String,
     val imageUrl: String?,
 )
 
 // TODO Don't parse the raw JSON ad hoc like this. RecipeClient should expose a
 // typed lookup instead of returning a JSON string meant for the LLM.
-private suspend fun lookUpRecipe(
+private suspend fun lookUpRecipeSummary(
     recipeClient: RecipeClient,
     json: Json,
-    spoonacularId: Int,
-): LookedUpRecipe? {
+    spoonacularId: Long,
+): LookedUpRecipeSummary? {
     val info = json.parseToJsonElement(recipeClient.getRecipeInformation(spoonacularId)).jsonObject
     val title = info["title"]?.jsonPrimitive?.contentOrNull ?: return null
-    val url = (info["sourceUrl"] ?: info["spoonacularSourceUrl"])?.jsonPrimitive?.contentOrNull ?: return null
     val imageUrl = info["image"]?.jsonPrimitive?.contentOrNull
-    return LookedUpRecipe(title, url, imageUrl)
+    return LookedUpRecipeSummary(title, imageUrl)
 }
