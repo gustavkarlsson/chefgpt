@@ -26,6 +26,17 @@ class PostgresRecipeSummaryStore(
                 .map { toApiRecipeSummary(it.id, it.title, it.spoonacular_id, it.image_url) }
         }
 
+    override suspend fun getRecipeSummary(
+        userId: UserId,
+        id: RecipeSummaryId,
+    ): ApiRecipeSummary? =
+        db.use {
+            recipeSummaryQueries
+                .selectByUserIdAndId(userId.value.toJavaUuid(), id.value.toJavaUuid())
+                .executeAsOneOrNull()
+                ?.let { toApiRecipeSummary(it.id, it.title, it.spoonacular_id, it.image_url) }
+        }
+
     override fun streamRecipeSummaries(userId: UserId): Flow<List<ApiRecipeSummary>> =
         syncer
             .notifications(userId)

@@ -88,6 +88,9 @@ class FakeRecipeClient : RecipeClient {
     override suspend fun nutritionById(id: Long): String =
         """{"calories":"450","carbs":"55g","fat":"18g","protein":"22g","nutrients":[{"name":"Calories","amount":450.0,"unit":"kcal","percentOfDailyNeeds":22.5},{"name":"Fat","amount":18.0,"unit":"g","percentOfDailyNeeds":27.7},{"name":"Protein","amount":22.0,"unit":"g","percentOfDailyNeeds":44.0},{"name":"Carbohydrates","amount":55.0,"unit":"g","percentOfDailyNeeds":18.3}]}"""
 
+    override suspend fun getAnalyzedInstructionsById(id: Long): String =
+        """[{"name":"","steps":[{"number":1,"step":"Bring a large pot of salted water to a boil.","ingredients":[],"equipment":[]},{"number":2,"step":"Cook pancetta in a skillet over medium heat until crispy.","ingredients":[],"equipment":[]},{"number":3,"step":"Mix eggs and parmesan cheese in a bowl.","ingredients":[],"equipment":[]},{"number":4,"step":"Combine hot pasta with pancetta, then add egg mixture and toss quickly.","ingredients":[],"equipment":[]},{"number":5,"step":"Season with black pepper and serve immediately.","ingredients":[],"equipment":[]}]}]"""
+
     override suspend fun getAnalyzedRecipeInstructions(instructions: String): String =
         """{"parsedInstructions":[{"name":"","steps":[{"number":1,"step":"Cook pasta according to package directions.","ingredients":[{"id":1,"name":"pasta"}],"equipment":[{"id":1,"name":"pot"}]},{"number":2,"step":"Drain and serve.","ingredients":[],"equipment":[{"id":2,"name":"colander"}]}]}]}"""
 

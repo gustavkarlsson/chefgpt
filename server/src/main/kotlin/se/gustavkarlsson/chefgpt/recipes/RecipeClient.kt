@@ -190,6 +190,16 @@ interface RecipeClient : ToolSet {
 
     @Tool
     @LLMDescription(
+        "Get step-by-step analyzed cooking instructions for a recipe by its ID. " +
+            "Returns structured steps with the ingredients and equipment used in each step.",
+    )
+    suspend fun getAnalyzedInstructionsById(
+        @LLMDescription("The ID of the recipe.")
+        id: Long,
+    ): String
+
+    @Tool
+    @LLMDescription(
         "Parse and analyze raw recipe instructions text. " +
             "Returns structured steps with the ingredients and equipment used in each step.",
     )
