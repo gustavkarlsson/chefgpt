@@ -1,7 +1,7 @@
 {
     "request": {
         "method": "POST",
-        "url": "http://localhost/recipes",
+        "url": "http://localhost/recipe-summaries",
         "headers": {
             "Session-Id": "00000000000000000000000000000000",
             "Accept": "application/json",
@@ -26,7 +26,7 @@
             "data": {
                 "id": "00000000-0000-0000-0000-000000000000",
                 "title": "Spaghetti Carbonara",
-                "url": "https://example.com/carbonara",
+                "spoonacularId": 716429,
                 "imageUrl": "https://img.spoonacular.com/recipes/716429-556x370.jpg"
             }
         }

@@ -9,12 +9,13 @@ import io.ktor.http.contentType
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import se.gustavkarlsson.chefgpt.api.ApiSaveRecipe
+import se.gustavkarlsson.chefgpt.api.ApiSaveSpoonacularRecipe
+import se.gustavkarlsson.chefgpt.api.SpoonacularId
 import se.gustavkarlsson.slapshot.junit5.JUnit5SnapshotContext
 import se.gustavkarlsson.slapshot.junit5.SnapshotExtension
 
 @ExtendWith(SnapshotExtension::class)
-class RecipesSnapshotTest {
+class RecipeSummariesSnapshotTest {
     private lateinit var snapshotContext: JUnit5SnapshotContext
 
     @BeforeEach
@@ -23,60 +24,60 @@ class RecipesSnapshotTest {
     }
 
     @Test
-    fun `save recipe unauthenticated`() =
+    fun `save recipe summary unauthenticated`() =
         snapshotTestApplication(snapshotContext) { client ->
-            client.post("/recipes") {
+            client.post("/recipe-summaries") {
                 contentType(ContentType.Application.Json)
-                setBody(ApiSaveRecipe(716429))
+                setBody(ApiSaveSpoonacularRecipe(SpoonacularId(716429L)))
             }
         }
 
     @Test
-    fun `save recipe`() =
+    fun `save recipe summary`() =
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.post("/recipes") {
+            client.post("/recipe-summaries") {
                 header("Session-Id", sessionId)
                 contentType(ContentType.Application.Json)
-                setBody(ApiSaveRecipe(716429))
+                setBody(ApiSaveSpoonacularRecipe(SpoonacularId(716429L)))
             }
         }
 
     @Test
-    fun `delete recipe`() =
+    fun `delete recipe summary`() =
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
-            val recipe = saveRecipe(sessionId, 716429)
+            val recipeSummary = saveRecipeSummary(sessionId, SpoonacularId(716429L))
 
-            client.delete("/recipes/${recipe.id}") {
+            client.delete("/recipe-summaries/${recipeSummary.id}") {
                 header("Session-Id", sessionId)
             }
         }
 
     @Test
-    fun `delete recipe not found`() =
+    fun `delete recipe summary not found`() =
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.delete("/recipes/11111111-1111-1111-1111-111111111111") {
+            client.delete("/recipe-summaries/11111111-1111-1111-1111-111111111111") {
                 header("Session-Id", sessionId)
             }
         }
 
     @Test
-    fun `delete recipe invalid id`() =
+    fun `delete recipe summary invalid id`() =
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.delete("/recipes/not-a-uuid") {
+            client.delete("/recipe-summaries/not-a-uuid") {
                 header("Session-Id", sessionId)
             }
         }
 
     @Test
-    fun `delete recipe unauthenticated`() =
+    fun `delete recipe summary unauthenticated`() =
         snapshotTestApplication(snapshotContext) { client ->
-            client.delete("/recipes/11111111-1111-1111-1111-111111111111")
+            client.delete("/recipe-summaries/11111111-1111-1111-1111-111111111111")
         }
 }

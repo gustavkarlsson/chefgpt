@@ -1,0 +1,3 @@
+ALTER TABLE recipe RENAME TO recipe_summary;
+DROP INDEX idx_recipe_user_id;
+CREATE INDEX idx_recipe_summary_user_id ON recipe_summary (user_id);

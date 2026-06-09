@@ -46,7 +46,8 @@ fun Application.installKoog() {
 
                     If there are too few results, suggest that the user updates their ingredients.
 
-                    When the user has picked a recipe, send the recipe to them.
+                    When the user has picked a recipe, save it for them using the
+                    saveRecipeSummary tool, then present it to them.
 
                     As soon as you understand what the user wants to do in this chat,
                     give the chat a short, descriptive name using the nameChat tool.

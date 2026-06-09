@@ -11,9 +11,12 @@ import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventRepository
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 import se.gustavkarlsson.chefgpt.ingredients.toTools
+import se.gustavkarlsson.chefgpt.recipes.RecipeSummaryStore
+import se.gustavkarlsson.chefgpt.recipes.toTools
 
 class KoogAiAgent(
     private val ingredientStore: IngredientStore,
+    private val recipeSummaryStore: RecipeSummaryStore,
     private val chatRepository: ChatRepository,
     private val eventRepository: EventRepository,
 ) : AiAgent {
@@ -29,6 +32,7 @@ class KoogAiAgent(
                     ToolRegistry {
                         // Scoped to the user and chat, in addition to globally available tools
                         tools(ingredientStore.toTools(userId))
+                        tools(recipeSummaryStore.toTools(userId))
                         tools(ChatNamingTools(chatRepository, eventRepository, userId, chatId))
                     },
             )

@@ -1,0 +1,3 @@
+ALTER TABLE recipe_summary ADD COLUMN spoonacular_id BIGINT NOT NULL DEFAULT 0;
+ALTER TABLE recipe_summary ALTER COLUMN spoonacular_id DROP DEFAULT;
+ALTER TABLE recipe_summary DROP COLUMN url;

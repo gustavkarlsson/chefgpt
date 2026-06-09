@@ -1,7 +1,7 @@
 {
     "request": {
         "method": "DELETE",
-        "url": "http://localhost/recipes/not-a-uuid",
+        "url": "http://localhost/recipe-summaries/not-a-uuid",
         "headers": {
             "Session-Id": "00000000000000000000000000000000",
             "Accept": "application/json",
@@ -17,8 +17,8 @@
         "body": {
             "type": "json",
             "data": {
-                "type": "invalid-recipe-id",
-                "message": "Invalid recipe id"
+                "type": "invalid-recipe-summary-id",
+                "message": "Invalid recipe summary id"
             }
         }
     }

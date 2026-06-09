@@ -4,10 +4,10 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-@SerialName("api-recipe")
-data class ApiRecipe(
-    val id: RecipeId,
+@SerialName("api-recipe-summary")
+data class ApiRecipeSummary(
+    val id: RecipeSummaryId,
     val title: String,
-    val url: String,
+    val spoonacularId: SpoonacularId,
     val imageUrl: String? = null,
 )

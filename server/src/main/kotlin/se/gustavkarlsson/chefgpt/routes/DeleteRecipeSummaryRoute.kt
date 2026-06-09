@@ -7,26 +7,26 @@ import io.ktor.server.routing.delete
 import io.ktor.server.util.getOrFail
 import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.api.ApiError
-import se.gustavkarlsson.chefgpt.api.RecipeId
-import se.gustavkarlsson.chefgpt.recipes.RecipeStore
+import se.gustavkarlsson.chefgpt.api.RecipeSummaryId
+import se.gustavkarlsson.chefgpt.recipes.RecipeSummaryStore
 import se.gustavkarlsson.chefgpt.requireSession
 
-fun Route.deleteRecipeRoute() {
-    delete("/recipes/{id}") {
-        val recipeStore = get<RecipeStore>()
+fun Route.deleteRecipeSummaryRoute() {
+    delete("/recipe-summaries/{id}") {
+        val recipeSummaryStore = get<RecipeSummaryStore>()
         val userId = call.requireSession().user.id
         val id =
-            RecipeId.parseOrNull(call.parameters.getOrFail("id"))
+            RecipeSummaryId.parseOrNull(call.parameters.getOrFail("id"))
                 ?: return@delete call.respond(
                     HttpStatusCode.BadRequest,
-                    ApiError("invalid-recipe-id", "Invalid recipe id"),
+                    ApiError("invalid-recipe-summary-id", "Invalid recipe summary id"),
                 )
-        if (recipeStore.deleteRecipe(userId, id)) {
+        if (recipeSummaryStore.deleteRecipeSummary(userId, id)) {
             call.respond(HttpStatusCode.NoContent)
         } else {
             call.respond(
                 HttpStatusCode.NotFound,
-                ApiError("recipe-not-found", "Recipe not found"),
+                ApiError("recipe-summary-not-found", "Recipe summary not found"),
             )
         }
     }
