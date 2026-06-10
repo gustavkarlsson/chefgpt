@@ -36,6 +36,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Kitchen
 import androidx.compose.material.icons.filled.Restaurant
@@ -382,7 +383,20 @@ private fun MessageBubble(
                         if (message.reasoning) {
                             Text("Reasoning", style = MaterialTheme.typography.bodyMedium)
                         }
-                        MessageText(message.text)
+                        for (chunk in message.chunks) {
+                            when (chunk) {
+                                is UiMessageChunk.Text -> {
+                                    MessageText(chunk.text)
+                                }
+
+                                is UiMessageChunk.MultipleChoiceQuestion -> {
+                                    MultipleChoiceQuestionChunk(
+                                        chunk = chunk,
+                                        onClickAnswer = message.onClickAnswer,
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -400,6 +414,57 @@ private fun MessageText(
         typography = LocalMarkdownTypography.current,
         modifier = modifier.padding(12.dp),
     )
+}
+
+@Composable
+private fun MultipleChoiceQuestionChunk(
+    chunk: UiMessageChunk.MultipleChoiceQuestion,
+    onClickAnswer: ((String) -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = chunk.question,
+            style = MaterialTheme.typography.titleSmall,
+        )
+        for ((index, answer) in chunk.answers.withIndex()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    modifier = Modifier.padding(end = 8.dp),
+                    text = "${index + 1}.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Surface(
+                    modifier = Modifier.weight(1f),
+                    onClick = { onClickAnswer?.invoke(answer.text) },
+                    enabled = onClickAnswer != null,
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.12f),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            modifier = Modifier.weight(1f),
+                            text = answer.text,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        if (answer.selected) {
+                            Icon(
+                                modifier = Modifier.padding(start = 8.dp),
+                                imageVector = Icons.Default.Check,
+                                contentDescription = "Selected",
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable

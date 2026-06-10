@@ -21,6 +21,7 @@ import org.koin.core.annotation.InjectedParam
 import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.api.ApiAgentChatNamed
 import se.gustavkarlsson.chefgpt.api.ApiAgentMessage
+import se.gustavkarlsson.chefgpt.api.ApiAgentMessageChunk
 import se.gustavkarlsson.chefgpt.api.ApiAgentReasoning
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiIngredient
@@ -110,7 +111,7 @@ class ChatViewModel(
     // No messages yet: invite the user to describe what they want help cooking, with examples.
     // The example prompts can be tapped to submit them, but only once we're joined and able to send.
     private fun State.toUiContent(): UiContent {
-        val messages = events.toUiMessages()
+        val messages = toUiMessages()
         return if (messages.isEmpty()) {
             UiContent.Empty(
                 headline = EMPTY_HEADLINE,
@@ -123,16 +124,52 @@ class ChatViewModel(
         }
     }
 
-    private fun List<ApiEvent>.toUiMessages(): List<UiMessage> =
-        mapNotNull { event ->
+    private fun State.toUiMessages(): List<UiMessage> {
+        // Answers stay clickable only while no user message has been sent after the question.
+        val lastUserMessageIndex = events.indexOfLast { it is ApiUserMessage }
+        val canAnswer = isJoined()
+        return events.mapIndexedNotNull { index, event ->
             when (event) {
-                is ApiSystemEvent -> null
-                is ApiAgentChatNamed -> null
-                is ApiAgentMessage -> UiMessage.Agent(event.id.toString(), event.text, reasoning = false)
-                is ApiAgentReasoning -> UiMessage.Agent(event.id.toString(), event.text, reasoning = true)
-                is ApiUserMessage -> UiMessage.User(event.id.toString(), event.text, event.imageUrl?.toString())
+                is ApiSystemEvent -> {
+                    null
+                }
+
+                is ApiAgentChatNamed -> {
+                    null
+                }
+
+                is ApiAgentMessage -> {
+                    val nextUserText =
+                        events
+                            .drop(index + 1)
+                            .takeWhile { it !is ApiAgentMessage }
+                            .filterIsInstance<ApiUserMessage>()
+                            .firstOrNull()
+                            ?.text
+                            ?.trim()
+                    UiMessage.Agent(
+                        id = event.id.toString(),
+                        chunks = event.chunks.map { it.toUiChunk(nextUserText) },
+                        reasoning = false,
+                        onClickAnswer = if (canAnswer && index > lastUserMessageIndex) ::sendAnswer else null,
+                    )
+                }
+
+                is ApiAgentReasoning -> {
+                    UiMessage.Agent(
+                        id = event.id.toString(),
+                        chunks = listOf(UiMessageChunk.Text(event.text)),
+                        reasoning = true,
+                        onClickAnswer = null,
+                    )
+                }
+
+                is ApiUserMessage -> {
+                    UiMessage.User(event.id.toString(), event.text, event.imageUrl?.toString())
+                }
             }
         }
+    }
 
     private fun State.isConnected(): Boolean = joinId != null
 
@@ -218,6 +255,16 @@ class ChatViewModel(
     private fun submitPrompt(prompt: String) {
         updateUserText(prompt)
         sendMessage()
+    }
+
+    private fun sendAnswer(answer: String) {
+        viewModelScope.launch {
+            log.i { "Sending answer to ${conversation.chatId}" }
+            conversation.sendAction(ApiUserSendsMessage(answer, imageUrl = null)).onErr { error ->
+                log.e { "Failed to send answer: $error" }
+                showSnackbar("Couldn't send answer", isError = true)
+            }
+        }
     }
 
     private fun sendMessage() {
@@ -324,10 +371,51 @@ sealed interface UiMessage {
 
     data class Agent(
         override val id: String,
-        val text: String,
+        val chunks: List<UiMessageChunk>,
         val reasoning: Boolean,
+        // Null when answering is disabled (not caught up, or a user message followed the question).
+        val onClickAnswer: ((String) -> Unit)?,
     ) : UiMessage
 }
+
+sealed interface UiMessageChunk {
+    data class Text(
+        val text: String,
+    ) : UiMessageChunk
+
+    data class MultipleChoiceQuestion(
+        val question: String,
+        val answers: List<UiAnswer>,
+    ) : UiMessageChunk
+}
+
+data class UiAnswer(
+    val text: String,
+    val selected: Boolean,
+)
+
+private fun ApiAgentMessageChunk.toUiChunk(selectedAnswerText: String?): UiMessageChunk =
+    when (this) {
+        is ApiAgentMessageChunk.Text -> {
+            UiMessageChunk.Text(text)
+        }
+
+        is ApiAgentMessageChunk.MultipleChoiceQuestion -> {
+            UiMessageChunk.MultipleChoiceQuestion(
+                question = question,
+                answers =
+                    answers.mapIndexed { index, answer ->
+                        val trimmed = selectedAnswerText?.trim()
+                        UiAnswer(
+                            text = answer,
+                            selected =
+                                answer.trim().equals(trimmed, ignoreCase = true) ||
+                                    trimmed?.toIntOrNull() == index + 1,
+                        )
+                    },
+            )
+        }
+    }
 
 sealed interface IngredientChange {
     val icon: EmojiAvatarModel

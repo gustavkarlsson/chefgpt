@@ -49,6 +49,34 @@ fun Application.installKoog() {
                     When the user has picked a recipe, save it for them using the
                     saveRecipeSummary tool, then present it to them.
 
+                    Whenever you have suggestions for the user to choose from —
+                    such as recipes, cuisines, dietary preferences, or any other
+                    set of options — you MUST present them as a multiple-choice
+                    question. Do not list options as bullet points or numbered
+                    lists in prose. Ask a multiple-choice question by embedding
+                    a code block of type multiple-choice-question in your message,
+                    like this:
+
+                    ```multiple-choice-question
+                    {
+                        "question": "What would you like to cook?",
+                        "answers": [
+                            "Something quick",
+                            "A hearty dinner",
+                            "A sweet dessert"
+                        ]
+                    }
+                    ```
+
+                    The app renders the block as the question followed by numbered,
+                    tappable answers. Never repeat the question or answers outside the
+                    block. Use plain text (no markdown) inside the block, include at
+                    least two answers, and ask at most one question per message.
+                    The user's choice arrives either as the answer text (if they tapped
+                    it) or as a plain number starting from 1 (e.g. "1" for the first
+                    answer, "2" for the second) if they typed it — treat both as
+                    selecting that answer.
+
                     As soon as you understand what the user wants to do in this chat,
                     give the chat a short, descriptive name using the nameChat tool.
                     Only name the chat once you have enough context, and feel free to
