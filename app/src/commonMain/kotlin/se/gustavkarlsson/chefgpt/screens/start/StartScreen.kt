@@ -628,6 +628,7 @@ private fun RecipeItem(
         modifier =
             modifier
                 .fillMaxWidth()
+                .clickable { recipe.onClickOpen(recipe.id) }
                 .padding(contentPadding)
                 .padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,

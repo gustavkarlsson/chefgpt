@@ -18,4 +18,20 @@ data class ApiRecipe(
     val cookingDuration: Duration? = null,
     @Serializable(with = DurationSerializer::class)
     val duration: Duration? = null,
+    val ingredients: List<ApiRecipeIngredient> = emptyList(),
+    val nutrients: List<ApiNutrient> = emptyList(),
+)
+
+@Serializable
+data class ApiRecipeIngredient(
+    val name: String,
+    val value: String,
+    val unit: String,
+)
+
+@Serializable
+data class ApiNutrient(
+    val name: String,
+    val value: String,
+    val unit: String,
 )

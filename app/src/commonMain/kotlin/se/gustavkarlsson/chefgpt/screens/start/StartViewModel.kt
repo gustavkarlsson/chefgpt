@@ -21,6 +21,7 @@ import se.gustavkarlsson.chefgpt.screens.StateViewModel
 import se.gustavkarlsson.chefgpt.screens.chat.ChatScreen
 import se.gustavkarlsson.chefgpt.screens.debug.DebugScreen
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsScreen
+import se.gustavkarlsson.chefgpt.screens.recipe.RecipeDetailScreen
 import se.gustavkarlsson.chefgpt.sessions.RegisterError
 import se.gustavkarlsson.chefgpt.sessions.SessionCredentials
 import se.gustavkarlsson.chefgpt.sessions.SessionRepository
@@ -93,6 +94,7 @@ class StartViewModel(
                 id = summary.id,
                 title = summary.title,
                 imageUrl = summary.imageUrl,
+                onClickOpen = ::openRecipe,
                 onClickDelete = ::deleteRecipe,
             )
         }
@@ -223,6 +225,11 @@ class StartViewModel(
         navigator.push(DebugScreen())
     }
 
+    private fun openRecipe(recipeId: RecipeId) {
+        val credentials = innerState.value.sessionCredentials ?: return
+        navigator.push(RecipeDetailScreen(credentials.sessionId, recipeId))
+    }
+
     private fun deleteRecipe(recipeId: RecipeId) {
         val credentials = innerState.value.sessionCredentials ?: return
         viewModelScope.launch {
@@ -328,5 +335,6 @@ data class UiRecipeSummary(
     val id: RecipeId,
     val title: String,
     val imageUrl: ImageUrl?,
+    val onClickOpen: (RecipeId) -> Unit,
     val onClickDelete: (RecipeId) -> Unit,
 )

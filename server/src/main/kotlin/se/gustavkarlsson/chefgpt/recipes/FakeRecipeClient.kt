@@ -38,7 +38,32 @@ class FakeRecipeClient : RecipeClient {
         addWinePairing: Boolean,
         addTasteData: Boolean,
     ): String =
-        """{"id":$id,"title":"Spaghetti Carbonara","readyInMinutes":30,"servings":4,"sourceUrl":"https://example.com/carbonara","image":"https://img.spoonacular.com/recipes/716429-556x370.jpg","summary":"A classic Italian pasta dish with eggs, cheese, pancetta, and pepper.","instructions":"<ol><li>Cook pasta.</li><li>Fry pancetta.</li><li>Mix eggs and cheese.</li><li>Combine and serve.</li></ol>","extendedIngredients":[{"id":1,"name":"spaghetti","amount":400.0,"unit":"g"},{"id":2,"name":"pancetta","amount":200.0,"unit":"g"},{"id":3,"name":"eggs","amount":4.0,"unit":""},{"id":4,"name":"parmesan cheese","amount":100.0,"unit":"g"},{"id":5,"name":"black pepper","amount":1.0,"unit":"tsp"}],"vegetarian":false,"vegan":false,"glutenFree":false,"dairyFree":false,"cuisines":["Italian"],"dishTypes":["lunch","main course","dinner"]}"""
+        buildString {
+            append("""{"id":$id,"title":"Spaghetti Carbonara","readyInMinutes":30,""")
+            append(""""servings":4,"sourceUrl":"https://example.com/carbonara",""")
+            append(""""image":"https://img.spoonacular.com/recipes/716429-556x370.jpg",""")
+            append(""""summary":"A classic Italian pasta dish.",""")
+            append(""""extendedIngredients":[""")
+            append("""{"id":1,"name":"spaghetti","amount":400.0,"unit":"g"},""")
+            append("""{"id":2,"name":"pancetta","amount":200.0,"unit":"g"},""")
+            append("""{"id":3,"name":"eggs","amount":4.0,"unit":""},""")
+            append("""{"id":4,"name":"parmesan cheese","amount":100.0,"unit":"g"},""")
+            append("""{"id":5,"name":"black pepper","amount":1.0,"unit":"tsp"}""")
+            append("""],""")
+            append(""""vegetarian":false,"vegan":false,"glutenFree":false,"dairyFree":false""")
+            if (includeNutrition) {
+                append(""","nutrition":{"nutrients":[""")
+                append("""{"name":"Calories","amount":450.0,"unit":"kcal"},""")
+                append("""{"name":"Fat","amount":18.0,"unit":"g"},""")
+                append("""{"name":"Protein","amount":22.0,"unit":"g"},""")
+                append("""{"name":"Carbohydrates","amount":55.0,"unit":"g"},""")
+                append("""{"name":"Fiber","amount":3.5,"unit":"g"},""")
+                append("""{"name":"Sugar","amount":4.0,"unit":"g"},""")
+                append("""{"name":"Sodium","amount":620.0,"unit":"mg"}""")
+                append("""]}""")
+            }
+            append("}")
+        }
 
     override suspend fun getRecipeInformationBulk(
         ids: List<Long>,
