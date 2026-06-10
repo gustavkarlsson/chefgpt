@@ -8,6 +8,11 @@ import se.gustavkarlsson.chefgpt.sessions.SessionId
 interface RecipeRepository {
     suspend fun streamSummaries(sessionId: SessionId): Flow<List<RecipeSummary>>
 
+    suspend fun get(
+        sessionId: SessionId,
+        recipeId: RecipeId,
+    ): Result<Recipe, ClientError>
+
     suspend fun delete(
         sessionId: SessionId,
         recipeId: RecipeId,
