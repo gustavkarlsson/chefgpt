@@ -5,7 +5,9 @@ import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.onErr
 import com.github.michaelbull.result.onOk
 import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import se.gustavkarlsson.chefgpt.api.ChatId
@@ -26,6 +28,7 @@ import se.gustavkarlsson.chefgpt.sessions.RegisterError
 import se.gustavkarlsson.chefgpt.sessions.SessionCredentials
 import se.gustavkarlsson.chefgpt.sessions.SessionRepository
 import se.gustavkarlsson.chefgpt.sessions.UserCredentials
+import kotlin.time.Duration.Companion.seconds
 
 private val log = Logger.withTag("${StartViewModel::class.simpleName}")
 
@@ -267,9 +270,18 @@ class StartViewModel(
     }
 
     private suspend fun streamChats(credentials: SessionCredentials) {
-        chatRepository
-            .stream(credentials.sessionId)
-            .collect { chats -> innerState.update { it.copy(chats = chats) } }
+        while (true) {
+            try {
+                chatRepository
+                    .stream(credentials.sessionId)
+                    .collect { chats -> innerState.update { it.copy(chats = chats) } }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                log.w(e) { "Chat stream failed, reconnecting" }
+            }
+            delay(3.seconds)
+        }
     }
 
     private fun restartRecipeStream(credentials: SessionCredentials?) {
@@ -278,9 +290,18 @@ class StartViewModel(
     }
 
     private suspend fun streamRecipes(credentials: SessionCredentials) {
-        recipeRepository
-            .streamSummaries(credentials.sessionId)
-            .collect { summaries -> innerState.update { it.copy(recipeSummaries = summaries) } }
+        while (true) {
+            try {
+                recipeRepository
+                    .streamSummaries(credentials.sessionId)
+                    .collect { summaries -> innerState.update { it.copy(recipeSummaries = summaries) } }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                log.w(e) { "Recipe stream failed, reconnecting" }
+            }
+            delay(3.seconds)
+        }
     }
 }
 
