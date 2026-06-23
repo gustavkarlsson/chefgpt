@@ -13,6 +13,7 @@ import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.readLine
 import kotlinx.io.writeString
 import kotlinx.serialization.json.Json
+import se.gustavkarlsson.chefgpt.APP_STORAGE_DIR
 import se.gustavkarlsson.chefgpt.IoOrDefault
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ChatId
@@ -21,7 +22,7 @@ private val log = Logger.withTag("${EventHistoryStore::class.simpleName}")
 
 // TODO Replace with database
 class EventHistoryStore(
-    private val dir: Path = Path("."),
+    private val dir: Path = Path(APP_STORAGE_DIR),
     private val prettyPrint: Boolean = false,
 ) {
     private val json =

@@ -72,7 +72,7 @@ interface RecipeClient : ToolSet {
     )
     suspend fun getRecipeInformation(
         @LLMDescription("The id of the recipe.")
-        id: Int,
+        id: Long,
         @LLMDescription(
             "Include nutrition data in the recipe information." +
                 "Nutrition data is per serving." +
@@ -93,7 +93,7 @@ interface RecipeClient : ToolSet {
     )
     suspend fun getRecipeInformationBulk(
         @LLMDescription("List of recipe IDs to fetch.")
-        ids: List<Int>,
+        ids: List<Long>,
         @LLMDescription("Whether to include nutrition data in the response.")
         includeNutrition: Boolean = false,
     ): String
@@ -102,7 +102,7 @@ interface RecipeClient : ToolSet {
     @LLMDescription("Find recipes that are similar to a given recipe.")
     suspend fun getSimilarRecipes(
         @LLMDescription("The ID of the recipe to find similar recipes for.")
-        id: Int,
+        id: Long,
         @LLMDescription("The maximum number of similar recipes to return (1-100).")
         number: Int = 10,
     ): String
@@ -140,7 +140,7 @@ interface RecipeClient : ToolSet {
     )
     suspend fun summarizeRecipe(
         @LLMDescription("The ID of the recipe to summarize.")
-        id: Int,
+        id: Long,
     ): String
 
     @Tool
@@ -150,7 +150,7 @@ interface RecipeClient : ToolSet {
     )
     suspend fun tasteById(
         @LLMDescription("The ID of the recipe.")
-        id: Int,
+        id: Long,
         @LLMDescription("Whether to normalize all taste values to a scale of 0–1.")
         normalize: Boolean = true,
     ): String
@@ -159,7 +159,7 @@ interface RecipeClient : ToolSet {
     @LLMDescription("Get the equipment needed to prepare a recipe by its ID.")
     suspend fun equipmentById(
         @LLMDescription("The ID of the recipe.")
-        id: Int,
+        id: Long,
     ): String
 
     @Tool
@@ -169,14 +169,14 @@ interface RecipeClient : ToolSet {
     )
     suspend fun priceBreakdownById(
         @LLMDescription("The ID of the recipe.")
-        id: Int,
+        id: Long,
     ): String
 
     @Tool
     @LLMDescription("Get the ingredient list for a recipe by its ID, including amounts and units.")
     suspend fun ingredientsById(
         @LLMDescription("The ID of the recipe.")
-        id: Int,
+        id: Long,
         @LLMDescription("The measurement system to use: 'us' or 'metric'.")
         measure: String = "metric",
     ): String
@@ -185,7 +185,17 @@ interface RecipeClient : ToolSet {
     @LLMDescription("Get the detailed nutrition information for a recipe by its ID.")
     suspend fun nutritionById(
         @LLMDescription("The ID of the recipe.")
-        id: Int,
+        id: Long,
+    ): String
+
+    @Tool
+    @LLMDescription(
+        "Get step-by-step analyzed cooking instructions for a recipe by its ID. " +
+            "Returns structured steps with the ingredients and equipment used in each step.",
+    )
+    suspend fun getAnalyzedInstructionsById(
+        @LLMDescription("The ID of the recipe.")
+        id: Long,
     ): String
 
     @Tool

@@ -40,11 +40,11 @@ sealed interface ApiUserEvent : ApiEvent
 data class ApiAgentMessage(
     override val id: EventId,
     override val timestamp: Instant,
-    val text: String,
+    val chunks: List<ApiAgentMessageChunk>,
 ) : ApiAgentEvent {
     init {
-        require(text.isNotBlank()) {
-            "Text must not be blank"
+        require(chunks.isNotEmpty()) {
+            "Chunks must not be empty"
         }
     }
 }

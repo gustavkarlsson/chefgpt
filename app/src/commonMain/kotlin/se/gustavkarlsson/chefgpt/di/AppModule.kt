@@ -14,10 +14,15 @@ import se.gustavkarlsson.chefgpt.chats.ApiConversationFactory
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.ConversationFactory
 import se.gustavkarlsson.chefgpt.chats.EventHistoryStore
+import se.gustavkarlsson.chefgpt.debug.Settings
 import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
 import se.gustavkarlsson.chefgpt.navigation.Navigator
+import se.gustavkarlsson.chefgpt.recipes.ApiRecipeRepository
+import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 import se.gustavkarlsson.chefgpt.screens.chat.ChatViewModel
+import se.gustavkarlsson.chefgpt.screens.debug.DebugViewModel
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsViewModel
+import se.gustavkarlsson.chefgpt.screens.recipe.RecipeDetailViewModel
 import se.gustavkarlsson.chefgpt.screens.start.StartViewModel
 import se.gustavkarlsson.chefgpt.sessions.LastSessionFileStore
 import se.gustavkarlsson.chefgpt.sessions.SessionRepository
@@ -25,15 +30,15 @@ import se.gustavkarlsson.chefgpt.sessions.SessionRepositoryImpl
 
 val singletonModule =
     module {
+        single<Settings>()
         single<ChefGptClient>()
         // TODO Should be activity retained scoped for Android.
         single<Navigator>()
-        // TODO Get path depending on platform
         single<LastSessionFileStore>()
-        // TODO Get path depending on platform
         single<EventHistoryStore>()
         single<SessionRepositoryImpl>() bind SessionRepository::class
         single<ApiChatRepository>() bind ChatRepository::class
+        single<ApiRecipeRepository>() bind RecipeRepository::class
         single<ApiConversationFactory>() bind ConversationFactory::class
         single<IngredientEmojiResolver.Factory>()
     }
@@ -44,6 +49,8 @@ val viewModelModule =
         viewModel<StartViewModel>()
         viewModel<ChatViewModel>()
         viewModel<IngredientsViewModel>()
+        viewModel<DebugViewModel>()
+        viewModel<RecipeDetailViewModel>()
     }
 
 val nativeModule =

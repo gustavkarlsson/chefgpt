@@ -8,3 +8,7 @@ data class Chat(
     val createdAt: Instant,
     val name: String? = null,
 )
+
+// Falls back to a timestamp-based title when the chat hasn't been named yet.
+val Chat.displayName: String
+    get() = name ?: "Chat from ${createdAt.toString().replace("T", " ").take(19)}"

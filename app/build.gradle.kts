@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.atomicfu)
     alias(libs.plugins.koinCompiler)
 }
 
@@ -57,7 +58,11 @@ kotlin {
             implementation(libs.composeRuntime)
             implementation(libs.composeFoundation)
             implementation(libs.composeMaterial3)
+            implementation(libs.composeMaterial3Adaptive)
+            implementation(libs.composeMaterial3AdaptiveLayout)
+            implementation(libs.composeMaterial3AdaptiveNavigation)
             implementation(libs.composeUi)
+            implementation(libs.composeUiBackhandler)
             implementation(libs.composeComponentsResources)
             implementation(libs.composeUiToolingPreview)
             implementation(libs.androidxLifecycleViewmodelCompose)
@@ -124,8 +129,14 @@ android {
         }
     }
     buildTypes {
+        getByName("debug") {
+            // Allow plain-HTTP traffic so debug builds can reach the local dev server.
+            manifestPlaceholders["usesCleartextTraffic"] = "true"
+        }
         getByName("release") {
             isMinifyEnabled = false
+            // Release builds must talk to the server over HTTPS only.
+            manifestPlaceholders["usesCleartextTraffic"] = "false"
         }
     }
 }

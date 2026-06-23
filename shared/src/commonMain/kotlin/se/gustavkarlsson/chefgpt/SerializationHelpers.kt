@@ -6,6 +6,7 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlin.time.Duration
 import kotlin.uuid.Uuid
 
 abstract class UuidValueSerializer<T>(
@@ -23,6 +24,19 @@ abstract class UuidValueSerializer<T>(
     }
 
     override fun deserialize(decoder: Decoder): T = wrap(Uuid.parse(decoder.decodeString()))
+}
+
+object DurationSerializer : KSerializer<Duration> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("duration", PrimitiveKind.STRING)
+
+    override fun serialize(
+        encoder: Encoder,
+        value: Duration,
+    ) {
+        encoder.encodeString(value.toIsoString())
+    }
+
+    override fun deserialize(decoder: Decoder): Duration = Duration.parseIsoString(decoder.decodeString())
 }
 
 abstract class StringValueSerializer<T>(

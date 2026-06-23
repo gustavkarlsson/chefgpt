@@ -3,21 +3,22 @@ package se.gustavkarlsson.chefgpt.navigation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
+import se.gustavkarlsson.chefgpt.screens.start.StartScreen
 
 // TODO Add logging
 
 class Navigator(
-    initialRoute: Route = Route.Start,
+    initialScreen: Screen = StartScreen(),
 ) {
-    val backStack: StateFlow<List<Route>>
-        field = MutableStateFlow(listOf(initialRoute))
+    val backStack: StateFlow<List<Screen>>
+        field = MutableStateFlow(listOf(initialScreen))
 
-    fun push(route: Route) {
-        backStack.update { routes -> routes + route }
+    fun push(screen: Screen) {
+        backStack.update { routes -> routes + screen }
     }
 
-    fun replaceTop(route: Route) {
-        backStack.update { routes -> routes.dropLast(1) + route }
+    fun replaceTop(screen: Screen) {
+        backStack.update { routes -> routes.dropLast(1) + screen }
     }
 
     fun pop() {

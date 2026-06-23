@@ -21,14 +21,14 @@ class IngredientStoreTools(
         "Mark the given ingredients as in the user's inventory. Returns the ingredients whose status actually changed, excluding any that were already in inventory",
     )
     suspend fun addIngredients(ingredients: List<String>): List<ApiIngredient> =
-        store.addIngredients(userId, ingredients)
+        store.createIngredients(userId, ingredients)
 
     @Tool
     @LLMDescription(
-        "Mark the given ingredients as no longer in the user's inventory, keeping them in the store. Returns the ingredients whose status actually changed, excluding any that were not in inventory",
+        "Mark the given ingredients as no longer in the user's inventory, keeping them in the store. Returns the affected ingredients",
     )
     suspend fun removeIngredients(ingredients: List<String>): List<ApiIngredient> =
-        store.removeIngredients(userId, resolveIds(ingredients))
+        store.setInventory(userId, resolveIds(ingredients), inInventory = false)
 
     @Tool
     @LLMDescription(

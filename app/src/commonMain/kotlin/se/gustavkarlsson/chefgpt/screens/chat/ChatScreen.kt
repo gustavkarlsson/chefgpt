@@ -10,28 +10,36 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Kitchen
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,7 +49,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,7 +58,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isShiftPressed
@@ -59,8 +67,13 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.mikepenz.markdown.m3.Markdown
 import kotlinx.coroutines.channels.Channel
@@ -68,84 +81,117 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import se.gustavkarlsson.chefgpt.api.ApiAgentChatNamed
-import se.gustavkarlsson.chefgpt.api.ApiAgentEvent
-import se.gustavkarlsson.chefgpt.api.ApiAgentMessage
-import se.gustavkarlsson.chefgpt.api.ApiAgentReasoning
-import se.gustavkarlsson.chefgpt.api.ApiEvent
-import se.gustavkarlsson.chefgpt.api.ApiSystemEvent
-import se.gustavkarlsson.chefgpt.api.ApiUserEvent
-import se.gustavkarlsson.chefgpt.api.ApiUserMessage
+import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatar
-import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatarModel
-import se.gustavkarlsson.chefgpt.navigation.Route
+import se.gustavkarlsson.chefgpt.navigation.Screen
+import se.gustavkarlsson.chefgpt.navigation.Screen.Id
 import se.gustavkarlsson.chefgpt.pickImageFile
-import se.gustavkarlsson.chefgpt.screens.chat.ChatViewModel.ViewState
+import se.gustavkarlsson.chefgpt.plus
+import se.gustavkarlsson.chefgpt.sessions.SessionId
+import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessage
+import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessageHost
+import se.gustavkarlsson.chefgpt.snackbar.rememberSnackbarHostState
+import se.gustavkarlsson.chefgpt.theme.LocalMarkdownTypography
 import kotlin.time.Duration.Companion.milliseconds
 
-@Composable
-fun ChatScreen(chat: Route.Chat) {
-    val viewModel = koinViewModel<ChatViewModel> { parametersOf(chat) }
-    val viewState by viewModel.viewState.collectAsState()
-    Content(viewState, viewModel.ingredientChanges)
+@Serializable
+@SerialName("chat")
+data class ChatScreen(
+    val sessionId: SessionId,
+    val chatId: ChatId,
+    override val id: Id = Id.new(),
+) : Screen {
+    @Composable
+    override fun Content() {
+        val viewModel = koinViewModel<ChatViewModel> { parametersOf(this) }
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+        Content(uiState, viewModel.ingredientChanges, viewModel.snackbarMessages)
+    }
 }
 
 @Composable
 private fun Content(
-    viewState: ViewState,
+    uiState: UiState,
     ingredientChanges: Flow<IngredientChange>,
+    snackbarMessages: Flow<SnackbarMessage>,
+    modifier: Modifier = Modifier,
 ) {
+    val snackbarHostState = rememberSnackbarHostState(snackbarMessages)
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
+        snackbarHost = { SnackbarMessageHost(snackbarHostState) },
         topBar = {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(onClick = viewState.onClickBack) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
+            Surface(color = MaterialTheme.colorScheme.background) {
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .windowInsetsPadding(
+                                WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                            ).padding(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(onClick = uiState.onClickBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                        )
+                    }
+                    ConnectionIndicator(connected = uiState.connected)
+                    Text(
+                        modifier = Modifier.weight(1f).padding(start = 8.dp),
+                        text = uiState.title,
+                        style = MaterialTheme.typography.titleLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    IngredientButton(
+                        ingredientChanges = ingredientChanges,
+                        onClick = uiState.onClickIngredients,
                     )
                 }
-                Surface(
-                    color = if (viewState.connected) Color.Green else Color.Red,
-                    shape = CircleShape,
-                    modifier = Modifier.size(16.dp),
-                ) {
-                }
-                Spacer(Modifier.weight(1f))
-                IngredientButton(
-                    ingredientChanges = ingredientChanges,
-                    onClick = viewState.onClickIngredients,
-                )
             }
         },
-    ) { paddingValues ->
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-        ) {
-            MessageList(
-                events = viewState.events,
-                modifier = Modifier.weight(1f),
-            )
-
+        bottomBar = {
             MessageInput(
-                userText = viewState.userText,
-                attachedImage = viewState.attachedImage,
-                onUserTextChanged = viewState.onUserTextChanged,
-                onClickSend = viewState.onClickSend,
-                onImageAttached = viewState.onImageAttached,
-                onImageCleared = viewState.onImageCleared,
                 modifier = Modifier.fillMaxWidth(),
+                input = uiState.input,
             )
+        },
+    ) { paddingValues ->
+        when (val content = uiState.content) {
+            is UiContent.Empty -> {
+                EmptyState(
+                    modifier = Modifier.fillMaxSize().padding(paddingValues),
+                    content = content,
+                )
+            }
+
+            is UiContent.Messages -> {
+                MessageList(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = paddingValues,
+                    messages = content.messages,
+                )
+            }
         }
     }
+}
+
+@Composable
+private fun ConnectionIndicator(
+    connected: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.size(16.dp),
+        color = if (connected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+        shape = CircleShape,
+    ) {}
 }
 
 // How long an ingredient avatar travels onto/off the button, plus the fade applied at each end of that travel
@@ -180,7 +226,7 @@ private fun IngredientButton(
         }
     }
 
-    Box(contentAlignment = Alignment.Center, modifier = modifier) {
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
         current?.let { change ->
             val p = progress.value
             // Added travels onto the button (start edge -> center); removed travels off it (center -> start edge).
@@ -197,7 +243,7 @@ private fun IngredientButton(
                     else -> 1f
                 }.coerceIn(0f, 1f)
             EmojiAvatar(
-                model = EmojiAvatarModel.of(change.emoji, change.name),
+                model = change.icon,
                 modifier =
                     Modifier
                         .align(Alignment.Center)
@@ -215,101 +261,206 @@ private fun IngredientButton(
 }
 
 @Composable
-private fun MessageList(
-    events: List<ApiEvent>,
+private fun EmptyState(
+    content: UiContent.Empty,
     modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(horizontal = 32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(
+            imageVector = Icons.Default.Restaurant,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.primary,
+        )
+        Text(
+            modifier = Modifier.padding(top = 16.dp),
+            text = content.headline,
+            style = MaterialTheme.typography.headlineSmall,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            modifier = Modifier.padding(top = 8.dp),
+            text = content.description,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Surface(
+            modifier = Modifier.padding(top = 24.dp),
+            onClick = { content.onClickPrompt?.invoke(content.examplePrompt) },
+            enabled = content.onClickPrompt != null,
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+        ) {
+            Text(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                text = content.examplePrompt,
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
+@Composable
+private fun MessageList(
+    messages: List<UiMessage>,
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
 ) {
     val listState = rememberLazyListState()
 
     // reverseLayout anchors the list at the bottom, so the newest message (index 0
     // of the reversed list) stays pinned there regardless of its height.
-    val reversedEvents = remember(events) { events.asReversed() }
+    val reversedMessages = remember(messages) { messages.asReversed() }
 
-    LaunchedEffect(events.size) {
-        if (events.isNotEmpty()) {
+    LaunchedEffect(messages.size) {
+        if (messages.isNotEmpty()) {
             listState.animateScrollToItem(0)
         }
     }
 
     LazyColumn(
-        state = listState,
         modifier = modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 16.dp),
+        state = listState,
+        contentPadding = contentPadding + PaddingValues(horizontal = 8.dp, vertical = 16.dp),
         reverseLayout = true,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        items(items = reversedEvents, key = { it.id }) { event ->
-            MessageBubble(event)
+        items(items = reversedMessages, key = { it.id }) { message ->
+            MessageBubble(message = message)
         }
     }
 }
 
-// TODO Handle different types of actions more exhaustively
 @Composable
-private fun MessageBubble(event: ApiEvent) {
-    val isUser =
-        when (event) {
-            is ApiSystemEvent -> return
-            is ApiAgentChatNamed -> return
-            is ApiAgentEvent -> false
-            is ApiUserEvent -> true
-        }
-
-    Box(modifier = Modifier.fillMaxWidth()) {
+private fun MessageBubble(
+    message: UiMessage,
+    modifier: Modifier = Modifier,
+) {
+    val fromUser = message is UiMessage.User
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         Surface(
             modifier =
                 Modifier
-                    .align(
-                        if (isUser) {
-                            Alignment.CenterEnd
-                        } else {
-                            Alignment.CenterStart
-                        },
-                    ).widthIn(max = 400.dp)
+                    .align(if (fromUser) Alignment.CenterEnd else Alignment.CenterStart)
+                    .widthIn(max = minOf(400.dp, maxWidth * 0.8f))
                     .padding(4.dp),
             shape = RoundedCornerShape(12.dp),
             color =
-                if (isUser) {
+                if (fromUser) {
                     MaterialTheme.colorScheme.primaryContainer
                 } else {
                     MaterialTheme.colorScheme.tertiaryContainer
                 },
         ) {
             Column {
-                if (event is ApiAgentReasoning) {
-                    Text("Reasoning", style = MaterialTheme.typography.bodyMedium)
+                when (message) {
+                    is UiMessage.User -> {
+                        message.imageUrl?.let { imageUrl ->
+                            AsyncImage(
+                                modifier =
+                                    Modifier
+                                        .align(Alignment.End)
+                                        .fillMaxWidth()
+                                        .heightIn(max = 300.dp),
+                                model = imageUrl,
+                                contentDescription = "Attached image",
+                                contentScale = ContentScale.Crop,
+                            )
+                        }
+                        message.text?.let { MessageText(it) }
+                    }
+
+                    is UiMessage.Agent -> {
+                        if (message.reasoning) {
+                            Text("Reasoning", style = MaterialTheme.typography.bodyMedium)
+                        }
+                        for (chunk in message.chunks) {
+                            when (chunk) {
+                                is UiMessageChunk.Text -> {
+                                    MessageText(chunk.text)
+                                }
+
+                                is UiMessageChunk.MultipleChoiceQuestion -> {
+                                    MultipleChoiceQuestionChunk(
+                                        chunk = chunk,
+                                        onClickAnswer = message.onClickAnswer,
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
-                if (event is ApiUserMessage) {
-                    event.imageUrl?.let { image ->
-                        AsyncImage(
-                            model = image,
-                            contentDescription = null,
-                            modifier =
-                                Modifier
-                                    .align(
-                                        if (isUser) {
-                                            Alignment.End
-                                        } else {
-                                            Alignment.Start
-                                        },
-                                    ).fillMaxWidth()
-                                    .heightIn(max = 300.dp),
-                            contentScale = ContentScale.Crop,
+            }
+        }
+    }
+}
+
+@Composable
+private fun MessageText(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    Markdown(
+        content = text,
+        typography = LocalMarkdownTypography.current,
+        modifier = modifier.padding(12.dp),
+    )
+}
+
+@Composable
+private fun MultipleChoiceQuestionChunk(
+    chunk: UiMessageChunk.MultipleChoiceQuestion,
+    onClickAnswer: ((String) -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = chunk.question,
+            style = MaterialTheme.typography.titleSmall,
+        )
+        for ((index, answer) in chunk.answers.withIndex()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    modifier = Modifier.padding(end = 8.dp),
+                    text = "${index + 1}.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Surface(
+                    modifier = Modifier.weight(1f),
+                    onClick = { onClickAnswer?.invoke(answer.text) },
+                    enabled = onClickAnswer != null,
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.12f),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            modifier = Modifier.weight(1f),
+                            text = answer.text,
+                            style = MaterialTheme.typography.bodyMedium,
                         )
+                        if (answer.selected) {
+                            Icon(
+                                modifier = Modifier.padding(start = 8.dp),
+                                imageVector = Icons.Default.Check,
+                                contentDescription = "Selected",
+                            )
+                        }
                     }
-                }
-                val text =
-                    when (event) {
-                        is ApiAgentMessage -> event.text
-                        is ApiAgentReasoning -> event.text
-                        is ApiAgentChatNamed -> null
-                        is ApiUserMessage -> event.text
-                    }
-                text?.let {
-                    Markdown(
-                        content = it,
-                        modifier = Modifier.padding(12.dp),
-                    )
                 }
             }
         }
@@ -318,12 +469,7 @@ private fun MessageBubble(event: ApiEvent) {
 
 @Composable
 private fun MessageInput(
-    userText: String,
-    attachedImage: Path?,
-    onUserTextChanged: (String) -> Unit,
-    onClickSend: (() -> Unit)?,
-    onImageAttached: (Path) -> Unit,
-    onImageCleared: (() -> Unit)?,
+    input: UiInput,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -334,92 +480,113 @@ private fun MessageInput(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(8.dp),
+                    .windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
+                    ).padding(8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            val focusRequester = remember { FocusRequester() }
+            LaunchedEffect(Unit) { focusRequester.requestFocus() }
             TextField(
-                value = userText,
-                onValueChange = onUserTextChanged,
                 modifier =
                     Modifier
                         .weight(1f)
+                        .focusRequester(focusRequester)
                         .onPreviewKeyEvent { keyEvent ->
                             if (keyEvent.key == Key.Enter && keyEvent.type == KeyEventType.KeyDown) {
                                 if (keyEvent.isShiftPressed) {
                                     false // Allow shift+enter to insert newline
                                 } else {
-                                    if (onClickSend != null && userText.isNotBlank()) {
-                                        onClickSend.invoke()
-                                    }
+                                    input.onClickSend?.invoke()
                                     true
                                 }
                             } else {
                                 false
                             }
                         },
+                value = input.text,
+                onValueChange = input.onTextChanged,
                 placeholder = { Text("Type a message...") },
+                keyboardOptions =
+                    KeyboardOptions(
+                        keyboardType = KeyboardType.Text,
+                        capitalization = KeyboardCapitalization.Sentences,
+                    ),
             )
 
-            val scope = rememberCoroutineScope()
-            if (attachedImage == null) {
-                IconButton(
-                    onClick = {
-                        scope.launch {
-                            pickImageFile()?.let { onImageAttached(it) }
-                        }
-                    },
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CameraAlt,
-                        contentDescription = "Take photo",
-                    )
-                }
-            } else {
-                val interactionSource = remember { MutableInteractionSource() }
-                val isHovered by interactionSource.collectIsHoveredAsState()
-                Box(
-                    modifier =
-                        Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                            .hoverable(interactionSource = interactionSource)
-                            .clickable { onImageCleared?.invoke() },
-                ) {
-                    AsyncImage(
-                        model = attachedImage,
-                        contentDescription = "Attached Image",
-                        modifier =
-                            Modifier
-                                .matchParentSize(),
-                        contentScale = ContentScale.Crop,
-                    )
-                    if (isHovered) {
-                        Box(
-                            modifier =
-                                Modifier
-                                    .matchParentSize()
-                                    .background(Color.Black.copy(alpha = 0.4f)),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Clear,
-                                contentDescription = "Clear Image",
-                                tint = Color.White,
-                            )
-                        }
-                    }
-                }
-            }
+            AttachedImageButton(
+                attachedImage = input.attachedImage,
+                onImageAttached = input.onImageAttached,
+                onClickClearImage = input.onClickClearImage,
+            )
 
             IconButton(
-                onClick = { onClickSend?.invoke() },
-                enabled = onClickSend != null && userText.isNotBlank(),
+                onClick = { input.onClickSend?.invoke() },
+                enabled = input.onClickSend != null,
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Send,
                     contentDescription = "Send",
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AttachedImageButton(
+    attachedImage: Path?,
+    onImageAttached: (Path) -> Unit,
+    onClickClearImage: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    val scope = rememberCoroutineScope()
+    if (attachedImage == null) {
+        IconButton(
+            modifier = modifier,
+            onClick = {
+                scope.launch {
+                    pickImageFile()?.let(onImageAttached)
+                }
+            },
+        ) {
+            Icon(
+                imageVector = Icons.Default.CameraAlt,
+                contentDescription = "Take photo",
+            )
+        }
+    } else {
+        val interactionSource = remember { MutableInteractionSource() }
+        val isHovered by interactionSource.collectIsHoveredAsState()
+        Box(
+            modifier =
+                modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .hoverable(interactionSource = interactionSource)
+                    .clickable { onClickClearImage?.invoke() },
+        ) {
+            AsyncImage(
+                modifier = Modifier.matchParentSize(),
+                model = attachedImage,
+                contentDescription = "Attached image",
+                contentScale = ContentScale.Crop,
+            )
+            if (isHovered) {
+                Box(
+                    modifier =
+                        Modifier
+                            .matchParentSize()
+                            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.4f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Clear,
+                        contentDescription = "Clear image",
+                        tint = MaterialTheme.colorScheme.inverseOnSurface,
+                    )
+                }
             }
         }
     }

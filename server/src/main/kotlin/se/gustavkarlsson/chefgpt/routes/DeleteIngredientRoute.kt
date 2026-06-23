@@ -21,14 +21,8 @@ fun Route.deleteIngredientRoute() {
                     HttpStatusCode.BadRequest,
                     ApiError("invalid-ingredient-id", "Invalid ingredient id"),
                 )
-        val destroy = call.request.queryParameters["destroy"].toBoolean()
-        val removed =
-            if (destroy) {
-                ingredientStore.destroyIngredients(userId, listOf(id))
-            } else {
-                ingredientStore.removeIngredients(userId, listOf(id))
-            }
-        if (removed.isNotEmpty()) {
+        val destroyed = ingredientStore.destroyIngredients(userId, listOf(id))
+        if (destroyed.isNotEmpty()) {
             call.respond(HttpStatusCode.NoContent)
         } else {
             call.respond(

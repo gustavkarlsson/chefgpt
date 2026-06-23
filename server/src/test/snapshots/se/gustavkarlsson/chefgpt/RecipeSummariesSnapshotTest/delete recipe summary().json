@@ -1,14 +1,15 @@
 {
     "request": {
-        "method": "PUT",
-        "url": "http://localhost/ingredients/tomato",
+        "method": "DELETE",
+        "url": "http://localhost/recipe-summaries/00000000-0000-0000-0000-000000000000",
         "headers": {
+            "Session-Id": "00000000000000000000000000000000",
             "Accept": "application/json",
             "Content-Length": "0"
         }
     },
     "response": {
-        "status": 401,
+        "status": 204,
         "headers": {
             "Content-Length": "0"
         }

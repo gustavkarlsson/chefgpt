@@ -1,27 +1,35 @@
 package se.gustavkarlsson.chefgpt.screens.ingredients
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Kitchen
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,147 +39,192 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.isShiftPressed
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
-import kotlinx.io.files.Path
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatar
-import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatarModel
-import se.gustavkarlsson.chefgpt.navigation.Route
+import se.gustavkarlsson.chefgpt.navigation.Screen
+import se.gustavkarlsson.chefgpt.navigation.Screen.Id
 import se.gustavkarlsson.chefgpt.pickImageFile
-import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsViewModel.Ingredient
-import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsViewModel.ViewState
+import se.gustavkarlsson.chefgpt.plus
+import se.gustavkarlsson.chefgpt.sessions.SessionId
+import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessage
+import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessageHost
+import se.gustavkarlsson.chefgpt.snackbar.rememberSnackbarHostState
 
-@Composable
-fun IngredientsScreen(route: Route.Ingredients) {
-    val viewModel = koinViewModel<IngredientsViewModel> { parametersOf(route) }
-    val viewState by viewModel.viewState.collectAsState()
-    Content(viewState)
+@Serializable
+@SerialName("ingredients")
+data class IngredientsScreen(
+    val sessionId: SessionId,
+    override val id: Id = Id.new(),
+) : Screen {
+    @Composable
+    override fun Content() {
+        val viewModel = koinViewModel<IngredientsViewModel> { parametersOf(this) }
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+        Content(uiState, viewModel.snackbarMessages, viewModel.focusInputEvents)
+    }
 }
 
 @Composable
-private fun Content(viewState: ViewState) {
+private fun Content(
+    uiState: UiState,
+    snackbarMessages: Flow<SnackbarMessage>,
+    focusInputEvents: Flow<Unit>,
+    modifier: Modifier = Modifier,
+) {
+    val snackbarHostState = rememberSnackbarHostState(snackbarMessages)
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
+        snackbarHost = { SnackbarMessageHost(snackbarHostState) },
         topBar = {
-            Row(
-                modifier = Modifier.padding(4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                IconButton(onClick = viewState.onClickBack) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
+            Surface(color = MaterialTheme.colorScheme.background) {
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .windowInsetsPadding(
+                                WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                            ).padding(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(onClick = uiState.onClickBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                        )
+                    }
+                    Text(
+                        modifier = Modifier.padding(start = 8.dp),
+                        text = "Ingredients",
+                        style = MaterialTheme.typography.titleLarge,
                     )
                 }
-                Text(
-                    text = "Ingredients",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(start = 8.dp),
-                )
             }
         },
+        bottomBar = {
+            IngredientInput(
+                modifier = Modifier.fillMaxWidth(),
+                input = uiState.input,
+                focusInputEvents = focusInputEvents,
+            )
+        },
     ) { paddingValues ->
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-        ) {
-            val gridState = rememberLazyGridState()
-            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+        when (val content = uiState.content) {
+            is UiContent.Loading -> {
+                // Render blank until the first ingredients arrive.
+            }
+
+            is UiContent.Empty -> {
+                EmptyState(
+                    content = content,
+                    modifier = Modifier.padding(paddingValues),
+                )
+            }
+
+            is UiContent.Ingredients -> {
                 LazyVerticalGrid(
-                    state = gridState,
+                    modifier = Modifier.fillMaxWidth(),
                     columns = GridCells.FixedSize(100.dp),
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(8.dp),
+                    contentPadding = paddingValues + PaddingValues(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     ingredientSection(
                         title = null,
-                        ingredients = viewState.inStore,
-                        onClickIngredient = viewState.onClickIngredient,
+                        ingredients = content.inInventory,
                     )
                     ingredientSection(
-                        title = "Previously in store",
-                        ingredients = viewState.previouslyInStore,
-                        onClickIngredient = viewState.onClickIngredient,
-                        onDestroyIngredient = viewState.onDestroyIngredient,
+                        title = content.secondSection.title,
+                        ingredients = content.secondSection.ingredients,
                     )
                 }
-                IngredientScrollbar(
-                    gridState = gridState,
-                    modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
-                )
             }
-
-            IngredientInput(
-                inputText = viewState.inputText,
-                scanningImage = viewState.scanningImage,
-                onInputChange = viewState.onInputChange,
-                onClickAdd = viewState.onClickAdd,
-                onScanImageSelected = viewState.onScanImageSelected,
-                modifier = Modifier.fillMaxWidth(),
-            )
         }
+    }
+}
+
+@Composable
+private fun EmptyState(
+    content: UiContent.Empty,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.fillMaxSize().padding(horizontal = 32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(
+            imageVector = Icons.Default.Kitchen,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.primary,
+        )
+        Text(
+            modifier = Modifier.padding(top = 16.dp),
+            text = content.headline,
+            style = MaterialTheme.typography.headlineSmall,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            modifier = Modifier.padding(top = 8.dp),
+            text = content.description,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
 private fun LazyGridScope.ingredientSection(
     title: String?,
-    ingredients: List<Ingredient>,
-    onClickIngredient: (Ingredient) -> Unit,
-    onDestroyIngredient: ((Ingredient) -> Unit)? = null,
+    ingredients: List<UiIngredient>,
 ) {
     if (ingredients.isEmpty()) return
     if (title != null) {
         stickyHeader(key = title) {
             Text(
+                modifier = Modifier.padding(vertical = 8.dp),
                 text = title,
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(vertical = 8.dp),
             )
         }
     }
-    items(items = ingredients, key = { it.id }) { ingredient ->
+    items(items = ingredients, key = { it.key }) { ingredient ->
         IngredientCard(
-            ingredient = ingredient,
-            onClick = { onClickIngredient(ingredient) },
-            onDestroy = onDestroyIngredient?.let { { it(ingredient) } },
             modifier = Modifier.animateItem(),
+            ingredient = ingredient,
         )
     }
 }
 
 @Composable
 private fun IngredientCard(
-    ingredient: Ingredient,
-    onClick: () -> Unit,
+    ingredient: UiIngredient,
     modifier: Modifier = Modifier,
-    onDestroy: (() -> Unit)? = null,
 ) {
     Surface(
-        modifier =
-            modifier
-                .size(100.dp)
-                .clickable(onClick = onClick),
+        modifier = modifier.size(100.dp).clickable { ingredient.onClick(ingredient.key) },
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
@@ -180,31 +233,42 @@ private fun IngredientCard(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .alpha(if (ingredient.inInventory) 1f else 0.5f)
-                        .padding(8.dp),
+                        .alpha(if (ingredient.dimmed) 0.5f else 1f)
+                        .padding(horizontal = 4.dp, vertical = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                EmojiAvatar(EmojiAvatarModel.of(ingredient.emoji, ingredient.name))
+                EmojiAvatar(ingredient.icon)
                 Text(
+                    modifier = Modifier.padding(top = 4.dp),
                     text = ingredient.name,
                     style = MaterialTheme.typography.bodySmall,
-                    maxLines = 1,
+                    minLines = 2,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
-            if (onDestroy != null) {
+            if (ingredient.isNew) {
+                Box(
+                    modifier =
+                        Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(6.dp)
+                            .size(8.dp)
+                            .background(MaterialTheme.colorScheme.secondary, CircleShape),
+                )
+            }
+            if (ingredient.onClickDestroy != null) {
                 IconButton(
-                    onClick = onDestroy,
                     modifier = Modifier.align(Alignment.BottomEnd).size(32.dp),
+                    onClick = { ingredient.onClickDestroy(ingredient.key) },
                 ) {
                     Icon(
+                        modifier = Modifier.size(18.dp),
                         imageVector = Icons.Default.Delete,
                         contentDescription = "Delete",
                         tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(18.dp),
                     )
                 }
             }
@@ -214,74 +278,70 @@ private fun IngredientCard(
 
 @Composable
 private fun IngredientInput(
-    inputText: String,
-    scanningImage: Boolean,
-    onInputChange: (String) -> Unit,
-    onClickAdd: (() -> Unit)?,
-    onScanImageSelected: (Path) -> Unit,
+    input: UiInput,
+    focusInputEvents: Flow<Unit>,
     modifier: Modifier = Modifier,
 ) {
-    Surface(
-        modifier = modifier,
-        shadowElevation = 8.dp,
-    ) {
-        Row(
+    Surface(modifier = modifier) {
+        Column(
             modifier =
                 Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    .windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
+                    ).padding(bottom = 16.dp, top = 4.dp),
         ) {
-            TextField(
-                value = inputText,
-                onValueChange = onInputChange,
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .onPreviewKeyEvent { keyEvent ->
-                            if (keyEvent.key == Key.Enter && keyEvent.type == KeyEventType.KeyDown) {
-                                if (keyEvent.isShiftPressed) {
-                                    false
-                                } else {
-                                    onClickAdd?.invoke()
-                                    true
-                                }
-                            } else {
-                                false
+            val focusRequester = remember { FocusRequester() }
+            LaunchedEffect(focusInputEvents) {
+                focusInputEvents.collect { focusRequester.requestFocus() }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                TextField(
+                    value = input.text,
+                    onValueChange = input.onTextChange,
+                    modifier = Modifier.weight(1f).focusRequester(focusRequester),
+                    placeholder = { Text("Add an ingredient...") },
+                    singleLine = true,
+                    keyboardOptions =
+                        KeyboardOptions(
+                            keyboardType = KeyboardType.Text,
+                            capitalization = KeyboardCapitalization.Sentences,
+                            imeAction = ImeAction.Done,
+                        ),
+                    keyboardActions = KeyboardActions(onDone = { input.onClickAdd?.invoke() }),
+                )
+                val scope = rememberCoroutineScope()
+                if (input.onScanImageSelected == null) {
+                    // Scanning can take a while; show progress in place of the camera button.
+                    Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    }
+                } else {
+                    IconButton(
+                        onClick = {
+                            scope.launch {
+                                pickImageFile()?.let(input.onScanImageSelected)
                             }
                         },
-                placeholder = { Text("Add an ingredient...") },
-                singleLine = true,
-            )
-            val scope = rememberCoroutineScope()
-            if (scanningImage) {
-                // Scanning can take a while; show progress in place of the camera button.
-                Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CameraAlt,
+                            contentDescription = "Scan ingredients from image",
+                        )
+                    }
                 }
-            } else {
                 IconButton(
-                    onClick = {
-                        scope.launch {
-                            pickImageFile()?.let(onScanImageSelected)
-                        }
-                    },
+                    onClick = { input.onClickAdd?.invoke() },
+                    enabled = input.onClickAdd != null,
                 ) {
                     Icon(
-                        imageVector = Icons.Default.CameraAlt,
-                        contentDescription = "Scan ingredients from image",
+                        imageVector = Icons.AutoMirrored.Filled.Send,
+                        contentDescription = "Add",
                     )
                 }
-            }
-            IconButton(
-                onClick = { onClickAdd?.invoke() },
-                enabled = onClickAdd != null,
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Send,
-                    contentDescription = "Add",
-                )
             }
         }
     }
