@@ -61,13 +61,13 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.navigation.Screen
 import se.gustavkarlsson.chefgpt.navigation.Screen.Id
 import se.gustavkarlsson.chefgpt.plus
 import se.gustavkarlsson.chefgpt.recipes.Ingredient
 import se.gustavkarlsson.chefgpt.recipes.Nutrient
 import se.gustavkarlsson.chefgpt.recipes.Recipe
-import se.gustavkarlsson.chefgpt.recipes.RecipeId
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 import se.gustavkarlsson.chefgpt.theme.LocalMarkdownTypography
 import kotlin.time.Duration

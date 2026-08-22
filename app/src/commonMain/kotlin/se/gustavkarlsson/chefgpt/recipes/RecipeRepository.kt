@@ -3,6 +3,7 @@ package se.gustavkarlsson.chefgpt.recipes
 import com.github.michaelbull.result.Result
 import kotlinx.coroutines.flow.Flow
 import se.gustavkarlsson.chefgpt.ClientError
+import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 
 interface RecipeRepository {

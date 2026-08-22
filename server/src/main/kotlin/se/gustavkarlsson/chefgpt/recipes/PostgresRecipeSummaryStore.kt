@@ -4,7 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import se.gustavkarlsson.chefgpt.api.ApiRecipeSummary
-import se.gustavkarlsson.chefgpt.api.RecipeSummaryId
+import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.api.SpoonacularId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.postgres.DatabaseAccess
@@ -28,7 +28,7 @@ class PostgresRecipeSummaryStore(
 
     override suspend fun getRecipeSummary(
         userId: UserId,
-        id: RecipeSummaryId,
+        id: RecipeId,
     ): ApiRecipeSummary? =
         db.use {
             recipeSummaryQueries
@@ -62,7 +62,7 @@ class PostgresRecipeSummaryStore(
 
     override suspend fun deleteRecipeSummary(
         userId: UserId,
-        id: RecipeSummaryId,
+        id: RecipeId,
     ): Boolean {
         val deleted =
             db.use {
@@ -83,5 +83,4 @@ private fun toApiRecipeSummary(
     title: String,
     spoonacularId: Long,
     imageUrl: String?,
-): ApiRecipeSummary =
-    ApiRecipeSummary(RecipeSummaryId(id.toKotlinUuid()), title, SpoonacularId(spoonacularId), imageUrl)
+): ApiRecipeSummary = ApiRecipeSummary(RecipeId(id.toKotlinUuid()), title, SpoonacularId(spoonacularId), imageUrl)

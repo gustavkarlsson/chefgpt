@@ -20,7 +20,7 @@ import se.gustavkarlsson.chefgpt.api.ApiNutrient
 import se.gustavkarlsson.chefgpt.api.ApiRecipe
 import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
 import se.gustavkarlsson.chefgpt.api.ImageUrl
-import se.gustavkarlsson.chefgpt.api.RecipeSummaryId
+import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.recipes.RecipeClient
 import se.gustavkarlsson.chefgpt.recipes.RecipeSummaryStore
 import se.gustavkarlsson.chefgpt.requireSession
@@ -30,23 +30,23 @@ private fun formatValue(amount: Double): String =
     if (amount == kotlin.math.floor(amount)) amount.toInt().toString() else "%.1f".format(amount)
 
 fun Route.getRecipeRoute() {
-    get("/recipe-summaries/{id}") {
+    get("/recipes/{id}") {
         val recipeSummaryStore = get<RecipeSummaryStore>()
         val recipeClient = get<RecipeClient>()
         val json = get<Json>()
         val userId = call.requireSession().user.id
         val id =
-            RecipeSummaryId.parseOrNull(call.parameters.getOrFail("id"))
+            RecipeId.parseOrNull(call.parameters.getOrFail("id"))
                 ?: return@get call.respond(
                     HttpStatusCode.BadRequest,
-                    ApiError("invalid-recipe-summary-id", "Invalid recipe summary id"),
+                    ApiError("invalid-recipe-id", "Invalid recipe id"),
                 )
 
         val summary =
             recipeSummaryStore.getRecipeSummary(userId, id)
                 ?: return@get call.respond(
                     HttpStatusCode.NotFound,
-                    ApiError("recipe-summary-not-found", "Recipe summary not found"),
+                    ApiError("recipe-not-found", "Recipe not found"),
                 )
 
         // TODO Don't parse the raw JSON ad hoc like this. RecipeClient should expose a

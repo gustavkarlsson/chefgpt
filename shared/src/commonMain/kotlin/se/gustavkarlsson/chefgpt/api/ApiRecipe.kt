@@ -6,7 +6,7 @@ import kotlin.time.Duration
 
 @Serializable
 data class ApiRecipe(
-    val id: RecipeSummaryId,
+    val id: RecipeId,
     val spoonacularId: SpoonacularId,
     val title: String,
     val imageUrl: ImageUrl? = null,
