@@ -2,7 +2,7 @@ package se.gustavkarlsson.chefgpt.recipes
 
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
-import se.gustavkarlsson.chefgpt.api.RecipeSummaryId
+import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.api.SpoonacularId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import kotlin.test.Test
@@ -71,7 +71,7 @@ class InMemoryRecipeSummaryStoreTest {
     @Test
     fun `deleteRecipeSummary returns false when the recipe summary does not exist`() =
         runTest {
-            assertFalse(store.deleteRecipeSummary(userId, RecipeSummaryId.random()))
+            assertFalse(store.deleteRecipeSummary(userId, RecipeId.random()))
         }
 
     @Test

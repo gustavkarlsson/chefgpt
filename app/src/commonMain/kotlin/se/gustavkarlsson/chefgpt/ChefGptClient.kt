@@ -53,7 +53,7 @@ import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.api.IngredientId
-import se.gustavkarlsson.chefgpt.api.RecipeSummaryId
+import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.api.SpoonacularId
 import se.gustavkarlsson.chefgpt.debug.Settings
 import se.gustavkarlsson.chefgpt.sessions.SessionId
@@ -316,11 +316,11 @@ class ChefGptClient(
 
     suspend fun deleteRecipeSummary(
         sessionId: SessionId,
-        recipeSummaryId: RecipeSummaryId,
+        recipeId: RecipeId,
     ): Result<Unit, ClientError> =
         request(
             send = { baseUrl ->
-                delete("$baseUrl/recipe-summaries/$recipeSummaryId") {
+                delete("$baseUrl/recipe-summaries/$recipeId") {
                     sessionIdHeader(sessionId)
                 }
             },
@@ -329,11 +329,11 @@ class ChefGptClient(
 
     suspend fun getRecipe(
         sessionId: SessionId,
-        recipeSummaryId: RecipeSummaryId,
+        recipeId: RecipeId,
     ): Result<ApiRecipe, ClientError> =
         request(
             send = { baseUrl ->
-                get("$baseUrl/recipe-summaries/$recipeSummaryId") {
+                get("$baseUrl/recipes/$recipeId") {
                     sessionIdHeader(sessionId)
                     accept(ContentType.Application.Json)
                 }
