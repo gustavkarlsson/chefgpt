@@ -1,0 +1,93 @@
+-- Recipes that have been modified are represented by their modification, which
+-- takes their place until it is kept as a copy or overwrites them.
+selectSummariesByUserId:
+SELECT r.id, r.title, r.spoonacular_id, r.image_url, r.favorite, r.modified_from
+FROM recipe r
+WHERE r.user_id = ?
+  AND NOT EXISTS (SELECT 1 FROM recipe m WHERE m.modified_from = r.id);
+
+selectByUserIdAndId:
+SELECT *
+FROM recipe
+WHERE user_id = ? AND id = ?;
+
+selectStepsByRecipeId:
+SELECT instruction
+FROM recipe_step
+WHERE recipe_id = ?
+ORDER BY position;
+
+selectIngredientsByRecipeId:
+SELECT name, amount, unit
+FROM recipe_ingredient
+WHERE recipe_id = ?
+ORDER BY position;
+
+selectNutrientsByRecipeId:
+SELECT name, amount, unit
+FROM recipe_nutrient
+WHERE recipe_id = ?
+ORDER BY position;
+
+insert:
+INSERT INTO recipe (user_id, spoonacular_id, title, image_url, description,
+                    preparation_minutes, cooking_minutes, total_minutes, favorite, modified_from)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+RETURNING id;
+
+insertStep:
+INSERT INTO recipe_step (recipe_id, position, instruction)
+VALUES (?, ?, ?);
+
+insertIngredient:
+INSERT INTO recipe_ingredient (recipe_id, position, name, amount, unit)
+VALUES (?, ?, ?, ?, ?);
+
+insertNutrient:
+INSERT INTO recipe_nutrient (recipe_id, position, name, amount, unit)
+VALUES (?, ?, ?, ?, ?);
+
+updateByUserIdAndId:
+UPDATE recipe
+SET title               = COALESCE(:title, title),
+    image_url           = COALESCE(:imageUrl, image_url),
+    description         = COALESCE(:description, description),
+    preparation_minutes = COALESCE(:preparationMinutes, preparation_minutes),
+    cooking_minutes     = COALESCE(:cookingMinutes, cooking_minutes),
+    total_minutes       = COALESCE(:totalMinutes, total_minutes)
+WHERE user_id = :userId AND id = :id
+RETURNING id;
+
+selectIdByUserIdAndModifiedFrom:
+SELECT id
+FROM recipe
+WHERE user_id = ? AND modified_from = ?;
+
+clearModifiedFromByUserIdAndId:
+UPDATE recipe
+SET modified_from = NULL
+WHERE user_id = :userId AND id = :id
+RETURNING id;
+
+setFavoriteByUserIdAndId:
+UPDATE recipe
+SET favorite = :favorite
+WHERE user_id = :userId AND id = :id
+RETURNING id;
+
+deleteStepsByRecipeId:
+DELETE FROM recipe_step
+WHERE recipe_id = ?;
+
+deleteIngredientsByRecipeId:
+DELETE FROM recipe_ingredient
+WHERE recipe_id = ?;
+
+deleteNutrientsByRecipeId:
+DELETE FROM recipe_nutrient
+WHERE recipe_id = ?;
+
+deleteByUserIdAndId:
+DELETE FROM recipe
+WHERE user_id = ? AND id = ?
+RETURNING id;

@@ -1,11 +1,18 @@
 {
     "request": {
-        "method": "DELETE",
-        "url": "http://localhost/recipe-summaries/00000000-0000-0000-0000-000000000000",
+        "method": "PATCH",
+        "url": "http://localhost/recipes/00000000-0000-0000-0000-000000000000",
         "headers": {
             "Session-Id": "00000000000000000000000000000000",
             "Accept": "application/json",
+            "Content-Type": "application/json",
             "Content-Length": "0"
+        },
+        "body": {
+            "type": "json",
+            "data": {
+                "favorite": true
+            }
         }
     },
     "response": {
@@ -17,8 +24,8 @@
         "body": {
             "type": "json",
             "data": {
-                "type": "recipe-summary-not-found",
-                "message": "Recipe summary not found"
+                "type": "recipe-not-found",
+                "message": "Recipe not found"
             }
         }
     }

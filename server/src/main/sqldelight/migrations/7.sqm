@@ -1,0 +1,48 @@
+DROP INDEX idx_recipe_summary_user_id;
+DROP TABLE recipe_summary;
+
+CREATE TABLE recipe
+(
+    id                  UUID    NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id             UUID    NOT NULL REFERENCES "user" (id) ON DELETE CASCADE,
+    spoonacular_id      BIGINT,
+    title               TEXT    NOT NULL,
+    image_url           TEXT,
+    description         TEXT,
+    preparation_minutes INT,
+    cooking_minutes     INT,
+    total_minutes       INT,
+    favorite            BOOLEAN NOT NULL,
+    modified_from       UUID REFERENCES recipe (id) ON DELETE SET NULL
+);
+
+CREATE INDEX idx_recipe_user_id ON recipe (user_id);
+CREATE UNIQUE INDEX idx_recipe_modified_from ON recipe (modified_from);
+
+CREATE TABLE recipe_step
+(
+    recipe_id   UUID NOT NULL REFERENCES recipe (id) ON DELETE CASCADE,
+    position    INT  NOT NULL,
+    instruction TEXT NOT NULL,
+    PRIMARY KEY (recipe_id, position)
+);
+
+CREATE TABLE recipe_ingredient
+(
+    recipe_id UUID NOT NULL REFERENCES recipe (id) ON DELETE CASCADE,
+    position  INT  NOT NULL,
+    name      TEXT NOT NULL,
+    amount    TEXT NOT NULL,
+    unit      TEXT,
+    PRIMARY KEY (recipe_id, position)
+);
+
+CREATE TABLE recipe_nutrient
+(
+    recipe_id UUID NOT NULL REFERENCES recipe (id) ON DELETE CASCADE,
+    position  INT  NOT NULL,
+    name      TEXT NOT NULL,
+    amount    TEXT NOT NULL,
+    unit      TEXT,
+    PRIMARY KEY (recipe_id, position)
+);

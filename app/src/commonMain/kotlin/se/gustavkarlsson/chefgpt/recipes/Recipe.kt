@@ -8,6 +8,8 @@ data class Recipe(
     val id: RecipeId,
     val title: String,
     val imageUrl: ImageUrl? = null,
+    val favorite: Boolean = false,
+    val modifiedFrom: RecipeId? = null,
     val description: String? = null,
     val preparationDuration: Duration? = null,
     val cookingDuration: Duration? = null,

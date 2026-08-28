@@ -19,13 +19,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -35,6 +38,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
@@ -57,6 +61,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.mikepenz.markdown.m3.Markdown
+import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
@@ -69,6 +74,9 @@ import se.gustavkarlsson.chefgpt.recipes.Ingredient
 import se.gustavkarlsson.chefgpt.recipes.Nutrient
 import se.gustavkarlsson.chefgpt.recipes.Recipe
 import se.gustavkarlsson.chefgpt.sessions.SessionId
+import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessage
+import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessageHost
+import se.gustavkarlsson.chefgpt.snackbar.rememberSnackbarHostState
 import se.gustavkarlsson.chefgpt.theme.LocalMarkdownTypography
 import kotlin.time.Duration
 
@@ -86,7 +94,7 @@ data class RecipeDetailScreen(
     override fun Content() {
         val viewModel = koinViewModel<RecipeDetailViewModel> { parametersOf(this) }
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-        Content(uiState)
+        Content(uiState, viewModel.snackbarMessages)
     }
 }
 
@@ -94,16 +102,19 @@ data class RecipeDetailScreen(
 @Composable
 private fun Content(
     uiState: RecipeDetailUiState,
+    snackbarMessages: Flow<SnackbarMessage>,
     modifier: Modifier = Modifier,
 ) {
+    val loaded = uiState.content as? RecipeDetailUiState.Content.Loaded
+    val snackbarHostState = rememberSnackbarHostState(snackbarMessages)
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        snackbarHost = { SnackbarMessageHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 windowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
                 title = {
-                    val title =
-                        (uiState.content as? RecipeDetailUiState.Content.Loaded)?.recipe?.title ?: ""
+                    val title = loaded?.recipe?.title ?: ""
                     Text(
                         text = title,
                         maxLines = 1,
@@ -118,13 +129,84 @@ private fun Content(
                         )
                     }
                 },
+                actions = {
+                    if (loaded != null) {
+                        IconButton(onClick = loaded.onClickToggleFavorite) {
+                            Icon(
+                                imageVector =
+                                    if (loaded.recipe.favorite) Icons.Default.Star else Icons.Outlined.StarBorder,
+                                contentDescription =
+                                    if (loaded.recipe.favorite) "Remove from favorites" else "Add to favorites",
+                            )
+                        }
+                    }
+                },
             )
+        },
+        bottomBar = {
+            val modificationActions = loaded?.modificationActions
+            if (modificationActions != null) {
+                ModificationBar(modificationActions)
+            }
         },
     ) { paddingValues ->
         when (val content = uiState.content) {
             RecipeDetailUiState.Content.Loading -> LoadingContent(paddingValues)
             is RecipeDetailUiState.Content.Error -> ErrorContent(content, paddingValues)
             is RecipeDetailUiState.Content.Loaded -> LoadedContent(content.recipe, paddingValues)
+        }
+    }
+}
+
+// Shown for a recipe that is a modified version of another one, until the user decides
+// what should happen to it.
+@Composable
+private fun ModificationBar(
+    actions: RecipeDetailUiState.ModificationActions,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.surfaceVariant,
+    ) {
+        Column(
+            modifier =
+                Modifier
+                    .windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
+                    ).padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = "Edited version of another recipe",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(
+                    onClick = { actions.onClickDiscard?.invoke() },
+                    enabled = actions.onClickDiscard != null,
+                ) {
+                    Text("Discard")
+                }
+                Spacer(Modifier.weight(1f))
+                TextButton(
+                    onClick = { actions.onClickSaveAsCopy?.invoke() },
+                    enabled = actions.onClickSaveAsCopy != null,
+                ) {
+                    Text("Save as copy")
+                }
+                Button(
+                    onClick = { actions.onClickOverwriteOriginal?.invoke() },
+                    enabled = actions.onClickOverwriteOriginal != null,
+                ) {
+                    Text("Overwrite original")
+                }
+            }
         }
     }
 }

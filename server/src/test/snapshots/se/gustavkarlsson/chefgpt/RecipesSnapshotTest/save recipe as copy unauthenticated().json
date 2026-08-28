@@ -1,15 +1,14 @@
 {
     "request": {
-        "method": "DELETE",
-        "url": "http://localhost/recipe-summaries/00000000-0000-0000-0000-000000000000",
+        "method": "POST",
+        "url": "http://localhost/recipes/00000000-0000-0000-0000-000000000000/save-as-copy",
         "headers": {
-            "Session-Id": "00000000000000000000000000000000",
             "Accept": "application/json",
             "Content-Length": "0"
         }
     },
     "response": {
-        "status": 204,
+        "status": 401,
         "headers": {
             "Content-Length": "0"
         }

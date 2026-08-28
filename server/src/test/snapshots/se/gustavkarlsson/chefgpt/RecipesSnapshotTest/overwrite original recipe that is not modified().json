@@ -1,7 +1,7 @@
 {
     "request": {
-        "method": "DELETE",
-        "url": "http://localhost/recipe-summaries/not-a-uuid",
+        "method": "POST",
+        "url": "http://localhost/recipes/00000000-0000-0000-0000-000000000000/overwrite-original",
         "headers": {
             "Session-Id": "00000000000000000000000000000000",
             "Accept": "application/json",
@@ -9,7 +9,7 @@
         }
     },
     "response": {
-        "status": 400,
+        "status": 409,
         "headers": {
             "Content-Length": "0",
             "Content-Type": "application/json"
@@ -17,8 +17,8 @@
         "body": {
             "type": "json",
             "data": {
-                "type": "invalid-recipe-summary-id",
-                "message": "Invalid recipe summary id"
+                "type": "recipe-not-modified",
+                "message": "Recipe is not a modified version of another recipe"
             }
         }
     }

@@ -46,8 +46,21 @@ fun Application.installKoog() {
 
                     If there are too few results, suggest that the user updates their ingredients.
 
-                    When the user has picked a recipe, save it for them using the
-                    saveRecipeSummary tool, then present it to them.
+                    When the user asks you to keep or save a recipe, save it with
+                    the saveRecipe tool.
+
+                    When they say they want to come back to a recipe — that they like
+                    it, want to keep it handy, or want it among their favorites — mark
+                    it with setRecipeFavorite.
+
+                    If the user wants a saved recipe changed — an ingredient
+                    substituted, the servings scaled, the steps simplified — read it
+                    with getRecipe (use listRecipes to find it) and write only the
+                    changed parts back with modifyRecipe, leaving everything else as
+                    it is. That stores a modified version, which the user sees in place
+                    of the recipe it came from while they make up their mind. When they
+                    want it to stick, call overwriteOriginalRecipe to let it replace the
+                    recipe it was modified from, or saveRecipeAsCopy to keep both.
 
                     Whenever you have suggestions for the user to choose from —
                     such as recipes, cuisines, dietary preferences, or any other

@@ -7,10 +7,12 @@ import kotlin.time.Duration
 @Serializable
 data class ApiRecipe(
     val id: RecipeId,
-    val spoonacularId: SpoonacularId,
+    val spoonacularId: SpoonacularId? = null,
     val title: String,
     val imageUrl: ImageUrl? = null,
     val steps: List<String>,
+    val favorite: Boolean = false,
+    val modifiedFrom: RecipeId? = null,
     val description: String? = null,
     @Serializable(with = DurationSerializer::class)
     val preparationDuration: Duration? = null,
@@ -26,12 +28,12 @@ data class ApiRecipe(
 data class ApiRecipeIngredient(
     val name: String,
     val value: String,
-    val unit: String,
+    val unit: String? = null,
 )
 
 @Serializable
 data class ApiNutrient(
     val name: String,
     val value: String,
-    val unit: String,
+    val unit: String? = null,
 )

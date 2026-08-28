@@ -1,7 +1,7 @@
 {
     "request": {
-        "method": "GET",
-        "url": "http://localhost/recipes/00000000-0000-0000-0000-000000000000",
+        "method": "POST",
+        "url": "http://localhost/recipes/00000000-0000-0000-0000-000000000000/save-as-copy",
         "headers": {
             "Session-Id": "00000000000000000000000000000000",
             "Accept": "application/json",
@@ -19,7 +19,7 @@
             "data": {
                 "id": "00000000-0000-0000-0000-000000000000",
                 "spoonacularId": 716429,
-                "title": "Spaghetti Carbonara",
+                "title": "Vegetarian carbonara",
                 "imageUrl": "https://img.spoonacular.com/recipes/716429-556x370.jpg",
                 "steps": [
                     "Bring a large pot of salted water to a boil.",
@@ -28,6 +28,7 @@
                     "Combine hot pasta with pancetta, then add egg mixture and toss quickly.",
                     "Season with black pepper and serve immediately."
                 ],
+                "favorite": false,
                 "description": "A classic Italian pasta dish.",
                 "duration": "PT30M",
                 "ingredients": [
@@ -43,8 +44,7 @@
                     },
                     {
                         "name": "eggs",
-                        "value": "4",
-                        "unit": ""
+                        "value": "4"
                     },
                     {
                         "name": "parmesan cheese",

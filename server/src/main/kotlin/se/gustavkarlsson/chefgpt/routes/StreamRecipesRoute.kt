@@ -4,19 +4,19 @@ import io.ktor.server.routing.Route
 import io.ktor.server.sse.send
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.ktor.ext.get
-import se.gustavkarlsson.chefgpt.recipes.RecipeSummaryStore
+import se.gustavkarlsson.chefgpt.recipes.RecipeStore
 import se.gustavkarlsson.chefgpt.requireSession
 import se.gustavkarlsson.chefgpt.util.sse
 
-fun Route.streamRecipeSummariesRoute() {
-    sse("/recipe-summaries") {
-        val recipeSummaryStore = get<RecipeSummaryStore>()
+fun Route.streamRecipesRoute() {
+    sse("/recipes") {
+        val recipeStore = get<RecipeStore>()
         val userId = call.requireSession().user.id
 
-        recipeSummaryStore
+        recipeStore
             .streamRecipeSummaries(userId)
             .collectLatest { recipeSummaries ->
-                send(recipeSummaries, "recipe-summaries")
+                send(recipeSummaries, "recipes")
             }
     }
 }

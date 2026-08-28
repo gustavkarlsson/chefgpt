@@ -11,7 +11,6 @@ import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.ClientError
 import se.gustavkarlsson.chefgpt.api.ApiRecipe
 import se.gustavkarlsson.chefgpt.api.ApiRecipeSummary
-import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 
@@ -35,28 +34,61 @@ class ApiRecipeRepository(
             .onOk { log.i { "Got recipe: $recipeId" } }
             .onErr { log.e { "Failed to get recipe: $recipeId" } }
 
+    override suspend fun setFavorite(
+        sessionId: SessionId,
+        recipeId: RecipeId,
+        favorite: Boolean,
+    ): Result<Unit, ClientError> =
+        client
+            .setRecipeFavorite(sessionId, recipeId, favorite)
+            .onOk { log.i { "Set favorite=$favorite on recipe: $recipeId" } }
+            .onErr { log.e { "Failed to set favorite=$favorite on recipe: $recipeId" } }
+
+    override suspend fun overwriteOriginal(
+        sessionId: SessionId,
+        recipeId: RecipeId,
+    ): Result<Recipe, ClientError> =
+        client
+            .overwriteOriginalRecipe(sessionId, recipeId)
+            .map { it.toRecipe() }
+            .onOk { log.i { "Overwrote the recipe modified by: $recipeId" } }
+            .onErr { log.e { "Failed to overwrite the recipe modified by: $recipeId" } }
+
+    override suspend fun saveAsCopy(
+        sessionId: SessionId,
+        recipeId: RecipeId,
+    ): Result<Recipe, ClientError> =
+        client
+            .saveRecipeAsCopy(sessionId, recipeId)
+            .map { it.toRecipe() }
+            .onOk { log.i { "Saved recipe as a copy: $recipeId" } }
+            .onErr { log.e { "Failed to save recipe as a copy: $recipeId" } }
+
     override suspend fun delete(
         sessionId: SessionId,
         recipeId: RecipeId,
     ): Result<Unit, ClientError> =
         client
-            .deleteRecipeSummary(sessionId, recipeId)
+            .deleteRecipe(sessionId, recipeId)
             .onOk { log.i { "Deleted recipe: $recipeId" } }
             .onErr { log.e { "Failed to delete recipe: $recipeId" } }
 }
 
 private fun formatAmount(
     value: String,
-    unit: String,
-): String = if (unit.isEmpty()) value else "$value $unit"
+    unit: String?,
+): String = if (unit == null) value else "$value $unit"
 
-private fun ApiRecipeSummary.toRecipeSummary(): RecipeSummary = RecipeSummary(id, title, imageUrl?.let(::ImageUrl))
+private fun ApiRecipeSummary.toRecipeSummary(): RecipeSummary =
+    RecipeSummary(id, title, imageUrl, favorite, modifiedFrom)
 
 private fun ApiRecipe.toRecipe(): Recipe =
     Recipe(
         id = id,
         title = title,
         imageUrl = imageUrl,
+        favorite = favorite,
+        modifiedFrom = modifiedFrom,
         description = description,
         preparationDuration = preparationDuration,
         cookingDuration = cookingDuration,

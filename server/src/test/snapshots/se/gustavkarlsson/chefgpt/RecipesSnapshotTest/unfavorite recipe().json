@@ -1,0 +1,107 @@
+{
+    "request": {
+        "method": "PATCH",
+        "url": "http://localhost/recipes/00000000-0000-0000-0000-000000000000",
+        "headers": {
+            "Session-Id": "00000000000000000000000000000000",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Content-Length": "0"
+        },
+        "body": {
+            "type": "json",
+            "data": {
+                "favorite": false
+            }
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Length": "0",
+            "Content-Type": "application/json"
+        },
+        "body": {
+            "type": "json",
+            "data": {
+                "id": "00000000-0000-0000-0000-000000000000",
+                "spoonacularId": 716429,
+                "title": "Spaghetti Carbonara",
+                "imageUrl": "https://img.spoonacular.com/recipes/716429-556x370.jpg",
+                "steps": [
+                    "Bring a large pot of salted water to a boil.",
+                    "Cook pancetta in a skillet over medium heat until crispy.",
+                    "Mix eggs and parmesan cheese in a bowl.",
+                    "Combine hot pasta with pancetta, then add egg mixture and toss quickly.",
+                    "Season with black pepper and serve immediately."
+                ],
+                "favorite": false,
+                "description": "A classic Italian pasta dish.",
+                "duration": "PT30M",
+                "ingredients": [
+                    {
+                        "name": "spaghetti",
+                        "value": "400",
+                        "unit": "g"
+                    },
+                    {
+                        "name": "pancetta",
+                        "value": "200",
+                        "unit": "g"
+                    },
+                    {
+                        "name": "eggs",
+                        "value": "4"
+                    },
+                    {
+                        "name": "parmesan cheese",
+                        "value": "100",
+                        "unit": "g"
+                    },
+                    {
+                        "name": "black pepper",
+                        "value": "1",
+                        "unit": "tsp"
+                    }
+                ],
+                "nutrients": [
+                    {
+                        "name": "Calories",
+                        "value": "450",
+                        "unit": "kcal"
+                    },
+                    {
+                        "name": "Fat",
+                        "value": "18",
+                        "unit": "g"
+                    },
+                    {
+                        "name": "Protein",
+                        "value": "22",
+                        "unit": "g"
+                    },
+                    {
+                        "name": "Carbohydrates",
+                        "value": "55",
+                        "unit": "g"
+                    },
+                    {
+                        "name": "Fiber",
+                        "value": "3.5",
+                        "unit": "g"
+                    },
+                    {
+                        "name": "Sugar",
+                        "value": "4",
+                        "unit": "g"
+                    },
+                    {
+                        "name": "Sodium",
+                        "value": "620",
+                        "unit": "mg"
+                    }
+                ]
+            }
+        }
+    }
+}
