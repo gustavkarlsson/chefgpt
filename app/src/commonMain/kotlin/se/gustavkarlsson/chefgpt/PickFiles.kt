@@ -9,7 +9,7 @@ expect suspend fun pickFiles(multiple: Boolean): List<Path>
 
 private val imageExtensions = setOf("png", "jpg", "jpeg", "gif", "bmp", "webp")
 
-private val documentExtensions = setOf("pdf", "txt", "md", "csv")
+private val documentExtensions = setOf("pdf", "txt", "csv")
 
 fun isPickable(fileName: String): Boolean = fileName.extension() in imageExtensions + documentExtensions
 
