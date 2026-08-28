@@ -1,0 +1,32 @@
+{
+    "request": {
+        "method": "POST",
+        "url": "http://localhost/files",
+        "headers": {
+            "Session-Id": "00000000000000000000000000000000",
+            "X-File-Name": "recipe.txt",
+            "Accept": "application/json",
+            "Content-Type": "text/plain; charset=UTF-8",
+            "Content-Length": "0"
+        },
+        "body": {
+            "type": "text",
+            "data": "Boil water"
+        }
+    },
+    "response": {
+        "status": 201,
+        "headers": {
+            "Content-Length": "0",
+            "Content-Type": "application/json"
+        },
+        "body": {
+            "type": "json",
+            "data": {
+                "url": "https://example.com/fake.txt",
+                "mimeType": "text/plain",
+                "fileName": "recipe.txt"
+            }
+        }
+    }
+}

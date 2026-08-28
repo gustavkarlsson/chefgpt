@@ -11,6 +11,7 @@ import se.gustavkarlsson.chefgpt.agent.KoogAiAgent
 import se.gustavkarlsson.chefgpt.agent.KoogIngredientScanAgent
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventRepository
+import se.gustavkarlsson.chefgpt.files.ImageCropper
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 import se.gustavkarlsson.chefgpt.recipes.RecipeLookup
 import se.gustavkarlsson.chefgpt.recipes.RecipeStore
@@ -24,9 +25,17 @@ fun Application.createAiAgentModule() =
                     val ingredientStore = get<IngredientStore>()
                     val recipeStore = get<RecipeStore>()
                     val recipeLookup = get<RecipeLookup>()
+                    val imageCropper = get<ImageCropper>()
                     val chatRepository = get<ChatRepository>()
                     val eventRepository = get<EventRepository>()
-                    KoogAiAgent(ingredientStore, recipeStore, recipeLookup, chatRepository, eventRepository)
+                    KoogAiAgent(
+                        ingredientStore,
+                        recipeStore,
+                        recipeLookup,
+                        imageCropper,
+                        chatRepository,
+                        eventRepository,
+                    )
                 }
 
                 "fake" -> {

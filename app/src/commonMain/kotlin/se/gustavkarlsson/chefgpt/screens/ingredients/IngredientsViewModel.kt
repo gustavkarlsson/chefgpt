@@ -5,6 +5,7 @@ import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.onErr
 import com.github.michaelbull.result.onOk
 import io.ktor.http.ContentType
+import io.ktor.http.defaultForFilePath
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -21,6 +22,7 @@ import se.gustavkarlsson.chefgpt.api.IngredientId
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatarModel
 import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
 import se.gustavkarlsson.chefgpt.ingredients.IngredientWords
+import se.gustavkarlsson.chefgpt.isImageFile
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
 import se.gustavkarlsson.chefgpt.sessions.SessionId
@@ -264,12 +266,16 @@ class IngredientsViewModel(
 
     private fun scanImage(image: Path) {
         if (innerState.value.scanningImage) return // Already scanning
+        // The picker offers documents too, but the scanner only reads photos.
+        if (!isImageFile(image.name)) {
+            showSnackbar("That's not a photo I can scan", isError = true)
+            return
+        }
         innerState.update { it.copy(scanningImage = true) }
         viewModelScope.launch {
             try {
-                val extension = image.toString().substringAfterLast('.')
                 client
-                    .scanIngredients(sessionId, image, ContentType("image", extension))
+                    .scanIngredients(sessionId, image, ContentType.defaultForFilePath(image.name))
                     .onOk { count -> log.i { "Scan found $count ingredient(s)" } }
                     .onErr {
                         log.e { "Failed to scan ingredients: $it" }

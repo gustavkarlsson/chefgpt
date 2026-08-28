@@ -1,0 +1,37 @@
+{
+    "request": {
+        "method": "POST",
+        "url": "http://localhost/chats/00000000-0000-0000-0000-000000000000/actions",
+        "headers": {
+            "Session-Id": "00000000000000000000000000000000",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Content-Length": "0"
+        },
+        "body": {
+            "type": "json",
+            "data": {
+                "type": "api-user-sends-message",
+                "text": "Can you save this?",
+                "attachments": [
+                    {
+                        "url": "https://res.cloudinary.com/demo/image/upload/v1/page.jpg",
+                        "mimeType": "image/jpeg",
+                        "fileName": "page.jpg"
+                    },
+                    {
+                        "url": "https://res.cloudinary.com/demo/raw/upload/v1/recipe.txt",
+                        "mimeType": "text/plain",
+                        "fileName": "recipe.txt"
+                    }
+                ]
+            }
+        }
+    },
+    "response": {
+        "status": 204,
+        "headers": {
+            "Content-Length": "0"
+        }
+    }
+}

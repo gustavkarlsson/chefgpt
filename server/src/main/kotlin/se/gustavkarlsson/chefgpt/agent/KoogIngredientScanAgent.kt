@@ -12,8 +12,9 @@ import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
 import io.ktor.server.routing.RoutingContext
-import se.gustavkarlsson.chefgpt.api.ImageUrl
+import se.gustavkarlsson.chefgpt.api.ApiAttachment
 import se.gustavkarlsson.chefgpt.auth.UserId
+import se.gustavkarlsson.chefgpt.files.format
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 import se.gustavkarlsson.chefgpt.ingredients.toTools
 
@@ -43,13 +44,8 @@ class KoogIngredientScanAgent(
 ) : IngredientScanAgent {
     override suspend fun RoutingContext.scan(
         userId: UserId,
-        imageUrl: ImageUrl,
+        image: ApiAttachment,
     ): Result<Int, String> {
-        val format =
-            imageUrl.value
-                .substringAfterLast('.')
-                .substringBefore('?')
-                .ifEmpty { "jpeg" }
         val agent =
             AIAgent(
                 promptExecutor = llm(),
@@ -59,7 +55,14 @@ class KoogIngredientScanAgent(
                             prompt("scan-ingredients") {
                                 system(SYSTEM_PROMPT)
                                 user {
-                                    image(AttachmentSource.Image(AttachmentContent.URL(imageUrl.value), format))
+                                    image(
+                                        AttachmentSource.Image(
+                                            AttachmentContent.URL(image.url),
+                                            image.format,
+                                            image.mimeType,
+                                            image.fileName,
+                                        ),
+                                    )
                                 }
                             },
                         model = AnthropicModels.Haiku_4_5,

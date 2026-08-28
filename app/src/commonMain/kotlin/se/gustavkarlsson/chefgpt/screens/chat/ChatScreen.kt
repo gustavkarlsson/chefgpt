@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -34,8 +35,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Kitchen
@@ -87,9 +89,10 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatar
+import se.gustavkarlsson.chefgpt.isImageFile
 import se.gustavkarlsson.chefgpt.navigation.Screen
 import se.gustavkarlsson.chefgpt.navigation.Screen.Id
-import se.gustavkarlsson.chefgpt.pickImageFile
+import se.gustavkarlsson.chefgpt.pickFiles
 import se.gustavkarlsson.chefgpt.plus
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessage
@@ -364,17 +367,21 @@ private fun MessageBubble(
             Column {
                 when (message) {
                     is UiMessage.User -> {
-                        message.imageUrl?.let { imageUrl ->
-                            AsyncImage(
-                                modifier =
-                                    Modifier
-                                        .align(Alignment.End)
-                                        .fillMaxWidth()
-                                        .heightIn(max = 300.dp),
-                                model = imageUrl,
-                                contentDescription = "Attached image",
-                                contentScale = ContentScale.Crop,
-                            )
+                        for (attachment in message.attachments) {
+                            if (attachment.isImage) {
+                                AsyncImage(
+                                    modifier =
+                                        Modifier
+                                            .align(Alignment.End)
+                                            .fillMaxWidth()
+                                            .heightIn(max = 300.dp),
+                                    model = attachment.url,
+                                    contentDescription = attachment.label,
+                                    contentScale = ContentScale.Crop,
+                                )
+                            } else {
+                                AttachedFileChip(attachment.label)
+                            }
                         }
                         message.text?.let { MessageText(it) }
                     }
@@ -476,58 +483,158 @@ private fun MessageInput(
         modifier = modifier,
         shadowElevation = 8.dp,
     ) {
-        Row(
+        Column(
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .windowInsetsPadding(
                         WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
                     ).padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            val focusRequester = remember { FocusRequester() }
-            LaunchedEffect(Unit) { focusRequester.requestFocus() }
-            TextField(
+            AttachmentsRow(
+                attachments = input.attachments,
+                onClickRemoveAttachment = input.onClickRemoveAttachment,
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val focusRequester = remember { FocusRequester() }
+                LaunchedEffect(Unit) { focusRequester.requestFocus() }
+                TextField(
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .focusRequester(focusRequester)
+                            .onPreviewKeyEvent { keyEvent ->
+                                if (keyEvent.key == Key.Enter && keyEvent.type == KeyEventType.KeyDown) {
+                                    if (keyEvent.isShiftPressed) {
+                                        false // Allow shift+enter to insert newline
+                                    } else {
+                                        input.onClickSend?.invoke()
+                                        true
+                                    }
+                                } else {
+                                    false
+                                }
+                            },
+                    value = input.text,
+                    onValueChange = input.onTextChanged,
+                    placeholder = { Text("Type a message...") },
+                    keyboardOptions =
+                        KeyboardOptions(
+                            keyboardType = KeyboardType.Text,
+                            capitalization = KeyboardCapitalization.Sentences,
+                        ),
+                )
+
+                AttachFilesButton(onFilesAttached = input.onFilesAttached)
+
+                IconButton(
+                    onClick = { input.onClickSend?.invoke() },
+                    enabled = input.onClickSend != null,
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Send,
+                        contentDescription = "Send",
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AttachFilesButton(
+    onFilesAttached: (List<Path>) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val scope = rememberCoroutineScope()
+    IconButton(
+        modifier = modifier,
+        onClick = {
+            scope.launch {
+                onFilesAttached(pickFiles(multiple = true))
+            }
+        },
+    ) {
+        Icon(
+            imageVector = Icons.Default.AttachFile,
+            contentDescription = "Attach files",
+        )
+    }
+}
+
+@Composable
+private fun AttachmentsRow(
+    attachments: List<Path>,
+    onClickRemoveAttachment: (Path) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (attachments.isEmpty()) return
+    LazyRow(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(attachments, key = { it.toString() }) { attachment ->
+            RemovableAttachment(
+                attachment = attachment,
+                onClickRemove = { onClickRemoveAttachment(attachment) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun RemovableAttachment(
+    attachment: Path,
+    onClickRemove: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
+    Box(
+        modifier =
+            modifier
+                .size(48.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .hoverable(interactionSource = interactionSource)
+                .clickable(onClick = onClickRemove),
+    ) {
+        if (isImageFile(attachment.name)) {
+            AsyncImage(
+                modifier = Modifier.matchParentSize(),
+                model = attachment,
+                contentDescription = attachment.name,
+                contentScale = ContentScale.Crop,
+            )
+        } else {
+            Box(
                 modifier =
                     Modifier
-                        .weight(1f)
-                        .focusRequester(focusRequester)
-                        .onPreviewKeyEvent { keyEvent ->
-                            if (keyEvent.key == Key.Enter && keyEvent.type == KeyEventType.KeyDown) {
-                                if (keyEvent.isShiftPressed) {
-                                    false // Allow shift+enter to insert newline
-                                } else {
-                                    input.onClickSend?.invoke()
-                                    true
-                                }
-                            } else {
-                                false
-                            }
-                        },
-                value = input.text,
-                onValueChange = input.onTextChanged,
-                placeholder = { Text("Type a message...") },
-                keyboardOptions =
-                    KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
-                        capitalization = KeyboardCapitalization.Sentences,
-                    ),
-            )
-
-            AttachedImageButton(
-                attachedImage = input.attachedImage,
-                onImageAttached = input.onImageAttached,
-                onClickClearImage = input.onClickClearImage,
-            )
-
-            IconButton(
-                onClick = { input.onClickSend?.invoke() },
-                enabled = input.onClickSend != null,
+                        .matchParentSize()
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Send,
-                    contentDescription = "Send",
+                    imageVector = Icons.AutoMirrored.Filled.InsertDriveFile,
+                    contentDescription = attachment.name,
+                )
+            }
+        }
+        if (isHovered) {
+            Box(
+                modifier =
+                    Modifier
+                        .matchParentSize()
+                        .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.4f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Clear,
+                    contentDescription = "Remove attachment",
+                    tint = MaterialTheme.colorScheme.inverseOnSurface,
                 )
             }
         }
@@ -535,59 +642,22 @@ private fun MessageInput(
 }
 
 @Composable
-private fun AttachedImageButton(
-    attachedImage: Path?,
-    onImageAttached: (Path) -> Unit,
-    onClickClearImage: (() -> Unit)?,
+private fun AttachedFileChip(
+    label: String,
     modifier: Modifier = Modifier,
 ) {
-    val scope = rememberCoroutineScope()
-    if (attachedImage == null) {
-        IconButton(
-            modifier = modifier,
-            onClick = {
-                scope.launch {
-                    pickImageFile()?.let(onImageAttached)
-                }
-            },
-        ) {
-            Icon(
-                imageVector = Icons.Default.CameraAlt,
-                contentDescription = "Take photo",
-            )
-        }
-    } else {
-        val interactionSource = remember { MutableInteractionSource() }
-        val isHovered by interactionSource.collectIsHoveredAsState()
-        Box(
-            modifier =
-                modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .hoverable(interactionSource = interactionSource)
-                    .clickable { onClickClearImage?.invoke() },
-        ) {
-            AsyncImage(
-                modifier = Modifier.matchParentSize(),
-                model = attachedImage,
-                contentDescription = "Attached image",
-                contentScale = ContentScale.Crop,
-            )
-            if (isHovered) {
-                Box(
-                    modifier =
-                        Modifier
-                            .matchParentSize()
-                            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.4f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Clear,
-                        contentDescription = "Clear image",
-                        tint = MaterialTheme.colorScheme.inverseOnSurface,
-                    )
-                }
-            }
-        }
+    Row(
+        modifier = modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.InsertDriveFile,
+            contentDescription = null,
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+        )
     }
 }

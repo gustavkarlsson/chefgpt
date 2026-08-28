@@ -40,6 +40,7 @@ import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.serialization.json.Json
 import se.gustavkarlsson.chefgpt.api.ApiAction
+import se.gustavkarlsson.chefgpt.api.ApiAttachment
 import se.gustavkarlsson.chefgpt.api.ApiChat
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiEvent
@@ -52,6 +53,7 @@ import se.gustavkarlsson.chefgpt.api.ApiRecipeUpdate
 import se.gustavkarlsson.chefgpt.api.ApiSaveSpoonacularRecipe
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
+import se.gustavkarlsson.chefgpt.api.FILE_NAME_HEADER
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.api.IngredientId
 import se.gustavkarlsson.chefgpt.api.RecipeId
@@ -121,21 +123,22 @@ class ChefGptClient(
             readSafe = { SessionId(headers["Session-Id"]!!) },
         )
 
-    suspend fun uploadImage(
+    suspend fun uploadFile(
         sessionId: SessionId,
         data: Path,
         contentType: ContentType,
-    ): Result<ImageUrl, ClientError> =
+    ): Result<ApiAttachment, ClientError> =
         request(
             send = { baseUrl ->
-                post("$baseUrl/images") {
+                post("$baseUrl/files") {
                     sessionIdHeader(sessionId)
                     contentType(contentType)
-                    accept(ContentType.Text.Plain)
+                    header(FILE_NAME_HEADER, data.name)
+                    accept(ContentType.Application.Json)
                     setBody(data.byteReadChannel())
                 }
             },
-            readSafe = { ImageUrl(bodyAsText()) },
+            readSafe = { body() },
         )
 
     // Uploads the image to the ingredient scanner. The server blocks until the

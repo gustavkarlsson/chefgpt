@@ -14,6 +14,7 @@ import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.chats.EventRepository
 import se.gustavkarlsson.chefgpt.chats.createEvent
+import se.gustavkarlsson.chefgpt.files.AttachmentTextLoader
 import se.gustavkarlsson.chefgpt.getChatId
 import se.gustavkarlsson.chefgpt.requireSession
 import se.gustavkarlsson.chefgpt.respond
@@ -26,7 +27,7 @@ fun Route.chatActionsRoute() {
             .onOk { chatId ->
                 val eventRepository = get<EventRepository>()
                 val action = call.receive<ApiAction>()
-                eventRepository.append(chatId, action.createEvent())
+                eventRepository.append(chatId, action.createEvent(get<AttachmentTextLoader>()))
                 when (action) {
                     is ApiUserJoinedChat -> {
                         Unit

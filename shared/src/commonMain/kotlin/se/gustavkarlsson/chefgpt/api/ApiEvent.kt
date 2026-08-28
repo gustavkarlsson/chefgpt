@@ -91,14 +91,14 @@ data class ApiUserMessage(
     override val id: EventId,
     override val timestamp: Instant,
     val text: String?,
-    val imageUrl: ImageUrl? = null,
+    val attachments: List<ApiAttachment> = emptyList(),
 ) : ApiUserEvent {
     init {
         require(text == null || text.isNotBlank()) {
             "Text must not be blank"
         }
-        require(text != null || imageUrl != null) {
-            "Message must contain text or imageUrl"
+        require(text != null || attachments.isNotEmpty()) {
+            "Message must contain text or attachments"
         }
     }
 }

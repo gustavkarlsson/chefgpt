@@ -2,12 +2,16 @@ package se.gustavkarlsson.chefgpt.screens.chat
 
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
-import com.github.michaelbull.result.Ok
+import com.github.michaelbull.result.Result
+import com.github.michaelbull.result.combine
 import com.github.michaelbull.result.map
 import com.github.michaelbull.result.onErr
 import com.github.michaelbull.result.onOk
 import io.ktor.http.ContentType
+import io.ktor.http.defaultForFilePath
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -19,10 +23,12 @@ import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
 import org.koin.core.annotation.InjectedParam
 import se.gustavkarlsson.chefgpt.ChefGptClient
+import se.gustavkarlsson.chefgpt.ClientError
 import se.gustavkarlsson.chefgpt.api.ApiAgentChatNamed
 import se.gustavkarlsson.chefgpt.api.ApiAgentMessage
 import se.gustavkarlsson.chefgpt.api.ApiAgentMessageChunk
 import se.gustavkarlsson.chefgpt.api.ApiAgentReasoning
+import se.gustavkarlsson.chefgpt.api.ApiAttachment
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiIngredient
 import se.gustavkarlsson.chefgpt.api.ApiSystemEvent
@@ -98,10 +104,10 @@ class ChatViewModel(
             input =
                 UiInput(
                     text = userText,
-                    attachedImage = attachedImage,
+                    attachments = attachments,
                     onTextChanged = ::updateUserText,
-                    onImageAttached = ::attachImage,
-                    onClickClearImage = if (attachedImage != null) ::clearImage else null,
+                    onFilesAttached = ::attachFiles,
+                    onClickRemoveAttachment = ::removeAttachment,
                     onClickSend = if (canSend()) ::sendMessage else null,
                 ),
             onClickBack = navigator::pop,
@@ -165,7 +171,7 @@ class ChatViewModel(
                 }
 
                 is ApiUserMessage -> {
-                    UiMessage.User(event.id.toString(), event.text, event.imageUrl?.toString())
+                    UiMessage.User(event.id.toString(), event.text, event.attachments.map { it.toUiAttachment() })
                 }
             }
         }
@@ -181,7 +187,7 @@ class ChatViewModel(
             !isJoined() -> false
 
             // Nothing to send.
-            else -> userText.isNotBlank() || attachedImage != null
+            else -> userText.isNotBlank() || attachments.isNotEmpty()
         }
 
     init {
@@ -240,12 +246,12 @@ class ChatViewModel(
         innerState.update { it.copy(userText = text) }
     }
 
-    private fun attachImage(image: Path) {
-        innerState.update { it.copy(attachedImage = image) }
+    private fun attachFiles(files: List<Path>) {
+        innerState.update { it.copy(attachments = (it.attachments + files).distinct()) }
     }
 
-    private fun clearImage() {
-        innerState.update { it.copy(attachedImage = null) }
+    private fun removeAttachment(file: Path) {
+        innerState.update { it.copy(attachments = it.attachments - file) }
     }
 
     private fun openIngredients() {
@@ -260,7 +266,7 @@ class ChatViewModel(
     private fun sendAnswer(answer: String) {
         viewModelScope.launch {
             log.i { "Sending answer to ${conversation.chatId}" }
-            conversation.sendAction(ApiUserSendsMessage(answer, imageUrl = null)).onErr { error ->
+            conversation.sendAction(ApiUserSendsMessage(answer)).onErr { error ->
                 log.e { "Failed to send answer: $error" }
                 showSnackbar("Couldn't send answer", isError = true)
             }
@@ -273,24 +279,32 @@ class ChatViewModel(
             //  Do we need to update some kind of "waiting" state?
             val lastState =
                 innerState.getAndUpdate {
-                    it.copy(userText = "", attachedImage = null)
+                    it.copy(userText = "", attachments = emptyList())
                 }
             log.i { "Sending message to ${conversation.chatId}" }
 
-            if (lastState.attachedImage != null) {
-                val extension = lastState.attachedImage.toString().substringAfterLast(".")
-                // TODO Introduce use-case
-                client.uploadImage(sessionId, lastState.attachedImage, ContentType("image", extension))
-            } else {
-                Ok(null)
-            }.map { imageUrl ->
-                conversation.sendAction(ApiUserSendsMessage(lastState.userText, imageUrl))
-            }.onErr { error ->
-                log.e { "Failed to send message: $error" }
-                showSnackbar("Couldn't send message", isError = true)
-            }
+            // TODO Introduce use-case
+            lastState
+                .uploadAttachments()
+                .map { attachments ->
+                    conversation.sendAction(
+                        ApiUserSendsMessage(lastState.userText.ifBlank { null }, attachments),
+                    )
+                }.onErr { error ->
+                    log.e { "Failed to send message: $error" }
+                    showSnackbar("Couldn't send message", isError = true)
+                }
         }
     }
+
+    private suspend fun State.uploadAttachments(): Result<List<ApiAttachment>, ClientError> =
+        coroutineScope {
+            attachments
+                .map { file ->
+                    async { client.uploadFile(sessionId, file, ContentType.defaultForFilePath(file.name)) }
+                }.awaitAll()
+                .combine()
+        }
 
     private suspend fun runSession() =
         coroutineScope {
@@ -325,7 +339,7 @@ data class State(
     val chat: Chat? = null,
     val events: List<ApiEvent> = emptyList(),
     val userText: String = "",
-    val attachedImage: Path? = null,
+    val attachments: List<Path> = emptyList(),
 )
 
 data class UiState(
@@ -353,11 +367,17 @@ sealed interface UiContent {
 
 data class UiInput(
     val text: String,
-    val attachedImage: Path?,
+    val attachments: List<Path>,
     val onTextChanged: (String) -> Unit,
-    val onImageAttached: (Path) -> Unit,
-    val onClickClearImage: (() -> Unit)?,
+    val onFilesAttached: (List<Path>) -> Unit,
+    val onClickRemoveAttachment: (Path) -> Unit,
     val onClickSend: (() -> Unit)?,
+)
+
+data class UiAttachment(
+    val url: String,
+    val isImage: Boolean,
+    val label: String,
 )
 
 sealed interface UiMessage {
@@ -366,7 +386,7 @@ sealed interface UiMessage {
     data class User(
         override val id: String,
         val text: String?,
-        val imageUrl: String?,
+        val attachments: List<UiAttachment>,
     ) : UiMessage
 
     data class Agent(
@@ -393,6 +413,13 @@ data class UiAnswer(
     val text: String,
     val selected: Boolean,
 )
+
+private fun ApiAttachment.toUiAttachment(): UiAttachment =
+    UiAttachment(
+        url = url,
+        isImage = isImage,
+        label = fileName ?: url.substringAfterLast('/'),
+    )
 
 private fun ApiAgentMessageChunk.toUiChunk(selectedAnswerText: String?): UiMessageChunk =
     when (this) {
