@@ -11,13 +11,17 @@ import se.gustavkarlsson.chefgpt.api.ApiAction
 import se.gustavkarlsson.chefgpt.api.ApiAgentChatNamed
 import se.gustavkarlsson.chefgpt.api.ApiAgentMessage
 import se.gustavkarlsson.chefgpt.api.ApiAgentMessageChunk
+import se.gustavkarlsson.chefgpt.api.ApiAttachment
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserJoined
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserMessage
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.EventId
-import se.gustavkarlsson.chefgpt.api.ImageUrl
+import se.gustavkarlsson.chefgpt.files.AttachmentKind
+import se.gustavkarlsson.chefgpt.files.AttachmentTextLoader
+import se.gustavkarlsson.chefgpt.files.format
+import se.gustavkarlsson.chefgpt.files.kind
 import kotlin.time.Clock
 import kotlin.time.Instant
 import ai.koog.prompt.message.Message as KoogMessage
@@ -33,7 +37,7 @@ fun Event.toApiOrNull(): ApiEvent? =
         }
 
         is Event.Message -> {
-            message.toApiOrNull(id, timestamp)
+            message.toApiOrNull(id, timestamp, attachments)
         }
 
         is Event.ChatNamed -> {
@@ -48,20 +52,20 @@ fun Event.toApiOrNull(): ApiEvent? =
 private fun KoogMessage.toApiOrNull(
     id: EventId,
     timestamp: Instant,
+    attachments: List<ApiAttachment>,
 ): ApiEvent? =
     when (this) {
         is KoogMessage.User -> {
             val text = textContent().takeIf { it.isNotBlank() }
-            val imageUrl = imageUrlOrNull()
             // Tool-result-only user messages carry no displayable content
-            if (text == null && imageUrl == null) {
+            if (text == null && attachments.isEmpty()) {
                 null
             } else {
                 ApiUserMessage(
                     id = id,
                     timestamp = timestamp,
                     text = text,
-                    imageUrl = imageUrl,
+                    attachments = attachments,
                 )
             }
         }
@@ -85,20 +89,7 @@ private fun KoogMessage.toApiOrNull(
         }
     }
 
-private fun KoogMessage.User.imageUrlOrNull(): ImageUrl? {
-    val attachment = parts.filterIsInstance<MessagePart.Attachment>().firstOrNull() ?: return null
-    val source = attachment.source
-    require(source is AttachmentSource.Image) {
-        "Only image attachments are supported"
-    }
-    val content = source.content
-    require(content is AttachmentContent.URL) {
-        "Only URL images are supported"
-    }
-    return ImageUrl(content.url)
-}
-
-fun ApiAction.createEvent(): Event =
+suspend fun ApiAction.createEvent(textLoader: AttachmentTextLoader): Event =
     when (this) {
         is ApiUserJoinedChat -> {
             Event.UserJoined(EventId.random(), Clock.System.now(), joinId)
@@ -108,23 +99,38 @@ fun ApiAction.createEvent(): Event =
             val parts =
                 buildList {
                     text?.let { add(MessagePart.Text(it)) }
-                    imageUrl?.let { imageUrl ->
-                        val format =
-                            imageUrl.value
-                                .substringAfterLast('.')
-                                .substringBefore('?')
-                                .ifEmpty { "jpeg" }
-                        add(
-                            MessagePart.Attachment(
-                                AttachmentSource.Image(AttachmentContent.URL(imageUrl.value), format),
-                            ),
-                        )
+                    attachments.forEach { attachment ->
+                        attachment.toMessagePartOrNull(textLoader)?.let(::add)
                     }
                 }
             val koogMessage = Message.User(parts, RequestMetaInfo(Clock.System.now()))
-            Event.Message(EventId.random(), koogMessage)
+            Event.Message(EventId.random(), koogMessage, attachments)
         }
     }
+
+private suspend fun ApiAttachment.toMessagePartOrNull(textLoader: AttachmentTextLoader): MessagePart.Attachment? {
+    val source =
+        when (kind) {
+            AttachmentKind.Image -> {
+                AttachmentSource.Image(AttachmentContent.URL(url), format, mimeType, fileName)
+            }
+
+            AttachmentKind.Pdf -> {
+                AttachmentSource.File(AttachmentContent.URL(url), format, mimeType, fileName)
+            }
+
+            // Anthropic only accepts a url as the source of a pdf, so text has to be inlined.
+            AttachmentKind.Text -> {
+                val text = textLoader.loadText(url) ?: return null
+                AttachmentSource.File(AttachmentContent.PlainText(text), format, mimeType, fileName)
+            }
+
+            null -> {
+                return null
+            }
+        }
+    return MessagePart.Attachment(source)
+}
 
 private const val QUESTION_FENCE = "```multiple-choice-question"
 private const val CLOSING_FENCE = "```"

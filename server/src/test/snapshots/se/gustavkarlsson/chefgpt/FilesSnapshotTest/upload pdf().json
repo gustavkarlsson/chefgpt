@@ -1,0 +1,32 @@
+{
+    "request": {
+        "method": "POST",
+        "url": "http://localhost/files",
+        "headers": {
+            "Session-Id": "00000000000000000000000000000000",
+            "X-File-Name": "recipe.pdf",
+            "Accept": "application/json",
+            "Content-Type": "application/pdf",
+            "Content-Length": "0"
+        },
+        "body": {
+            "type": "binary-base64",
+            "data": "AQID"
+        }
+    },
+    "response": {
+        "status": 201,
+        "headers": {
+            "Content-Length": "0",
+            "Content-Type": "application/json"
+        },
+        "body": {
+            "type": "json",
+            "data": {
+                "url": "https://example.com/fake.pdf",
+                "mimeType": "application/pdf",
+                "fileName": "recipe.pdf"
+            }
+        }
+    }
+}

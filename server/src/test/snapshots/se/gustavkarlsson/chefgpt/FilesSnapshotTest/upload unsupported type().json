@@ -1,0 +1,32 @@
+{
+    "request": {
+        "method": "POST",
+        "url": "http://localhost/files",
+        "headers": {
+            "Session-Id": "00000000000000000000000000000000",
+            "X-File-Name": "recipe.zip",
+            "Accept": "application/json",
+            "Content-Type": "application/zip",
+            "Content-Length": "0"
+        },
+        "body": {
+            "type": "binary-base64",
+            "data": "AQID"
+        }
+    },
+    "response": {
+        "status": 415,
+        "headers": {
+            "Content-Length": "0",
+            "Content-Type": "application/json"
+        },
+        "body": {
+            "type": "json",
+            "data": {
+                "type": "unsupported-file-type",
+                "message": "Unsupported content type: application/zip",
+                "userMessage": "I can only read images, PDFs and text files."
+            }
+        }
+    }
+}

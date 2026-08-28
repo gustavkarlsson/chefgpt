@@ -32,6 +32,54 @@ class RecipeStoreTools(
     }
 
     @Tool
+    @LLMDescription(
+        "Write a recipe of your own into the user's recipes, for example one you read in a photo " +
+            "or a document they shared. Fit what you can read into the fields and leave out what " +
+            "is missing — never invent ingredients or steps. Use saveRecipe instead when the " +
+            "recipe already exists in Spoonacular.",
+    )
+    suspend fun createRecipe(
+        @LLMDescription("The name of the dish.")
+        title: String,
+        @LLMDescription("The instructions, one per step.")
+        steps: List<String>,
+        @LLMDescription("The ingredients, or an empty list if they are unknown.")
+        ingredients: List<ApiRecipeIngredient> = emptyList(),
+        @LLMDescription("The nutrients, or an empty list if they are unknown.")
+        nutrients: List<ApiNutrient> = emptyList(),
+        @LLMDescription("A short summary of the dish, or an empty string to leave it out.")
+        description: String = "",
+        @LLMDescription(
+            "The url of a picture to use as the recipe's photo: from listSharedFiles when the " +
+                "picture is nothing but the food, and from cropImage when it also holds writing " +
+                "or background. Empty string for no photo.",
+        )
+        imageUrl: String = "",
+        @LLMDescription("The preparation time in minutes, or 0 if it is unknown.")
+        preparationMinutes: Int = 0,
+        @LLMDescription("The cooking time in minutes, or 0 if it is unknown.")
+        cookingMinutes: Int = 0,
+        @LLMDescription("The total time in minutes, or 0 if it is unknown.")
+        totalMinutes: Int = 0,
+    ): ApiRecipeSummary {
+        require(title.isNotBlank()) { "A recipe needs a title" }
+        require(steps.isNotEmpty()) { "A recipe needs at least one step" }
+        val recipe =
+            NewRecipe(
+                title = title,
+                steps = steps,
+                imageUrl = recipePhotoUrlOrNull(imageUrl),
+                description = description.ifBlank { null },
+                preparationDuration = preparationMinutes.minutesOrNull(),
+                cookingDuration = cookingMinutes.minutesOrNull(),
+                duration = totalMinutes.minutesOrNull(),
+                ingredients = ingredients,
+                nutrients = nutrients,
+            )
+        return store.saveRecipe(userId, recipe).toSummary()
+    }
+
+    @Tool
     @LLMDescription("Get all the user's recipes, without their instructions and ingredients.")
     suspend fun listRecipes(): List<ApiRecipeSummary> = store.getRecipeSummaries(userId)
 

@@ -40,7 +40,7 @@ private val testConfig =
         "bindings.storage" to "memory",
         "bindings.agent" to "fake",
         "bindings.recipes" to "fake",
-        "bindings.imageUploader" to "fake",
+        "bindings.files" to "fake",
         "anthropic.apiKey" to "test-key",
     )
 

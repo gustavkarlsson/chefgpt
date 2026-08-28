@@ -9,7 +9,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import se.gustavkarlsson.chefgpt.api.ApiAction
+import se.gustavkarlsson.chefgpt.api.ApiAttachment
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
+import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.JoinId
 import se.gustavkarlsson.slapshot.junit5.JUnit5SnapshotContext
 import se.gustavkarlsson.slapshot.junit5.SnapshotExtension
@@ -66,6 +68,36 @@ class ActionsSnapshotTest {
                 header("Session-Id", sessionId)
                 contentType(ContentType.Application.Json)
                 setBody<ApiAction>(ApiUserJoinedChat(FAKE_JOIN_ID))
+            }
+        }
+
+    @Test
+    fun `user sends message with attachments`() =
+        snapshotTestApplication(snapshotContext) { client ->
+            val sessionId = registerUser()
+            val chat = createChat(sessionId)
+
+            client.post("/chats/${chat.id}/actions") {
+                header("Session-Id", sessionId)
+                contentType(ContentType.Application.Json)
+                setBody<ApiAction>(
+                    ApiUserSendsMessage(
+                        text = "Can you save this?",
+                        attachments =
+                            listOf(
+                                ApiAttachment(
+                                    url = "https://res.cloudinary.com/demo/image/upload/v1/page.jpg",
+                                    mimeType = "image/jpeg",
+                                    fileName = "page.jpg",
+                                ),
+                                ApiAttachment(
+                                    url = "https://res.cloudinary.com/demo/raw/upload/v1/recipe.txt",
+                                    mimeType = "text/plain",
+                                    fileName = "recipe.txt",
+                                ),
+                            ),
+                    ),
+                )
             }
         }
 }

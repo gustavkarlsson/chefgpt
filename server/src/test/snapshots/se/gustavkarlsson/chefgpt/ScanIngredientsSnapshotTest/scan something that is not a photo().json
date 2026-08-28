@@ -1,11 +1,11 @@
 {
     "request": {
         "method": "POST",
-        "url": "http://localhost/images",
+        "url": "http://localhost/ingredients/scan",
         "headers": {
             "Session-Id": "00000000000000000000000000000000",
             "Accept": "application/json",
-            "Content-Type": "image/jpeg",
+            "Content-Type": "application/pdf",
             "Content-Length": "0"
         },
         "body": {
@@ -14,14 +14,18 @@
         }
     },
     "response": {
-        "status": 201,
+        "status": 415,
         "headers": {
             "Content-Length": "0",
-            "Content-Type": "text/plain; charset=UTF-8"
+            "Content-Type": "application/json"
         },
         "body": {
-            "type": "text",
-            "data": "https://cataas.com/cat"
+            "type": "json",
+            "data": {
+                "type": "unsupported-file-type",
+                "message": "Unsupported content type: application/pdf",
+                "userMessage": "I can only scan photos."
+            }
         }
     }
 }

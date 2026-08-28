@@ -64,7 +64,7 @@ import org.koin.core.parameter.parametersOf
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatar
 import se.gustavkarlsson.chefgpt.navigation.Screen
 import se.gustavkarlsson.chefgpt.navigation.Screen.Id
-import se.gustavkarlsson.chefgpt.pickImageFile
+import se.gustavkarlsson.chefgpt.pickFiles
 import se.gustavkarlsson.chefgpt.plus
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessage
@@ -323,7 +323,7 @@ private fun IngredientInput(
                     IconButton(
                         onClick = {
                             scope.launch {
-                                pickImageFile()?.let(input.onScanImageSelected)
+                                pickFiles(multiple = false).firstOrNull()?.let(input.onScanImageSelected)
                             }
                         },
                     ) {

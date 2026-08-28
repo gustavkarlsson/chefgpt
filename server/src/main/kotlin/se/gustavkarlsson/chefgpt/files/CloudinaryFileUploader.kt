@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt.images
+package se.gustavkarlsson.chefgpt.files
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -19,18 +19,18 @@ import io.ktor.utils.io.ByteReadChannel
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import se.gustavkarlsson.chefgpt.api.ImageUrl
+import se.gustavkarlsson.chefgpt.api.ApiAttachment
 
-class CloudinaryImageUploader(
+class CloudinaryFileUploader(
     private val apiKey: String,
     private val apiSecret: String,
     private val cloud: String,
-) : ImageUploader,
+) : FileUploader,
     AutoCloseable {
     private val client =
         HttpClient(CIO) {
             install(HttpTimeout) {
-                requestTimeoutMillis = 10_000
+                requestTimeoutMillis = 30_000
             }
             install(ContentNegotiation) {
                 json(Json)
@@ -38,11 +38,13 @@ class CloudinaryImageUploader(
             // TODO Install logging
         }
 
-    override suspend fun uploadImage(
+    override suspend fun uploadFile(
         readChannel: ByteReadChannel,
         contentType: ContentType?,
-    ): ImageUrl? =
+        fileName: String?,
+    ): ApiAttachment? =
         try {
+            val mimeType = contentType?.let { "${it.contentType}/${it.contentSubtype}" } ?: "application/octet-stream"
             val jsonObject =
                 client
                     .submitFormWithBinaryData(
@@ -50,7 +52,7 @@ class CloudinaryImageUploader(
                             url {
                                 protocol = URLProtocol.HTTPS
                                 host = "api.cloudinary.com"
-                                pathSegments = listOf("v1_1", cloud, "image", "upload")
+                                pathSegments = listOf("v1_1", cloud, resourceType(mimeType), "upload")
                             },
                         formData =
                             formData {
@@ -59,13 +61,7 @@ class CloudinaryImageUploader(
                                     value = ChannelProvider { readChannel },
                                     headers =
                                         headers {
-                                            val finalFileName =
-                                                buildString {
-                                                    append("image")
-                                                    if (contentType?.contentType == "image") {
-                                                        append(".${contentType.contentSubtype}")
-                                                    }
-                                                }
+                                            val finalFileName = fileName ?: defaultFileName(mimeType)
                                             append(HttpHeaders.ContentDisposition, "filename=$finalFileName")
                                             contentType?.let { append(HttpHeaders.ContentType, it.toString()) }
                                         },
@@ -78,7 +74,7 @@ class CloudinaryImageUploader(
                 jsonObject
                     .getValue("secure_url")
                     .jsonPrimitive.content
-            ImageUrl(url)
+            ApiAttachment(url = url, mimeType = mimeType, fileName = fileName)
         } catch (_: Exception) {
             // TODO log error
             null
@@ -88,3 +84,12 @@ class CloudinaryImageUploader(
         client.close()
     }
 }
+
+// Cloudinary stores PDFs as image resources, which is also what lets us crop a page of one.
+private fun resourceType(mimeType: String): String =
+    when (attachmentKindOrNull(mimeType)) {
+        AttachmentKind.Image, AttachmentKind.Pdf -> "image"
+        AttachmentKind.Text, null -> "raw"
+    }
+
+private fun defaultFileName(mimeType: String): String = "file.${mimeType.substringAfter('/').substringBefore(';')}"

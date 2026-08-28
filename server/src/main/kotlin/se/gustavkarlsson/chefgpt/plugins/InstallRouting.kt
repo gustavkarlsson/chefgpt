@@ -9,8 +9,8 @@ import se.gustavkarlsson.chefgpt.routes.createIngredientRoute
 import se.gustavkarlsson.chefgpt.routes.deleteChatRoute
 import se.gustavkarlsson.chefgpt.routes.deleteIngredientRoute
 import se.gustavkarlsson.chefgpt.routes.deleteRecipeRoute
+import se.gustavkarlsson.chefgpt.routes.filesRoute
 import se.gustavkarlsson.chefgpt.routes.getRecipeRoute
-import se.gustavkarlsson.chefgpt.routes.imagesRoute
 import se.gustavkarlsson.chefgpt.routes.loginRoute
 import se.gustavkarlsson.chefgpt.routes.overwriteOriginalRecipeRoute
 import se.gustavkarlsson.chefgpt.routes.patchIngredientRoute
@@ -30,7 +30,7 @@ fun Application.installRouting() {
         registerRoute()
         loginRoute()
         authenticate {
-            imagesRoute()
+            filesRoute()
             streamChatsRoute()
             streamIngredientsRoute()
             createIngredientRoute()
