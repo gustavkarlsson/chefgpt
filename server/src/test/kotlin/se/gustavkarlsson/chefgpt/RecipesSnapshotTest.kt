@@ -97,6 +97,12 @@ class RecipesSnapshotTest {
         }
 
     @Test
+    fun `get recipe unauthenticated`() =
+        snapshotTestApplication(snapshotContext) { client ->
+            client.get("/recipes/$MISSING_ID")
+        }
+
+    @Test
     fun `favorite recipe`() =
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
