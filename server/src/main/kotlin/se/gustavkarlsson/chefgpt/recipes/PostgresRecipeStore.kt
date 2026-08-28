@@ -210,6 +210,7 @@ private fun ChefGptDatabase.selectRecipe(
         preparationDuration = recipe.preparation_minutes?.minutes,
         cookingDuration = recipe.cooking_minutes?.minutes,
         duration = recipe.total_minutes?.minutes,
+        servings = toIntRangeOrNull(recipe.min_servings, recipe.max_servings),
         ingredients =
             recipeQueries
                 .selectIngredientsByRecipeId(id)
@@ -240,6 +241,8 @@ private fun ChefGptDatabase.insertRecipe(
                 recipe.preparationDuration?.toMinutes(),
                 recipe.cookingDuration?.toMinutes(),
                 recipe.duration?.toMinutes(),
+                recipe.servings?.first,
+                recipe.servings?.last,
                 favorite,
                 modifiedFrom?.value?.toJavaUuid(),
             ).executeAsOne()
@@ -265,6 +268,8 @@ private fun ChefGptDatabase.updateRecipe(
                 update.preparationDuration?.toMinutes(),
                 update.cookingDuration?.toMinutes(),
                 update.duration?.toMinutes(),
+                update.servings?.first,
+                update.servings?.last,
                 userId,
                 id,
             ).executeAsOneOrNull()
@@ -304,3 +309,9 @@ private fun ChefGptDatabase.insertNutrients(
 }
 
 private fun Duration.toMinutes(): Int = inWholeMinutes.toInt()
+
+// The two columns are written together, so only a complete pair makes a range.
+private fun toIntRangeOrNull(
+    min: Int?,
+    max: Int?,
+): IntRange? = if (min != null && max != null) min..max else null

@@ -2,6 +2,7 @@ package se.gustavkarlsson.chefgpt.api
 
 import kotlinx.serialization.Serializable
 import se.gustavkarlsson.chefgpt.DurationSerializer
+import se.gustavkarlsson.chefgpt.IntRangeSerializer
 import kotlin.time.Duration
 
 @Serializable
@@ -20,6 +21,8 @@ data class ApiRecipe(
     val cookingDuration: Duration? = null,
     @Serializable(with = DurationSerializer::class)
     val duration: Duration? = null,
+    @Serializable(with = IntRangeSerializer::class)
+    val servings: IntRange? = null,
     val ingredients: List<ApiRecipeIngredient> = emptyList(),
     val nutrients: List<ApiNutrient> = emptyList(),
 )

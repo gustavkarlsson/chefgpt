@@ -38,6 +38,10 @@
                 "favorite": true,
                 "description": "A classic Italian pasta dish.",
                 "duration": "PT30M",
+                "servings": {
+                    "min": 4,
+                    "max": 4
+                },
                 "ingredients": [
                     {
                         "name": "spaghetti",

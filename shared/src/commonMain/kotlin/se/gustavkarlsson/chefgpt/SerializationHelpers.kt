@@ -1,6 +1,7 @@
 package se.gustavkarlsson.chefgpt
 
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -37,6 +38,26 @@ object DurationSerializer : KSerializer<Duration> {
     }
 
     override fun deserialize(decoder: Decoder): Duration = Duration.parseIsoString(decoder.decodeString())
+}
+
+@Serializable
+private data class IntRangeSurrogate(
+    val min: Int,
+    val max: Int,
+)
+
+object IntRangeSerializer : KSerializer<IntRange> {
+    override val descriptor: SerialDescriptor = IntRangeSurrogate.serializer().descriptor
+
+    override fun serialize(
+        encoder: Encoder,
+        value: IntRange,
+    ) {
+        encoder.encodeSerializableValue(IntRangeSurrogate.serializer(), IntRangeSurrogate(value.first, value.last))
+    }
+
+    override fun deserialize(decoder: Decoder): IntRange =
+        decoder.decodeSerializableValue(IntRangeSurrogate.serializer()).let { it.min..it.max }
 }
 
 abstract class StringValueSerializer<T>(

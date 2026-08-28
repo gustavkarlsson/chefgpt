@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -25,6 +27,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Timer
@@ -53,6 +56,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -451,6 +455,7 @@ private fun LoadedContent(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun MainPane(
     recipe: Recipe,
@@ -470,29 +475,14 @@ private fun MainPane(
                     text = recipe.title,
                     style = MaterialTheme.typography.headlineMedium,
                 )
-                val timings =
-                    buildList {
-                        recipe.preparationDuration?.let { add("Prep" to it) }
-                        recipe.cookingDuration?.let { add("Cook" to it) }
-                        if (recipe.preparationDuration == null && recipe.cookingDuration == null) {
-                            recipe.duration?.let { add("Total" to it) }
-                        }
-                    }
-                if (timings.isNotEmpty()) {
-                    Row(
+                val meta = recipe.toMetaChips()
+                if (meta.isNotEmpty()) {
+                    FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.padding(top = 12.dp),
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Timer,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp),
-                        )
-                        timings.forEach { (label, duration) ->
-                            TimingChip(label = label, duration = duration)
-                        }
+                        meta.forEach { MetaChip(it) }
                     }
                 }
             }
@@ -602,10 +592,26 @@ private fun RecipeHero(
     }
 }
 
+private data class MetaChipContent(
+    val icon: ImageVector,
+    val label: String,
+    val value: String,
+)
+
+// The total time only says something of its own when neither part of it is known.
+private fun Recipe.toMetaChips(): List<MetaChipContent> =
+    buildList {
+        preparationDuration?.let { add(MetaChipContent(Icons.Default.Timer, "Prep", it.toDisplayString())) }
+        cookingDuration?.let { add(MetaChipContent(Icons.Default.Timer, "Cook", it.toDisplayString())) }
+        if (preparationDuration == null && cookingDuration == null) {
+            duration?.let { add(MetaChipContent(Icons.Default.Timer, "Total", it.toDisplayString())) }
+        }
+        servings?.let { add(MetaChipContent(Icons.Default.Groups, "Serves", it.toDisplayString())) }
+    }
+
 @Composable
-private fun TimingChip(
-    label: String,
-    duration: Duration,
+private fun MetaChip(
+    content: MetaChipContent,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -618,13 +624,19 @@ private fun TimingChip(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            Icon(
+                imageVector = content.icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.size(14.dp),
+            )
             Text(
-                text = "$label:",
+                text = "${content.label}:",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
             )
             Text(
-                text = duration.toDisplayString(),
+                text = content.value,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
             )
@@ -740,3 +752,5 @@ private fun Duration.toDisplayString(): String {
         else -> "${minutes}m"
     }
 }
+
+private fun IntRange.toDisplayString(): String = if (first == last) "$first" else "$first-$last"

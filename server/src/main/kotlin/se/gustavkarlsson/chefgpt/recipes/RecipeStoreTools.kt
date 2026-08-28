@@ -61,6 +61,18 @@ class RecipeStoreTools(
         cookingMinutes: Int = 0,
         @LLMDescription("The total time in minutes, or 0 if it is unknown.")
         totalMinutes: Int = 0,
+        @LLMDescription(
+            "The lower end of how many servings the recipe makes, for example 4 for \"4-6 servings\" " +
+                "or 4 for an exact \"4 servings\". Must be given together with maxServings, " +
+                "or the servings are left out.",
+        )
+        minServings: Int = 0,
+        @LLMDescription(
+            "The upper end of how many servings the recipe makes, for example 6 for \"4-6 servings\" " +
+                "or 4 for an exact \"4 servings\" (same as minServings). Must be given together with " +
+                "minServings, or the servings are left out.",
+        )
+        maxServings: Int = 0,
     ): ApiRecipeSummary {
         require(title.isNotBlank()) { "A recipe needs a title" }
         require(steps.isNotEmpty()) { "A recipe needs at least one step" }
@@ -73,6 +85,7 @@ class RecipeStoreTools(
                 preparationDuration = preparationMinutes.minutesOrNull(),
                 cookingDuration = cookingMinutes.minutesOrNull(),
                 duration = totalMinutes.minutesOrNull(),
+                servings = servingsOrNull(minServings, maxServings),
                 ingredients = ingredients,
                 nutrients = nutrients,
             )
@@ -125,6 +138,18 @@ class RecipeStoreTools(
         cookingMinutes: Int = 0,
         @LLMDescription("The new total time in minutes, or 0 to keep the current one.")
         totalMinutes: Int = 0,
+        @LLMDescription(
+            "The new lower end of how many servings the recipe makes, for example 4 for \"4-6 servings\" " +
+                "or 4 for an exact \"4 servings\". Must be given together with maxServings, " +
+                "or the current amount is kept.",
+        )
+        minServings: Int = 0,
+        @LLMDescription(
+            "The new upper end of how many servings the recipe makes, for example 6 for \"4-6 servings\" " +
+                "or 4 for an exact \"4 servings\" (same as minServings). Must be given together with " +
+                "minServings, or the current amount is kept.",
+        )
+        maxServings: Int = 0,
         @LLMDescription("The new instructions, one per step, or an empty list to keep the current ones.")
         steps: List<String> = emptyList(),
         @LLMDescription("The new ingredients, or an empty list to keep the current ones.")
@@ -139,6 +164,7 @@ class RecipeStoreTools(
                 preparationDuration = preparationMinutes.minutesOrNull(),
                 cookingDuration = cookingMinutes.minutesOrNull(),
                 duration = totalMinutes.minutesOrNull(),
+                servings = servingsOrNull(minServings, maxServings),
                 steps = steps.ifEmpty { null },
                 ingredients = ingredients.ifEmpty { null },
                 nutrients = nutrients.ifEmpty { null },
@@ -178,3 +204,13 @@ fun RecipeStore.toTools(
 private fun String.toRecipeId(): RecipeId = RecipeId.parseOrNull(this) ?: error("Invalid recipe ID: $this")
 
 private fun Int.minutesOrNull() = takeIf { it > 0 }?.minutes
+
+// Both bounds are required, since a lone bound would leave the other one ambiguous
+// (partial update, or same as the exact yield?). The bounds are ordered so a swapped pair still works.
+private fun servingsOrNull(
+    min: Int,
+    max: Int,
+): IntRange? {
+    if (min <= 0 || max <= 0) return null
+    return minOf(min, max)..maxOf(min, max)
+}
