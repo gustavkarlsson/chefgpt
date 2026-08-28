@@ -14,6 +14,7 @@ data class Recipe(
     val preparationDuration: Duration? = null,
     val cookingDuration: Duration? = null,
     val duration: Duration? = null,
+    val servings: IntRange? = null,
     val steps: List<String>,
     val ingredients: List<Ingredient> = emptyList(),
     val nutrients: List<Nutrient> = emptyList(),

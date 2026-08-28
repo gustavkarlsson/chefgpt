@@ -41,6 +41,7 @@ class RecipeLookup(
             preparationDuration = info.minutesOrNull("preparationMinutes"),
             cookingDuration = info.minutesOrNull("cookingMinutes"),
             duration = info.minutesOrNull("readyInMinutes"),
+            servings = info.servingsOrNull(),
             ingredients =
                 info["extendedIngredients"]
                     ?.jsonArray
@@ -80,6 +81,14 @@ private fun JsonObject.minutesOrNull(key: String) =
         ?.intOrNull
         ?.takeIf { it > 0 }
         ?.minutes
+
+// Spoonacular states an exact yield, which becomes a range with the same bounds.
+private fun JsonObject.servingsOrNull(): IntRange? =
+    get("servings")
+        ?.jsonPrimitive
+        ?.intOrNull
+        ?.takeIf { it > 0 }
+        ?.let { it..it }
 
 private fun JsonElement.toSteps(): List<String> =
     jsonArray.flatMap { instructionSet ->

@@ -17,6 +17,7 @@ data class NewRecipe(
     val preparationDuration: Duration? = null,
     val cookingDuration: Duration? = null,
     val duration: Duration? = null,
+    val servings: IntRange? = null,
     val ingredients: List<ApiRecipeIngredient> = emptyList(),
     val nutrients: List<ApiNutrient> = emptyList(),
 )
@@ -38,6 +39,7 @@ fun NewRecipe.toApiRecipe(
         preparationDuration = preparationDuration,
         cookingDuration = cookingDuration,
         duration = duration,
+        servings = servings,
         ingredients = ingredients,
         nutrients = nutrients,
     )
@@ -52,6 +54,7 @@ fun ApiRecipe.toNewRecipe(): NewRecipe =
         preparationDuration = preparationDuration,
         cookingDuration = cookingDuration,
         duration = duration,
+        servings = servings,
         ingredients = ingredients,
         nutrients = nutrients,
     )

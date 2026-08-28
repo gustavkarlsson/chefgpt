@@ -93,6 +93,16 @@ class InMemoryRecipeStoreTest {
         }
 
     @Test
+    fun `modifyRecipe replaces the servings range`() =
+        runTest {
+            val saved = store.saveRecipe(userId, carbonara())
+
+            val modified = store.modifyRecipe(userId, saved.id, RecipeUpdate(servings = 6..8))
+
+            assertEquals(6..8, modified?.servings)
+        }
+
+    @Test
     fun `modifyRecipe replaces the whole list of steps`() =
         runTest {
             val saved = store.saveRecipe(userId, carbonara())
@@ -316,6 +326,7 @@ private fun carbonara(spoonacularId: SpoonacularId? = SpoonacularId(1L)) =
         preparationDuration = 10.minutes,
         cookingDuration = 20.minutes,
         duration = 30.minutes,
+        servings = 4..4,
         ingredients =
             listOf(
                 ApiRecipeIngredient("spaghetti", "400", "g"),

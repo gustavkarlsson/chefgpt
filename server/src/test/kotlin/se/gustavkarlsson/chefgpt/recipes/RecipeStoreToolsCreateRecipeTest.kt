@@ -91,6 +91,72 @@ class RecipeStoreToolsCreateRecipeTest {
         }
 
     @Test
+    fun `leaves out servings when neither bound is given`() =
+        runTest {
+            val summary = tools.createRecipe(title = "Pannkakor", steps = listOf("Whisk"))
+
+            assertNull(store.getRecipe(userId, summary.id)?.servings)
+        }
+
+    @Test
+    fun `leaves out servings when only the lower bound is given`() =
+        runTest {
+            val summary = tools.createRecipe(title = "Pannkakor", steps = listOf("Whisk"), minServings = 4)
+
+            assertNull(store.getRecipe(userId, summary.id)?.servings)
+        }
+
+    @Test
+    fun `leaves out servings when only the upper bound is given`() =
+        runTest {
+            val summary = tools.createRecipe(title = "Pannkakor", steps = listOf("Whisk"), maxServings = 6)
+
+            assertNull(store.getRecipe(userId, summary.id)?.servings)
+        }
+
+    @Test
+    fun `stores an exact yield as a range with equal bounds`() =
+        runTest {
+            val summary =
+                tools.createRecipe(
+                    title = "Pannkakor",
+                    steps = listOf("Whisk"),
+                    minServings = 4,
+                    maxServings = 4,
+                )
+
+            assertEquals(4..4, store.getRecipe(userId, summary.id)?.servings)
+        }
+
+    @Test
+    fun `stores both bounds when the recipe gives a range of servings`() =
+        runTest {
+            val summary =
+                tools.createRecipe(
+                    title = "Pannkakor",
+                    steps = listOf("Whisk"),
+                    minServings = 4,
+                    maxServings = 6,
+                )
+
+            assertEquals(4..6, store.getRecipe(userId, summary.id)?.servings)
+        }
+
+    @Test
+    fun `orders swapped servings bounds`() =
+        runTest {
+            val summary =
+                tools.createRecipe(
+                    title = "Pannkakor",
+                    steps = listOf("Whisk"),
+                    minServings = 6,
+                    maxServings = 4,
+                )
+
+            assertEquals(4..6, store.getRecipe(userId, summary.id)?.servings)
+        }
+
+    @Test
     fun `refuses a recipe without steps`() =
         runTest {
             assertFailsWith<IllegalArgumentException> {

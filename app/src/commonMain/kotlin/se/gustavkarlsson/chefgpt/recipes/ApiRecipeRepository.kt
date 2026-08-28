@@ -93,6 +93,7 @@ private fun ApiRecipe.toRecipe(): Recipe =
         preparationDuration = preparationDuration,
         cookingDuration = cookingDuration,
         duration = duration,
+        servings = servings,
         steps = steps,
         ingredients = ingredients.map { Ingredient(it.name, formatAmount(it.value, it.unit)) },
         nutrients = nutrients.map { Nutrient(it.name, formatAmount(it.value, it.unit)) },

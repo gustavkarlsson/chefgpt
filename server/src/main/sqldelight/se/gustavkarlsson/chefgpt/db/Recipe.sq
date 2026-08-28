@@ -31,8 +31,9 @@ ORDER BY position;
 
 insert:
 INSERT INTO recipe (user_id, spoonacular_id, title, image_url, description,
-                    preparation_minutes, cooking_minutes, total_minutes, favorite, modified_from)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    preparation_minutes, cooking_minutes, total_minutes,
+                    min_servings, max_servings, favorite, modified_from)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 RETURNING id;
 
 insertStep:
@@ -54,7 +55,9 @@ SET title               = COALESCE(:title, title),
     description         = COALESCE(:description, description),
     preparation_minutes = COALESCE(:preparationMinutes, preparation_minutes),
     cooking_minutes     = COALESCE(:cookingMinutes, cooking_minutes),
-    total_minutes       = COALESCE(:totalMinutes, total_minutes)
+    total_minutes       = COALESCE(:totalMinutes, total_minutes),
+    min_servings        = COALESCE(:minServings, min_servings),
+    max_servings        = COALESCE(:maxServings, max_servings)
 WHERE user_id = :userId AND id = :id
 RETURNING id;
 

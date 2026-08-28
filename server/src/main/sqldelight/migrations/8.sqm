@@ -1,0 +1,5 @@
+ALTER TABLE recipe
+    ADD COLUMN min_servings INT;
+
+ALTER TABLE recipe
+    ADD COLUMN max_servings INT;
