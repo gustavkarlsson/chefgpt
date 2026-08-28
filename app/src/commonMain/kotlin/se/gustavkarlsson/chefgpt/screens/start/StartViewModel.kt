@@ -12,11 +12,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.ImageUrl
+import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.chats.Chat
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.displayName
 import se.gustavkarlsson.chefgpt.navigation.Navigator
-import se.gustavkarlsson.chefgpt.recipes.RecipeId
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 import se.gustavkarlsson.chefgpt.recipes.RecipeSummary
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
@@ -97,7 +97,10 @@ class StartViewModel(
                 id = summary.id,
                 title = summary.title,
                 imageUrl = summary.imageUrl,
+                favorite = summary.favorite,
+                modified = summary.modifiedFrom != null,
                 onClickOpen = ::openRecipe,
+                onClickToggleFavorite = ::toggleRecipeFavorite,
                 onClickDelete = ::deleteRecipe,
             )
         }
@@ -233,6 +236,22 @@ class StartViewModel(
         navigator.push(RecipeDetailScreen(credentials.sessionId, recipeId))
     }
 
+    private fun toggleRecipeFavorite(recipeId: RecipeId) {
+        val credentials = innerState.value.sessionCredentials ?: return
+        val summary = innerState.value.recipeSummaries.firstOrNull { it.id == recipeId } ?: return
+        val favorite = !summary.favorite
+        viewModelScope.launch {
+            recipeRepository
+                .setFavorite(credentials.sessionId, recipeId, favorite)
+                .onOk { log.i { "Recipe favorite=$favorite: $recipeId" } }
+                .onErr {
+                    log.e { "Failed to set favorite=$favorite on recipe: $it" }
+                    val message = if (favorite) "Couldn't favorite recipe" else "Couldn't unfavorite recipe"
+                    showSnackbar(message, isError = true)
+                }
+        }
+    }
+
     private fun deleteRecipe(recipeId: RecipeId) {
         val credentials = innerState.value.sessionCredentials ?: return
         viewModelScope.launch {
@@ -356,6 +375,9 @@ data class UiRecipeSummary(
     val id: RecipeId,
     val title: String,
     val imageUrl: ImageUrl?,
+    val favorite: Boolean,
+    val modified: Boolean,
     val onClickOpen: (RecipeId) -> Unit,
+    val onClickToggleFavorite: (RecipeId) -> Unit,
     val onClickDelete: (RecipeId) -> Unit,
 )

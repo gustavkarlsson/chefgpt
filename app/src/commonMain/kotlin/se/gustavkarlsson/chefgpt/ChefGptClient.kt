@@ -48,12 +48,13 @@ import se.gustavkarlsson.chefgpt.api.ApiIngredientUpdate
 import se.gustavkarlsson.chefgpt.api.ApiNewIngredient
 import se.gustavkarlsson.chefgpt.api.ApiRecipe
 import se.gustavkarlsson.chefgpt.api.ApiRecipeSummary
+import se.gustavkarlsson.chefgpt.api.ApiRecipeUpdate
 import se.gustavkarlsson.chefgpt.api.ApiSaveSpoonacularRecipe
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.api.IngredientId
-import se.gustavkarlsson.chefgpt.api.RecipeSummaryId
+import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.api.SpoonacularId
 import se.gustavkarlsson.chefgpt.debug.Settings
 import se.gustavkarlsson.chefgpt.sessions.SessionId
@@ -286,9 +287,9 @@ class ChefGptClient(
             val baseUrl = settings.getBaseUrl()
             httpClient.sseTyped<List<ApiRecipeSummary>>(
                 json = json,
-                eventType = "recipe-summaries",
+                eventType = "recipes",
                 request = {
-                    url("$baseUrl/recipe-summaries")
+                    url("$baseUrl/recipes")
                     sessionIdHeader(sessionId)
                 },
             ) { _, incoming ->
@@ -296,31 +297,77 @@ class ChefGptClient(
             }
         }
 
-    // Saves a recipe summary by its Spoonacular id. The server looks the recipe
-    // up before storing it and returns the stored recipe summary.
-    suspend fun saveRecipeSummary(
+    // Saves a recipe by its Spoonacular id. The server looks the recipe
+    // up before storing it and returns the stored recipe.
+    suspend fun saveRecipe(
         sessionId: SessionId,
         spoonacularId: SpoonacularId,
-    ): Result<ApiRecipeSummary, ClientError> =
+    ): Result<ApiRecipe, ClientError> =
         request(
             send = { baseUrl ->
-                post("$baseUrl/recipe-summaries") {
+                post("$baseUrl/recipes") {
                     sessionIdHeader(sessionId)
                     contentType(ContentType.Application.Json)
                     accept(ContentType.Application.Json)
                     setBody(ApiSaveSpoonacularRecipe(spoonacularId))
                 }
             },
-            readSafe = { body<ApiRecipeSummary>() },
+            readSafe = { body<ApiRecipe>() },
         )
 
-    suspend fun deleteRecipeSummary(
+    suspend fun setRecipeFavorite(
         sessionId: SessionId,
-        recipeSummaryId: RecipeSummaryId,
+        recipeId: RecipeId,
+        favorite: Boolean,
     ): Result<Unit, ClientError> =
         request(
             send = { baseUrl ->
-                delete("$baseUrl/recipe-summaries/$recipeSummaryId") {
+                patch("$baseUrl/recipes/$recipeId") {
+                    sessionIdHeader(sessionId)
+                    contentType(ContentType.Application.Json)
+                    setBody(ApiRecipeUpdate(favorite))
+                }
+            },
+            readSafe = {},
+        )
+
+    // Lets a modified recipe replace the recipe it was modified from, deleting that one.
+    suspend fun overwriteOriginalRecipe(
+        sessionId: SessionId,
+        recipeId: RecipeId,
+    ): Result<ApiRecipe, ClientError> =
+        request(
+            send = { baseUrl ->
+                post("$baseUrl/recipes/$recipeId/overwrite-original") {
+                    sessionIdHeader(sessionId)
+                    accept(ContentType.Application.Json)
+                }
+            },
+            readSafe = { body<ApiRecipe>() },
+        )
+
+    // Keeps a modified recipe alongside the recipe it was modified from.
+    suspend fun saveRecipeAsCopy(
+        sessionId: SessionId,
+        recipeId: RecipeId,
+    ): Result<ApiRecipe, ClientError> =
+        request(
+            send = { baseUrl ->
+                post("$baseUrl/recipes/$recipeId/save-as-copy") {
+                    sessionIdHeader(sessionId)
+                    accept(ContentType.Application.Json)
+                }
+            },
+            readSafe = { body<ApiRecipe>() },
+        )
+
+    suspend fun deleteRecipe(
+        sessionId: SessionId,
+        recipeId: RecipeId,
+    ): Result<Unit, ClientError> =
+        request(
+            send = { baseUrl ->
+                delete("$baseUrl/recipes/$recipeId") {
                     sessionIdHeader(sessionId)
                 }
             },
@@ -329,11 +376,11 @@ class ChefGptClient(
 
     suspend fun getRecipe(
         sessionId: SessionId,
-        recipeSummaryId: RecipeSummaryId,
+        recipeId: RecipeId,
     ): Result<ApiRecipe, ClientError> =
         request(
             send = { baseUrl ->
-                get("$baseUrl/recipe-summaries/$recipeSummaryId") {
+                get("$baseUrl/recipes/$recipeId") {
                     sessionIdHeader(sessionId)
                     accept(ContentType.Application.Json)
                 }

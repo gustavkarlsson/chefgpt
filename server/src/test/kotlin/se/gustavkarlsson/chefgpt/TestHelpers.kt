@@ -15,9 +15,11 @@ import se.gustavkarlsson.chefgpt.api.ApiChat
 import se.gustavkarlsson.chefgpt.api.ApiIngredient
 import se.gustavkarlsson.chefgpt.api.ApiIngredientUpdate
 import se.gustavkarlsson.chefgpt.api.ApiNewIngredient
-import se.gustavkarlsson.chefgpt.api.ApiRecipeSummary
+import se.gustavkarlsson.chefgpt.api.ApiRecipe
+import se.gustavkarlsson.chefgpt.api.ApiRecipeUpdate
 import se.gustavkarlsson.chefgpt.api.ApiSaveSpoonacularRecipe
 import se.gustavkarlsson.chefgpt.api.IngredientId
+import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.api.SpoonacularId
 
 const val VALID_USERNAME = "testuser"
@@ -72,21 +74,39 @@ suspend fun ApplicationTestBuilder.createIngredients(
     }
 }
 
-suspend fun ApplicationTestBuilder.saveRecipeSummary(
+suspend fun ApplicationTestBuilder.saveRecipe(
     sessionId: String,
     spoonacularId: SpoonacularId,
-): ApiRecipeSummary {
+): ApiRecipe {
     val client =
         createClient {
             expectSuccess = true
             install(ContentNegotiation) { json() }
         }
     return client
-        .post("/recipe-summaries") {
+        .post("/recipes") {
             header("Session-Id", sessionId)
             contentType(ContentType.Application.Json)
             setBody(ApiSaveSpoonacularRecipe(spoonacularId))
-        }.body<ApiRecipeSummary>()
+        }.body<ApiRecipe>()
+}
+
+suspend fun ApplicationTestBuilder.setRecipeFavorite(
+    sessionId: String,
+    id: RecipeId,
+    favorite: Boolean,
+): ApiRecipe {
+    val client =
+        createClient {
+            expectSuccess = true
+            install(ContentNegotiation) { json() }
+        }
+    return client
+        .patch("/recipes/$id") {
+            header("Session-Id", sessionId)
+            contentType(ContentType.Application.Json)
+            setBody(ApiRecipeUpdate(favorite))
+        }.body<ApiRecipe>()
 }
 
 suspend fun ApplicationTestBuilder.setIngredientInventory(

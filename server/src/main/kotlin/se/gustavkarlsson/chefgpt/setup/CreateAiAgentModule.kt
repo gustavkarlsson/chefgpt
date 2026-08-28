@@ -12,7 +12,8 @@ import se.gustavkarlsson.chefgpt.agent.KoogIngredientScanAgent
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventRepository
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
-import se.gustavkarlsson.chefgpt.recipes.RecipeSummaryStore
+import se.gustavkarlsson.chefgpt.recipes.RecipeLookup
+import se.gustavkarlsson.chefgpt.recipes.RecipeStore
 
 fun Application.createAiAgentModule() =
     module {
@@ -21,10 +22,11 @@ fun Application.createAiAgentModule() =
             when (val type = config.property("bindings.agent").getString()) {
                 "llm" -> {
                     val ingredientStore = get<IngredientStore>()
-                    val recipeSummaryStore = get<RecipeSummaryStore>()
+                    val recipeStore = get<RecipeStore>()
+                    val recipeLookup = get<RecipeLookup>()
                     val chatRepository = get<ChatRepository>()
                     val eventRepository = get<EventRepository>()
-                    KoogAiAgent(ingredientStore, recipeSummaryStore, chatRepository, eventRepository)
+                    KoogAiAgent(ingredientStore, recipeStore, recipeLookup, chatRepository, eventRepository)
                 }
 
                 "fake" -> {

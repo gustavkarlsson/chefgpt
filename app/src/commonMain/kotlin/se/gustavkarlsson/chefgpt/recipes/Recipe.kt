@@ -1,12 +1,15 @@
 package se.gustavkarlsson.chefgpt.recipes
 
 import se.gustavkarlsson.chefgpt.api.ImageUrl
+import se.gustavkarlsson.chefgpt.api.RecipeId
 import kotlin.time.Duration
 
 data class Recipe(
     val id: RecipeId,
     val title: String,
     val imageUrl: ImageUrl? = null,
+    val favorite: Boolean = false,
+    val modifiedFrom: RecipeId? = null,
     val description: String? = null,
     val preparationDuration: Duration? = null,
     val cookingDuration: Duration? = null,

@@ -35,8 +35,10 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -587,7 +589,7 @@ private fun RecipeSidebar(
             HorizontalDivider()
             if (recipes.isEmpty()) {
                 Text(
-                    text = "No saved recipes yet",
+                    text = "No recipes yet",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier =
@@ -662,13 +664,28 @@ private fun RecipeItem(
                 }
             }
         }
-        Text(
-            text = recipe.title,
-            style = MaterialTheme.typography.bodyLarge,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = recipe.title,
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (recipe.modified) {
+                Text(
+                    text = "Edited",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        IconButton(onClick = { recipe.onClickToggleFavorite(recipe.id) }) {
+            Icon(
+                imageVector = if (recipe.favorite) Icons.Default.Star else Icons.Outlined.StarBorder,
+                contentDescription = if (recipe.favorite) "Remove from favorites" else "Add to favorites",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         IconButton(onClick = { recipe.onClickDelete(recipe.id) }) {
             Icon(
                 imageVector = Icons.Default.Delete,
