@@ -5,6 +5,25 @@
 CHANGED_FILES="$(git --no-pager diff --name-status --no-color --cached | awk '$1 != "D" && $NF ~ /\.kts?$/ { print $NF }')"
 
 if [ -n "$CHANGED_FILES" ]; then
+    # A file that is staged AND modified in the working tree cannot be handled
+    # safely: spotless rewrites the staged region, so the saved diff of the
+    # unstaged changes no longer applies. Refuse before touching anything.
+    mixed_files="$(
+        {
+            printf '%s\n' "$CHANGED_FILES" | sort -u
+            git --no-pager diff --name-only --no-color | sort -u
+        } | sort | uniq -d
+    )"
+    if [ -n "$mixed_files" ]; then
+        echo "[error] These files have both staged and unstaged changes:"
+        printf '%s\n' "$mixed_files" | sed 's/^/[error]   /'
+        echo "[error] spotless cannot format them without risking your unstaged work."
+        echo "[error] Stage or stash the remaining changes, then commit again."
+        unset mixed_files
+        exit 1
+    fi
+    unset mixed_files
+
     # Resolve the git dir instead of assuming ".git" is a directory: in a
     # worktree it is a file, and any path below it fails with ENOTDIR.
     git_dir="$(git rev-parse --absolute-git-dir)"
@@ -41,8 +60,10 @@ if [ -n "$CHANGED_FILES" ]; then
     if [ -s "$diff" ]; then
       if ! git apply --ignore-whitespace "$diff"; then
         echo "[error] Failed to restore unstaged changes. Aborting commit."
+        echo "[error] This happens when spotless reformats a region the saved"
+        echo "[error] diff quotes, e.g. after a commit made with --no-verify."
         echo "[error] Your unstaged work is saved in: $diff"
-        echo "[error] Restore it manually with: git apply $diff"
+        echo "[error] Restore it manually with: git apply --3way $diff"
         unset diff git_dir
         exit 1
       fi
