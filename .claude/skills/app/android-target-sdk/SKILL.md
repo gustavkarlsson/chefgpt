@@ -75,7 +75,9 @@ Bump `androidTargetSdk` in `gradle/libs.versions.toml` — version catalog only,
 ./gradlew :app:assembleDebug
 ```
 
-`lintDebug` is the CI gate (`.github/workflows/verify.yml`) and surfaces lint failures introduced by the new target. Then run the **verify** skill.
+`lintDebug` is the CI gate (`.github/workflows/verify.yml`). Then run the **verify** skill.
+
+A green build proves little here. Nothing in the toolchain rejects a `targetSdk` above `compileSdk`, and no automated check exercises the behavior changes — confirm by reading that `androidCompileSdk` is still at least `androidTargetSdk`, and treat everything from step 5 as needing manual testing.
 
 ---
 
