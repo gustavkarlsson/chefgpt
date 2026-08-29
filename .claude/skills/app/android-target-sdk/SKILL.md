@@ -17,9 +17,11 @@ Every version in `(current, new]` must be reviewed — a multi-version jump revi
 
 ## 2. Check `compileSdk`
 
-`compileSdk` must be at least `targetSdk`. If `androidCompileSdk` is lower than the new target, stop and use the **update-dependencies** skill, instructing it to bump `androidCompileSdk` to match `androidTargetSdk` and nothing else.
+`compileSdk` must be at least `targetSdk`. If `androidCompileSdk` is lower than the new target, stop and use the **update-dependencies** skill, scoping it to `androidCompileSdk` plus whatever that forces — installing the SDK package, and the Gradle and AGP bumps it may require. That skill owns `compileSdk`; don't bump it by hand and don't upgrade anything else as a side effect of this task.
 
-Don't bump it by hand, and don't upgrade other dependencies as a side effect of this task.
+The split is deliberate and reciprocal: **update-dependencies** treats `androidTargetSdk` as a hard constraint it must never touch, because opting into new OS behavior is a product decision. That decision is this skill's job.
+
+Land the `compileSdk` change and its verification before starting on the target bump, so a failure belongs to one or the other.
 
 ---
 
