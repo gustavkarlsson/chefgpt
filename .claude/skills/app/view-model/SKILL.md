@@ -159,7 +159,7 @@ This flag should be set to `true` before starting the operation and set to `fals
 ## Conventions
 
 - Modern Kotlin, immutable data, functional patterns. No more code than necessary.
-- Write unit-tests using the unit-test skill.
+- Write unit-tests.
 - After changes, run the **verify** skill.
 
 ## Example

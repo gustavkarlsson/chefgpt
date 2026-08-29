@@ -1,9 +1,11 @@
 ---
-name: unit-test
-description: Write unit tests in Kotlin for this project. Use this skill whenever writing, adding, or generating any unit tests — even for small helpers or single functions. Applies to all modules.
+description: Conventions for writing Kotlin tests in this project.
+paths:
+  - "**/src/test/**"
+  - "**/src/*Test/**"
 ---
 
-Write unit tests following these conventions:
+# Kotlin test conventions
 
 ## Structure: Arrange-Act-Assert
 
@@ -48,3 +50,7 @@ Describe the scenario, not the implementation:
 test("returns empty list when no items match filter")
 test("throws IllegalArgumentException when input is negative")
 ```
+
+## Server route tests
+
+Ktor HTTP routes are covered by snapshot tests, which follow different conventions (JUnit5 API, stored JSON snapshots). Use the **snapshot-test** skill when writing or updating those.
