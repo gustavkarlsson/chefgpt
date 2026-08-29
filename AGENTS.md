@@ -18,6 +18,8 @@
 
 Always use version catalogs. Versions must use `version.ref`, never inline literals.
 
+To upgrade dependencies, use the update-dependencies skill.
+
 ## Testing
 
 Run JVM tests (CI-equivalent, fast):

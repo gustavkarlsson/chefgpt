@@ -154,6 +154,8 @@ val postgres =
         group = "application"
         description = "Ensures the chefgpt postgres docker container is running"
 
+        val image = "postgres:${libs.versions.postgresImage.get()}"
+
         doFirst {
             val containerName = "chefgpt-postgres"
             val (exitCode, output) = Command.run("docker", "inspect", "-f", "{{.State.Running}}", containerName)
@@ -172,7 +174,7 @@ val postgres =
                         "POSTGRES_HOST_AUTH_METHOD=trust",
                         "--env",
                         "POSTGRES_DB=chefgpt",
-                        "postgres:18.3",
+                        image,
                     )
                 }
 
