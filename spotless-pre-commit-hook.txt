@@ -5,10 +5,24 @@
 CHANGED_FILES="$(git --no-pager diff --name-status --no-color --cached | awk '$1 != "D" && $NF ~ /\.kts?$/ { print $NF }')"
 
 if [ -n "$CHANGED_FILES" ]; then
-    diff=.git/unstaged-spotless-git-hook.diff
-    git diff --color=never > "$diff"
+    # Resolve the git dir instead of assuming ".git" is a directory: in a
+    # worktree it is a file, and any path below it fails with ENOTDIR.
+    git_dir="$(git rev-parse --absolute-git-dir)"
+    diff="$git_dir/unstaged-spotless-git-hook.diff"
+
+    if ! git diff --color=never > "$diff"; then
+        echo "[error] Failed to save unstaged changes to $diff. Aborting commit."
+        unset diff git_dir
+        exit 1
+    fi
+
     if [ -s "$diff" ]; then
-      git apply -R "$diff"
+      if ! git apply -R "$diff"; then
+        echo "[error] Failed to set aside unstaged changes. Aborting commit."
+        echo "[error] Your unstaged work is saved in: $diff"
+        unset diff git_dir
+        exit 1
+      fi
     fi
 
     echo "Running spotlessApply"
@@ -29,12 +43,12 @@ if [ -n "$CHANGED_FILES" ]; then
         echo "[error] Failed to restore unstaged changes. Aborting commit."
         echo "[error] Your unstaged work is saved in: $diff"
         echo "[error] Restore it manually with: git apply $diff"
-        unset diff
+        unset diff git_dir
         exit 1
       fi
     fi
-    rm "$diff"
-    unset diff
+    rm -f "$diff"
+    unset diff git_dir
 
     echo "Completed spotless hook."
     if [ $gradle_command_exit_code -ne 0 ]; then
