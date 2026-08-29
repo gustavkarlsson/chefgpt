@@ -149,6 +149,14 @@ compose.desktop {
     application {
         mainClass = "se.gustavkarlsson.chefgpt.MainKt"
 
+        // The plugin uses the Gradle daemon's JVM, not the toolchain.
+        // https://youtrack.jetbrains.com/issue/CMP-4997
+        javaHome =
+            javaToolchains
+                .launcherFor(java.toolchain)
+                .get()
+                .metadata.installationPath.asFile.absolutePath
+
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "se.gustavkarlsson.chefgpt"

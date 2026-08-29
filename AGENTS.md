@@ -34,6 +34,10 @@ Run all tests and lint checks (slow and requires platform-specific tools install
 
 Individual modules can also be tested if changes are isolated.
 
+## Environment
+
+If a build fails for toolchain reasons (JDK, Android SDK, Xcode, Docker), use the setup skill.
+
 ## Completing a task
 
 Before considering a task as done, use the verify skill to find any issues.
