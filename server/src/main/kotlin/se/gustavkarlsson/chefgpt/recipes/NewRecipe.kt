@@ -8,18 +8,20 @@ import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.api.SpoonacularId
 import kotlin.time.Duration
 
+/** A recipe about to be saved, before it has an ID. */
 data class NewRecipe(
     val title: String,
     val steps: List<String>,
-    val spoonacularId: SpoonacularId? = null,
-    val imageUrl: ImageUrl? = null,
-    val description: String? = null,
-    val preparationDuration: Duration? = null,
-    val cookingDuration: Duration? = null,
-    val duration: Duration? = null,
-    val servings: IntRange? = null,
-    val ingredients: List<ApiRecipeIngredient> = emptyList(),
-    val nutrients: List<ApiNutrient> = emptyList(),
+    val imageUrl: ImageUrl?,
+    val description: String?,
+    val preparationDuration: Duration?,
+    val cookingDuration: Duration?,
+    val duration: Duration?,
+    val servings: IntRange?,
+    val ingredients: List<ApiRecipeIngredient>,
+    val nutrients: List<ApiNutrient>,
+    // Only a recipe looked up from Spoonacular has one; the agent writes recipes without.
+    val spoonacularId: SpoonacularId?,
 )
 
 fun NewRecipe.toApiRecipe(

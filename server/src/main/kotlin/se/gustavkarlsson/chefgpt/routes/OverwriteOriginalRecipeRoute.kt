@@ -19,18 +19,22 @@ fun Route.overwriteOriginalRecipeRoute() {
             RecipeId.parseOrNull(call.parameters.getOrFail("id"))
                 ?: return@post call.respond(
                     HttpStatusCode.BadRequest,
-                    ApiError("invalid-recipe-id", "Invalid recipe id"),
+                    ApiError("invalid-recipe-id", "Invalid recipe id", userMessage = null),
                 )
         val recipe =
             recipeStore.getRecipe(userId, id)
                 ?: return@post call.respond(
                     HttpStatusCode.NotFound,
-                    ApiError("recipe-not-found", "Recipe not found"),
+                    ApiError("recipe-not-found", "Recipe not found", userMessage = null),
                 )
         if (recipe.modifiedFrom == null) {
             return@post call.respond(
                 HttpStatusCode.Conflict,
-                ApiError("recipe-not-modified", "Recipe is not a modified version of another recipe"),
+                ApiError(
+                    "recipe-not-modified",
+                    "Recipe is not a modified version of another recipe",
+                    userMessage = null,
+                ),
             )
         }
 
@@ -38,7 +42,7 @@ fun Route.overwriteOriginalRecipeRoute() {
             recipeStore.overwriteOriginal(userId, id)
                 ?: return@post call.respond(
                     HttpStatusCode.NotFound,
-                    ApiError("recipe-not-found", "Recipe not found"),
+                    ApiError("recipe-not-found", "Recipe not found", userMessage = null),
                 )
         call.respond(HttpStatusCode.OK, overwritten)
     }

@@ -15,7 +15,7 @@ const val FILE_NAME_HEADER = "X-File-Name"
 data class ApiAttachment(
     val url: String,
     val mimeType: String,
-    val fileName: String? = null,
+    val fileName: String?,
 ) {
     init {
         require(url.isNotBlank()) {

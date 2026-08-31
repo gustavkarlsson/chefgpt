@@ -29,14 +29,14 @@ fun Routing.registerRoute() {
                         is RegistrationError.InvalidUserName -> {
                             ResponseData(
                                 status = HttpStatusCode.BadRequest,
-                                body = ApiError("invalid-username", registrationError.message),
+                                body = ApiError("invalid-username", registrationError.message, userMessage = null),
                             )
                         }
 
                         is RegistrationError.InvalidPassword -> {
                             ResponseData(
                                 status = HttpStatusCode.BadRequest,
-                                body = ApiError("invalid-password", registrationError.message),
+                                body = ApiError("invalid-password", registrationError.message, userMessage = null),
                             )
                         }
 

@@ -330,7 +330,7 @@ private fun carbonara(spoonacularId: SpoonacularId? = SpoonacularId(1L)) =
         ingredients =
             listOf(
                 ApiRecipeIngredient("spaghetti", "400", "g"),
-                ApiRecipeIngredient("eggs", "4"),
+                ApiRecipeIngredient("eggs", "4", null),
             ),
         nutrients = listOf(ApiNutrient("Calories", "450", "kcal")),
     )

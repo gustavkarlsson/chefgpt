@@ -14,9 +14,9 @@ private const val DEFAULT_DISMISS_TEXT = "OK"
 // automatically dismissed. Errors default to staying until dismissed.
 data class SnackbarMessage(
     val text: String,
-    val isError: Boolean = false,
-    val dismissText: String = DEFAULT_DISMISS_TEXT,
-    val duration: Duration = if (isError) Duration.INFINITE else DEFAULT_DURATION,
+    val isError: Boolean,
+    val dismissText: String,
+    val duration: Duration,
 )
 
 // Reusable one-shot snackbar message stream for a ViewModel. Hold one instance, expose

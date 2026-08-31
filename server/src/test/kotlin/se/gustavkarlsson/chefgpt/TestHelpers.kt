@@ -46,7 +46,7 @@ suspend fun ApplicationTestBuilder.createChat(sessionId: String): ApiChat {
     val setupClient =
         createClient {
             expectSuccess = true
-            install(ContentNegotiation) { json() }
+            install(ContentNegotiation) { json(chefGptJson(strict = true)) }
         }
     val response =
         setupClient.post("/chats") {
@@ -62,7 +62,7 @@ suspend fun ApplicationTestBuilder.createIngredients(
     val client =
         createClient {
             expectSuccess = true
-            install(ContentNegotiation) { json() }
+            install(ContentNegotiation) { json(chefGptJson(strict = true)) }
         }
     return ingredients.map { ingredient ->
         client
@@ -81,7 +81,7 @@ suspend fun ApplicationTestBuilder.saveRecipe(
     val client =
         createClient {
             expectSuccess = true
-            install(ContentNegotiation) { json() }
+            install(ContentNegotiation) { json(chefGptJson(strict = true)) }
         }
     return client
         .post("/recipes") {
@@ -99,7 +99,7 @@ suspend fun ApplicationTestBuilder.setRecipeFavorite(
     val client =
         createClient {
             expectSuccess = true
-            install(ContentNegotiation) { json() }
+            install(ContentNegotiation) { json(chefGptJson(strict = true)) }
         }
     return client
         .patch("/recipes/$id") {
@@ -117,7 +117,7 @@ suspend fun ApplicationTestBuilder.setIngredientInventory(
     val client =
         createClient {
             expectSuccess = true
-            install(ContentNegotiation) { json() }
+            install(ContentNegotiation) { json(chefGptJson(strict = true)) }
         }
     return client
         .patch("/ingredients/$id") {

@@ -29,7 +29,7 @@ fun ApplicationCall.getCredentials(): Result<UserPasswordCredential, ResponseDat
                 is BadRequestException -> {
                     ResponseData(
                         status = HttpStatusCode.BadRequest,
-                        body = ApiError("invalid-credentials", "Invalid credentials"),
+                        body = ApiError("invalid-credentials", "Invalid credentials", userMessage = null),
                     )
                 }
 
@@ -40,7 +40,7 @@ fun ApplicationCall.getCredentials(): Result<UserPasswordCredential, ResponseDat
         }.toErrorIfNull {
             ResponseData(
                 status = HttpStatusCode.BadRequest,
-                body = ApiError("missing-credentials", "Missing credentials"),
+                body = ApiError("missing-credentials", "Missing credentials", userMessage = null),
             )
         }
 
@@ -60,13 +60,13 @@ suspend fun ApplicationCall.getChatId(): Result<ChatId, ResponseData<ApiError>> 
         .toResultOr {
             ResponseData(
                 status = HttpStatusCode.BadRequest,
-                body = ApiError("invalid-chat-id", "Invalid chat ID"),
+                body = ApiError("invalid-chat-id", "Invalid chat ID", userMessage = null),
             )
         }.flatMap { chatId ->
             chatRepository[userId, chatId].toResultOr {
                 ResponseData(
                     status = HttpStatusCode.NotFound,
-                    body = ApiError("chat-not-found", "Chat not found"),
+                    body = ApiError("chat-not-found", "Chat not found", userMessage = null),
                 )
             }
         }.map { chat ->

@@ -41,7 +41,16 @@ class StartViewModel(
     private val streamChatsJob = atomic<Job?>(null)
     private val streamRecipesJob = atomic<Job?>(null)
 
-    override fun createInitialState() = State()
+    override fun createInitialState() =
+        State(
+            initialized = false,
+            sessionCredentials = null,
+            chats = emptyList(),
+            recipeSummaries = emptyList(),
+            inputUsername = "",
+            inputPassword = "",
+            authenticating = false,
+        )
 
     override fun State.toUiState(): UiState =
         UiState(
@@ -325,13 +334,13 @@ class StartViewModel(
 }
 
 data class State(
-    val initialized: Boolean = false,
-    val sessionCredentials: SessionCredentials? = null,
-    val chats: List<Chat> = emptyList(),
-    val recipeSummaries: List<RecipeSummary> = emptyList(),
-    val inputUsername: String = "",
-    val inputPassword: String = "",
-    val authenticating: Boolean = false,
+    val initialized: Boolean,
+    val sessionCredentials: SessionCredentials?,
+    val chats: List<Chat>,
+    val recipeSummaries: List<RecipeSummary>,
+    val inputUsername: String,
+    val inputPassword: String,
+    val authenticating: Boolean,
 ) {
     val inputCredentials: UserCredentials
         get() = UserCredentials(inputUsername, inputPassword)

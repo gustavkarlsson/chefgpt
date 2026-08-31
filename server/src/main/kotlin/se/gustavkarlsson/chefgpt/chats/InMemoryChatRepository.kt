@@ -23,7 +23,7 @@ class InMemoryChatRepository : ChatRepository {
     ): Chat? = storage[userId]?.value.orEmpty().find { it.id == chatId }
 
     override suspend fun create(userId: UserId): Chat {
-        val chat = Chat(ChatId.random(), Clock.System.now())
+        val chat = Chat(ChatId.random(), Clock.System.now(), name = null)
         storage.getOrPut(userId) { MutableStateFlow(emptyList()) }.update { it + chat }
         return chat
     }

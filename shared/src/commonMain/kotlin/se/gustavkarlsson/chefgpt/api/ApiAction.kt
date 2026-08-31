@@ -14,7 +14,7 @@ sealed interface ApiAction
 @SerialName("api-user-sends-message")
 data class ApiUserSendsMessage(
     val text: String?,
-    val attachments: List<ApiAttachment> = emptyList(),
+    val attachments: List<ApiAttachment>,
 ) : ApiAction {
     init {
         require(text == null || text.isNotBlank()) {

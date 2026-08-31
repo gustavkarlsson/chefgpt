@@ -13,7 +13,7 @@ fun Application.createEventRepositoryModule() =
         single {
             val db = getOrNull<DatabaseAccess>()
             if (db != null) {
-                PostgresEventRepository(db)
+                PostgresEventRepository(db, get())
             } else {
                 InMemoryEventRepository()
             }

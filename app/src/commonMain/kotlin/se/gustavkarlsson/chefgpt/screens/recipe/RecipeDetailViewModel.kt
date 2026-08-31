@@ -22,7 +22,12 @@ class RecipeDetailViewModel(
     private val navigator: Navigator,
     @InjectedParam private val screen: RecipeDetailScreen,
 ) : StateViewModel<RecipeDetailState, RecipeDetailUiState>() {
-    override fun createInitialState() = RecipeDetailState()
+    override fun createInitialState() =
+        RecipeDetailState(
+            loading = true,
+            recipe = null,
+            resolving = false,
+        )
 
     override fun RecipeDetailState.toUiState(): RecipeDetailUiState =
         RecipeDetailUiState(
@@ -157,9 +162,9 @@ class RecipeDetailViewModel(
 }
 
 data class RecipeDetailState(
-    val loading: Boolean = true,
-    val recipe: Recipe? = null,
-    val resolving: Boolean = false,
+    val loading: Boolean,
+    val recipe: Recipe?,
+    val resolving: Boolean,
 )
 
 data class RecipeDetailUiState(
@@ -177,7 +182,7 @@ data class RecipeDetailUiState(
             val recipe: Recipe,
             val onClickToggleFavorite: () -> Unit,
             // Set only for a recipe that is a modified version of another one.
-            val modificationActions: ModificationActions? = null,
+            val modificationActions: ModificationActions?,
         ) : Content
     }
 

@@ -20,7 +20,7 @@ fun Route.deleteChatRoute() {
         if (chatId == null) {
             call.respond(
                 HttpStatusCode.BadRequest,
-                ApiError("invalid-chat-id", "Invalid chat ID"),
+                ApiError("invalid-chat-id", "Invalid chat ID", userMessage = null),
             )
             return@delete
         }
@@ -30,7 +30,7 @@ fun Route.deleteChatRoute() {
         } else {
             call.respond(
                 HttpStatusCode.NotFound,
-                ApiError("chat-not-found", "Chat not found"),
+                ApiError("chat-not-found", "Chat not found", userMessage = null),
             )
         }
     }

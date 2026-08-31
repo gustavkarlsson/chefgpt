@@ -23,7 +23,7 @@ fun Route.saveRecipeRoute() {
             recipeLookup.lookUp(spoonacularId)
                 ?: return@post call.respond(
                     HttpStatusCode.NotFound,
-                    ApiError("recipe-not-found", "Recipe not found"),
+                    ApiError("recipe-not-found", "Recipe not found", userMessage = null),
                 )
 
         val saved = recipeStore.saveRecipe(userId, lookedUp)

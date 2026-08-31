@@ -22,7 +22,7 @@ class PostgresChatRepository(
         val chat =
             db.use {
                 val row = chatQueries.insert(user_id = userId.value.toJavaUuid()).executeAsOne()
-                Chat(ChatId(row.id.toKotlinUuid()), row.created_at.toKotlinInstant())
+                Chat(ChatId(row.id.toKotlinUuid()), row.created_at.toKotlinInstant(), name = null)
             }
         syncer.notifyChange(userId)
         return chat

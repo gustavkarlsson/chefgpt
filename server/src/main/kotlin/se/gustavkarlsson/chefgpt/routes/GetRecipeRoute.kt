@@ -19,14 +19,14 @@ fun Route.getRecipeRoute() {
             RecipeId.parseOrNull(call.parameters.getOrFail("id"))
                 ?: return@get call.respond(
                     HttpStatusCode.BadRequest,
-                    ApiError("invalid-recipe-id", "Invalid recipe id"),
+                    ApiError("invalid-recipe-id", "Invalid recipe id", userMessage = null),
                 )
 
         val recipe =
             recipeStore.getRecipe(userId, id)
                 ?: return@get call.respond(
                     HttpStatusCode.NotFound,
-                    ApiError("recipe-not-found", "Recipe not found"),
+                    ApiError("recipe-not-found", "Recipe not found", userMessage = null),
                 )
 
         call.respond(HttpStatusCode.OK, recipe)

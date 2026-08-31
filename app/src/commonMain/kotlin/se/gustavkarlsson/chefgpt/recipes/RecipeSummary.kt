@@ -6,7 +6,7 @@ import se.gustavkarlsson.chefgpt.api.RecipeId
 data class RecipeSummary(
     val id: RecipeId,
     val title: String,
-    val imageUrl: ImageUrl? = null,
-    val favorite: Boolean = false,
-    val modifiedFrom: RecipeId? = null,
+    val imageUrl: ImageUrl?,
+    val favorite: Boolean,
+    val modifiedFrom: RecipeId?,
 )

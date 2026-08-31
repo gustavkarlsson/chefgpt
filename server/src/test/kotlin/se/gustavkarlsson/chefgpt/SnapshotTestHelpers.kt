@@ -55,7 +55,9 @@ fun snapshotTestApplication(
     application { moduleWithExtraKoinModules(extraKoinModules) }
     val client =
         createClient {
-            install(ContentNegotiation) { json() }
+            // Strict, so a response field the API model doesn't declare fails the test instead of
+            // being quietly dropped. The stored snapshot catches the other direction.
+            install(ContentNegotiation) { json(chefGptJson(strict = true)) }
             install(SSE)
             install(SnapshotTesting(snapshotContext.sanitizing()))
             clientConfig()

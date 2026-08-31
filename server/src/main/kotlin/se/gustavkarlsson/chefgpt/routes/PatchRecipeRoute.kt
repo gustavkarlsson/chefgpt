@@ -21,7 +21,7 @@ fun Route.patchRecipeRoute() {
             RecipeId.parseOrNull(call.parameters.getOrFail("id"))
                 ?: return@patch call.respond(
                     HttpStatusCode.BadRequest,
-                    ApiError("invalid-recipe-id", "Invalid recipe id"),
+                    ApiError("invalid-recipe-id", "Invalid recipe id", userMessage = null),
                 )
         val body = call.receive<ApiRecipeUpdate>()
         val updated = recipeStore.setFavorite(userId, id, body.favorite)
@@ -30,7 +30,7 @@ fun Route.patchRecipeRoute() {
         } else {
             call.respond(
                 HttpStatusCode.NotFound,
-                ApiError("recipe-not-found", "Recipe not found"),
+                ApiError("recipe-not-found", "Recipe not found", userMessage = null),
             )
         }
     }

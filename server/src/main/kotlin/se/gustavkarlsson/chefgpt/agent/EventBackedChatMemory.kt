@@ -123,7 +123,7 @@ class EventBackedChatMemory {
             if (newPromptMessages.isNotEmpty()) {
                 val chatId = ChatId.parse(runId)
                 for (message in newPromptMessages) {
-                    val event = Event.Message(EventId.random(), message)
+                    val event = Event.Message(EventId.random(), message, attachments = emptyList())
                     eventRepository.append(chatId, event)
                 }
                 lastSyncedMessageHolder.set(newPromptMessages.last())

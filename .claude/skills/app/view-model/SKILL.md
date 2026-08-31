@@ -55,7 +55,7 @@ The class extends `StateViewModel<State, UiState>()`.
     ```kotlin
     private val sessionJob = atomic<Job?>(null)
     ```
-4. **`override fun createInitialState(): State`** — usually `State()`, or `State(...)` when a field has no default.
+4. **`override fun createInitialState(): State`** — names every property of `State`.
 5. **`override fun State.toUiState(): UiState`** — pure mapping from state to UI state, wiring callbacks. (`innerState` and `uiState` are inherited from the base.)
 6. **Private state to UI state mapping functions** — to avoid making `toUiState` too complex, it can be broken down into smaller functions declared right after it.
 7. **`init { ... }`** — Perform init logic such as launching long-running collectors.
@@ -63,8 +63,8 @@ The class extends `StateViewModel<State, UiState>()`.
 
 ### Top-level after ViewModel class
 
-1. **`data class State`** — a public top-level class (it is the base class's `S` generic argument, so it cannot be `private`). The single source of truth for state in the ViewModel. All properties are immutable (mutation is done via copy functions); every field has a default unless they are set via ViewModel constructor arguments.
-2. **`UiState`** — what the UI renders: UI-friendly data + callbacks. See the *State vs UiState* section below.
+1. **`data class State`** — a public top-level class (it is the base class's `S` generic argument, so it cannot be `private`). The single source of truth for state in the ViewModel. All properties are immutable (mutation is done via copy functions) and required, so `createInitialState()` spells out every starting value in one place.
+2. **`UiState`** — what the UI renders: UI-friendly data + callbacks. See the *State vs UiState* section below. Properties are required here too; `toUiState()` rebuilds the whole thing on every emission.
 3. **Public UI models** — additional models that are part of `UiState`; same guidelines apply.
 
 ## State vs UiState
@@ -121,7 +121,7 @@ result.onErr {
 }
 ```
 
-`showSnackbar(text, isError)` covers the common case (`isError = true` is error-styled and stays until dismissed). For full control over `dismissText` (defaults to `"OK"`) or `duration`, pass a prebuilt `SnackbarMessage` to the other overload. The UI renders it via `rememberSnackbarHostState` + `SnackbarMessageHost` (see the **screen-ui** skill). `IngredientsViewModel` (in `screens/ingredients/`) is the reference example.
+`showSnackbar(text, isError)` covers the common case (`isError = true` is error-styled and stays until dismissed). For control over `dismissText` or `duration`, use `SnackbarMessages.show(...)`, whose parameters default the same way. The UI renders it via `rememberSnackbarHostState` + `SnackbarMessageHost` (see the **screen-ui** skill). `IngredientsViewModel` (in `screens/ingredients/`) is the reference example.
 
 ## Callbacks
 
