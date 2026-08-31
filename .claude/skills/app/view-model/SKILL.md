@@ -130,6 +130,7 @@ result.onErr {
 - Type as `() -> Unit` when possible (or `(T) -> Unit` if the input comes from the UI, such as text changes).
 - **Make a callback nullable (`(() -> Unit)?`) to express "disabled"** — return `null` from `toUiState()` (or a `get()`) when the action isn't currently allowed (blank input, not connected, etc.). The UI greys out the control. Don't add separate `enabled` booleans for this.
 - When assigning callbacks **into the `UiState` hierarchy**, NEVER use lambdas, as they will generate a new equals value each time, causing unnecessary recompositions. Instead, use references to private functions (`::addItem`).
+- How the UI consumes these callbacks (including what a `null` one renders as) is the **compose-ui** skill.
 
 ## Actions
 
@@ -158,7 +159,6 @@ This flag should be set to `true` before starting the operation and set to `fals
 
 ## Conventions
 
-- Modern Kotlin, immutable data, functional patterns. No more code than necessary.
 - Write unit-tests.
 - After changes, run the **verify** skill.
 

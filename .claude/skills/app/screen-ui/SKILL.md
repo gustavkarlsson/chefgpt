@@ -1,11 +1,15 @@
 ---
 name: screen-ui
-description: Create or modify the Compose UI of a screen in the `app` module. Use this skill when building or changing the composables that render a screen. A screen is the pairing of a ViewModel (see the view-model skill) and its UI; this skill covers the UI half only.
+description: Structure a screen in the `app` module — the `Screen` data class, its `Content()` entry point, ViewModel wiring, and snackbar and one-shot event plumbing. Use when adding a screen or changing how one is wired. A screen is the pairing of a ViewModel (see the view-model skill) and its UI; the composables themselves follow the compose-ui skill.
 ---
 
 A **screen** is a concept that pairs two halves:
 - A **ViewModel** that owns state and exposes a `UiState` — see the **view-model** skill.
-- The **UI**: the composables that render that `UiState` — covered here.
+- The **UI**: the composables that render that `UiState`.
+
+This skill covers how the screen itself is put together and wired up. How to write the composables
+inside it — decomposition, callbacks, `Modifier`, theming, lists, accessibility — is the
+**compose-ui** skill.
 
 UI lives alongside its ViewModel in `app/src/commonMain/kotlin/se/gustavkarlsson/chefgpt/screens/<screen>/`, in a file named after the screen:
 - `UserViewModel` -> `UserScreen.kt`
@@ -93,31 +97,14 @@ private fun Content(
 }
 ```
 
-### Content and child composables
+### The private `Content`
 
-- `Content` and all child composables are `private` and **stateless**: they take a `UiState` (or a slice of it) and never reference the ViewModel. This keeps the UI previewable and testable.
-- Break the UI into small private composables, each taking only the slice of state it renders. Mirror the `UiState` hierarchy.
-- A child takes plain data + callbacks, not the whole `UiState`, when that keeps it focused.
-- For `sealed interface` UiState variants, branch with `when` and render a composable per case (e.g. `Loading`, `Loaded`, `Error`).
+`Screen.Content()` delegates immediately to a private `Content(uiState, ...)` in the same file, and
+that composable owns the whole screen body. It is stateless and never references the ViewModel — it
+takes `uiState` plus any `Flow` the screen collects, which is what keeps the UI previewable.
 
-## Callbacks
-
-- Invoke callbacks straight from `UiState`; never put business logic in the UI.
-- A nullable callback means "disabled". Drive the control's enabled state off it and grey out / swap the control accordingly — don't add separate `enabled` flags:
-  ```kotlin
-  IconButton(onClick = { input.onClickAdd?.invoke() }, enabled = input.onClickAdd != null) { ... }
-  ```
-- Keep transformations (sorting, filtering, formatting) in the ViewModel. The UI renders ready-made data.
-
-## Conventions
-
-- Material3 only. Use `MaterialTheme.typography` / `MaterialTheme.colorScheme`, never hard-coded styles or colors.
-- All composables should have a `Modifier` parameter.
-- `Modifier` is first optional parameter, placed immediately after any required arguments (excluding any trailing content lambda). It's always defaulted to `Modifier` which is the empty modifier.
-- When setting a modifier as an argument, always place it first in the named argument list (despite the parameter not being first).
-- Lazy lists: stable string keys (`key = { it.id.toString() }`) on items. Don't animate items unless the user explicitly asks for it.
-- Every `Icon` and `Image` needs a `contentDescription`.
-- Modern Kotlin, immutable data, no more code than necessary.
+Everything below that entry point — how the body is broken up, callbacks, `Modifier`, theming,
+lists, accessibility — is the **compose-ui** skill.
 
 ## Wiring a new screen
 
