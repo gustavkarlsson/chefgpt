@@ -1,11 +1,18 @@
 ---
-name: snapshot-test
-description: Write snapshot tests for Ktor HTTP routes. Use when adding, updating, or debugging snapshot tests for server endpoints.
+description: Conventions for the Ktor route snapshot tests under server/src/test.
+paths:
+  - "server/src/test/**"
 ---
 
-Snapshot tests in this project capture the full HTTP request+response (including headers and JSON body) and compare against a stored JSON file on each run.
-They live in `server/src/test/kotlin/.../` and their snapshots in `server/src/test/snapshots/`.
-In contrast to normal unit tests, snapshot tests run with the Junit5 API.
+# Server snapshot tests
+
+Ktor HTTP routes are covered by snapshot tests that capture the full request+response (headers and
+JSON body) and compare against a stored JSON file on each run. They live in
+`server/src/test/kotlin/.../`, their snapshots in `server/src/test/snapshots/`.
+
+These conventions take precedence over the `kotlin-tests` rule for anything under
+`server/src/test/`: snapshot tests use the JUnit5 API, and the assertion is the stored snapshot
+rather than Arrange-Act-Assert with `kotlin.test`.
 
 ## Test structure
 

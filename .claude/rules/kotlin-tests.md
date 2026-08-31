@@ -53,4 +53,4 @@ test("throws IllegalArgumentException when input is negative")
 
 ## Server route tests
 
-Ktor HTTP routes are covered by snapshot tests, which follow different conventions (JUnit5 API, stored JSON snapshots). Use the **snapshot-test** skill when writing or updating those.
+Ktor HTTP routes are covered by snapshot tests, which follow different conventions (JUnit5 API, stored JSON snapshots). Under `server/src/test/`, the `server-snapshot-tests` rule takes precedence over the conventions above.

@@ -55,7 +55,7 @@ In `server/src/main/kotlin/se/gustavkarlsson/chefgpt/plugins/InstallRouting.kt`,
 
 ## 4. Snapshot test
 
-Add a snapshot test — see /snapshot-test for conventions.
+Add a snapshot test — see the `server-snapshot-tests` rule for conventions.
 
 ## Key conventions
 

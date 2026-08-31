@@ -6,17 +6,7 @@
 - `shared`: Kotlin Multiplatform shared code between server and clients
 - `iosApp`: XCode project for the iOS client
 
-## General
-
-- Use modern Kotlin language features.
-- Don't write more code than necessary.
-- Prefer functional patterns and immutable data.
-- Comment only when purpose or implementation is unclear.
-- Never use fully qualified references — use imports (and typealiases for collisions).
-
 ## Dependencies
-
-Always use version catalogs. Versions must use `version.ref`, never inline literals.
 
 To upgrade dependencies, use the update-dependencies skill.
 
