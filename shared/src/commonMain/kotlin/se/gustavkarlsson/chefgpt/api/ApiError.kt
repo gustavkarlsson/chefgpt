@@ -8,5 +8,5 @@ import kotlinx.serialization.Serializable
 data class ApiError(
     val type: String,
     val message: String,
-    val userMessage: String? = null,
+    val userMessage: String?,
 )

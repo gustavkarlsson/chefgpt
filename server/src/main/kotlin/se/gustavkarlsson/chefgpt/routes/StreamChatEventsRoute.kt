@@ -37,6 +37,7 @@ fun Route.streamChatEventsRoute() {
                                     ApiError(
                                         "invalid-event-id",
                                         "Query parameter lastEventId=$lastEventId is not valid",
+                                        userMessage = null,
                                     ),
                             )
                         }.map { chatId to it }

@@ -1,18 +1,44 @@
 package se.gustavkarlsson.chefgpt.recipes
 
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.Json
 import se.gustavkarlsson.chefgpt.api.ApiRecipe
 import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
 import se.gustavkarlsson.chefgpt.api.ImageUrl
+import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.auth.UserId
+import se.gustavkarlsson.chefgpt.chefGptJson
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
 private const val UPLOADED_PHOTO = "https://res.cloudinary.com/demo/image/upload/v123/page.jpg"
+
+// The recipe createRecipe is expected to store, with everything the agent didn't give spelled out.
+private fun pannkakor(
+    id: RecipeId,
+    steps: List<String>,
+    description: String,
+    preparationDuration: Duration,
+    ingredients: List<ApiRecipeIngredient>,
+) = ApiRecipe(
+    id = id,
+    spoonacularId = null,
+    title = "Pannkakor",
+    imageUrl = null,
+    steps = steps,
+    favorite = false,
+    modifiedFrom = null,
+    description = description,
+    preparationDuration = preparationDuration,
+    cookingDuration = null,
+    duration = null,
+    servings = null,
+    ingredients = ingredients,
+    nutrients = emptyList(),
+)
 
 class RecipeStoreToolsCreateRecipeTest {
     private val userId = UserId.random()
@@ -20,7 +46,7 @@ class RecipeStoreToolsCreateRecipeTest {
     private val tools =
         RecipeStoreTools(
             store = store,
-            lookup = RecipeLookup(FakeRecipeClient(), Json),
+            lookup = RecipeLookup(FakeRecipeClient(), chefGptJson(strict = true)),
             userId = userId,
         )
 
@@ -37,13 +63,12 @@ class RecipeStoreToolsCreateRecipeTest {
                 )
 
             assertEquals(
-                ApiRecipe(
+                pannkakor(
                     id = summary.id,
-                    title = "Pannkakor",
                     steps = listOf("Whisk", "Fry"),
-                    ingredients = listOf(ApiRecipeIngredient("flour", "3", "dl")),
                     description = "Grandma's pancakes",
                     preparationDuration = 10.minutes,
+                    ingredients = listOf(ApiRecipeIngredient("flour", "3", "dl")),
                 ),
                 store.getRecipe(userId, summary.id),
             )

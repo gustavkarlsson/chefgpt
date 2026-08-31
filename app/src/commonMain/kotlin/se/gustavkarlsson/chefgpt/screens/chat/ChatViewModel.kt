@@ -89,7 +89,14 @@ class ChatViewModel(
             ),
         )
 
-    override fun createInitialState() = State()
+    override fun createInitialState() =
+        State(
+            joinId = null,
+            chat = null,
+            events = emptyList(),
+            userText = "",
+            attachments = emptyList(),
+        )
 
     // Discrete add/remove events that the UI animates one at a time; transient, so they live
     // outside UiState rather than as state.
@@ -266,7 +273,7 @@ class ChatViewModel(
     private fun sendAnswer(answer: String) {
         viewModelScope.launch {
             log.i { "Sending answer to ${conversation.chatId}" }
-            conversation.sendAction(ApiUserSendsMessage(answer)).onErr { error ->
+            conversation.sendAction(ApiUserSendsMessage(answer, attachments = emptyList())).onErr { error ->
                 log.e { "Failed to send answer: $error" }
                 showSnackbar("Couldn't send answer", isError = true)
             }
@@ -335,11 +342,11 @@ private fun List<ApiEvent>.upsert(event: ApiEvent): List<ApiEvent> {
 }
 
 data class State(
-    val joinId: JoinId? = null,
-    val chat: Chat? = null,
-    val events: List<ApiEvent> = emptyList(),
-    val userText: String = "",
-    val attachments: List<Path> = emptyList(),
+    val joinId: JoinId?,
+    val chat: Chat?,
+    val events: List<ApiEvent>,
+    val userText: String,
+    val attachments: List<Path>,
 )
 
 data class UiState(

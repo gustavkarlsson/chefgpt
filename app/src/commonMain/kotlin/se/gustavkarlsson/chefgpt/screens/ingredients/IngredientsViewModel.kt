@@ -47,7 +47,14 @@ class IngredientsViewModel(
     private val focusInputChannel = Channel<Unit>(Channel.UNLIMITED)
     val focusInputEvents: Flow<Unit> = focusInputChannel.receiveAsFlow()
 
-    override fun createInitialState() = State()
+    override fun createInitialState() =
+        State(
+            ingredients = null,
+            inputText = "",
+            scanningImage = false,
+            emojiResolver = null,
+            baselineInInventory = null,
+        )
 
     override fun State.toUiState(): UiState =
         UiState(
@@ -289,13 +296,13 @@ class IngredientsViewModel(
 }
 
 data class State(
-    val ingredients: List<ApiIngredient>? = null, // null until the first ingredient emission arrives.
-    val inputText: String = "",
-    val scanningImage: Boolean = false,
-    val emojiResolver: IngredientEmojiResolver? = null, // null until the emoji catalog has loaded.
+    val ingredients: List<ApiIngredient>?, // null until the first ingredient emission arrives.
+    val inputText: String,
+    val scanningImage: Boolean,
+    val emojiResolver: IngredientEmojiResolver?, // null until the emoji catalog has loaded.
     // Ids in the inventory when the screen opened (first stream emission). Anything in stock now but
     // absent here is "new"; an ingredient removed and re-added returns to the baseline, so it isn't.
-    val baselineInInventory: Set<IngredientId>? = null,
+    val baselineInInventory: Set<IngredientId>?,
 )
 
 data class UiState(

@@ -20,6 +20,8 @@ data class ApiMyThing(
 
 Use inline value classes for IDs and other single-value classes. Use a custom serializer to serialize it to a primitive (follow the pattern in `ChatId.kt`).
 
+Never give an API model property a default value — see the `json-serialization` rule.
+
 ## 2. Create the route file
 
 In `server/src/main/kotlin/se/gustavkarlsson/chefgpt/routes/MyThingRoute.kt`:

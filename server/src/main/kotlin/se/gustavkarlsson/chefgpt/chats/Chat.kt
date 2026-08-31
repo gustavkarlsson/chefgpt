@@ -6,5 +6,5 @@ import kotlin.time.Instant
 data class Chat(
     val id: ChatId,
     val createdAt: Instant,
-    val name: String? = null,
+    val name: String?,
 )

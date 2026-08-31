@@ -19,7 +19,7 @@ data class SharedFile(
     @property:LLMDescription("What kind of file it is: image, pdf or text.")
     val type: String,
     @property:LLMDescription("The name the file had on the user's device, if it had one.")
-    val fileName: String? = null,
+    val fileName: String?,
 )
 
 /**

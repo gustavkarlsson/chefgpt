@@ -8,10 +8,10 @@ import kotlinx.serialization.Serializable
 data class ApiRecipeSummary(
     val id: RecipeId,
     val title: String,
-    val spoonacularId: SpoonacularId? = null,
-    val imageUrl: ImageUrl? = null,
-    val favorite: Boolean = false,
-    val modifiedFrom: RecipeId? = null,
+    val spoonacularId: SpoonacularId?,
+    val imageUrl: ImageUrl?,
+    val favorite: Boolean,
+    val modifiedFrom: RecipeId?,
 )
 
 fun ApiRecipe.toSummary(): ApiRecipeSummary =

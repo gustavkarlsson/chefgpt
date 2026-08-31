@@ -23,6 +23,6 @@ class FakeAiAgent(
                 content = "This is a fake response from the dummy agent.",
                 metaInfo = ResponseMetaInfo(clock.now()),
             )
-        eventRepository.append(chatId, Event.Message(EventId.random(), message))
+        eventRepository.append(chatId, Event.Message(EventId.random(), message, attachments = emptyList()))
     }
 }

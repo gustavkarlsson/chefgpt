@@ -15,7 +15,13 @@ interface Screen : NavKey {
     @Composable
     fun Content()
 
-    /** A stable ID that uniquely identifies a route in the back stack. */
+    /**
+     * A stable ID that uniquely identifies a route in the back stack.
+     *
+     * Screens default their `id` to [new], which a `@Serializable` type in this project is otherwise
+     * not allowed: a back stack only ever holds navigation state, which a fresh install clears rather
+     * than carries forward, so there are no older instances to read back.
+     */
     @ConsistentCopyVisibility
     @Serializable
     data class Id private constructor(

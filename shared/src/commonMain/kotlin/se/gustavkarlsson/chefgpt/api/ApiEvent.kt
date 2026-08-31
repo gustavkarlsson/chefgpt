@@ -91,7 +91,7 @@ data class ApiUserMessage(
     override val id: EventId,
     override val timestamp: Instant,
     val text: String?,
-    val attachments: List<ApiAttachment> = emptyList(),
+    val attachments: List<ApiAttachment>,
 ) : ApiUserEvent {
     init {
         require(text == null || text.isNotBlank()) {

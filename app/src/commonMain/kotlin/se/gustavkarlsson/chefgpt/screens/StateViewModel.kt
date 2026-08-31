@@ -40,5 +40,5 @@ abstract class StateViewModel<State : Any, UiState : Any> : ViewModel() {
     protected fun showSnackbar(
         text: String,
         isError: Boolean = false,
-    ) = snackbar.show(SnackbarMessage(text = text, isError = isError))
+    ) = snackbar.show(text = text, isError = isError)
 }

@@ -12,27 +12,20 @@ import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.readLine
 import kotlinx.io.writeString
-import kotlinx.serialization.json.Json
 import se.gustavkarlsson.chefgpt.APP_STORAGE_DIR
 import se.gustavkarlsson.chefgpt.IoOrDefault
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ChatId
+import se.gustavkarlsson.chefgpt.chefGptJson
 
 private val log = Logger.withTag("${EventHistoryStore::class.simpleName}")
 
 // TODO Replace with database
 class EventHistoryStore(
     private val dir: Path = Path(APP_STORAGE_DIR),
-    private val prettyPrint: Boolean = false,
+    developmentMode: Boolean = false,
 ) {
-    private val json =
-        Json {
-            prettyPrint = this@EventHistoryStore.prettyPrint
-            isLenient = true
-            encodeDefaults = true
-            explicitNulls = false
-            ignoreUnknownKeys = true
-        }
+    private val json = chefGptJson(strict = developmentMode, prettyPrint = developmentMode)
 
     suspend fun load(chatId: ChatId): Result<List<ApiEvent>, Unit> =
         withContext(Dispatchers.IoOrDefault) {

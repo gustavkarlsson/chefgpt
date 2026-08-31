@@ -19,7 +19,7 @@ fun Route.deleteIngredientRoute() {
             IngredientId.parseOrNull(call.parameters.getOrFail("id"))
                 ?: return@delete call.respond(
                     HttpStatusCode.BadRequest,
-                    ApiError("invalid-ingredient-id", "Invalid ingredient id"),
+                    ApiError("invalid-ingredient-id", "Invalid ingredient id", userMessage = null),
                 )
         val destroyed = ingredientStore.destroyIngredients(userId, listOf(id))
         if (destroyed.isNotEmpty()) {
@@ -27,7 +27,7 @@ fun Route.deleteIngredientRoute() {
         } else {
             call.respond(
                 HttpStatusCode.NotFound,
-                ApiError("ingredient-not-found", "Ingredient not found"),
+                ApiError("ingredient-not-found", "Ingredient not found", userMessage = null),
             )
         }
     }

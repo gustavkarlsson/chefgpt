@@ -20,6 +20,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import se.gustavkarlsson.chefgpt.api.ApiAttachment
+import se.gustavkarlsson.chefgpt.chefGptJson
 
 class CloudinaryFileUploader(
     private val apiKey: String,
@@ -33,7 +34,8 @@ class CloudinaryFileUploader(
                 requestTimeoutMillis = 30_000
             }
             install(ContentNegotiation) {
-                json(Json)
+                // Forgiving: Cloudinary's responses carry far more than we model.
+                json(chefGptJson(strict = false))
             }
             // TODO Install logging
         }

@@ -80,6 +80,7 @@ class RecipeStoreTools(
             NewRecipe(
                 title = title,
                 steps = steps,
+                spoonacularId = null,
                 imageUrl = recipePhotoUrlOrNull(imageUrl),
                 description = description.ifBlank { null },
                 preparationDuration = preparationMinutes.minutesOrNull(),

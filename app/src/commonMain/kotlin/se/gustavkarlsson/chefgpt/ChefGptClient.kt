@@ -38,7 +38,6 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
-import kotlinx.serialization.json.Json
 import se.gustavkarlsson.chefgpt.api.ApiAction
 import se.gustavkarlsson.chefgpt.api.ApiAttachment
 import se.gustavkarlsson.chefgpt.api.ApiChat
@@ -70,16 +69,7 @@ class ChefGptClient(
     private val settings: Settings,
     developmentMode: Boolean = false,
 ) : AutoCloseable {
-    private val json =
-        Json {
-            encodeDefaults = true
-            isLenient = !developmentMode
-            explicitNulls = false
-            ignoreUnknownKeys = !developmentMode
-            allowComments = !developmentMode
-            allowTrailingComma = !developmentMode
-            prettyPrint = developmentMode
-        }
+    private val json = chefGptJson(strict = developmentMode, prettyPrint = developmentMode)
 
     private val httpClient =
         HttpClient(CIO) {
@@ -451,7 +441,7 @@ sealed interface ClientError {
     // The server responded with a non-success status.
     data class Http(
         val status: HttpStatusCode,
-        val errorBody: ApiError? = null,
+        val errorBody: ApiError?,
     ) : ClientError
 
     // The request never produced a usable response (e.g. connection failure).

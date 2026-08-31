@@ -21,7 +21,7 @@ fun Route.patchIngredientRoute() {
             IngredientId.parseOrNull(call.parameters.getOrFail("id"))
                 ?: return@patch call.respond(
                     HttpStatusCode.BadRequest,
-                    ApiError("invalid-ingredient-id", "Invalid ingredient id"),
+                    ApiError("invalid-ingredient-id", "Invalid ingredient id", userMessage = null),
                 )
         val body = call.receive<ApiIngredientUpdate>()
         val updated = ingredientStore.setInventory(userId, listOf(id), body.inInventory).singleOrNull()
@@ -30,7 +30,7 @@ fun Route.patchIngredientRoute() {
         } else {
             call.respond(
                 HttpStatusCode.NotFound,
-                ApiError("ingredient-not-found", "Ingredient not found"),
+                ApiError("ingredient-not-found", "Ingredient not found", userMessage = null),
             )
         }
     }

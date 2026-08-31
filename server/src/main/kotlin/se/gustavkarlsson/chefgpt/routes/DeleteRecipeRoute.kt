@@ -19,14 +19,14 @@ fun Route.deleteRecipeRoute() {
             RecipeId.parseOrNull(call.parameters.getOrFail("id"))
                 ?: return@delete call.respond(
                     HttpStatusCode.BadRequest,
-                    ApiError("invalid-recipe-id", "Invalid recipe id"),
+                    ApiError("invalid-recipe-id", "Invalid recipe id", userMessage = null),
                 )
         if (recipeStore.deleteRecipe(userId, id)) {
             call.respond(HttpStatusCode.NoContent)
         } else {
             call.respond(
                 HttpStatusCode.NotFound,
-                ApiError("recipe-not-found", "Recipe not found"),
+                ApiError("recipe-not-found", "Recipe not found", userMessage = null),
             )
         }
     }

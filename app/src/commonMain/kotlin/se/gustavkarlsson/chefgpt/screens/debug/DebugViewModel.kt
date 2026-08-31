@@ -24,6 +24,7 @@ class DebugViewModel(
                             title = "Server base URL",
                             value = baseUrl,
                             onValueChange = ::updateBaseUrl,
+                            placeholder = null,
                         ),
                     )
                     BASE_URL_HINT?.let { hint ->
@@ -66,7 +67,7 @@ sealed interface UiDebugItem {
             override val title: String,
             val value: String,
             val onValueChange: (String) -> Unit,
-            val placeholder: String? = null,
+            val placeholder: String?,
         ) : Labeled
 
         data class Toggle(

@@ -29,7 +29,7 @@ fun Routing.loginRoute() {
                         LoginError.WrongCredentials -> {
                             ResponseData(
                                 status = HttpStatusCode.Unauthorized,
-                                body = ApiError("wrong-credentials", "Wrong credentials"),
+                                body = ApiError("wrong-credentials", "Wrong credentials", userMessage = null),
                             )
                         }
                     }

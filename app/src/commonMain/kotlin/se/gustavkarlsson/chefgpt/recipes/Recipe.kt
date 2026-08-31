@@ -7,17 +7,17 @@ import kotlin.time.Duration
 data class Recipe(
     val id: RecipeId,
     val title: String,
-    val imageUrl: ImageUrl? = null,
-    val favorite: Boolean = false,
-    val modifiedFrom: RecipeId? = null,
-    val description: String? = null,
-    val preparationDuration: Duration? = null,
-    val cookingDuration: Duration? = null,
-    val duration: Duration? = null,
-    val servings: IntRange? = null,
+    val imageUrl: ImageUrl?,
+    val favorite: Boolean,
+    val modifiedFrom: RecipeId?,
+    val description: String?,
+    val preparationDuration: Duration?,
+    val cookingDuration: Duration?,
+    val duration: Duration?,
+    val servings: IntRange?,
     val steps: List<String>,
-    val ingredients: List<Ingredient> = emptyList(),
-    val nutrients: List<Nutrient> = emptyList(),
+    val ingredients: List<Ingredient>,
+    val nutrients: List<Nutrient>,
 )
 
 data class Ingredient(

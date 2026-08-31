@@ -12,6 +12,7 @@ import kotlin.uuid.toJavaUuid
 
 class PostgresEventRepository(
     private val db: DatabaseAccess,
+    private val json: Json,
 ) : EventRepository {
     private val syncer = RepoSyncer<ChatId>()
 
@@ -19,9 +20,9 @@ class PostgresEventRepository(
         chatId: ChatId,
         event: Event,
     ) {
-        val json = Json.encodeToString<Event>(event)
+        val serialized = json.encodeToString<Event>(event)
         db.use {
-            eventQueries.insert(chatId.value.toJavaUuid(), json)
+            eventQueries.insert(chatId.value.toJavaUuid(), serialized)
         }
         syncer.notifyChange(chatId)
     }
@@ -31,7 +32,7 @@ class PostgresEventRepository(
             eventQueries
                 .selectByChatIdAfter(chatId.value.toJavaUuid(), 0L)
                 .executeAsList()
-                .map { row -> row.parseEvent() }
+                .map { row -> json.parseEvent(row) }
         }
 
     override fun flow(
@@ -57,11 +58,11 @@ class PostgresEventRepository(
                             .executeAsList()
                     }
                 for (row in rows) {
-                    send(row.parseEvent())
+                    send(json.parseEvent(row))
                     lastRowId = row.id
                 }
             }
         }
 }
 
-private fun SelectByChatIdAfter.parseEvent(): Event = Json.decodeFromString(json)
+private fun Json.parseEvent(row: SelectByChatIdAfter): Event = decodeFromString(row.json)

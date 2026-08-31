@@ -6,7 +6,6 @@ import ai.koog.prompt.message.Message
 import ai.koog.prompt.message.MessagePart
 import ai.koog.prompt.message.RequestMetaInfo
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import se.gustavkarlsson.chefgpt.api.ApiAction
 import se.gustavkarlsson.chefgpt.api.ApiAgentChatNamed
 import se.gustavkarlsson.chefgpt.api.ApiAgentMessage
@@ -18,6 +17,7 @@ import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserMessage
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.EventId
+import se.gustavkarlsson.chefgpt.chefGptJson
 import se.gustavkarlsson.chefgpt.files.AttachmentKind
 import se.gustavkarlsson.chefgpt.files.AttachmentTextLoader
 import se.gustavkarlsson.chefgpt.files.format
@@ -135,7 +135,8 @@ private suspend fun ApiAttachment.toMessagePartOrNull(textLoader: AttachmentText
 private const val QUESTION_FENCE = "```multiple-choice-question"
 private const val CLOSING_FENCE = "```"
 
-private val chunkJson = Json { ignoreUnknownKeys = true }
+// Forgiving: this parses whatever the agent wrote, which we don't control.
+private val chunkJson = chefGptJson(strict = false)
 
 @Serializable
 private data class MultipleChoiceQuestionJson(

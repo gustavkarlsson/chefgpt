@@ -21,7 +21,7 @@ sealed interface Event {
         val message: KoogMessage,
         // The files the user attached, kept alongside the message because a Koog attachment loses
         // its url once the content has been inlined (which text attachments require).
-        val attachments: List<ApiAttachment> = emptyList(),
+        val attachments: List<ApiAttachment>,
     ) : Event {
         override val timestamp: Instant
             get() = message.metaInfo.timestamp
