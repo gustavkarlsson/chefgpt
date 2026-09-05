@@ -1,12 +1,20 @@
 name: gradle-setup
 description: Setup Java and Gradle
+inputs:
+  write-cache:
+    description: >-
+      Whether this job should write to the Gradle cache (true) or only read from it (false).
+    required: true
 runs:
   using: "composite"
   steps:
     - name: Setup Java
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v6
       with:
         java-version: "21"
         distribution: "zulu"
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v4
+      uses: gradle/actions/setup-gradle@v6
+      with:
+        cache-read-only: ${{ inputs.write-cache != 'true' }}
+        cache-encryption-key: ${{ env.GRADLE_ENCRYPTION_KEY }}
