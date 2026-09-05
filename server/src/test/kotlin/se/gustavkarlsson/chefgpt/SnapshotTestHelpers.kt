@@ -25,7 +25,8 @@ private val UUID_REGEX =
     Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 private const val UUID_PLACEHOLDER = "00000000-0000-0000-0000-000000000000"
 
-private val HEX_SESSION_REGEX = Regex("[0-9a-f]{32}")
+// Length-agnostic so the placeholder stays stable when Ktor changes how long a session id is.
+private val HEX_SESSION_REGEX = Regex("[0-9a-f]{32,}")
 private const val HEX_SESSION_PLACEHOLDER = "00000000000000000000000000000000"
 
 private val ISO_INSTANT_REGEX =
