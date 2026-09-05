@@ -16,7 +16,7 @@ force, e.g. a Gradle bump required by a new AGP). Otherwise cover everything in 
 | File | What lives there |
 |---|---|
 | `gradle/libs.versions.toml` | all library, plugin and tool versions — the primary target |
-| `gradle/wrapper/gradle-wrapper.properties` | Gradle distribution (`-all` variant) |
+| `gradle/wrapper/gradle-wrapper.properties` | Gradle distribution (`-bin` variant) |
 | `settings.gradle.kts` | inline `foojay-resolver` version |
 | `.github/` | action pins across every workflow and composite action |
 | `*/build.gradle.kts` | any version not yet in the catalog |

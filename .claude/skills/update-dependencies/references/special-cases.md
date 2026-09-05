@@ -5,12 +5,12 @@ special handling beyond the changelog and migration policy in `SKILL.md`.
 
 ## Gradle wrapper
 
-Always use the **`-all`** distribution — it ships sources and documentation, which the IDE
-and this skill rely on.
+Always use the **`-bin`** distribution — it is a much smaller download, which keeps CI and
+fresh checkouts fast.
 
 ```bash
-./gradlew wrapper --gradle-version <version> --distribution-type all
-./gradlew wrapper --gradle-version <version> --distribution-type all   # second run updates the wrapper jar and scripts
+./gradlew wrapper --gradle-version <version> --distribution-type bin
+./gradlew wrapper --gradle-version <version> --distribution-type bin   # second run updates the wrapper jar and scripts
 ./gradlew tasks                                                        # actually downloads and installs the distribution
 ```
 
@@ -19,7 +19,7 @@ using the *old* wrapper, the second regenerates the jar and scripts using the ne
 `./gradlew tasks` is what makes the new distribution real on disk — without it you have
 only edited a properties file.
 
-Afterwards check `distributionUrl` still ends in `-all.zip`, and that the configuration
+Afterwards check `distributionUrl` still ends in `-bin.zip`, and that the configuration
 cache (`org.gradle.configuration-cache=true` in `gradle.properties`) still works — Gradle
 majors tighten configuration-cache rules, and the `postgres` and `buildSupported` tasks use
 `ProcessBuilder` / `providers.exec`.

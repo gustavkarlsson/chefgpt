@@ -59,7 +59,7 @@ Never hardcode these — read them, so the skill does not rot when they are bump
 JDK=$(sed -n 's/^java=\([^ #]*\).*/\1/p' .sdkmanrc)                                        # 21.0.10-zulu
 COMPILE_SDK=$(sed -n 's/^androidCompileSdk *= *"\(.*\)"/\1/p' gradle/libs.versions.toml)   # 36
 PG_IMAGE=$(sed -n 's/^postgresImage *= *"\(.*\)"/\1/p' gradle/libs.versions.toml)          # 18.3
-GRADLE=$(sed -n 's|.*/gradle-\([0-9.]*\)-all.zip|\1|p' gradle/wrapper/gradle-wrapper.properties)
+GRADLE=$(sed -n 's|.*/gradle-\([0-9.]*\)-bin.zip|\1|p' gradle/wrapper/gradle-wrapper.properties)
 IOS_TARGET=$(sed -n 's/.*IPHONEOS_DEPLOYMENT_TARGET = \([^;]*\);.*/\1/p' \
     iosApp/iosApp.xcodeproj/project.pbxproj | head -1)                                     # 18.2
 ```
