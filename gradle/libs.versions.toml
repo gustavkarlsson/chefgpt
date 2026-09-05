@@ -15,11 +15,11 @@ flyway = "12.2.0"
 jvmToolchain = "21" # Jetbrains Hot-Reload needs this
 kermit = "2.1.0"
 koin = "4.2.2"
-koinPlugin = "1.0.1"
+koinPlugin = "1.1.0"
 # koog-ktor is a 1.0 beta-stream module (no stable 1.0.0 exists) that pulls koog-agents from the 1.0 preview stream; keep the two pinned as a matched pair.
 koogAgents = "1.0.0-preview7"
 koogKtor = "1.0.0-beta-preview7"
-kotlin = "2.4.0"
+kotlin = "2.4.10"
 kotlinResult = "2.3.1"
 kotlinxCoroutines = "1.10.2"
 kotlinxSerializationJson = "1.10.0"

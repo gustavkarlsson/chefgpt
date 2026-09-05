@@ -85,7 +85,6 @@ allprojects {
         compilerOptions {
             optIn.add("kotlin.uuid.ExperimentalUuidApi")
             optIn.add("kotlinx.serialization.ExperimentalSerializationApi")
-            optIn.add("kotlinx.serialization.ExperimentalSerializationApi")
             optIn.add("kotlinx.coroutines.ExperimentalCoroutinesApi")
             freeCompilerArgs.add("-Xexpect-actual-classes")
         }
