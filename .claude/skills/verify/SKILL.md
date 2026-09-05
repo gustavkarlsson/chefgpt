@@ -6,7 +6,7 @@ description: Run the full CI-equivalent check suite (spotlessCheck + all JVM tes
 Run the following command and report the results:
 
 ```bash
-./gradlew spotlessCheck :server:test :shared:jvmTest :shared:testDebugUnitTest :app:jvmTest :app:testDebugUnitTest
+./gradlew spotlessCheck :server:test :shared:jvmTest :shared:testAndroidHostTest :app:jvmTest :app:testAndroidHostTest
 ```
 
 If `spotlessCheck` fails, run `./gradlew spotlessApply` first and then retry the full command.

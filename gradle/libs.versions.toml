@@ -1,44 +1,44 @@
 [versions]
-agp = "8.13.2"
-androidCompileSdk = "36"
+agp = "9.4.0"
+androidCompileSdk = "37"
 androidMinSdk = "24"
 androidTargetSdk = "36"
 androidxActivity = "1.13.0"
-androidxLifecycle = "2.10.0"
+androidxLifecycle = "2.11.0"
 atomicfu = "0.33.0"
 bcrypt = "0.10.2"
-coil = "3.4.0"
-composeHotReload = "1.0.0"
-composeMultiplatform = "1.10.3"
-emoji = "2.4.0"
-flyway = "12.2.0"
-jvmToolchain = "21" # Jetbrains Hot-Reload needs this
+coil = "3.6.2"
+composeHotReload = "1.2.0"
+composeMultiplatform = "1.12.0"
+emoji = "2.5.0"
+flyway = "13.5.0"
+jvmToolchain = "25" # Must stay within what the Jetbrains Hot-Reload JBR supports
 kermit = "2.1.0"
 koin = "4.2.2"
-koinPlugin = "1.0.1"
-# koog-ktor is a 1.0 beta-stream module (no stable 1.0.0 exists) that pulls koog-agents from the 1.0 preview stream; keep the two pinned as a matched pair.
-koogAgents = "1.0.0-preview7"
-koogKtor = "1.0.0-beta-preview7"
-kotlin = "2.4.0"
+koinPlugin = "1.1.0"
+# koog-ktor trails koog-agents by a beta suffix and pulls koog-agents transitively; keep the two pinned as a matched pair on the same version.
+koogAgents = "1.2.0"
+koogKtor = "1.2.0-beta"
+kotlin = "2.4.10"
 kotlinResult = "2.3.1"
-kotlinxCoroutines = "1.10.2"
-kotlinxSerializationJson = "1.10.0"
+kotlinxCoroutines = "1.11.0"
+kotlinxSerializationJson = "1.11.0"
 ktlint = "1.8.0"
-ktor = "3.4.2"
-logback = "1.5.32"
-material3 = "1.10.0-alpha05"
+ktor = "3.5.2"
+logback = "1.6.3"
+material3 = "1.12.0-alpha03"
 material3Adaptive = "1.2.0"
 materialIconsExtended = "1.7.3"
-multiplatformMarkdownRendererM3 = "0.39.2"
-navigation3 = "1.1.0-beta01"
-hikaricp = "6.2.1"
-postgresDriver = "42.7.10"
-postgresImage = "18.3"
+multiplatformMarkdownRendererM3 = "0.45.0"
+navigation3 = "1.1.1"
+hikaricp = "7.1.0"
+postgresDriver = "42.7.13"
+postgresImage = "18.6"
 slapshot = "1.0.0"
-slf4jSimple = "2.0.17"
+slf4jSimple = "2.0.19"
 sqldelight = "2.1.0"
-spotless = "8.4.0"
-testcontainers = "2.0.4"
+spotless = "8.10.2"
+testcontainers = "2.0.5"
 
 [libraries]
 
@@ -142,7 +142,7 @@ slapshotKtor3 = { module = "se.gustavkarlsson.slapshot:slapshot-ktor3", version.
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
-androidLibrary = { id = "com.android.library", version.ref = "agp" }
+androidKotlinMultiplatformLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 composeHotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "composeHotReload" }
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }

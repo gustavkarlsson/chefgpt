@@ -15,7 +15,7 @@ A few versions live outside the catalog because their format can't reference it:
 
 | File | What lives there |
 |---|---|
-| `gradle/wrapper/gradle-wrapper.properties` | the Gradle distribution (`-all` variant) |
+| `gradle/wrapper/gradle-wrapper.properties` | the Gradle distribution (`-bin` variant) |
 | `settings.gradle.kts` | the inline `foojay-resolver` version |
 | `.github/` | action pins across every workflow and composite action |
 

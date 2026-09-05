@@ -7,9 +7,9 @@ A Kotlin Multiplatform toy project exploring custom AI agents and KMP.
 Only Java is always required. Everything else depends on which platforms you work on —
 building just the server, or just the desktop app, does not need the Android or iOS tooling.
 
-### Java 21 (always)
+### Java 25 (always)
 
-Any JDK 21 works, from any source — Gradle's toolchain resolver will even download one if
+Any JDK 25 works, from any source — Gradle's toolchain resolver will even download one if
 your machine has none.
 
 If you happen to use [SDKMAN](https://sdkman.io/), `sdk install` picks up the version
@@ -29,7 +29,7 @@ Docker, to run the databases in containers. Install [Docker](https://docs.docker
 
 ### Android
 
-- Android SDK with API level 36
+- Android SDK with API level 37
 - A connected device or running emulator
 
 ### iOS
@@ -76,7 +76,7 @@ Automatically formats Kotlin files before each commit:
 Run JVM tests and lint:
 
 ```bash
-./gradlew spotlessCheck :server:test :shared:jvmTest :shared:testDebugUnitTest :app:jvmTest :app:testDebugUnitTest
+./gradlew spotlessCheck :server:test :shared:jvmTest :shared:testAndroidHostTest :app:jvmTest :app:testAndroidHostTest
 ```
 
 Run all tests including Android and iOS (requires platform tools):
@@ -100,7 +100,7 @@ Start containerized database and the Ktor server (skip servers if you want to ma
 Build and install the debug APK:
 
 ```bash
-./gradlew :app:assembleDebug
+./gradlew :androidApp:assembleDebug
 ```
 
 ### iOS

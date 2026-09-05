@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidApplication)
+    alias(libs.plugins.androidKotlinMultiplatformLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
@@ -19,9 +19,22 @@ kotlin {
             .toInt(),
     )
 
-    // TODO fix deprecation
-    @Suppress("DEPRECATION")
-    androidTarget()
+    android {
+        // Distinct from :androidApp, which owns the se.gustavkarlsson.chefgpt namespace.
+        namespace = "se.gustavkarlsson.chefgpt.app"
+        compileSdk =
+            libs.versions.androidCompileSdk
+                .get()
+                .toInt()
+        minSdk =
+            libs.versions.androidMinSdk
+                .get()
+                .toInt()
+
+        androidResources.enable = true
+
+        withHostTest {}
+    }
 
     listOf(
         iosArm64(),
@@ -91,52 +104,10 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlinTest)
         }
-        androidMain.dependencies {
-            implementation(libs.composeUiToolingPreview) // TODO Move to common?
-            implementation(libs.androidxActivityCompose)
-        }
         jvmMain.dependencies {
             implementation(libs.slf4jApi)
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinxCoroutinesSwing)
-        }
-    }
-}
-
-android {
-    namespace = "se.gustavkarlsson.chefgpt"
-    compileSdk =
-        libs.versions.androidCompileSdk
-            .get()
-            .toInt()
-
-    defaultConfig {
-        applicationId = "se.gustavkarlsson.chefgpt"
-        minSdk =
-            libs.versions.androidMinSdk
-                .get()
-                .toInt()
-        targetSdk =
-            libs.versions.androidTargetSdk
-                .get()
-                .toInt()
-        versionCode = 1
-        versionName = "1.0"
-    }
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
-    buildTypes {
-        getByName("debug") {
-            // Allow plain-HTTP traffic so debug builds can reach the local dev server.
-            manifestPlaceholders["usesCleartextTraffic"] = "true"
-        }
-        getByName("release") {
-            isMinifyEnabled = false
-            // Release builds must talk to the server over HTTPS only.
-            manifestPlaceholders["usesCleartextTraffic"] = "false"
         }
     }
 }

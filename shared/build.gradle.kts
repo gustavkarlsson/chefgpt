@@ -1,10 +1,9 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.kotlinSerialization)
-    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.androidKotlinMultiplatformLibrary)
 }
 
 kotlin {
@@ -14,7 +13,19 @@ kotlin {
             .toInt(),
     )
 
-    androidTarget()
+    android {
+        namespace = "se.gustavkarlsson.chefgpt.shared"
+        compileSdk =
+            libs.versions.androidCompileSdk
+                .get()
+                .toInt()
+        minSdk =
+            libs.versions.androidMinSdk
+                .get()
+                .toInt()
+
+        withHostTest {}
+    }
 
     iosArm64()
     iosSimulatorArm64()
@@ -38,20 +49,5 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlinTest)
         }
-    }
-}
-
-android {
-    namespace = "se.gustavkarlsson.chefgpt.shared"
-    compileSdk =
-        libs.versions.androidCompileSdk
-            .get()
-            .toInt()
-
-    defaultConfig {
-        minSdk =
-            libs.versions.androidMinSdk
-                .get()
-                .toInt()
     }
 }
