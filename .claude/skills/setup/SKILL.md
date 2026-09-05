@@ -56,9 +56,10 @@ What each selected platform needs:
 Never hardcode these — read them, so the skill does not rot when they are bumped.
 
 ```bash
-JDK=$(sed -n 's/^java=\([^ #]*\).*/\1/p' .sdkmanrc)                                        # 21.0.10-zulu
-COMPILE_SDK=$(sed -n 's/^androidCompileSdk *= *"\(.*\)"/\1/p' gradle/libs.versions.toml)   # 36
-PG_IMAGE=$(sed -n 's/^postgresImage *= *"\(.*\)"/\1/p' gradle/libs.versions.toml)          # 18.3
+JDK=$(sed -n 's/^java=\([^ #]*\).*/\1/p' .sdkmanrc)                                        # 25.0.4+1.1-zulu
+TOOLCHAIN=$(sed -n 's/^jvmToolchain *= *"\(.*\)".*/\1/p' gradle/libs.versions.toml)        # 25
+COMPILE_SDK=$(sed -n 's/^androidCompileSdk *= *"\(.*\)"/\1/p' gradle/libs.versions.toml)   # 37
+PG_IMAGE=$(sed -n 's/^postgresImage *= *"\(.*\)"/\1/p' gradle/libs.versions.toml)          # 18.6
 GRADLE=$(sed -n 's|.*/gradle-\([0-9.]*\)-bin.zip|\1|p' gradle/wrapper/gradle-wrapper.properties)
 IOS_TARGET=$(sed -n 's/.*IPHONEOS_DEPLOYMENT_TARGET = \([^;]*\);.*/\1/p' \
     iosApp/iosApp.xcodeproj/project.pbxproj | head -1)                                     # 18.2
@@ -75,21 +76,21 @@ java -version 2>&1     # the JDK on PATH
 
 `.sdkmanrc` records the recommended JDK, but **SDKMAN is not required** — it is one way to
 manage JDKs, not the way this project builds. Don't assume it is installed, and don't tell
-the user to adopt it. What actually matters is that Gradle can get a JDK 21 toolchain:
-`jvmToolchain(21)` plus the foojay resolver in `settings.gradle.kts` means Gradle will
+the user to adopt it. What actually matters is that Gradle can get a `$TOOLCHAIN` toolchain:
+`jvmToolchain` plus the foojay resolver in `settings.gradle.kts` means Gradle will
 download one itself if the machine has none. So:
 
-- **`./gradlew --version` works** → this area passes. `jvmToolchain(21)` governs every
+- **`./gradlew --version` works** → this area passes. `jvmToolchain` governs every
   compile task and the toolchain-aware run tasks, regardless of the daemon's own JVM.
-- **The JVM Gradle runs on is not 21** → a *warning*, worth a line in the report but not a
+- **The JVM Gradle runs on is older** → a *warning*, worth a line in the report but not a
   blocker, as long as the run tasks used in step 9 are the toolchain-aware ones.
 
-Confirm a JDK 21 exists somewhere Gradle can see — including one Gradle provisioned itself
+Confirm a `$TOOLCHAIN` JDK exists somewhere Gradle can see — including one Gradle provisioned itself
 under `~/.gradle/jdks`. Ask Gradle rather than presuming a manager or trusting
 `/usr/libexec/java_home`, which happily returns a 17 when asked for 21:
 
 ```bash
-./gradlew -q javaToolchains | grep -B1 -A3 'Language Version: *21'   # every JDK 21 Gradle knows about
+./gradlew -q javaToolchains | grep -B1 -A3 "Language Version: *$TOOLCHAIN"   # every matching JDK Gradle knows about
 ```
 
 If none exists, offer to install one (step 8) — though the foojay resolver will provision
@@ -215,7 +216,7 @@ after the step 8 answers. A platform the user declined to fix is
 not built and not run.
 
 Run every Gradle invocation as-is. Don't set `JAVA_HOME` and don't invoke a JDK manager —
-the toolchain resolves JDK 21 on its own, provided you use the task names below.
+the toolchain resolves its JDK on its own, provided you use the task names below.
 
 **1. Build.** Drive explicit tasks rather than `./gradlew buildSupported` — that task picks
 targets from `which adb` / `which xcodebuild` at configuration time and downgrades misses to
@@ -227,7 +228,7 @@ per selected platform:
 | `server` | `:server:shadowJar` |
 | `desktop` | `:app:jvmJar` |
 | `web` | `:app:jsBrowserDevelopmentExecutableDistribution` and `:app:wasmJsBrowserDevelopmentExecutableDistribution` |
-| `android` | `:app:assembleDebug` |
+| `android` | `:androidApp:assembleDebug` |
 | `ios` | `:app:linkDebugFrameworkIosSimulatorArm64` |
 
 **2. Server.** Start it, prove it answers, stop it. There is no health endpoint — any HTTP

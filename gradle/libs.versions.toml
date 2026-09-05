@@ -1,6 +1,6 @@
 [versions]
-agp = "8.13.2"
-androidCompileSdk = "36"
+agp = "9.4.0"
+androidCompileSdk = "37"
 androidMinSdk = "24"
 androidTargetSdk = "36"
 androidxActivity = "1.13.0"
@@ -142,7 +142,7 @@ slapshotKtor3 = { module = "se.gustavkarlsson.slapshot:slapshot-ktor3", version.
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
-androidLibrary = { id = "com.android.library", version.ref = "agp" }
+androidKotlinMultiplatformLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 composeHotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "composeHotReload" }
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }

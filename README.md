@@ -76,7 +76,7 @@ Automatically formats Kotlin files before each commit:
 Run JVM tests and lint:
 
 ```bash
-./gradlew spotlessCheck :server:test :shared:jvmTest :shared:testDebugUnitTest :app:jvmTest :app:testDebugUnitTest
+./gradlew spotlessCheck :server:test :shared:jvmTest :shared:testAndroidHostTest :app:jvmTest :app:testAndroidHostTest
 ```
 
 Run all tests including Android and iOS (requires platform tools):
@@ -100,7 +100,7 @@ Start containerized database and the Ktor server (skip servers if you want to ma
 Build and install the debug APK:
 
 ```bash
-./gradlew :app:assembleDebug
+./gradlew :androidApp:assembleDebug
 ```
 
 ### iOS

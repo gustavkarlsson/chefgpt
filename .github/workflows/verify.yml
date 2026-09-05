@@ -47,9 +47,9 @@ jobs:
           ./gradlew
           :server:test
           :shared:jvmTest
-          :shared:testDebugUnitTest
+          :shared:testAndroidHostTest
           :app:jvmTest
-          :app:testDebugUnitTest
+          :app:testAndroidHostTest
 
       - name: Upload test reports
         if: always()
@@ -76,7 +76,7 @@ jobs:
           GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Build Android debug APK
-        run: ./gradlew :app:assembleDebug
+        run: ./gradlew :androidApp:assembleDebug
 
   build-ios:
     name: Build iOS simulator app

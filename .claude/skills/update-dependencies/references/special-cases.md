@@ -24,7 +24,8 @@ cache (`org.gradle.configuration-cache=true` in `gradle.properties`) still works
 majors tighten configuration-cache rules, and the `postgres` and `buildSupported` tasks use
 `ProcessBuilder` / `providers.exec`.
 
-Bump the wrapper **before** AGP.
+Bump the wrapper **before** AGP — unless their supported ranges do not overlap, in which
+case both move in one commit. See the AGP section.
 
 ## Android SDK and compileSdk
 
@@ -41,9 +42,9 @@ Name packages exactly as `sdk list` prints them (`platforms/android-<N>`). Insta
 update download in the foreground and may prompt for a licence, so run them with a generous
 timeout and never in the background.
 
-Then set `androidCompileSdk` in `libs.versions.toml` to `<N>`. It is consumed by both
-`app/build.gradle.kts` and `shared/build.gradle.kts` through the catalog, so one edit
-covers both.
+Then set `androidCompileSdk` in `libs.versions.toml` to `<N>`. It is consumed by
+`app/build.gradle.kts`, `androidApp/build.gradle.kts` and `shared/build.gradle.kts` through
+the catalog, so one edit covers all three.
 
 Only install stable platforms — preview platforms are named after the release letter rather
 than a number, and are subject to the unstable-version rule.
@@ -52,20 +53,27 @@ than a number, and are subject to the unstable-version rule.
 behaviour changes and is a product decision, not a dependency update.
 
 A newer `compileSdk` can surface new lint checks and deprecation warnings — run
-`./gradlew :app:lintDebug` and read them.
+`./gradlew :androidApp:lintDebug` and read them.
 
 ## Android Gradle Plugin
 
 Check the AGP↔Gradle compatibility table at
 https://developer.android.com/build/releases/gradle-plugin before bumping, and upgrade the
 wrapper first if the target AGP needs a newer Gradle. AGP also declares a minimum JDK — it
-must be satisfied by the pinned `jvmToolchain` (21); if it is not, stop and ask, because
-the toolchain is pinned by the Hot Reload constraint.
+must be satisfied by the pinned `jvmToolchain`; if it is not, stop and ask, because the
+toolchain is pinned by the Hot Reload constraint.
 
 AGP majors routinely remove DSL and change variant APIs. Read the release notes in full.
 
-While here, re-check the `@Suppress("DEPRECATION")` and its TODO on `androidTarget()` in
-`app/build.gradle.kts` — an AGP or Kotlin bump may have resolved it.
+Gradle and AGP constrain each other in **both** directions, so the wrapper cannot always go
+first: Gradle 9.6 removed an internal API AGP 8.x depends on, while AGP 9.4 requires Gradle
+9.6+. When the supported ranges do not overlap, bump both in one commit.
+
+`app` and `shared` use the KMP-specific `com.android.kotlin.multiplatform.library` plugin,
+configured through an `android { }` block *inside* `kotlin { }`. Only `androidApp` uses
+`com.android.application`, with a top-level `android { }`. Since AGP 9 the plain
+`com.android.library` / `com.android.application` plugins are rejected in any module that
+also applies the Kotlin Multiplatform plugin — do not reintroduce them.
 
 ## Kotlin
 
@@ -81,8 +89,7 @@ One `version.ref` moves `kotlinJvm`, `kotlinMultiplatform`, `kotlinSerialization
    will otherwise fail the JS/Wasm builds.
 2. **Re-check the compiler options** in the root `build.gradle.kts`: the `optIn` list and
    the `-Xexpect-actual-classes` free arg. Opt-ins get promoted to stable across releases,
-   at which point the opt-in becomes a warning and should be dropped. The `optIn` list also
-   currently contains a duplicate entry worth cleaning up.
+   at which point the opt-in becomes a warning and should be dropped.
 3. **Migrate to new syntax.** Read "What's new in Kotlin X" and, for every
    *non-experimental* language feature that supersedes something the codebase does, migrate
    the usages. This is required, not optional.
@@ -102,12 +109,10 @@ before moving either Kotlin or Compose.
 of the Compose Multiplatform BOM — apply the unstable-version rule, and prefer a stable
 release if one has appeared.
 
-`composeHotReload` is the reason `jvmToolchain` is pinned; do not let a Hot Reload bump
-push the toolchain.
-
-While here, note that `composeUiToolingPreview` is declared in both `commonMain` and
-`androidMain` in `app/build.gradle.kts` with a TODO — worth resolving if the release notes
-touch it.
+`composeHotReload` is the reason `jvmToolchain` is pinned: the toolchain must stay within
+what the JetBrains Runtime that Hot Reload provisions supports. A Hot Reload bump can
+*raise* that ceiling, but never move the toolchain without launching `:app:hotRunJvmAsync`
+to confirm the app actually starts.
 
 ## Ktor
 
@@ -134,11 +139,10 @@ DI code still compiles.
 
 ## koog
 
-`koogAgents` (`1.0.0-preview*`) and `koogKtor` (`1.0.0-beta-preview*`) are a deliberately
-pinned matched pair — the catalog carries a comment explaining that no stable 1.0 exists
-and that `koog-ktor` pulls `koog-agents` from the preview stream. Move both together to the
-same preview number, or move neither. Do not resolve `koog-agents` to a version `koog-ktor`
-does not expect.
+`koogAgents` and `koogKtor` are a deliberately pinned matched pair: `koog-ktor` trails
+`koog-agents` by a `-beta` suffix and pulls `koog-agents` in transitively. Move both
+together to the same version, or move neither. Do not resolve `koog-agents` to a version
+`koog-ktor` does not expect.
 
 ## SQLDelight
 

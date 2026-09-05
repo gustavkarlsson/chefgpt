@@ -38,7 +38,7 @@ Then:
 
 ```bash
 ./gradlew lintDebug
-./gradlew :app:assembleDebug
+./gradlew :androidApp:assembleDebug
 ```
 
 `lintDebug` also catches the inverse mistake — code still guarding a version below the new floor. Then run the **verify** skill.

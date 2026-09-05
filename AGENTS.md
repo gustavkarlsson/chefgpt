@@ -2,7 +2,8 @@
 
 ## Repository Layout
 - `server`: Ktor backend
-- `app`: Kotlin Multiplatform client project
+- `app`: Kotlin Multiplatform client project — all client code, every target
+- `androidApp`: thin Android application wrapper around `app` (manifest, resources, `MainActivity`)
 - `shared`: Kotlin Multiplatform shared code between server and clients
 - `iosApp`: XCode project for the iOS client
 
@@ -14,7 +15,7 @@ To upgrade dependencies, use the update-dependencies skill.
 
 Run JVM tests (CI-equivalent, fast):
 ```bash
-./gradlew spotlessCheck :server:test :shared:jvmTest :shared:testDebugUnitTest :app:jvmTest :app:testDebugUnitTest
+./gradlew spotlessCheck :server:test :shared:jvmTest :shared:testAndroidHostTest :app:jvmTest :app:testAndroidHostTest
 ```
 
 Run all tests and lint checks (slow and requires platform-specific tools installed):

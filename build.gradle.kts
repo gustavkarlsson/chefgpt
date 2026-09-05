@@ -5,7 +5,7 @@ plugins {
     // this is necessary to avoid the plugins to be loaded multiple times
     // in each subproject's classloader
     alias(libs.plugins.androidApplication) apply false
-    alias(libs.plugins.androidLibrary) apply false
+    alias(libs.plugins.androidKotlinMultiplatformLibrary) apply false
     alias(libs.plugins.composeHotReload) apply false
     alias(libs.plugins.composeMultiplatform) apply false
     alias(libs.plugins.composeCompiler) apply false
@@ -42,7 +42,7 @@ tasks.register("buildSupported") {
         }
 
     if (hasAndroid) {
-        dependsOn(":app:assembleDebug")
+        dependsOn(":androidApp:assembleDebug")
     } else {
         doFirst {
             logger.warn("WARNING: Android tools (adb) not found — skipping Android build")

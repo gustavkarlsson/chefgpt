@@ -74,7 +74,7 @@ Bump `androidTargetSdk` in `gradle/libs.versions.toml` — version catalog only,
 
 ```bash
 ./gradlew lintDebug
-./gradlew :app:assembleDebug
+./gradlew :androidApp:assembleDebug
 ```
 
 `lintDebug` is the CI gate (`.github/workflows/verify.yml`). Then run the **verify** skill.

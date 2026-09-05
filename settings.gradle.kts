@@ -35,6 +35,7 @@ plugins {
 
 rootProject.name = "ChefGPT"
 
+include(":androidApp")
 include(":app")
 include(":server")
 include(":shared")

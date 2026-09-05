@@ -109,11 +109,11 @@ Do not change these unless the user explicitly instructs you to:
   `androidTargetSdk`. iOS has no separate target setting: the SDK you build against *is*
   the behaviour opt-in. The iOS CI job is also currently disabled (`if: false`), so such a
   change would go unverified.
-- **`jvmToolchain` must stay at a version that works with the JetBrains Compose Hot Reload
-  JVM** — that is why it is pinned at 21 (see the comment in `libs.versions.toml`). If a
-  bump is ever requested, `libs.versions.toml`, `.sdkmanrc` and
-  `.github/actions/gradle-setup/action.yml` must move together, and Hot Reload support for
-  the new JDK must be confirmed first.
+- **`jvmToolchain` must stay at a version the JetBrains Compose Hot Reload JBR supports**
+  (see the comment in `libs.versions.toml`). If a bump is ever requested,
+  `libs.versions.toml`, `.sdkmanrc` and `.github/actions/gradle-setup/action.yml` must move
+  together, and Hot Reload support for the new JDK must be confirmed first — by launching
+  `:app:hotRunJvmAsync`, not just by building.
 - **Matched pairs** — some catalog entries are deliberately pinned to each other with an
   explanatory comment (currently `koogAgents` / `koogKtor`). Read the comments in
   `libs.versions.toml` and move such entries together or not at all.
@@ -129,7 +129,7 @@ Verification depth:
 | Upgrade | Also run |
 |---|---|
 | any | the **verify** skill (`spotlessCheck` + JVM tests) |
-| Gradle, AGP, `compileSdk` | `./gradlew :app:lintDebug :app:assembleDebug` |
+| Gradle, AGP, `compileSdk` | `./gradlew :androidApp:lintDebug :androidApp:assembleDebug` |
 | Kotlin, Compose | `./gradlew buildSupported` — covers JS and Wasm, which the verify skill does not |
 | ktlint | `./gradlew spotlessApply`, committed **separately** from the version bump |
 | SQLDelight, Flyway | `./gradlew :server:test` (migration verification is enabled) |
