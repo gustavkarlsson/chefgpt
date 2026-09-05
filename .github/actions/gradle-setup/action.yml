@@ -3,8 +3,7 @@ description: Setup Java and Gradle
 inputs:
   write-cache:
     description: >-
-      Whether this job should write to the Gradle cache (true) or only
-      read from it (false).
+      Whether this job should write to the Gradle cache (true) or only read from it (false).
     required: true
 runs:
   using: "composite"
