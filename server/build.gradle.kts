@@ -1,4 +1,8 @@
+@file:OptIn(kotlin.time.ExperimentalTime::class)
+
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.seconds
 
 plugins {
     alias(libs.plugins.kotlinJvm)
@@ -186,6 +190,22 @@ val postgres =
                 else -> {
                     logger.lifecycle("$containerName container is already running.")
                 }
+            }
+
+            logger.lifecycle("Waiting for $containerName to accept connections...")
+            val timeout = 30.seconds
+            val deadline = Clock.System.now() + timeout
+            var ready = false
+            while (Clock.System.now() < deadline) {
+                val (readyCode, _) = Command.run("docker", "exec", containerName, "pg_isready", "-U", "postgres")
+                if (readyCode == 0) {
+                    ready = true
+                    break
+                }
+                Thread.sleep(500)
+            }
+            if (!ready) {
+                throw GradleException("$containerName did not become ready within $timeout")
             }
         }
     }
