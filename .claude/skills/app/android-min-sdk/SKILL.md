@@ -3,7 +3,7 @@ name: android-min-sdk
 description: Raise the Android `minSdk` to a new API version and remove the code and resources that only existed for older versions. Use when dropping support for older Android versions.
 ---
 
-`minSdk` is set once in `gradle/libs.versions.toml` as `androidMinSdk` and consumed by both `app/build.gradle.kts` and `shared/build.gradle.kts`, so there's no per-module edit.
+`minSdk` is set once in `gradle/libs.versions.toml` as `androidMinSdk` and consumed by `app/build.gradle.kts`, `shared/build.gradle.kts`, and `androidApp/build.gradle.kts`, so there's no per-module edit.
 
 Raising it drops users on older devices. If the user didn't name a version, ask which one before changing anything.
 
@@ -20,8 +20,8 @@ Change `androidMinSdk` in `gradle/libs.versions.toml`.
 Find the candidates:
 
 ```bash
-rg -n 'SDK_INT|RequiresApi|TargetApi|ChecksSdkIntAtLeast|VERSION_CODES|maxSdkVersion' app shared
-find app/src shared/src -type d -name '*-v[0-9]*'
+rg -n 'SDK_INT|RequiresApi|TargetApi|ChecksSdkIntAtLeast|VERSION_CODES|maxSdkVersion' app shared androidApp
+find app/src shared/src androidApp/src -type d -name '*-v[0-9]*'
 ```
 
 Then:

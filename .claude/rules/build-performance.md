@@ -1,0 +1,113 @@
+---
+description: Keep Gradle caching (task, build, and configuration cache) working and fast. Triggered on Gradle build files, gradle.properties, the version catalog, and the wrapper — not CI.
+paths:
+  - "**/*.gradle.kts"
+  - "gradle.properties"
+  - "gradle/libs.versions.toml"
+  - "gradle/wrapper/gradle-wrapper.properties"
+---
+
+# Build performance
+
+Gradle has three layers of caching that keep builds fast. Each is enabled in
+`gradle.properties`, and each has things that silently break it. When touching
+any build file, keep all three working.
+
+The **review** skill's *Build performance* dimension defers to this rule rather than
+restating it.
+
+## The three layers
+
+| Layer | Enabled by | What it skips |
+|---|---|---|
+| Task caching | up-to-date checks (`@Input`/`@Output`) | re-running a task whose inputs are unchanged |
+| Build cache | `org.gradle.caching=true` | re-running a task whose outputs are already cached — across builds and machines |
+| Configuration cache | `org.gradle.configuration-cache=true` | the whole configuration phase |
+
+`gradle.properties` must have available caches turned on (unless default).
+
+Don't downgrade or delete any of them without a reason.
+
+## Keeping task and build caching working
+
+A task is cacheable only when Gradle can prove its outputs are a pure function
+of its inputs:
+
+- **Declare inputs and outputs.** A task that touches files without declaring
+  them (`@Input`, `@InputFiles`, `@OutputFile`, `@OutputDirectory`, `@Internal`,
+  …) is never up-to-date and pollutes the build cache.
+- **No absolute paths in inputs or outputs.** Cached tasks must be relocatable;
+  a path containing the build directory or a machine-specific location defeats
+  the cache. Use relative paths or `Project.layout`.
+- **No timestamps, environment, or system properties as inputs.** Capture only
+  what affects the output. `System.currentTimeMillis()`, `System.getenv()`, and
+  host-specific values at execution time make the output non-reproducible.
+- **Reproducible outputs.** Sort where order is not semantic; don't embed
+  timestamps or absolute paths in generated files.
+- **Don't disable caching.** `@DisableCachingByDefault`, `outputs.cacheIf { false }`,
+  or `doNotCacheIf(...)` are for tasks whose outputs are genuinely not worth
+  caching — not a workaround for a misconfigured task.
+
+## Keeping the configuration cache working
+
+The configuration cache serializes the result of the configuration phase and
+replays it on the next build. Anything read at *configuration time* becomes an
+input and, if it changes often or isn't serializable, breaks the cache:
+
+- **Keep configuration pure.** Don't read the environment, system properties,
+  the clock, or mutable external state at configuration time; read them inside a
+  task action instead.
+- **No `Project` references at execution time.** Capture values in configuration
+  and pass plain values into task actions; holding `project` in a lambda that
+  runs later makes it unserializable.
+- **Use provider chains.** Prefer `Provider`/`Property`/`ConfigurableFileCollection`
+  over eager `String`/`File` so Gradle can track and serialize values lazily.
+- **Declare the inputs a task uses.** A `doLast { }` that reads a file it never
+  declared breaks both the configuration cache and the task cache.
+- **Watch the warnings.** A "Configuration cache problems found" warning means
+  Gradle fell back or will refuse to cache. Treat it as a bug to fix, not noise.
+
+## Verifying
+
+Confirm the caches actually work after any build-file change:
+
+```bash
+# Configuration cache: run twice, second run must reuse the cache
+./gradlew help
+./gradlew help   # expect: "Reusing configuration cache."
+
+# Fail loudly on configuration-cache problems instead of warning
+./gradlew :server:test :shared:jvmTest :app:jvmTest --configuration-cache-problems=fail
+
+# Build cache: a clean build followed by a cache hit proves it works
+./gradlew clean :server:test :shared:jvmTest :app:jvmTest
+./gradlew :server:test :shared:jvmTest :app:jvmTest --info   # expect FROM-CACHE on the cached tasks
+```
+
+- A second run that still reports tasks as `UP-TO-DATE`/`FROM-CACHE` is the
+  success signal; a task that re-runs for no reason has undeclared or
+  non-relocatable inputs.
+- If `--configuration-cache-problems=fail` fails, the configuration cache is
+  broken and must be fixed before the change is done.
+
+### Benchmarking
+
+When a change is meant to *improve* build performance (not just keep the caches
+working), measure before and after rather than guessing:
+
+```bash
+# Profile a build; report lands at androidApp/build/reports/profile/profile-*.html
+./gradlew :androidApp:assembleDebug --profile
+
+# Wall-clock time, warm caches first so the second run reflects steady state
+./gradlew :androidApp:assembleDebug
+time ./gradlew :androidApp:assembleDebug
+```
+
+- Always run the build once first to warm the caches, then time a second run —
+  a cold build measures cache population, not steady-state performance.
+- Use `--profile` for a per-task breakdown and `--scan` for a shareable build
+  scan; both show configuration, task, and dependency-resolution time.
+- Compare the same task under the same conditions (same machine, same cache
+  state, no `--rerun-tasks` unless that is the point). A single wall-clock run
+  is noisy — repeat a few times and report the median.
