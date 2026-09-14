@@ -1,0 +1,20 @@
+{
+  "worktree": {
+    "setup": [
+      "./setup_dev.sh",
+      "cp -f \"$PASEO_SOURCE_CHECKOUT_PATH/server/application_dev.conf\" server",
+      "./install-spotless-pre-commit-hook.sh"
+    ],
+    "teardown": "./gradlew clean"
+  },
+  "scripts": {
+    "run_dev.sh": {
+      "command": "./run_dev.sh"
+    }
+  },
+  "metadataGeneration": {
+    "branchName": {
+      "instructions": "prefix branch names with paseo/"
+    }
+  }
+}
