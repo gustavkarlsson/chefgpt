@@ -108,8 +108,8 @@ val clearFlywayMigrationDirectory =
         delete(flywayMigrationDirectory)
     }
 
-val copySqldelightMigrationsToFlywheel =
-    tasks.register<Copy>("copySqldelightMigrationsToFlywheel") {
+val copySqldelightMigrationsToFlyway =
+    tasks.register<Copy>("copySqldelightMigrationsToFlyway") {
         description =
             "Copies SQLDelight migrations from a temporary to the Flyway migrations directory, renaming them to match Flyway's format"
         dependsOn("generateMainChefGptDatabaseMigrations")
@@ -127,7 +127,7 @@ val copySqldelightMigrationsToFlywheel =
     }
 
 tasks.withType<KotlinCompile> {
-    dependsOn(copySqldelightMigrationsToFlywheel)
+    dependsOn(copySqldelightMigrationsToFlyway)
 }
 
 tasks.test {

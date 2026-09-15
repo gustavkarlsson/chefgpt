@@ -1,4 +1,3 @@
-rootProject.name = "chefgpt"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {

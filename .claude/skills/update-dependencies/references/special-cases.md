@@ -149,7 +149,7 @@ together to the same version, or move neither. Do not resolve `koog-agents` to a
 A bump regenerates the database interface and re-runs migration verification
 (`verifyMigrations = true`, `deriveSchemaFromMigrations = true`). The server build also
 copies SQLDelight migrations into the Flyway resource directory via
-`copySqldelightMigrationsToFlywheel`, so a change in migration file naming or output layout
+`copySqldelightMigrationsToFlyway`, so a change in migration file naming or output layout
 breaks Flyway too.
 
 Run `./gradlew :server:test` after, and check `server/src/main/sqldelight/databases` for an

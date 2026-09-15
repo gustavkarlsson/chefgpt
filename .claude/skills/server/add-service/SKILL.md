@@ -10,7 +10,7 @@ Services live in domain-named packages under `server/src/main/kotlin/se/gustavka
 If it's unclear what implementations are needed (e.g. real vs. fake, which external API, database vs. in-memory), **ask the user** before writing any code. Common patterns:
 
 - **Database-backed with in-memory fallback** — `PostgresFoo` + `InMemoryFoo`, selected by whether the database is available in the DI graph.
-- **External API with fake** — `RealFoo(apiKey)` + `FakeFoo()`, selected by a config string (see `CreateImageUploaderModule.kt`)
+- **External API with fake** — `RealFoo(apiKey)` + `FakeFoo()`, selected by a config string (see `CreateFilesModule.kt`)
 - **Single implementation** — no config switch needed, just wire directly
 
 ---
@@ -96,7 +96,7 @@ fun createMyServiceModule(config: ApplicationConfig) =
 fun createMyServiceModule(config: ApplicationConfig) =
     module {
         single {
-            val database = getOrNull<PostgresAccess>()
+            val database = getOrNull<DatabaseAccess>()
             if (database != null) PostgresMyService(database) else InMemoryMyService()
         } bind MyService::class
     }
@@ -120,7 +120,7 @@ myService {
 }
 ```
 
-In `application_dev_template.conf` (at the repo root, used to set up new dev environments), set safe defaults:
+In `server/application_dev_template.conf` (used to set up new dev environments), set safe defaults:
 
 ```hocon
 bindings {
