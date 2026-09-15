@@ -191,7 +191,7 @@ it and respect it for the rest of the run, including step 10.
 
 | Gap | What to offer to run |
 |---|---|
-| No usable JDK | install `$JDK` with whichever manager step 3 found — e.g. `sdk install java $JDK` if SDKMAN is present, otherwise `brew install --cask temurin@21` or the platform equivalent. If none is available, say so: Gradle's toolchain resolver will provision one on the next build anyway. |
+| No usable JDK | install `$JDK` with whichever manager step 3 found — e.g. `sdk install java $JDK` if SDKMAN is present, otherwise `brew install --cask temurin@$TOOLCHAIN` or the platform equivalent. If none is available, say so: Gradle's toolchain resolver will provision one on the next build anyway. |
 | Missing platform, build-tools or platform-tools | `"$ANDROID" sdk install <package>` |
 | No Android device connected **and** no emulator installed | `"$ANDROID" sdk install` the emulator and a system image |
 | No Android device connected **and** no AVD | `avdmanager create avd` against a system image for `$COMPILE_SDK` |
