@@ -8,7 +8,7 @@ paths:
 
 - Use modern Kotlin language features.
 - Don't write more code than necessary.
-- Prefer functional patterns and immutable data.
+- Write idiomatic Kotlin.
 - Comment only when purpose or implementation is unclear.
 - Never use fully qualified references — use imports (and typealiases for collisions).
 - Use braces in `when` branches when the expression returns `Unit`.

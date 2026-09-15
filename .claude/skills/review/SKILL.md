@@ -1,6 +1,6 @@
 ---
 name: review
-description: Holistic review of a change or the whole repo across code (correctness, style, and test coverage), documentation (correctness and stale references), and build performance. Use whenever asked to review, critique, or sanity-check code, a diff, a PR, documentation, the build, or test coverage, and before considering a task done. For a purely diff-focused correctness and cleanup pass, prefer the code-review skill; for security issues, the security-review skill.
+description: Holistic review of a change or the whole repo across code (correctness, style, and test coverage), documentation (correctness and stale references), and build performance. Use whenever asked to review, critique, or sanity-check code, a diff, a PR, documentation, the build, or test coverage, and before considering a task done.
 ---
 
 # Review
@@ -34,24 +34,20 @@ project rules:
   input. Trace the changed call paths rather than reading files in isolation.
 - **Style** — check against the `kotlin-style`, `kotlin-data-classes`, and
   `json-serialization` rules.
-- **Server conventions** — a new route needs a snapshot test (see `server-snapshot-tests`
-  rule), registration in `plugins/InstallRouting.kt`, DI through Koin (`get<T>()` inside
-  the handler), and domain→API conversion as an extension function (`fun X.toApi()`).
+- **Server conventions** — check new or changed routes against the `add-endpoint` skill;
+  the snapshot-test requirement is in the `server-snapshot-tests` rule.
 - **Reuse and simplification** — duplicated logic that already exists elsewhere, dead
-  code, and over-engineered abstractions. The `simplify` skill exists for a dedicated
-  cleanup pass; note reuse issues here but do not apply them.
+  code, and over-engineered abstractions. Note reuse issues here but do not apply them.
 
 ### Test coverage
 
 Judge whether the change is adequately tested against how each module tests its code.
 
-- **Server** — routes are covered by snapshot tests under `server/src/test/` following
-  the `server-snapshot-tests` rule. A new or changed route must have (or update) its
-  snapshot, and the snapshot file is committed alongside the test. Run
-  `./gradlew :server:test` to see snapshot failures.
+- **Server** — routes are covered by snapshot tests per the `server-snapshot-tests`
+  rule. Flag a new or changed route whose snapshot was not added or updated.
 - **Shared and app** — logic is tested with `kotlin.test` in `commonTest`/`jvmTest`,
-  following the `kotlin-tests` rule (Arrange-Act-Assert, one assertion per test). Android
-  host tests live in `src/*Test/` via `withHostTest {}`.
+  following the `kotlin-tests` rule. Android host tests live in `src/*Test/` via
+  `withHostTest {}`.
 - **`androidApp`** — a thin wrapper with no tests; that is expected, not a gap.
 - **Uncovered paths** — for each changed production file, ask what behaviour could break
   and whether a test would catch it. Flag changed code with no corresponding test and no
@@ -99,9 +95,7 @@ Look for changes that would slow the build or break Gradle's caching. The
 `build-performance` rule details the caching layers and how to keep them working — defer
 to it for those specifics and flag anything that violates it, rather than restating it.
 
-- **Version catalog hygiene** — every version belongs in `gradle/libs.versions.toml`
-  referenced with `version.ref`, never an inline literal (see the `gradle-versions`
-  rule).
+- **Version catalog hygiene** — versions must follow the `gradle-versions` rule.
 - **Dependency scope and weight** — a new dependency should be `implementation` rather
   than `api` unless its types leak into the public API, `testImplementation` if test-only,
   and should not drag in a large transitive tree that an existing dependency already

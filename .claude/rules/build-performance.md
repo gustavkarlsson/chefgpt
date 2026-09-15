@@ -13,9 +13,6 @@ Gradle has three layers of caching that keep builds fast. Each is enabled in
 `gradle.properties`, and each has things that silently break it. When touching
 any build file, keep all three working.
 
-The **review** skill's *Build performance* dimension defers to this rule rather than
-restating it.
-
 ## The three layers
 
 | Layer | Enabled by | What it skips |
@@ -27,6 +24,25 @@ restating it.
 `gradle.properties` must have available caches turned on (unless default).
 
 Don't downgrade or delete any of them without a reason.
+
+## gradle.properties
+
+The rest of `gradle.properties` configures the JVMs that run the build and how work is
+parallelized:
+
+- **JVM settings per process** — the Gradle daemon and the Kotlin compiler daemon are
+  separate JVMs, each sized independently:
+  - `org.gradle.jvmargs` — the Gradle daemon (`-Xmx4096M`, a metaspace cap, a reserved
+    code cache, and `-Dfile.encoding=UTF-8`).
+  - `kotlin.daemon.jvmargs` — the Kotlin compiler daemon (`-Xmx4096M`, a metaspace cap,
+    and a reserved code cache).
+  Tune each JVM individually, from that daemon's measured usage — not in lockstep.
+- **Parallel execution** — `org.gradle.parallel=true` lets Gradle run independent tasks
+  from different modules at the same time. `org.gradle.tooling.parallel` does the same
+  for the Tooling API (used by IDEs) and defaults to on in recent Gradle. Don't disable
+  either without a reason.
+- **Caching flags** — `org.gradle.caching=true` and `org.gradle.configuration-cache=true`
+  are described under *The three layers* above.
 
 ## Keeping task and build caching working
 
@@ -67,6 +83,40 @@ input and, if it changes often or isn't serializable, breaks the cache:
 - **Watch the warnings.** A "Configuration cache problems found" warning means
   Gradle fell back or will refuse to cache. Treat it as a bug to fix, not noise.
 
+## Repository order
+
+Gradle asks repositories for a module in declaration order, and the first one that can
+serve it wins. Keep the list short and each entry scoped to what it actually hosts, so
+resolution doesn't fan out to every repository for every dependency:
+
+- **Order matters** — put the most specific or fastest repositories first.
+- **Filter by group** — a `content`/`mavenContent` filter makes a repository answer only
+  for the groups it is authoritative for. For example, limit `google()` to the Android
+  groups via `includeGroupAndSubgroups(...)`:
+  ```kotlin
+  google {
+      mavenContent {
+          includeGroupAndSubgroups("androidx")
+          includeGroupAndSubgroups("com.android")
+          includeGroupAndSubgroups("com.google")
+      }
+  }
+  ```
+- **Scope third-party repos the same way** — a repo like JitPack should serve only the
+  groups it is authoritative for, not be an open fallback for anything Maven Central
+  doesn't have. JitPack artifacts all live under `com.github.*`:
+  ```kotlin
+  maven("https://jitpack.io") {
+      content {
+          includeGroupAndSubgroups("com.github")
+      }
+  }
+  ```
+  This stops Gradle querying JitPack for every missing artifact, which is slow and makes
+  resolution failures confusing. When a repo serves a group and *nothing else*, an
+  `exclusiveContent { forRepository(...) { filter { includeGroup(...) } } }` block is the
+  stronger form — but a plain `content` filter is usually enough.
+
 ## Verifying
 
 Confirm the caches actually work after any build-file change:
@@ -77,11 +127,11 @@ Confirm the caches actually work after any build-file change:
 ./gradlew help   # expect: "Reusing configuration cache."
 
 # Fail loudly on configuration-cache problems instead of warning
-./gradlew :server:test :shared:jvmTest :app:jvmTest --configuration-cache-problems=fail
+./gradlew :server:test :shared:jvmTest :app:jvmTest :androidApp:assembleDebug --configuration-cache-problems=fail
 
 # Build cache: a clean build followed by a cache hit proves it works
-./gradlew clean :server:test :shared:jvmTest :app:jvmTest
-./gradlew :server:test :shared:jvmTest :app:jvmTest --info   # expect FROM-CACHE on the cached tasks
+./gradlew clean :server:test :shared:jvmTest :app:jvmTest :androidApp:assembleDebug
+./gradlew :server:test :shared:jvmTest :app:jvmTest :androidApp:assembleDebug --info   # expect FROM-CACHE on the cached tasks
 ```
 
 - A second run that still reports tasks as `UP-TO-DATE`/`FROM-CACHE` is the
@@ -111,3 +161,8 @@ time ./gradlew :androidApp:assembleDebug
 - Compare the same task under the same conditions (same machine, same cache
   state, no `--rerun-tasks` unless that is the point). A single wall-clock run
   is noisy — repeat a few times and report the median.
+
+## Further reading
+
+- [Gradle performance guide](https://docs.gradle.org/current/userguide/performance.html)
+  — the canonical reference for build speed, caching, and configuration performance.
