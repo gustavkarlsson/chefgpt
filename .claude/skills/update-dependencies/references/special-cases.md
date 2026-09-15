@@ -57,6 +57,21 @@ A newer `compileSdk` can surface new lint checks and deprecation warnings — ru
 
 ## Android Gradle Plugin
 
+AGP must also stay within what the latest JetBrains IDE Android plugin supports. The plugin
+page is a client-side SPA, so its changelog lives in the Marketplace API, not the HTML:
+read the `notes` field to learn the supported AGP series, then take the highest patch of
+that series from Google Maven (the plugin ID `22989` comes from the `/plugin/22989-android`
+slug):
+
+```bash
+# JetBrains Android plugin — supported AGP series, in each entry's `notes`
+curl -s "https://plugins.jetbrains.com/api/plugins/22989/updates" \
+  | jq -r '.[] | .version + "  |  " + (.notes // "")'
+# Highest patch of that series
+curl -s "https://dl.google.com/dl/android/maven2/com/android/tools/build/gradle/maven-metadata.xml" \
+  | grep -oE '<version>[^<]+' | sed 's/<version>//' | grep -E '^<series>\.' | sort -V
+```
+
 Check the AGP↔Gradle compatibility table at
 https://developer.android.com/build/releases/gradle-plugin before bumping, and upgrade the
 wrapper first if the target AGP needs a newer Gradle. AGP also declares a minimum JDK — it
