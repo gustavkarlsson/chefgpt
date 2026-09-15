@@ -59,6 +59,15 @@ Don't create new coroutine scopes. Run suspending functions on the `runTest`
 lambda receiver (a `TestScope`), or pass `backgroundScope` when a scope
 argument is required (e.g. for a ViewModel).
 
+## Fakes over mocks
+
+Prefer fakes over mocks. Create a local `private class FakeX` when no shared fake
+exists; reserve mocking frameworks for what can't be faked cheaply (system types,
+HTTP services, verifying *how* something was called).
+
+Before writing a test, read the class under test fully, and look for existing
+shared fakes or fixtures in the package first.
+
 ## Server route tests
 
 Ktor HTTP routes are covered by snapshot tests, which follow different conventions (JUnit5 API, stored JSON snapshots). Under `server/src/test/`, the `server-snapshot-tests` rule takes precedence over the conventions above.

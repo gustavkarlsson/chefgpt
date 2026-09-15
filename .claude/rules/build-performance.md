@@ -1,10 +1,12 @@
 ---
-description: Keep Gradle caching (task, build, and configuration cache) working and fast. Triggered on Gradle build files, gradle.properties, the version catalog, and the wrapper — not CI.
+description: Keep Gradle caching (task, build, and configuration cache) working and fast. Triggered on Gradle build files, gradle.properties, the version catalog, the wrapper, and the CI workflows.
 paths:
   - "**/*.gradle.kts"
   - "gradle.properties"
   - "gradle/libs.versions.toml"
   - "gradle/wrapper/gradle-wrapper.properties"
+  - ".github/workflows/verify.yml"
+  - ".github/workflows/cache-cleanup.yml"
 ---
 
 # Build performance
@@ -63,6 +65,11 @@ of its inputs:
 - **Don't disable caching.** `@DisableCachingByDefault`, `outputs.cacheIf { false }`,
   or `doNotCacheIf(...)` are for tasks whose outputs are genuinely not worth
   caching — not a workaround for a misconfigured task.
+- **No machine- or run-specific inputs.** Before adding a `buildConfigField`,
+  manifest placeholder, or task input, ask whether two machines compute the same
+  value. Preference order: drop it; collapse to a fixed constant on CI via the
+  `CI` env var read through a `Provider`; or keep it out of anything upstream of
+  an expensive task.
 
 ## Keeping the configuration cache working
 
@@ -78,10 +85,25 @@ input and, if it changes often or isn't serializable, breaks the cache:
   runs later makes it unserializable.
 - **Use provider chains.** Prefer `Provider`/`Property`/`ConfigurableFileCollection`
   over eager `String`/`File` so Gradle can track and serialize values lazily.
+- **Use the provider APIs for external state.** Wrap external reads (network,
+  filesystem, git, subprocess) in a `ValueSource`. Read env and Gradle properties
+  via `providers.environmentVariable(...)` / `providers.gradleProperty(...)` — never
+  bare `System.getenv()` / `System.getProperty()`. Never call `.get()` on a
+  `Provider` during configuration — chain with `map`/`flatMap`/`orElse`.
+- **Register tasks lazily.** Prefer `tasks.register`/`configureEach`; avoid
+  `create`, `getByName`, and bare `tasks.withType<T> { }`.
 - **Declare the inputs a task uses.** A `doLast { }` that reads a file it never
   declared breaks both the configuration cache and the task cache.
 - **Watch the warnings.** A "Configuration cache problems found" warning means
   Gradle fell back or will refuse to cache. Treat it as a bug to fix, not noise.
+
+## Incremental compilation
+
+Compilation is incremental only while the code everything depends on doesn't
+change: prefer compiler plugins (Compose compiler, Koin compiler) over kapt,
+which touches more of the build; and keep unit tests on the JVM —
+Android-framework test dependencies belong in instrumented tests, not JVM unit
+tests.
 
 ## Repository order
 
@@ -116,6 +138,23 @@ resolution doesn't fan out to every repository for every dependency:
   resolution failures confusing. When a repo serves a group and *nothing else*, an
   `exclusiveContent { forRepository(...) { filter { includeGroup(...) } } }` block is the
   stronger form — but a plain `content` filter is usually enough.
+
+## CI build cache
+
+The build cache must be shared and written only where it's reusable:
+
+- **Route every Gradle job through `gradle-setup`** — the composite action in
+  `.github/actions/gradle-setup/action.yml` restores the cache via
+  `gradle/actions/setup-gradle`.
+- **Keep `cache-encryption-key` set** (`GRADLE_ENCRYPTION_KEY`) — it gates
+  configuration-cache data.
+- **Branches write branch-local caches** — every job sets `write-cache: true`;
+  `setup-gradle` scopes the cache to the branch, so only the default branch's
+  cache acts as the shared cache.
+- **PR-scoped caches are deleted** by `cache-cleanup.yml` when the PR closes —
+  never rely on them persisting.
+- **Never pass `--no-daemon`** — it defeats the daemon the cache and parallelism
+  depend on.
 
 ## Verifying
 

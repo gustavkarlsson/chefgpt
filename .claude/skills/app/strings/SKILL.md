@@ -52,3 +52,8 @@ in the `UiState`, and resolve it in the UI.
   ```
 
 - **Sort keys alphabetically** within each group.
+- **Use explicit positional placeholders** — always `%1$s` / `%2$s` / `%1$d`,
+  never bare `%s` / `%d`, even for a single argument.
+- **Use `<plurals>`** for count-dependent copy, not multiple `<string>` entries.
+- **Suffix `_alt`** for screen-reader-only strings (contentDescription /
+  accessibility labels).
