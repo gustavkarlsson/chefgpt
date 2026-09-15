@@ -18,6 +18,15 @@ assembled (the `Screen` data class, ViewModel wiring, snackbar and event plumbin
 - Branch mutually exclusive states with `when` over a `sealed interface` and render a composable
   per case (e.g. `Loading`, `Loaded`, `Error`).
 
+## Reuse & promotion
+
+- Default to a `private` composable in the file that uses it.
+- Promote it to a shared, reusable component only when a second caller appears — never
+  speculatively. Shared components live in `se.gustavkarlsson.chefgpt.ui.components`
+  (create the package when the first shared component appears).
+- There is no design-system wrapper layer or custom lint ban in this repo — compose
+  directly with Material3 (see Theming).
+
 ## Callbacks
 
 - Invoke callbacks straight off the state object. Never put business logic in a composable.
