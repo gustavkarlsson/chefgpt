@@ -7,6 +7,13 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.head_ref || github.event_name == 'push' && github.ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     name: Run linting
@@ -27,6 +34,13 @@ jobs:
 
       - name: Check Android lint
         run: ./gradlew lintDebug
+
+      - name: Upload reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: lint-reports
+          path: "**/build/reports/"
 
   test-jvm:
     name: Run JVM tests
@@ -52,7 +66,7 @@ jobs:
           :app:testAndroidHostTest
 
       - name: Upload test reports
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v7
         with:
           name: test-reports
