@@ -106,6 +106,41 @@ takes `uiState` plus any `Flow` the screen collects, which is what keeps the UI 
 Everything below that entry point — how the body is broken up, callbacks, `Modifier`, theming,
 lists, accessibility — is the **compose-ui** skill.
 
+### Previews
+
+Each screen ships with a `private` preview composable per main `UiState` subclass at the bottom of the file, so each state can be viewed in the IDE. Each wraps the private `Content(uiState, ...)` in `ChefGptTheme` and is annotated with KMP `@Preview` (`org.jetbrains.compose.ui.tooling.preview.Preview`):
+
+```kotlin
+@Preview
+@Composable
+private fun LoadingPreview() {
+    ChefGptTheme {
+        Content(UiState.Loading)
+    }
+}
+
+@Preview
+@Composable
+private fun LoadedPreview() {
+    ChefGptTheme {
+        Content(UiState.Loaded(/* representative sample */))
+    }
+}
+```
+
+- Use the private `Content(uiState, ...)` as the entry point — never `Screen.Content()`, which needs a ViewModel.
+- Build a representative sample of the model for `Loaded`/data states.
+- Pass `{}` for callback fields.
+- Add extra `@Preview` variants (e.g. dark/light) as needed.
+
+## Form factors
+
+A screen's layout should adapt to bigger/wider screens — landscape orientation, tablets and desktop — rather than just filling the extra width with the same stretched phone layout:
+
+- When a screen has a lot of vertical content, consider a left/right pane layout so the two panes sit side by side instead of stacking.
+- Use a width breakpoint (Material3 `WindowSizeClass`, or Compose Multiplatform's adaptive layout) to switch between the stacked phone layout and the pane-split wide layout, rather than hardcoding a width.
+- Use the previews to check that the wide layout holds up — no overflowing rows, no stretched full-width text that becomes hard to scan.
+
 ## Wiring a new screen
 
 When adding a whole new screen (not editing an existing one):

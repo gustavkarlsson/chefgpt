@@ -49,4 +49,6 @@ unless the user explicitly asks for it.
 
 ## Accessibility
 
-Every `Icon` and `Image` needs a `contentDescription`.
+Meaningful `Icon`s and `Image`s need a `contentDescription`. Decorative ones —
+icons and images that carry no information and only reinforce nearby text — get
+`contentDescription = null`.
