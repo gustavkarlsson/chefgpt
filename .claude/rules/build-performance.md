@@ -38,9 +38,9 @@ parallelized:
     and a reserved code cache).
   Tune each JVM individually, from that daemon's measured usage — not in lockstep.
 - **Parallel execution** — `org.gradle.parallel=true` lets Gradle run independent tasks
-  from different modules at the same time. `org.gradle.tooling.parallel` does the same
-  for the Tooling API (used by IDEs) and defaults to on in recent Gradle. Don't disable
-  either without a reason.
+  from different modules at the same time. Set `org.gradle.tooling.parallel=true` as well,
+  so the Tooling API (used by IDEs for sync and model building) works in parallel. Don't
+  disable either without a reason.
 - **Caching flags** — `org.gradle.caching=true` and `org.gradle.configuration-cache=true`
   are described under *The three layers* above.
 
@@ -146,7 +146,7 @@ When a change is meant to *improve* build performance (not just keep the caches
 working), measure before and after rather than guessing:
 
 ```bash
-# Profile a build; report lands at androidApp/build/reports/profile/profile-*.html
+# Profile a build; report lands at build/reports/profile/profile-*.html
 ./gradlew :androidApp:assembleDebug --profile
 
 # Wall-clock time, warm caches first so the second run reflects steady state
