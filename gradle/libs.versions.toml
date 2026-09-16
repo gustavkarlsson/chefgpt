@@ -1,5 +1,5 @@
 [versions]
-agp = "9.4.0"
+agp = "9.1.1" # Must stay compatible with the JetBrains IDE Android plugin
 androidCompileSdk = "37"
 androidMinSdk = "24"
 androidTargetSdk = "36"
