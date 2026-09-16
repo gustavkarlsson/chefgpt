@@ -47,6 +47,7 @@ Respect this order; each step constrains the next.
 1. **Gradle wrapper** — AGP requires a minimum Gradle version.
 2. **Android SDK** via the `android` CLI, then `androidCompileSdk` to match.
 3. **AGP** — check compatibility against the Gradle version from step 1.
+   It must also be supported by the latest version of the JetBrains IDE Android Plugin.
 4. **Kotlin** — moves `kotlinJvm`, `kotlinMultiplatform`, `kotlinSerialization` and
    `composeCompiler` atomically (they all use `version.ref = "kotlin"`).
 5. **Compose Multiplatform**, `composeHotReload`, `material3` — gated on the Kotlin version.
