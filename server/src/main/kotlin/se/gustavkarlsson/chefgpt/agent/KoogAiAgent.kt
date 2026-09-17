@@ -2,7 +2,7 @@ package se.gustavkarlsson.chefgpt.agent
 
 import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.ktor.aiAgent
-import ai.koog.prompt.executor.clients.anthropic.AnthropicModels
+import ai.koog.prompt.llm.LLModel
 import io.ktor.server.routing.RoutingContext
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.auth.UserId
@@ -18,6 +18,7 @@ import se.gustavkarlsson.chefgpt.recipes.RecipeStore
 import se.gustavkarlsson.chefgpt.recipes.toTools
 
 class KoogAiAgent(
+    private val model: LLModel,
     private val ingredientStore: IngredientStore,
     private val recipeStore: RecipeStore,
     private val recipeLookup: RecipeLookup,
@@ -32,7 +33,7 @@ class KoogAiAgent(
         val agent =
             aiAgent(
                 strategy = findRecipeStrategy(),
-                model = AnthropicModels.Haiku_4_5,
+                model = model,
                 tools =
                     ToolRegistry {
                         // Scoped to the user and chat, in addition to globally available tools

@@ -5,7 +5,7 @@ import ai.koog.agents.core.agent.config.AIAgentConfig
 import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.ktor.llm
 import ai.koog.prompt.dsl.prompt
-import ai.koog.prompt.executor.clients.anthropic.AnthropicModels
+import ai.koog.prompt.llm.LLModel
 import ai.koog.prompt.message.AttachmentContent
 import ai.koog.prompt.message.AttachmentSource
 import com.github.michaelbull.result.Err
@@ -40,6 +40,7 @@ private val SYSTEM_PROMPT =
     """.trimIndent()
 
 class KoogIngredientScanAgent(
+    private val model: LLModel,
     private val ingredientStore: IngredientStore,
 ) : IngredientScanAgent {
     override suspend fun RoutingContext.scan(
@@ -65,7 +66,7 @@ class KoogIngredientScanAgent(
                                     )
                                 }
                             },
-                        model = AnthropicModels.Haiku_4_5,
+                        model = model,
                         maxAgentIterations = 10,
                     ),
                 // The only tools the scanner can reach are the ingredient store's.

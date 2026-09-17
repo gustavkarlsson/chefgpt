@@ -42,7 +42,12 @@ private val testConfig =
         "bindings.agent" to "fake",
         "bindings.recipes" to "fake",
         "bindings.files" to "fake",
-        "anthropic.apiKey" to "test-key",
+        "ai.providers.anthropic.apiKey" to "test-key",
+        "ai.providers.deepseek.apiKey" to "test-key",
+        "ai.agents.chat.provider" to "anthropic",
+        "ai.agents.chat.model" to "claude-sonnet-4-6",
+        "ai.agents.ingredientScan.provider" to "anthropic",
+        "ai.agents.ingredientScan.model" to "claude-sonnet-4-6",
     )
 
 fun snapshotTestApplication(
