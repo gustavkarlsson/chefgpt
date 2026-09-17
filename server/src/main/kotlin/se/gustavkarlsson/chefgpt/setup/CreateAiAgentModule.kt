@@ -7,9 +7,12 @@ import org.koin.dsl.module
 import se.gustavkarlsson.chefgpt.agent.AiAgent
 import se.gustavkarlsson.chefgpt.agent.FakeAiAgent
 import se.gustavkarlsson.chefgpt.agent.FakeIngredientScanAgent
+import se.gustavkarlsson.chefgpt.agent.FakeRecipeScanAgent
 import se.gustavkarlsson.chefgpt.agent.IngredientScanAgent
 import se.gustavkarlsson.chefgpt.agent.KoogAiAgent
 import se.gustavkarlsson.chefgpt.agent.KoogIngredientScanAgent
+import se.gustavkarlsson.chefgpt.agent.KoogRecipeScanAgent
+import se.gustavkarlsson.chefgpt.agent.RecipeScanAgent
 import se.gustavkarlsson.chefgpt.ai.AiConfig
 import se.gustavkarlsson.chefgpt.ai.loadAiConfig
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
@@ -21,6 +24,7 @@ import se.gustavkarlsson.chefgpt.recipes.RecipeStore
 
 private const val CHAT_AGENT = "chat"
 private const val INGREDIENT_SCAN_AGENT = "ingredientScan"
+private const val RECIPE_SCAN_AGENT = "recipeScan"
 
 fun Application.createAiAgentModule() =
     module {
@@ -63,6 +67,25 @@ fun Application.createAiAgentModule() =
                 else -> error("Unknown agent type: '$type'. Expected 'llm' or 'fake'.")
             }
         } bind IngredientScanAgent::class
+        single {
+            when (val type = config.property("bindings.agent").getString()) {
+                "llm" -> {
+                    KoogRecipeScanAgent(
+                        aiConfig.agentModel(RECIPE_SCAN_AGENT),
+                        get<RecipeStore>(),
+                        get<RecipeLookup>(),
+                    )
+                }
+
+                "fake" -> {
+                    FakeRecipeScanAgent(get<RecipeStore>())
+                }
+
+                else -> {
+                    error("Unknown agent type: '$type'. Expected 'llm' or 'fake'.")
+                }
+            }
+        } bind RecipeScanAgent::class
     }
 
 private fun AiConfig.agentModel(agentId: String): LLModel {

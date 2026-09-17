@@ -19,6 +19,7 @@ import se.gustavkarlsson.chefgpt.routes.registerRoute
 import se.gustavkarlsson.chefgpt.routes.saveRecipeAsCopyRoute
 import se.gustavkarlsson.chefgpt.routes.saveRecipeRoute
 import se.gustavkarlsson.chefgpt.routes.scanIngredientsRoute
+import se.gustavkarlsson.chefgpt.routes.scanRecipesRoute
 import se.gustavkarlsson.chefgpt.routes.streamChatEventsRoute
 import se.gustavkarlsson.chefgpt.routes.streamChatsRoute
 import se.gustavkarlsson.chefgpt.routes.streamIngredientsRoute
@@ -37,6 +38,7 @@ fun Application.installRouting() {
             patchIngredientRoute()
             deleteIngredientRoute()
             scanIngredientsRoute()
+            scanRecipesRoute()
             createChatRoute()
             deleteChatRoute()
             streamChatEventsRoute()

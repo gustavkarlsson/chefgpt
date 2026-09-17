@@ -8,8 +8,6 @@ import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.llm.LLModel
 import ai.koog.prompt.message.AttachmentContent
 import ai.koog.prompt.message.AttachmentSource
-import com.github.michaelbull.result.Err
-import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
 import io.ktor.server.routing.RoutingContext
 import se.gustavkarlsson.chefgpt.api.ApiAttachment
@@ -77,25 +75,5 @@ class KoogIngredientScanAgent(
             )
         val reply = agent.run("Scan this image for ingredients and add the ones you find.")
         return parseScanResult(reply)
-    }
-}
-
-private fun parseScanResult(reply: String): Result<Int, String> {
-    val trimmed = reply.trim()
-    return when {
-        trimmed.startsWith("OK:", ignoreCase = true) -> {
-            when (val count = trimmed.substringAfter(':').trim().toIntOrNull()) {
-                null -> Err("Could not parse ingredient count from reply: $trimmed")
-                else -> Ok(count)
-            }
-        }
-
-        trimmed.startsWith("ERROR:", ignoreCase = true) -> {
-            Err(trimmed.substringAfter(':').trim())
-        }
-
-        else -> {
-            Err("Unexpected agent reply: $trimmed")
-        }
     }
 }
