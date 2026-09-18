@@ -19,6 +19,8 @@ import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.recipes.ApiRecipeRepository
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
+import se.gustavkarlsson.chefgpt.screens.camera.CameraViewModel
+import se.gustavkarlsson.chefgpt.screens.camera.PhotoCaptureCoordinator
 import se.gustavkarlsson.chefgpt.screens.chat.ChatViewModel
 import se.gustavkarlsson.chefgpt.screens.debug.DebugViewModel
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsViewModel
@@ -34,6 +36,7 @@ val singletonModule =
         single<ChefGptClient>()
         // TODO Should be activity retained scoped for Android.
         single<Navigator>()
+        single<PhotoCaptureCoordinator>()
         single<LastSessionFileStore>()
         single<EventHistoryStore>()
         single<SessionRepositoryImpl>() bind SessionRepository::class
@@ -49,6 +52,7 @@ val viewModelModule =
         viewModel<StartViewModel>()
         viewModel<ChatViewModel>()
         viewModel<IngredientsViewModel>()
+        viewModel<CameraViewModel>()
         viewModel<DebugViewModel>()
         viewModel<RecipeDetailViewModel>()
     }
