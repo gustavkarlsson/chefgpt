@@ -18,5 +18,7 @@ captures
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
 
+worktrees/
+
 # Local developer settings written at runtime by the debug screen.
 debug.conf
