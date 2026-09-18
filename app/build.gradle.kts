@@ -104,6 +104,9 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlinTest)
         }
+        jvmTest.dependencies {
+            implementation(libs.kotlinxCoroutinesTest)
+        }
         jvmMain.dependencies {
             implementation(libs.slf4jApi)
             implementation(compose.desktop.currentOs)

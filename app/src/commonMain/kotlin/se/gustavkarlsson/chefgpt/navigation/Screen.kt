@@ -16,6 +16,14 @@ interface Screen : NavKey {
     fun Content()
 
     /**
+     * A Screen that returns a result to whoever opened it through a result request.
+     *
+     * The result type [R] must be `@Serializable`; this is enforced at the
+     * `requestResult` and `completeResult` call sites.
+     */
+    interface ResultProvider<R : Any> : Screen
+
+    /**
      * A stable ID that uniquely identifies a route in the back stack.
      *
      * Screens default their `id` to [new], which a `@Serializable` type in this project is otherwise
