@@ -1,5 +1,7 @@
 package se.gustavkarlsson.chefgpt.di
 
+import kotlinx.io.files.FileSystem
+import kotlinx.io.files.SystemFileSystem
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
 import org.koin.dsl.KoinAppDeclaration
@@ -42,6 +44,7 @@ val singletonModule =
         single<ApiRecipeRepository>() bind RecipeRepository::class
         single<ApiConversationFactory>() bind ConversationFactory::class
         single<IngredientEmojiResolver.Factory>()
+        single<FileSystem> { SystemFileSystem }
     }
 
 // TODO Consider adding a viewModelScope and providing more VM-scoped dependencies

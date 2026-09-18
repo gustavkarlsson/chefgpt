@@ -88,6 +88,7 @@ kotlin {
             implementation(libs.ktorClientContentNegotiation)
             implementation(libs.ktorSerializationKotlinxJson)
             implementation(libs.kotlinxSerializationJson)
+            implementation(libs.kotlinxIoCore)
             implementation(libs.coilCompose)
             implementation(libs.coilNetworkKtor)
             implementation(libs.emojiCore)

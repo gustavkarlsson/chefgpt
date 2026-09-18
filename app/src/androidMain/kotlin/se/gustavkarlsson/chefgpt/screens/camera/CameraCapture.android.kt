@@ -12,12 +12,10 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,10 +40,10 @@ import java.io.File
 private const val TAG = "CameraCapture"
 
 @Composable
-actual fun CameraCapture(
-    onPhotoCaptured: (Path) -> Unit,
-    onPermissionDenied: () -> Unit,
-    onCancelled: () -> Unit,
+actual fun CameraView(
+    onPhotoTaken: (Path) -> Unit,
+    onPermissionDenied: (fixable: Boolean) -> Unit,
+    onError: () -> Unit,
     modifier: Modifier,
 ) {
     val context = LocalContext.current
@@ -54,10 +52,15 @@ actual fun CameraCapture(
     val permissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             hasPermission = granted
-            if (!granted) onPermissionDenied()
+            if (!granted) {
+                // TODO Add second try if possible
+                onPermissionDenied(true) // Android permission errors are fixable
+            }
         }
     LaunchedEffect(hasPermission) {
-        if (!hasPermission) permissionLauncher.launch(Manifest.permission.CAMERA)
+        if (!hasPermission) {
+            permissionLauncher.launch(Manifest.permission.CAMERA)
+        }
     }
 
     if (!hasPermission) return
@@ -89,7 +92,7 @@ actual fun CameraCapture(
                         )
                     } catch (e: Exception) {
                         Log.e(TAG, "Failed to bind camera", e)
-                        onCancelled()
+                        onError()
                     }
                 },
                 ContextCompat.getMainExecutor(context),
@@ -98,34 +101,24 @@ actual fun CameraCapture(
         }
     }
 
-    Box(modifier = modifier.background(Color.Black)) {
+    Box(modifier = modifier) {
         AndroidView(
             modifier = Modifier.fillMaxSize(),
             factory = { ctx -> PreviewView(ctx).also { previewView = it } },
         )
         IconButton(
-            modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
-            onClick = onCancelled,
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Back",
-                tint = Color.White,
-            )
-        }
-        IconButton(
-            modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
+            modifier = Modifier.align(Alignment.BottomCenter).padding(32.dp),
             onClick = {
                 if (!capturing) {
                     capturing = true
-                    capturePhoto(context, imageCapture, onPhotoCaptured, onCancelled)
+                    capturePhoto(context, imageCapture, onPhotoTaken, onError)
                 }
             },
         ) {
             Icon(
                 imageVector = Icons.Default.CameraAlt,
-                contentDescription = "Take photo",
-                tint = Color.White,
+                contentDescription = "Take photo", // TODO content description
+                tint = Color.White, // TODO color
             )
         }
     }
