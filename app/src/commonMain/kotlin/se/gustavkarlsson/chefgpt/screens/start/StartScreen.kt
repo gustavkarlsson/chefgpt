@@ -294,8 +294,8 @@ private fun LoggedInContent(
             AnimatedPane {
                 RecipeSidebar(
                     modifier = Modifier.fillMaxSize(),
+                    onClickScanRecipes = state.onClickScanRecipes,
                     recipes = state.recipeSummaries,
-                    onScanRecipes = state.onScanRecipes,
                     onClickBack =
                         if (navigator.canNavigateBack()) {
                             { scope.launch { navigator.navigateBack() } }
@@ -561,10 +561,9 @@ private fun ChatItem(
 private fun RecipeSidebar(
     recipes: List<UiRecipeSummary>,
     modifier: Modifier = Modifier,
-    onScanRecipes: ((List<Path>) -> Unit)? = null,
+    onClickScanRecipes: ((List<Path>) -> Unit)? = null,
     onClickBack: (() -> Unit)? = null,
 ) {
-    val scope = rememberCoroutineScope()
     Surface(
         modifier = modifier,
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
@@ -593,26 +592,6 @@ private fun RecipeSidebar(
                     modifier = Modifier.padding(8.dp),
                 )
                 Spacer(Modifier.weight(1f))
-                if (onScanRecipes == null) {
-                    // Scanning can take a while; show progress in place of the camera button.
-                    Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                    }
-                } else {
-                    IconButton(
-                        onClick = {
-                            scope.launch {
-                                val files = pickFiles(multiple = true)
-                                if (files.isNotEmpty()) onScanRecipes(files)
-                            }
-                        },
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CameraAlt,
-                            contentDescription = "Scan recipes from photos",
-                        )
-                    }
-                }
             }
             HorizontalDivider()
             if (recipes.isEmpty()) {
@@ -625,6 +604,10 @@ private fun RecipeSidebar(
                             .windowInsetsPadding(
                                 WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Bottom),
                             ).padding(16.dp),
+                )
+                ScanRecipeButton(
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    onClickScanRecipes = onClickScanRecipes,
                 )
             } else {
                 LazyColumn(
@@ -642,8 +625,47 @@ private fun RecipeSidebar(
                             modifier = Modifier.animateItem(),
                         )
                     }
+                    item {
+                        Column(Modifier.fillParentMaxWidth()) {
+                            ScanRecipeButton(
+                                modifier = Modifier.align(Alignment.CenterHorizontally),
+                                onClickScanRecipes = onClickScanRecipes,
+                            )
+                        }
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ScanRecipeButton(
+    onClickScanRecipes: ((List<Path>) -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    val scope = rememberCoroutineScope()
+    if (onClickScanRecipes == null) {
+        // Scanning can take a while; show progress in place of the camera button.
+        Box(modifier = modifier.size(48.dp), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(modifier = Modifier.size(24.dp))
+        }
+    } else {
+        IconButton(
+            modifier = modifier,
+            onClick = {
+                scope.launch {
+                    val files = pickFiles(multiple = true)
+                    if (files.isNotEmpty()) {
+                        onClickScanRecipes(files)
+                    }
+                }
+            },
+        ) {
+            Icon(
+                imageVector = Icons.Default.CameraAlt,
+                contentDescription = "Scan recipes from photos",
+            )
         }
     }
 }

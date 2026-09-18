@@ -91,11 +91,11 @@ class StartViewModel(
                 UiState.Content.LoggedIn(
                     username = sessionCredentials.username.value,
                     chats = chats.toUiChats(),
+                    onClickScanRecipes = if (scanningRecipes) null else ::scanRecipes,
                     recipeSummaries = recipeSummaries.toUiRecipeSummaries(),
                     onClickNewChat = ::createChat,
                     onClickIngredients = ::openIngredients,
                     onClickLogout = ::logOut,
-                    onScanRecipes = if (scanningRecipes) null else ::scanRecipes,
                 )
             }
         }
@@ -423,11 +423,11 @@ data class UiState(
         data class LoggedIn(
             val username: String,
             val chats: List<UiChat>,
+            val onClickScanRecipes: ((List<Path>) -> Unit)?,
             val recipeSummaries: List<UiRecipeSummary>,
             val onClickNewChat: () -> Unit,
             val onClickIngredients: () -> Unit,
             val onClickLogout: () -> Unit,
-            val onScanRecipes: ((List<Path>) -> Unit)?,
         ) : Content
     }
 }
