@@ -16,6 +16,7 @@ import kotlinx.io.files.Path
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import se.gustavkarlsson.chefgpt.navigation.Screen
 import se.gustavkarlsson.chefgpt.navigation.Screen.Id
 
@@ -23,10 +24,10 @@ import se.gustavkarlsson.chefgpt.navigation.Screen.Id
 @SerialName("camera")
 data class CameraScreen(
     override val id: Id = Id.new(),
-) : Screen {
+) : Screen.ResultProvider<CapturedPhoto> {
     @Composable
     override fun Content() {
-        val viewModel = koinViewModel<CameraViewModel>()
+        val viewModel = koinViewModel<CameraViewModel> { parametersOf(this) }
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
         Content(uiState)
     }

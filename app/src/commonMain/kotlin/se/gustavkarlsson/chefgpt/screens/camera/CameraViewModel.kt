@@ -2,12 +2,14 @@ package se.gustavkarlsson.chefgpt.screens.camera
 
 import kotlinx.coroutines.flow.update
 import kotlinx.io.files.Path
+import org.koin.core.annotation.InjectedParam
 import se.gustavkarlsson.chefgpt.navigation.Navigator
+import se.gustavkarlsson.chefgpt.navigation.completeResult
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
 
 class CameraViewModel(
     private val navigator: Navigator,
-    private val photoResults: PhotoCaptureCoordinator,
+    @InjectedParam private val screen: CameraScreen,
 ) : StateViewModel<State, UiState>() {
     override fun createInitialState() = State(permissionDenied = false)
 
@@ -20,7 +22,7 @@ class CameraViewModel(
         )
 
     private fun publish(path: Path) {
-        photoResults.publish(path)
+        navigator.completeResult(screen, CapturedPhoto(path))
         navigator.pop()
     }
 

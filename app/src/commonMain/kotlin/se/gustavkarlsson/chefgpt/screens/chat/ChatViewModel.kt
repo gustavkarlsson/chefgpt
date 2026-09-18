@@ -45,9 +45,9 @@ import se.gustavkarlsson.chefgpt.chats.displayName
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatarModel
 import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
 import se.gustavkarlsson.chefgpt.navigation.Navigator
+import se.gustavkarlsson.chefgpt.navigation.requestResult
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
 import se.gustavkarlsson.chefgpt.screens.camera.CameraScreen
-import se.gustavkarlsson.chefgpt.screens.camera.PhotoCaptureCoordinator
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsScreen
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 import kotlin.random.Random
@@ -75,7 +75,6 @@ class ChatViewModel(
     conversationFactory: ConversationFactory,
     private val chatRepository: ChatRepository,
     private val navigator: Navigator,
-    private val photoResults: PhotoCaptureCoordinator,
     private val emojiResolverFactory: IngredientEmojiResolver.Factory,
     @InjectedParam private val screen: ChatScreen,
 ) : StateViewModel<State, UiState>() {
@@ -203,9 +202,6 @@ class ChatViewModel(
 
     init {
         viewModelScope.launch {
-            photoResults.photos.collect { attachFiles(listOf(it)) }
-        }
-        viewModelScope.launch {
             chatRepository.stream(sessionId).collect { chats ->
                 val chat = chats.firstOrNull { it.id == conversation.chatId }
                 innerState.update { it.copy(chat = chat) }
@@ -265,7 +261,10 @@ class ChatViewModel(
     }
 
     private fun openCamera() {
-        navigator.push(CameraScreen())
+        viewModelScope.launch {
+            val photo = navigator.requestResult(CameraScreen()) ?: return@launch
+            attachFiles(listOf(photo.path))
+        }
     }
 
     private fun removeAttachment(file: Path) {
