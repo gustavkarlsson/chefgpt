@@ -63,6 +63,7 @@ class IngredientsViewModel(
                 UiInput(
                     text = inputText,
                     onTextChange = ::updateInputText,
+                    scanningImage = scanningImage,
                     onScanImageSelected = ::scanImage,
                     onClickAdd = if (inputText.isNotBlank() && emojiResolver != null) ::createIngredient else null,
                 ),
@@ -272,13 +273,15 @@ class IngredientsViewModel(
     }
 
     private fun scanImage(image: Path) {
-        if (innerState.value.scanningImage) return // Already scanning
         // The picker offers documents too, but the scanner only reads photos.
         if (!isImageFile(image.name)) {
             showSnackbar("That's not a photo I can scan", isError = true)
             return
         }
-        innerState.update { it.copy(scanningImage = true) }
+        innerState.update {
+            if (it.scanningImage) return // Already scanning
+            it.copy(scanningImage = true)
+        }
         viewModelScope.launch {
             try {
                 client
@@ -333,7 +336,8 @@ data class IngredientSection(
 data class UiInput(
     val text: String,
     val onTextChange: (String) -> Unit,
-    val onScanImageSelected: ((Path) -> Unit)?,
+    val scanningImage: Boolean,
+    val onScanImageSelected: ((Path) -> Unit),
     val onClickAdd: (() -> Unit)?,
 )
 

@@ -314,7 +314,7 @@ private fun IngredientInput(
                     keyboardActions = KeyboardActions(onDone = { input.onClickAdd?.invoke() }),
                 )
                 val scope = rememberCoroutineScope()
-                if (input.onScanImageSelected == null) {
+                if (input.scanningImage) {
                     // Scanning can take a while; show progress in place of the camera button.
                     Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp))
