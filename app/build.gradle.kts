@@ -114,10 +114,6 @@ kotlin {
             implementation(libs.kotlinxCoroutinesSwing)
         }
         androidMain.dependencies {
-            implementation(libs.androidxCameraCore)
-            implementation(libs.androidxCameraCamera2)
-            implementation(libs.androidxCameraLifecycle)
-            implementation(libs.androidxCameraView)
             implementation(libs.androidxConcurrentFutures)
             implementation(libs.androidxActivityCompose)
         }

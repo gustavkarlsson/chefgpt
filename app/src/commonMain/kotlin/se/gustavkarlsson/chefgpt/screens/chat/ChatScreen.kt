@@ -56,6 +56,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -89,6 +90,7 @@ import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import se.gustavkarlsson.chefgpt.api.ChatId
+import se.gustavkarlsson.chefgpt.camera.TakePhoto
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatar
 import se.gustavkarlsson.chefgpt.isImageFile
 import se.gustavkarlsson.chefgpt.navigation.Screen
@@ -530,7 +532,9 @@ private fun MessageInput(
                         ),
                 )
 
-                TakePhotoButton(onClickTakePhoto = input.onClickTakePhoto)
+                input.cameraButton?.let { button ->
+                    TakePhotoButton(button)
+                }
                 AttachFilesButton(onFilesAttached = input.onFilesAttached)
 
                 IconButton(
@@ -570,16 +574,33 @@ private fun AttachFilesButton(
 
 @Composable
 private fun TakePhotoButton(
-    onClickTakePhoto: () -> Unit,
+    button: UiCameraButton,
     modifier: Modifier = Modifier,
 ) {
+    var takingPhoto by rememberSaveable { mutableStateOf(false) }
     IconButton(
         modifier = modifier,
-        onClick = onClickTakePhoto,
+        onClick = { takingPhoto = true },
+        enabled = !takingPhoto,
     ) {
         Icon(
             imageVector = Icons.Default.CameraAlt,
-            contentDescription = "Take photo",
+            contentDescription = "Scan ingredients from a photo",
+        )
+    }
+    if (takingPhoto) {
+        TakePhoto(
+            onSuccess = { path ->
+                button.onPhotoTaken(path)
+                takingPhoto = false
+            },
+            onCancelled = {
+                takingPhoto = false
+            },
+            onError = {
+                button.onError()
+                takingPhoto = false
+            },
         )
     }
 }
