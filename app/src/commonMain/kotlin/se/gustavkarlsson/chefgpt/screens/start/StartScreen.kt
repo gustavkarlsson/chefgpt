@@ -33,6 +33,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Star
@@ -40,6 +41,7 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -86,11 +88,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import kotlinx.io.files.Path
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
 import se.gustavkarlsson.chefgpt.navigation.Screen
 import se.gustavkarlsson.chefgpt.navigation.Screen.Id
+import se.gustavkarlsson.chefgpt.pickFiles
 import se.gustavkarlsson.chefgpt.plus
 import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessage
 import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessageHost
@@ -291,6 +295,7 @@ private fun LoggedInContent(
                 RecipeSidebar(
                     modifier = Modifier.fillMaxSize(),
                     recipes = state.recipeSummaries,
+                    onScanRecipes = state.onScanRecipes,
                     onClickBack =
                         if (navigator.canNavigateBack()) {
                             { scope.launch { navigator.navigateBack() } }
@@ -556,8 +561,10 @@ private fun ChatItem(
 private fun RecipeSidebar(
     recipes: List<UiRecipeSummary>,
     modifier: Modifier = Modifier,
+    onScanRecipes: ((List<Path>) -> Unit)? = null,
     onClickBack: (() -> Unit)? = null,
 ) {
+    val scope = rememberCoroutineScope()
     Surface(
         modifier = modifier,
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
@@ -585,6 +592,27 @@ private fun RecipeSidebar(
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(8.dp),
                 )
+                Spacer(Modifier.weight(1f))
+                if (onScanRecipes == null) {
+                    // Scanning can take a while; show progress in place of the camera button.
+                    Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    }
+                } else {
+                    IconButton(
+                        onClick = {
+                            scope.launch {
+                                val files = pickFiles(multiple = true)
+                                if (files.isNotEmpty()) onScanRecipes(files)
+                            }
+                        },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CameraAlt,
+                            contentDescription = "Scan recipes from photos",
+                        )
+                    }
+                }
             }
             HorizontalDivider()
             if (recipes.isEmpty()) {

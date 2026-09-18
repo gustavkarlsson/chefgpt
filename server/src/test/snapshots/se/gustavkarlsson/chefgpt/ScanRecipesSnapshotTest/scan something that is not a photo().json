@@ -1,0 +1,39 @@
+{
+    "request": {
+        "method": "POST",
+        "url": "http://localhost/recipes/scan",
+        "headers": {
+            "Session-Id": "00000000000000000000000000000000",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Content-Length": "0"
+        },
+        "body": {
+            "type": "json",
+            "data": {
+                "attachments": [
+                    {
+                        "url": "https://example.com/recipe.pdf",
+                        "mimeType": "application/pdf",
+                        "fileName": "recipe.pdf"
+                    }
+                ]
+            }
+        }
+    },
+    "response": {
+        "status": 415,
+        "headers": {
+            "Content-Length": "0",
+            "Content-Type": "application/json"
+        },
+        "body": {
+            "type": "json",
+            "data": {
+                "type": "unsupported-file-type",
+                "message": "Unsupported attachment: application/pdf",
+                "userMessage": "I can only scan photos."
+            }
+        }
+    }
+}

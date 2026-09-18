@@ -1,0 +1,41 @@
+{
+    "request": {
+        "method": "POST",
+        "url": "http://localhost/recipes/scan",
+        "headers": {
+            "Session-Id": "00000000000000000000000000000000",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Content-Length": "0"
+        },
+        "body": {
+            "type": "json",
+            "data": {
+                "attachments": [
+                    {
+                        "url": "https://example.com/photo.jpg",
+                        "mimeType": "image/jpeg",
+                        "fileName": "photo.jpg"
+                    }
+                ]
+            }
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Length": "0",
+            "Content-Type": "application/json"
+        },
+        "body": {
+            "type": "json",
+            "data": [
+                {
+                    "id": "00000000-0000-0000-0000-000000000000",
+                    "title": "Pasta al pomodoro",
+                    "favorite": false
+                }
+            ]
+        }
+    }
+}

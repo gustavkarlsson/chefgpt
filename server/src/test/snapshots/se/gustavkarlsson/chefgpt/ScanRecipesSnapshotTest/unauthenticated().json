@@ -1,0 +1,29 @@
+{
+    "request": {
+        "method": "POST",
+        "url": "http://localhost/recipes/scan",
+        "headers": {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Content-Length": "0"
+        },
+        "body": {
+            "type": "json",
+            "data": {
+                "attachments": [
+                    {
+                        "url": "https://example.com/photo.jpg",
+                        "mimeType": "image/jpeg",
+                        "fileName": "photo.jpg"
+                    }
+                ]
+            }
+        }
+    },
+    "response": {
+        "status": 401,
+        "headers": {
+            "Content-Length": "0"
+        }
+    }
+}

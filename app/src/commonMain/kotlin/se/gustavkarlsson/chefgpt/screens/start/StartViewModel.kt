@@ -2,20 +2,30 @@ package se.gustavkarlsson.chefgpt.screens.start
 
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
+import com.github.michaelbull.result.combine
+import com.github.michaelbull.result.flatMap
 import com.github.michaelbull.result.onErr
 import com.github.michaelbull.result.onOk
+import io.ktor.http.ContentType
+import io.ktor.http.defaultForFilePath
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.io.files.Path
+import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.chats.Chat
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.displayName
+import se.gustavkarlsson.chefgpt.isImageFile
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 import se.gustavkarlsson.chefgpt.recipes.RecipeSummary
@@ -33,6 +43,7 @@ import kotlin.time.Duration.Companion.seconds
 private val log = Logger.withTag("${StartViewModel::class.simpleName}")
 
 class StartViewModel(
+    private val client: ChefGptClient,
     private val chatRepository: ChatRepository,
     private val recipeRepository: RecipeRepository,
     private val sessionRepository: SessionRepository,
@@ -50,6 +61,7 @@ class StartViewModel(
             inputUsername = "",
             inputPassword = "",
             authenticating = false,
+            scanningRecipes = false,
         )
 
     override fun State.toUiState(): UiState =
@@ -83,6 +95,7 @@ class StartViewModel(
                     onClickNewChat = ::createChat,
                     onClickIngredients = ::openIngredients,
                     onClickLogout = ::logOut,
+                    onScanRecipes = if (scanningRecipes) null else ::scanRecipes,
                 )
             }
         }
@@ -245,6 +258,50 @@ class StartViewModel(
         navigator.push(RecipeDetailScreen(credentials.sessionId, recipeId))
     }
 
+    private fun scanRecipes(files: List<Path>) {
+        val credentials = innerState.value.sessionCredentials ?: return
+        if (innerState.value.scanningRecipes) return // Already scanning
+        // The picker offers documents too, but the scanner only reads photos.
+        val images = files.filter { isImageFile(it.name) }
+        if (images.isEmpty()) {
+            showSnackbar("That's not a photo I can scan", isError = true)
+            return
+        }
+        innerState.update { it.copy(scanningRecipes = true) }
+        viewModelScope.launch {
+            try {
+                val result =
+                    coroutineScope {
+                        images
+                            .map { file ->
+                                async {
+                                    client.uploadFile(
+                                        credentials.sessionId,
+                                        file,
+                                        ContentType.defaultForFilePath(file.name),
+                                    )
+                                }
+                            }.awaitAll()
+                            .combine()
+                            .flatMap { attachments -> client.scanRecipes(credentials.sessionId, attachments) }
+                    }
+                result
+                    .onOk { summaries ->
+                        if (summaries.isEmpty()) {
+                            showSnackbar("Couldn't find a recipe in those photos")
+                        } else {
+                            showSnackbar("Saved ${summaries.size} recipe(s)")
+                        }
+                    }.onErr { error ->
+                        log.e { "Failed to scan recipes: $error" }
+                        showSnackbar("Couldn't scan recipes from the photos", isError = true)
+                    }
+            } finally {
+                innerState.update { it.copy(scanningRecipes = false) }
+            }
+        }
+    }
+
     private fun toggleRecipeFavorite(recipeId: RecipeId) {
         val credentials = innerState.value.sessionCredentials ?: return
         val summary = innerState.value.recipeSummaries.firstOrNull { it.id == recipeId } ?: return
@@ -341,6 +398,7 @@ data class State(
     val inputUsername: String,
     val inputPassword: String,
     val authenticating: Boolean,
+    val scanningRecipes: Boolean,
 ) {
     val inputCredentials: UserCredentials
         get() = UserCredentials(inputUsername, inputPassword)
@@ -369,6 +427,7 @@ data class UiState(
             val onClickNewChat: () -> Unit,
             val onClickIngredients: () -> Unit,
             val onClickLogout: () -> Unit,
+            val onScanRecipes: ((List<Path>) -> Unit)?,
         ) : Content
     }
 }

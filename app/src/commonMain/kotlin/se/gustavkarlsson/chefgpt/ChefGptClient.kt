@@ -50,6 +50,7 @@ import se.gustavkarlsson.chefgpt.api.ApiRecipe
 import se.gustavkarlsson.chefgpt.api.ApiRecipeSummary
 import se.gustavkarlsson.chefgpt.api.ApiRecipeUpdate
 import se.gustavkarlsson.chefgpt.api.ApiSaveSpoonacularRecipe
+import se.gustavkarlsson.chefgpt.api.ApiScanRecipe
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.api.FILE_NAME_HEADER
@@ -149,6 +150,25 @@ class ChefGptClient(
                 }
             },
             readSafe = { bodyAsText().toInt() },
+        )
+
+    // Uploads the images to the recipe scanner. The server blocks until the
+    // scanning agent has produced a result, so this call can take a while.
+    // Returns the saved recipes, so the caller can report how many were saved.
+    suspend fun scanRecipes(
+        sessionId: SessionId,
+        attachments: List<ApiAttachment>,
+    ): Result<List<ApiRecipeSummary>, ClientError> =
+        request(
+            send = { baseUrl ->
+                post("$baseUrl/recipes/scan") {
+                    sessionIdHeader(sessionId)
+                    contentType(ContentType.Application.Json)
+                    accept(ContentType.Application.Json)
+                    setBody(ApiScanRecipe(attachments))
+                }
+            },
+            readSafe = { body() },
         )
 
     suspend fun createChat(sessionId: SessionId): Result<ApiChat, ClientError> =
