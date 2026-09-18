@@ -38,6 +38,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Kitchen
@@ -529,6 +530,7 @@ private fun MessageInput(
                         ),
                 )
 
+                TakePhotoButton(onClickTakePhoto = input.onClickTakePhoto)
                 AttachFilesButton(onFilesAttached = input.onFilesAttached)
 
                 IconButton(
@@ -562,6 +564,22 @@ private fun AttachFilesButton(
         Icon(
             imageVector = Icons.Default.AttachFile,
             contentDescription = "Attach files",
+        )
+    }
+}
+
+@Composable
+private fun TakePhotoButton(
+    onClickTakePhoto: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    IconButton(
+        modifier = modifier,
+        onClick = onClickTakePhoto,
+    ) {
+        Icon(
+            imageVector = Icons.Default.CameraAlt,
+            contentDescription = "Take photo",
         )
     }
 }
