@@ -1,12 +1,13 @@
 package se.gustavkarlsson.chefgpt.agent
 
+import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
 import se.gustavkarlsson.chefgpt.api.ApiAttachment
 import se.gustavkarlsson.chefgpt.auth.UserId
 
-interface IngredientScanAgent {
-    suspend fun scan(
+class FakeDescribeImageAgent : DescribeImageAgent {
+    override suspend fun scan(
         userId: UserId,
         images: List<ApiAttachment>,
-    ): Result<Int, String>
+    ): Result<String, String> = Ok("A fake description of the images.")
 }

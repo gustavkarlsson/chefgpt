@@ -44,7 +44,8 @@ fun Route.scanIngredientsRoute() {
         }
 
         // Block until the specialized agent has scanned the image.
-        with(scanAgent) { scan(userId, attachment) }
+        scanAgent
+            .scan(userId, listOf(attachment))
             .onOk { count -> call.respond(HttpStatusCode.OK, count.toString()) }
             .onErr { reason ->
                 // The failure reason is for us only; the user just sees a 500.

@@ -8,6 +8,7 @@ import ai.koog.agents.core.agent.entity.createStorageKey
 import ai.koog.agents.core.feature.AIAgentGraphFeature
 import ai.koog.agents.core.feature.config.FeatureConfig
 import ai.koog.agents.core.feature.pipeline.AIAgentGraphPipeline
+import ai.koog.prompt.message.AttachmentSource
 import ai.koog.prompt.message.Message
 import ai.koog.prompt.message.MessagePart
 import org.slf4j.LoggerFactory
@@ -18,6 +19,21 @@ import se.gustavkarlsson.chefgpt.chats.EventRepository
 import java.util.concurrent.atomic.AtomicReference
 
 private val logger = LoggerFactory.getLogger(EventRepository::class.java)
+
+// The chat agent must not see photos in its own prompt; the scan agents read the image bytes.
+internal fun stripImageAttachments(messages: List<Message>): List<Message> =
+    messages.map { message ->
+        if (message is Message.User) {
+            message.copy(
+                parts =
+                    message.parts.filterNot { part ->
+                        part is MessagePart.Attachment && part.source is AttachmentSource.Image
+                    },
+            )
+        } else {
+            message
+        }
+    }
 
 class EventBackedChatMemory {
     class Config : FeatureConfig() {
@@ -74,7 +90,7 @@ class EventBackedChatMemory {
                         .getAll(chatId)
                         .filterIsInstance<Event.Message>()
                         .map { it.message }
-                val sanitizedMessages = sanitizeMessages(chatMessages)
+                val sanitizedMessages = stripImageAttachments(sanitizeMessages(chatMessages))
                 if (chatMessages.size != sanitizedMessages.size) {
                     val droppedMessageCount = chatMessages.size - sanitizedMessages.size
                     logger.warn("$droppedMessageCount messages were dropped during sanitization")

@@ -8,50 +8,34 @@ import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
 import ai.koog.prompt.message.AttachmentContent
 import ai.koog.prompt.message.AttachmentSource
+import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
 import se.gustavkarlsson.chefgpt.api.ApiAttachment
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.files.format
-import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
-import se.gustavkarlsson.chefgpt.ingredients.toTools
 
 private val SYSTEM_PROMPT =
     """
-    You are an ingredient scanner. Your only job is to look at the images and
-    identify the edible food ingredients that are visible in them.
-
-    Identify every distinct food ingredient you can see, using simple, singular,
-    lowercase names (e.g. "tomato", "egg", "milk"). Ignore non-food objects,
-    packaging, backgrounds, utensils and people.
-
-    Add all identified ingredients to the user's inventory in a single call to the
-    addIngredients tool. Do not remove, delete or look up anything, and do not
-    call any other tool.
-
-    When you are done, reply with exactly one line and nothing else:
-    - "OK: <count>" where <count> is the number of ingredients you found in the
-      images, even if it is 0, and regardless of how many were newly added. An
-      image with no food in it is not an error: report it as "OK: 0".
-    - "ERROR: <reason>" if anything technical prevents you from analyzing the
-      images, for example an image is missing, corrupt, or cannot be loaded.
+    You describe images. Describe what the image or images show in plain text,
+    factually and in enough detail to be useful. Do not invent anything that is
+    not visible in the images.
     """.trimIndent()
 
-class KoogIngredientScanAgent(
+class KoogDescribeImageAgent(
     private val promptExecutor: PromptExecutor,
     private val model: LLModel,
-    private val ingredientStore: IngredientStore,
-) : IngredientScanAgent {
+) : DescribeImageAgent {
     override suspend fun scan(
         userId: UserId,
         images: List<ApiAttachment>,
-    ): Result<Int, String> {
+    ): Result<String, String> {
         val agent =
             AIAgent(
                 promptExecutor = promptExecutor,
                 agentConfig =
                     AIAgentConfig(
                         prompt =
-                            prompt("scan-ingredients") {
+                            prompt("describe-images") {
                                 system(SYSTEM_PROMPT)
                                 user {
                                     images.forEach { image ->
@@ -67,15 +51,10 @@ class KoogIngredientScanAgent(
                                 }
                             },
                         model = model,
-                        maxAgentIterations = 10,
+                        maxAgentIterations = 1,
                     ),
-                // The only tools the scanner can reach are the ingredient store's.
-                toolRegistry =
-                    ToolRegistry {
-                        tools(ingredientStore.toTools(userId))
-                    },
+                toolRegistry = ToolRegistry {},
             )
-        val reply = agent.run("Scan these images for ingredients and add the ones you find.")
-        return parseScanResult(reply)
+        return Ok(agent.run("Describe these images."))
     }
 }

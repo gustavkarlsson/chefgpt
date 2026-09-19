@@ -45,7 +45,8 @@ fun Route.scanRecipesRoute() {
         }
 
         // Block until the specialized agent has scanned the images.
-        with(get<RecipeScanAgent>()) { scan(userId, request.attachments) }
+        get<RecipeScanAgent>()
+            .scan(userId, request.attachments)
             .onOk { summaries -> call.respond(HttpStatusCode.OK, summaries) }
             .onErr { reason ->
                 // The failure reason is for us only; the user just sees a 500.

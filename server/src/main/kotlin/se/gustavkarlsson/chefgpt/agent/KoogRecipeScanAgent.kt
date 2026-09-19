@@ -3,14 +3,13 @@ package se.gustavkarlsson.chefgpt.agent
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.agent.config.AIAgentConfig
 import ai.koog.agents.core.tools.ToolRegistry
-import ai.koog.ktor.llm
 import ai.koog.prompt.dsl.prompt
+import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
 import ai.koog.prompt.message.AttachmentContent
 import ai.koog.prompt.message.AttachmentSource
 import com.github.michaelbull.result.Result
 import com.github.michaelbull.result.map
-import io.ktor.server.routing.RoutingContext
 import se.gustavkarlsson.chefgpt.api.ApiAttachment
 import se.gustavkarlsson.chefgpt.api.ApiRecipeSummary
 import se.gustavkarlsson.chefgpt.auth.UserId
@@ -48,11 +47,12 @@ private val SYSTEM_PROMPT =
     """.trimIndent()
 
 class KoogRecipeScanAgent(
+    private val promptExecutor: PromptExecutor,
     private val model: LLModel,
     private val recipeStore: RecipeStore,
     private val recipeLookup: RecipeLookup,
 ) : RecipeScanAgent {
-    override suspend fun RoutingContext.scan(
+    override suspend fun scan(
         userId: UserId,
         images: List<ApiAttachment>,
     ): Result<List<ApiRecipeSummary>, String> {
@@ -75,7 +75,7 @@ class KoogRecipeScanAgent(
             }
         val agent =
             AIAgent(
-                promptExecutor = llm(),
+                promptExecutor = promptExecutor,
                 agentConfig =
                     AIAgentConfig(
                         prompt = prompt,

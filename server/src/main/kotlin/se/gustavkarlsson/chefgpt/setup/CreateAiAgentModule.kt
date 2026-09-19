@@ -1,15 +1,21 @@
 package se.gustavkarlsson.chefgpt.setup
 
+import ai.koog.ktor.Koog
+import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
 import io.ktor.server.application.Application
+import io.ktor.server.application.plugin
 import org.koin.dsl.bind
 import org.koin.dsl.module
 import se.gustavkarlsson.chefgpt.agent.AiAgent
+import se.gustavkarlsson.chefgpt.agent.DescribeImageAgent
 import se.gustavkarlsson.chefgpt.agent.FakeAiAgent
+import se.gustavkarlsson.chefgpt.agent.FakeDescribeImageAgent
 import se.gustavkarlsson.chefgpt.agent.FakeIngredientScanAgent
 import se.gustavkarlsson.chefgpt.agent.FakeRecipeScanAgent
 import se.gustavkarlsson.chefgpt.agent.IngredientScanAgent
 import se.gustavkarlsson.chefgpt.agent.KoogAiAgent
+import se.gustavkarlsson.chefgpt.agent.KoogDescribeImageAgent
 import se.gustavkarlsson.chefgpt.agent.KoogIngredientScanAgent
 import se.gustavkarlsson.chefgpt.agent.KoogRecipeScanAgent
 import se.gustavkarlsson.chefgpt.agent.RecipeScanAgent
@@ -25,11 +31,15 @@ import se.gustavkarlsson.chefgpt.recipes.RecipeStore
 private const val CHAT_AGENT = "chat"
 private const val INGREDIENT_SCAN_AGENT = "ingredientScan"
 private const val RECIPE_SCAN_AGENT = "recipeScan"
+private const val DESCRIBE_IMAGE_AGENT = "describeImage"
 
 fun Application.createAiAgentModule() =
     module {
         val config = environment.config
         val aiConfig = config.loadAiConfig()
+        single<PromptExecutor> {
+            plugin(Koog).promptExecutor
+        }
         single {
             when (val type = config.property("bindings.agent").getString()) {
                 "llm" -> {
@@ -47,6 +57,9 @@ fun Application.createAiAgentModule() =
                         imageCropper,
                         chatRepository,
                         eventRepository,
+                        get<RecipeScanAgent>(),
+                        get<IngredientScanAgent>(),
+                        get<DescribeImageAgent>(),
                     )
                 }
 
@@ -62,15 +75,28 @@ fun Application.createAiAgentModule() =
         } bind AiAgent::class
         single {
             when (val type = config.property("bindings.agent").getString()) {
-                "llm" -> KoogIngredientScanAgent(aiConfig.agentModel(INGREDIENT_SCAN_AGENT), get<IngredientStore>())
-                "fake" -> FakeIngredientScanAgent(get<IngredientStore>())
-                else -> error("Unknown agent type: '$type'. Expected 'llm' or 'fake'.")
+                "llm" -> {
+                    KoogIngredientScanAgent(
+                        get<PromptExecutor>(),
+                        aiConfig.agentModel(INGREDIENT_SCAN_AGENT),
+                        get<IngredientStore>(),
+                    )
+                }
+
+                "fake" -> {
+                    FakeIngredientScanAgent(get<IngredientStore>())
+                }
+
+                else -> {
+                    error("Unknown agent type: '$type'. Expected 'llm' or 'fake'.")
+                }
             }
         } bind IngredientScanAgent::class
         single {
             when (val type = config.property("bindings.agent").getString()) {
                 "llm" -> {
                     KoogRecipeScanAgent(
+                        get<PromptExecutor>(),
                         aiConfig.agentModel(RECIPE_SCAN_AGENT),
                         get<RecipeStore>(),
                         get<RecipeLookup>(),
@@ -86,6 +112,13 @@ fun Application.createAiAgentModule() =
                 }
             }
         } bind RecipeScanAgent::class
+        single {
+            when (val type = config.property("bindings.agent").getString()) {
+                "llm" -> KoogDescribeImageAgent(get<PromptExecutor>(), aiConfig.agentModel(DESCRIBE_IMAGE_AGENT))
+                "fake" -> FakeDescribeImageAgent()
+                else -> error("Unknown agent type: '$type'. Expected 'llm' or 'fake'.")
+            }
+        } bind DescribeImageAgent::class
     }
 
 private fun AiConfig.agentModel(agentId: String): LLModel {

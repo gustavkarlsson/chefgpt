@@ -4,9 +4,9 @@ import com.github.michaelbull.result.Result
 import se.gustavkarlsson.chefgpt.api.ApiAttachment
 import se.gustavkarlsson.chefgpt.auth.UserId
 
-interface IngredientScanAgent {
+interface DescribeImageAgent {
     suspend fun scan(
         userId: UserId,
         images: List<ApiAttachment>,
-    ): Result<Int, String>
+    ): Result<String, String>
 }
