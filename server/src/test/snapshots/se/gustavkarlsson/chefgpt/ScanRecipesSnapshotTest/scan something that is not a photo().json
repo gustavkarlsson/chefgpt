@@ -11,7 +11,7 @@
         "body": {
             "type": "json",
             "data": {
-                "attachments": [
+                "files": [
                     {
                         "url": "https://example.com/recipe.pdf",
                         "mimeType": "application/pdf",
@@ -31,7 +31,7 @@
             "type": "json",
             "data": {
                 "type": "unsupported-file-type",
-                "message": "Unsupported attachment: application/pdf",
+                "message": "Unsupported file: application/pdf",
                 "userMessage": "I can only scan photos."
             }
         }

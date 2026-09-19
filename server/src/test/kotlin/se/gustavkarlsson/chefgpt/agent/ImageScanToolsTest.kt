@@ -1,25 +1,17 @@
 package se.gustavkarlsson.chefgpt.agent
 
-import ai.koog.prompt.message.Message
-import ai.koog.prompt.message.MessagePart
-import ai.koog.prompt.message.RequestMetaInfo
 import kotlinx.coroutines.test.runTest
-import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
 import se.gustavkarlsson.chefgpt.api.ChatId
-import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.auth.UserId
-import se.gustavkarlsson.chefgpt.chats.Event
 import se.gustavkarlsson.chefgpt.chats.InMemoryEventRepository
+import se.gustavkarlsson.chefgpt.files.UploadedFile
 import se.gustavkarlsson.chefgpt.ingredients.InMemoryIngredientStore
 import se.gustavkarlsson.chefgpt.recipes.InMemoryRecipeStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.time.Clock
 
-private const val PAGE = "https://res.cloudinary.com/demo/image/upload/v123/page.jpg"
-private const val DISH = "https://res.cloudinary.com/demo/image/upload/v123/dish.jpg"
-private const val NOTES = "https://res.cloudinary.com/demo/raw/upload/v123/notes.txt"
+private val PAGE = UploadedFile("https://res.cloudinary.com/demo/image/upload/v123/page.jpg", "image/jpeg", "page.jpg")
+private val DISH = UploadedFile("https://res.cloudinary.com/demo/image/upload/v123/dish.jpg", "image/jpeg", "dish.jpg")
 
 class ImageScanToolsTest {
     private val chatId = ChatId.random()
@@ -37,76 +29,37 @@ class ImageScanToolsTest {
             FakeDescribeImageAgent(),
         )
 
-    private suspend fun share(vararg attachments: ApiUploadedFile) {
-        eventRepository.append(
-            chatId,
-            Event.Message(
-                id = EventId.random(),
-                message = Message.User(listOf(MessagePart.Text("Look")), RequestMetaInfo(Clock.System.now())),
-                attachments = attachments.toList(),
-            ),
-        )
-    }
-
     @Test
-    fun `scans recipes from a shared photo`() =
+    fun `scans recipes from a photo`() =
         runTest {
-            share(ApiUploadedFile(PAGE, "image/jpeg", "page.jpg"))
-
             val result = tools.scanRecipesInPhotos(listOf(PAGE))
 
-            assertEquals("Saved 1 recipe(s): Pasta al pomodoro", result)
+            assertEquals(listOf("Pasta al pomodoro"), result)
             assertEquals(listOf("Pasta al pomodoro"), recipeStore.getRecipeSummaries(userId).map { it.title })
         }
 
     @Test
-    fun `scans recipes from several shared photos`() =
+    fun `scans recipes from several photos`() =
         runTest {
-            share(ApiUploadedFile(PAGE, "image/jpeg", "page.jpg"), ApiUploadedFile(DISH, "image/jpeg", "dish.jpg"))
-
             val result = tools.scanRecipesInPhotos(listOf(PAGE, DISH))
 
-            assertEquals("Saved 1 recipe(s): Pasta al pomodoro", result)
+            assertEquals(listOf("Pasta al pomodoro"), result)
         }
 
     @Test
-    fun `scans ingredients from a shared photo`() =
+    fun `scans ingredients from a photo`() =
         runTest {
-            share(ApiUploadedFile(PAGE, "image/jpeg", "page.jpg"))
-
             val result = tools.scanIngredientsInPhotos(listOf(PAGE))
 
-            assertEquals("Found 2 ingredient(s).", result)
+            assertEquals(listOf("tomato", "basil"), result)
             assertEquals(setOf("tomato", "basil"), ingredientStore.getIngredients(userId).map { it.name }.toSet())
         }
 
     @Test
-    fun `describes shared photos`() =
+    fun `describes photos`() =
         runTest {
-            share(ApiUploadedFile(PAGE, "image/jpeg", "page.jpg"))
-
             val result = tools.describePhotos(listOf(PAGE))
 
-            assertEquals("A fake description of the images.", result)
-        }
-
-    @Test
-    fun `refuses a photo url that was not shared here`() =
-        runTest {
-            share(ApiUploadedFile(PAGE, "image/jpeg", "page.jpg"))
-
-            assertFailsWith<IllegalArgumentException> {
-                tools.scanRecipesInPhotos(listOf(DISH))
-            }
-        }
-
-    @Test
-    fun `refuses a shared file that is not a photo`() =
-        runTest {
-            share(ApiUploadedFile(NOTES, "text/plain", "notes.txt"))
-
-            assertFailsWith<IllegalArgumentException> {
-                tools.scanRecipesInPhotos(listOf(NOTES))
-            }
+            assertEquals(listOf("A fake description of an image", "Another description"), result)
         }
 }
