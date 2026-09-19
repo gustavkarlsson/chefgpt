@@ -50,6 +50,8 @@ private val testConfig =
         "ai.agents.ingredientScan.model" to "claude-sonnet-4-6",
         "ai.agents.recipeScan.provider" to "anthropic",
         "ai.agents.recipeScan.model" to "claude-sonnet-4-6",
+        "ai.agents.describeImage.provider" to "anthropic",
+        "ai.agents.describeImage.model" to "claude-sonnet-4-6",
     )
 
 fun snapshotTestApplication(

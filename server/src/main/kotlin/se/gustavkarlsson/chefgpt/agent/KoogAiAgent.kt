@@ -25,6 +25,9 @@ class KoogAiAgent(
     private val imageCropper: ImageCropper,
     private val chatRepository: ChatRepository,
     private val eventRepository: EventRepository,
+    private val recipeScanAgent: RecipeScanAgent,
+    private val ingredientScanAgent: IngredientScanAgent,
+    private val describeImageAgent: DescribeImageAgent,
 ) : AiAgent {
     override suspend fun RoutingContext.run(
         userId: UserId,
@@ -41,6 +44,16 @@ class KoogAiAgent(
                         tools(recipeStore.toTools(userId, recipeLookup))
                         tools(ChatNamingTools(chatRepository, eventRepository, userId, chatId))
                         tools(SharedFileTools(eventRepository, imageCropper, chatId))
+                        tools(
+                            ImageScanTools(
+                                eventRepository,
+                                chatId,
+                                userId,
+                                recipeScanAgent,
+                                ingredientScanAgent,
+                                describeImageAgent,
+                            ),
+                        )
                     },
             )
         agent.run(Unit, chatId.value.toString())

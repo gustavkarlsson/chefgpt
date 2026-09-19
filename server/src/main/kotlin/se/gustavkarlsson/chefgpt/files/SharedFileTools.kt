@@ -4,6 +4,7 @@ import ai.koog.agents.core.tools.annotations.LLMDescription
 import ai.koog.agents.core.tools.annotations.Tool
 import ai.koog.agents.core.tools.reflect.ToolSet
 import kotlinx.serialization.Serializable
+import se.gustavkarlsson.chefgpt.api.ApiAttachment
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.chats.Event
@@ -22,9 +23,14 @@ data class SharedFile(
     val fileName: String?,
 )
 
+suspend fun EventRepository.sharedAttachments(chatId: ChatId): List<ApiAttachment> =
+    getAll(chatId)
+        .filterIsInstance<Event.Message>()
+        .flatMap { it.attachments }
+
 /**
- * Attachments reach the model as image and document content blocks, so it sees the pictures but
- * never their urls. These tools hand the urls back as tool results, which the model does read.
+ * Hands the chat agent the urls of the files the user shared, so it can pass photo urls on to
+ * the image scanning tools. The chat agent is not shown photos in its own prompt.
  */
 @Suppress("unused")
 class SharedFileTools(
@@ -34,12 +40,12 @@ class SharedFileTools(
 ) : ToolSet {
     @Tool
     @LLMDescription(
-        "List the files the user has shared in this chat, in the order they shared them — " +
-            "the same order you were shown them in. Use this to get the url of a picture you have " +
-            "been shown, for example to give a recipe a photo.",
+        "List the files the user has shared in this chat, in the order they shared them. " +
+            "You cannot see photos yourself, so use this to get their urls and hand them to the " +
+            "scanning tools (scanRecipesInPhotos, scanIngredientsInPhotos, describePhotos).",
     )
     suspend fun listSharedFiles(): List<SharedFile> =
-        sharedAttachments().mapIndexed { index, attachment ->
+        eventRepository.sharedAttachments(chatId).mapIndexed { index, attachment ->
             SharedFile(
                 number = index + 1,
                 url = attachment.url,
@@ -67,17 +73,14 @@ class SharedFileTools(
         @LLMDescription("Height of the part to keep, as a fraction of the picture's height.")
         height: Double,
     ): String {
-        val shared = sharedAttachments().firstOrNull { it.url == url && it.kind == AttachmentKind.Image }
+        val shared =
+            eventRepository
+                .sharedAttachments(chatId)
+                .firstOrNull { it.url == url && it.kind == AttachmentKind.Image }
         requireNotNull(shared) { "No picture shared in this chat has the url $url" }
         val region =
             runCatching { CropRegion(x, y, width, height) }
                 .getOrElse { error("That is not a region inside the picture: ${it.message}") }
         return cropper.crop(ImageUrl(url), region).value
     }
-
-    private suspend fun sharedAttachments() =
-        eventRepository
-            .getAll(chatId)
-            .filterIsInstance<Event.Message>()
-            .flatMap { it.attachments }
 }
