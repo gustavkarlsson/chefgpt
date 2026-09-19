@@ -9,3 +9,25 @@ expect val APP_STORAGE_DIR: String
 
 // Optional hint shown under the base URL field. Null on platforms where it doesn't apply.
 expect val BASE_URL_HINT: String?
+
+data class DeviceConfig(
+    val platform: Platform,
+    val supportsCamera: Boolean,
+)
+
+fun readDeviceConfig(): DeviceConfig =
+    DeviceConfig(
+        platform = devicePlatform,
+        supportsCamera = deviceSupportsCamera(),
+    )
+
+expect fun deviceSupportsCamera(): Boolean
+
+expect val devicePlatform: Platform
+
+enum class Platform {
+    Android,
+    Desktop,
+    Ios,
+    Web,
+}

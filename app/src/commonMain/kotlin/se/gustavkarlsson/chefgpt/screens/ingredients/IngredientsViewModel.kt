@@ -17,12 +17,12 @@ import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
 import org.koin.core.annotation.InjectedParam
 import se.gustavkarlsson.chefgpt.ChefGptClient
+import se.gustavkarlsson.chefgpt.DeviceConfig
 import se.gustavkarlsson.chefgpt.api.ApiIngredient
 import se.gustavkarlsson.chefgpt.api.IngredientId
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatarModel
 import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
 import se.gustavkarlsson.chefgpt.ingredients.IngredientWords
-import se.gustavkarlsson.chefgpt.isImageFile
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
 import se.gustavkarlsson.chefgpt.sessions.SessionId
@@ -37,6 +37,7 @@ private const val EMPTY_DESCRIPTION =
 class IngredientsViewModel(
     private val client: ChefGptClient,
     private val navigator: Navigator,
+    private val deviceConfig: DeviceConfig,
     emojiResolverFactory: IngredientEmojiResolver.Factory,
     @InjectedParam screen: IngredientsScreen,
 ) : StateViewModel<State, UiState>() {
@@ -49,6 +50,7 @@ class IngredientsViewModel(
 
     override fun createInitialState() =
         State(
+            supportsCamera = deviceConfig.supportsCamera,
             ingredients = null,
             inputText = "",
             scanningImage = false,
@@ -63,8 +65,16 @@ class IngredientsViewModel(
                 UiInput(
                     text = inputText,
                     onTextChange = ::updateInputText,
-                    scanningImage = scanningImage,
-                    onScanImageSelected = ::scanImage,
+                    cameraButton =
+                        if (supportsCamera) {
+                            UiCameraButton(
+                                scanningImage = scanningImage,
+                                onPhotoTaken = ::scanImage,
+                                onError = ::showPhotoError,
+                            )
+                        } else {
+                            null
+                        },
                     onClickAdd = if (inputText.isNotBlank() && emojiResolver != null) ::createIngredient else null,
                 ),
             onClickBack = navigator::pop,
@@ -75,7 +85,7 @@ class IngredientsViewModel(
         // Hold off on the empty state until the first ingredient emission has arrived.
         if (ingredients == null) return UiContent.Loading
         val inInventory =
-            ingredients.orEmpty().toUiIngredients(
+            ingredients.toUiIngredients(
                 emojiResolver,
                 inInventory = true,
                 baseline = baselineInInventory,
@@ -89,7 +99,7 @@ class IngredientsViewModel(
                 IngredientSection(
                     title = "Previously in store",
                     ingredients =
-                        ingredients.orEmpty().toUiIngredients(
+                        ingredients.toUiIngredients(
                             emojiResolver,
                             inInventory = false,
                             baseline = baselineInInventory,
@@ -130,20 +140,17 @@ class IngredientsViewModel(
         // Catalog words we don't know about yet become brand new ingredients when tapped.
         val existing = ingredients.orEmpty().mapTo(mutableSetOf()) { it.name.lowercase() }
         val newWords =
-            IngredientWords
-                .match(inputText)
-                .filterNot { it in existing }
-                .map { name ->
-                    UiIngredient(
-                        key = name,
-                        name = name,
-                        icon = EmojiAvatarModel.of(emojiResolver.resolve(name), name),
-                        dimmed = false,
-                        isNew = false,
-                        onClick = ::addSuggestion,
-                        onClickDestroy = null,
-                    )
-                }
+            IngredientWords.match(inputText).filterNot { it in existing }.map { name ->
+                UiIngredient(
+                    key = name,
+                    name = name,
+                    icon = EmojiAvatarModel.of(emojiResolver.resolve(name), name),
+                    dimmed = false,
+                    isNew = false,
+                    onClick = ::addSuggestion,
+                    onClickDestroy = null,
+                )
+            }
 
         return previouslyInStore + newWords
     }
@@ -154,20 +161,17 @@ class IngredientsViewModel(
         baseline: Set<IngredientId>?,
     ): List<UiIngredient> {
         if (emojiResolver == null) return emptyList()
-        return this
-            .filter { it.inInventory == inInventory }
-            .sortedBy { it.lastModified }
-            .map { ingredient ->
-                UiIngredient(
-                    key = ingredient.id.toString(),
-                    name = ingredient.name,
-                    icon = EmojiAvatarModel.of(emojiResolver.resolve(ingredient.name), ingredient.name),
-                    dimmed = !inInventory,
-                    isNew = inInventory && baseline != null && ingredient.id !in baseline,
-                    onClick = if (inInventory) ::removeIngredient else ::addIngredient,
-                    onClickDestroy = if (inInventory) null else ::destroyIngredient,
-                )
-            }
+        return this.filter { it.inInventory == inInventory }.sortedBy { it.lastModified }.map { ingredient ->
+            UiIngredient(
+                key = ingredient.id.toString(),
+                name = ingredient.name,
+                icon = EmojiAvatarModel.of(emojiResolver.resolve(ingredient.name), ingredient.name),
+                dimmed = !inInventory,
+                isNew = inInventory && baseline != null && ingredient.id !in baseline,
+                onClick = if (inInventory) ::removeIngredient else ::addIngredient,
+                onClickDestroy = if (inInventory) null else ::destroyIngredient,
+            )
+        }
     }
 
     init {
@@ -183,8 +187,9 @@ class IngredientsViewModel(
                             innerState.getAndUpdate { state ->
                                 // The first emission establishes the baseline of what was already in stock.
                                 val baseline =
-                                    state.baselineInInventory
-                                        ?: ingredients.filter { it.inInventory }.mapTo(mutableSetOf()) { it.id }
+                                    state.baselineInInventory ?: ingredients
+                                        .filter { it.inInventory }
+                                        .mapTo(mutableSetOf()) { it.id }
                                 state.copy(ingredients = ingredients, baselineInInventory = baseline)
                             }
                         // Fire whenever the list transitions to empty; previous is null until the first load.
@@ -272,12 +277,8 @@ class IngredientsViewModel(
         innerState.update { it.copy(inputText = text) }
     }
 
-    private fun scanImage(image: Path) {
-        // The picker offers documents too, but the scanner only reads photos.
-        if (!isImageFile(image.name)) {
-            showSnackbar("That's not a photo I can scan", isError = true)
-            return
-        }
+    private fun scanImage(path: String) {
+        val image = Path(path)
         innerState.update {
             if (it.scanningImage) return // Already scanning
             it.copy(scanningImage = true)
@@ -296,9 +297,14 @@ class IngredientsViewModel(
             }
         }
     }
+
+    private fun showPhotoError() {
+        showSnackbar("Could not take a photo", isError = true)
+    }
 }
 
 data class State(
+    val supportsCamera: Boolean,
     val ingredients: List<ApiIngredient>?, // null until the first ingredient emission arrives.
     val inputText: String,
     val scanningImage: Boolean,
@@ -336,9 +342,14 @@ data class IngredientSection(
 data class UiInput(
     val text: String,
     val onTextChange: (String) -> Unit,
-    val scanningImage: Boolean,
-    val onScanImageSelected: ((Path) -> Unit),
+    val cameraButton: UiCameraButton?,
     val onClickAdd: (() -> Unit)?,
+)
+
+data class UiCameraButton(
+    val scanningImage: Boolean,
+    val onPhotoTaken: (photoPath: String) -> Unit,
+    val onError: () -> Unit,
 )
 
 data class UiIngredient(

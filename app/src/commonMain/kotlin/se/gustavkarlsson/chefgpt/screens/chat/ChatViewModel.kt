@@ -24,6 +24,7 @@ import kotlinx.io.files.Path
 import org.koin.core.annotation.InjectedParam
 import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.ClientError
+import se.gustavkarlsson.chefgpt.DeviceConfig
 import se.gustavkarlsson.chefgpt.api.ApiAgentChatNamed
 import se.gustavkarlsson.chefgpt.api.ApiAgentMessage
 import se.gustavkarlsson.chefgpt.api.ApiAgentMessageChunk
@@ -45,9 +46,7 @@ import se.gustavkarlsson.chefgpt.chats.displayName
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatarModel
 import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
 import se.gustavkarlsson.chefgpt.navigation.Navigator
-import se.gustavkarlsson.chefgpt.navigation.requestResult
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
-import se.gustavkarlsson.chefgpt.screens.camera.CameraScreen
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsScreen
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 import kotlin.random.Random
@@ -75,6 +74,7 @@ class ChatViewModel(
     conversationFactory: ConversationFactory,
     private val chatRepository: ChatRepository,
     private val navigator: Navigator,
+    private val deviceConfig: DeviceConfig,
     private val emojiResolverFactory: IngredientEmojiResolver.Factory,
     @InjectedParam private val screen: ChatScreen,
 ) : StateViewModel<State, UiState>() {
@@ -116,8 +116,13 @@ class ChatViewModel(
                     attachments = attachments,
                     onTextChanged = ::updateUserText,
                     onFilesAttached = ::attachFiles,
-                    onClickTakePhoto = ::openCamera,
                     onClickRemoveAttachment = ::removeAttachment,
+                    cameraButton =
+                        if (deviceConfig.supportsCamera) {
+                            UiCameraButton(onPhotoTaken = ::addPhotoAttachment, onError = ::showPhotoError)
+                        } else {
+                            null
+                        },
                     onClickSend = if (canSend()) ::sendMessage else null,
                 ),
             onClickBack = navigator::pop,
@@ -260,11 +265,12 @@ class ChatViewModel(
         innerState.update { it.copy(attachments = (it.attachments + files).distinct()) }
     }
 
-    private fun openCamera() {
-        viewModelScope.launch {
-            val photo = navigator.requestResult(CameraScreen()) ?: return@launch
-            attachFiles(listOf(photo.path))
-        }
+    private fun addPhotoAttachment(photoPath: String) {
+        innerState.update { it.copy(attachments = it.attachments + Path(photoPath)) }
+    }
+
+    private fun showPhotoError() {
+        showSnackbar("Could not take a photo", isError = true)
     }
 
     private fun removeAttachment(file: Path) {
@@ -387,9 +393,20 @@ data class UiInput(
     val attachments: List<Path>,
     val onTextChanged: (String) -> Unit,
     val onFilesAttached: (List<Path>) -> Unit,
-    val onClickTakePhoto: () -> Unit,
     val onClickRemoveAttachment: (Path) -> Unit,
+    val cameraButton: UiCameraButton?,
     val onClickSend: (() -> Unit)?,
+)
+
+data class UiSendFileButton(
+    val onFilesAttached: (List<Path>) -> Unit,
+    val onPhotoTaken: (photoPath: String) -> Unit,
+    val onError: () -> Unit,
+)
+
+data class UiCameraButton(
+    val onPhotoTaken: (photoPath: String) -> Unit,
+    val onError: () -> Unit,
 )
 
 data class UiAttachment(
