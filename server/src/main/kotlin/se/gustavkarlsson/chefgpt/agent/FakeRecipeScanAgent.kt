@@ -1,22 +1,17 @@
 package se.gustavkarlsson.chefgpt.agent
 
-import com.github.michaelbull.result.Ok
-import com.github.michaelbull.result.Result
-import io.ktor.server.routing.RoutingContext
-import se.gustavkarlsson.chefgpt.api.ApiAttachment
-import se.gustavkarlsson.chefgpt.api.ApiRecipeSummary
-import se.gustavkarlsson.chefgpt.api.toSummary
 import se.gustavkarlsson.chefgpt.auth.UserId
+import se.gustavkarlsson.chefgpt.files.UploadedFile
 import se.gustavkarlsson.chefgpt.recipes.NewRecipe
 import se.gustavkarlsson.chefgpt.recipes.RecipeStore
 
 class FakeRecipeScanAgent(
     private val recipeStore: RecipeStore,
 ) : RecipeScanAgent {
-    override suspend fun RoutingContext.scan(
+    override suspend fun scan(
         userId: UserId,
-        images: List<ApiAttachment>,
-    ): Result<List<ApiRecipeSummary>, String> {
+        images: List<UploadedFile>,
+    ): List<String> {
         val recipe =
             recipeStore.saveRecipe(
                 userId,
@@ -34,6 +29,6 @@ class FakeRecipeScanAgent(
                     spoonacularId = null,
                 ),
             )
-        return Ok(listOf(recipe.toSummary()))
+        return listOf(recipe.title)
     }
 }

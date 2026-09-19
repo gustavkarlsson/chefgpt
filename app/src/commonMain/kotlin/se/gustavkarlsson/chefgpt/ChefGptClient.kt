@@ -10,10 +10,12 @@ import com.github.michaelbull.result.runCatching
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.sse.SSE
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.accept
 import io.ktor.client.request.basicAuth
@@ -39,7 +41,6 @@ import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import se.gustavkarlsson.chefgpt.api.ApiAction
-import se.gustavkarlsson.chefgpt.api.ApiAttachment
 import se.gustavkarlsson.chefgpt.api.ApiChat
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiEvent
@@ -51,10 +52,10 @@ import se.gustavkarlsson.chefgpt.api.ApiRecipeSummary
 import se.gustavkarlsson.chefgpt.api.ApiRecipeUpdate
 import se.gustavkarlsson.chefgpt.api.ApiSaveSpoonacularRecipe
 import se.gustavkarlsson.chefgpt.api.ApiScanRecipe
+import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.api.FILE_NAME_HEADER
-import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.api.IngredientId
 import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.api.SpoonacularId
@@ -63,6 +64,10 @@ import se.gustavkarlsson.chefgpt.sessions.SessionId
 import se.gustavkarlsson.chefgpt.sessions.UserCredentials
 import se.gustavkarlsson.chefgpt.util.sseTyped
 import io.ktor.client.plugins.logging.Logger as KtorLogger
+
+// TODO perhaps put all agent work under a specific parent path and have them share a separate client?
+// How long to wait for a request that blocks while an agent runs on the server.
+private const val AGENT_REQUEST_TIMEOUT_MS = 60_000L
 
 private val log = Logger.withTag("${ChefGptClient::class.simpleName}")
 
@@ -78,6 +83,7 @@ class ChefGptClient(
                 json(json)
             }
             install(SSE)
+            install(HttpTimeout)
 
             install(Logging) {
                 logger =
@@ -118,7 +124,7 @@ class ChefGptClient(
         sessionId: SessionId,
         data: Path,
         contentType: ContentType,
-    ): Result<ApiAttachment, ClientError> =
+    ): Result<ApiUploadedFile, ClientError> =
         request(
             send = { baseUrl ->
                 post("$baseUrl/files") {
@@ -144,6 +150,9 @@ class ChefGptClient(
             send = { baseUrl ->
                 post("$baseUrl/ingredients/scan") {
                     sessionIdHeader(sessionId)
+                    timeout {
+                        requestTimeoutMillis = AGENT_REQUEST_TIMEOUT_MS
+                    }
                     contentType(contentType)
                     accept(ContentType.Text.Plain)
                     setBody(data.byteReadChannel())
@@ -157,12 +166,15 @@ class ChefGptClient(
     // Returns the saved recipes, so the caller can report how many were saved.
     suspend fun scanRecipes(
         sessionId: SessionId,
-        attachments: List<ApiAttachment>,
+        attachments: List<ApiUploadedFile>,
     ): Result<List<ApiRecipeSummary>, ClientError> =
         request(
             send = { baseUrl ->
                 post("$baseUrl/recipes/scan") {
                     sessionIdHeader(sessionId)
+                    timeout {
+                        requestTimeoutMillis = AGENT_REQUEST_TIMEOUT_MS
+                    }
                     contentType(ContentType.Application.Json)
                     accept(ContentType.Application.Json)
                     setBody(ApiScanRecipe(attachments))

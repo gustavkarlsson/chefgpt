@@ -8,7 +8,7 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.ResponseData
-import se.gustavkarlsson.chefgpt.agent.AiAgent
+import se.gustavkarlsson.chefgpt.agent.ChatAgent
 import se.gustavkarlsson.chefgpt.api.ApiAction
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
@@ -34,8 +34,8 @@ fun Route.chatActionsRoute() {
                     }
 
                     is ApiUserSendsMessage -> {
-                        val aiAgent = get<AiAgent>()
-                        with(aiAgent) { run(userId, chatId) }
+                        val chatAgent = get<ChatAgent>()
+                        with(chatAgent) { run(userId, chatId) }
                     }
                 }
             }.map {

@@ -7,12 +7,11 @@ import kotlinx.serialization.Serializable
 const val FILE_NAME_HEADER = "X-File-Name"
 
 /**
- * A file the user attached to a message, already uploaded and reachable at [url].
- * The [mimeType] decides how it is rendered and how it is handed to the agent.
+ * A file the user has uploaded. Reachable at [url].
  */
 @Serializable
-@SerialName("api-attachment")
-data class ApiAttachment(
+@SerialName("api-uploaded-file")
+data class ApiUploadedFile(
     val url: String,
     val mimeType: String,
     val fileName: String?,

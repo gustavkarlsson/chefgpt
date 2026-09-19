@@ -16,10 +16,9 @@ import io.ktor.http.headers
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.util.url
 import io.ktor.utils.io.ByteReadChannel
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import se.gustavkarlsson.chefgpt.api.ApiAttachment
+import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
 import se.gustavkarlsson.chefgpt.chefGptJson
 
 class CloudinaryFileUploader(
@@ -44,7 +43,7 @@ class CloudinaryFileUploader(
         readChannel: ByteReadChannel,
         contentType: ContentType?,
         fileName: String?,
-    ): ApiAttachment? =
+    ): ApiUploadedFile? =
         try {
             val mimeType = contentType?.let { "${it.contentType}/${it.contentSubtype}" } ?: "application/octet-stream"
             val jsonObject =
@@ -76,7 +75,7 @@ class CloudinaryFileUploader(
                 jsonObject
                     .getValue("secure_url")
                     .jsonPrimitive.content
-            ApiAttachment(url = url, mimeType = mimeType, fileName = fileName)
+            ApiUploadedFile(url = url, mimeType = mimeType, fileName = fileName)
         } catch (_: Exception) {
             // TODO log error
             null
@@ -89,9 +88,9 @@ class CloudinaryFileUploader(
 
 // Cloudinary stores PDFs as image resources, which is also what lets us crop a page of one.
 private fun resourceType(mimeType: String): String =
-    when (attachmentKindOrNull(mimeType)) {
-        AttachmentKind.Image, AttachmentKind.Pdf -> "image"
-        AttachmentKind.Text, null -> "raw"
+    when (fileKindOrNull(mimeType)) {
+        FileKind.Image, FileKind.Pdf -> "image"
+        FileKind.Text, null -> "raw"
     }
 
 private fun defaultFileName(mimeType: String): String = "file.${mimeType.substringAfter('/').substringBefore(';')}"

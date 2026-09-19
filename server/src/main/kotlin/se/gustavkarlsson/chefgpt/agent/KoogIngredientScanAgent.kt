@@ -1,79 +1,95 @@
 package se.gustavkarlsson.chefgpt.agent
 
 import ai.koog.agents.core.agent.AIAgent
+import ai.koog.agents.core.agent.AIAgentFunctionalStrategy
 import ai.koog.agents.core.agent.config.AIAgentConfig
 import ai.koog.agents.core.tools.ToolRegistry
-import ai.koog.ktor.llm
+import ai.koog.prompt.Prompt
 import ai.koog.prompt.dsl.prompt
+import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
-import ai.koog.prompt.message.AttachmentContent
-import ai.koog.prompt.message.AttachmentSource
-import com.github.michaelbull.result.Result
-import io.ktor.server.routing.RoutingContext
-import se.gustavkarlsson.chefgpt.api.ApiAttachment
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonPrimitive
+import org.slf4j.LoggerFactory
 import se.gustavkarlsson.chefgpt.auth.UserId
-import se.gustavkarlsson.chefgpt.files.format
+import se.gustavkarlsson.chefgpt.files.UploadedFile
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 import se.gustavkarlsson.chefgpt.ingredients.toTools
 
+private val logger = LoggerFactory.getLogger("KoogIngredientScanAgent")
+
 private val SYSTEM_PROMPT =
     """
-    You are an ingredient scanner. Your only job is to look at the image and
-    identify the edible food ingredients that are visible in it.
+    You are an ingredient scanner. Your only job is to look at the images and
+    identify the edible food ingredients that are visible in them.
+    Ignore non-food objects, such as packaging, backgrounds, utensils and people.
 
-    Identify every distinct food ingredient you can see, using simple, singular,
-    lowercase names (e.g. "tomato", "egg", "milk"). Ignore non-food objects,
-    packaging, backgrounds, utensils and people.
+    Workflow:
+    1. Call getIngredients to fetch existing ingredients.
+    2. Identify all distinct food ingredients from the images.
+    3. Call addIngredients to save the identified ingredients.
 
-    Add all identified ingredients to the user's inventory in a single call to the
-    addIngredients tool. Do not remove, delete or look up anything, and do not
-    call any other tool.
-
-    When you are done, reply with exactly one line and nothing else:
-    - "OK: <count>" where <count> is the number of ingredients you found in the
-      image, even if it is 0, and regardless of how many were newly added. An
-      image with no food in it is not an error: report it as "OK: 0".
-    - "ERROR: <reason>" if anything technical prevents you from analyzing the
-      image, for example the image is missing, corrupt, or cannot be loaded.
+    Ingredient naming:
+    Copy the spelling of the existing ingredients if they can be found (including capitalization), to avoid duplicates.
+    For new ingredients, use simple, plain-text lowercase names (e.g. "tomatoes", "eggs", "milk", "black pepper").
     """.trimIndent()
 
 class KoogIngredientScanAgent(
+    private val promptExecutor: PromptExecutor,
     private val model: LLModel,
     private val ingredientStore: IngredientStore,
 ) : IngredientScanAgent {
-    override suspend fun RoutingContext.scan(
+    override suspend fun scan(
         userId: UserId,
-        image: ApiAttachment,
-    ): Result<Int, String> {
-        val agent =
-            AIAgent(
-                promptExecutor = llm(),
-                agentConfig =
-                    AIAgentConfig(
-                        prompt =
-                            prompt("scan-ingredients") {
-                                system(SYSTEM_PROMPT)
-                                user {
-                                    image(
-                                        AttachmentSource.Image(
-                                            AttachmentContent.URL(image.url),
-                                            image.format,
-                                            image.mimeType,
-                                            image.fileName,
-                                        ),
-                                    )
-                                }
-                            },
-                        model = model,
-                        maxAgentIterations = 10,
-                    ),
-                // The only tools the scanner can reach are the ingredient store's.
-                toolRegistry =
-                    ToolRegistry {
-                        tools(ingredientStore.toTools(userId))
-                    },
-            )
-        val reply = agent.run("Scan this image for ingredients and add the ones you find.")
-        return parseScanResult(reply)
+        images: List<UploadedFile>,
+    ): List<String> {
+        val agent = buildAgent(userId, buildPrompt(images), ingredientScanStrategy())
+        return agent.run("Scan these images for ingredients and add the ones you find.")
     }
+
+    private fun buildAgent(
+        userId: UserId,
+        prompt: Prompt,
+        strategy: AIAgentFunctionalStrategy<String, List<String>>,
+    ) = AIAgent(
+        promptExecutor = promptExecutor,
+        agentConfig =
+            AIAgentConfig(
+                prompt = prompt,
+                model = model,
+                maxAgentIterations = 10,
+            ),
+        strategy = strategy,
+        // The only tools the scanner can reach are the ingredient store's.
+        toolRegistry =
+            ToolRegistry {
+                tools(ingredientStore.toTools(userId))
+            },
+    )
 }
+
+private fun buildPrompt(images: List<UploadedFile>) =
+    prompt("scan-ingredients") {
+        system(SYSTEM_PROMPT)
+        user {
+            for (image in images) {
+                image.toImageAttachmentOrNull()?.let {
+                    image(it)
+                }
+            }
+        }
+    }
+
+// TODO Fix brittle parsing since the tool signature might change
+private fun ingredientScanStrategy() =
+    scanStrategy("scan-ingredients") { call ->
+        if (call.tool == "addIngredients") {
+            call.argsJson["ingredients"]
+                ?.jsonArray
+                ?.mapNotNull { element -> element.jsonPrimitive.takeIf { it.isString }?.contentOrNull }
+                .orEmpty()
+        } else {
+            emptyList()
+        }
+    }

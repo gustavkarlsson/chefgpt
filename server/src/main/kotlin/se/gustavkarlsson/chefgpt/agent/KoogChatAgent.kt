@@ -9,15 +9,19 @@ import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.chats.ChatNamingTools
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventRepository
+import se.gustavkarlsson.chefgpt.files.FileKind
 import se.gustavkarlsson.chefgpt.files.ImageCropper
-import se.gustavkarlsson.chefgpt.files.SharedFileTools
+import se.gustavkarlsson.chefgpt.files.ImageEditTools
+import se.gustavkarlsson.chefgpt.files.UploadedFileTools
+import se.gustavkarlsson.chefgpt.files.kind
+import se.gustavkarlsson.chefgpt.files.sharedAttachments
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 import se.gustavkarlsson.chefgpt.ingredients.toTools
 import se.gustavkarlsson.chefgpt.recipes.RecipeLookup
 import se.gustavkarlsson.chefgpt.recipes.RecipeStore
 import se.gustavkarlsson.chefgpt.recipes.toTools
 
-class KoogAiAgent(
+class KoogChatAgent(
     private val model: LLModel,
     private val ingredientStore: IngredientStore,
     private val recipeStore: RecipeStore,
@@ -25,7 +29,10 @@ class KoogAiAgent(
     private val imageCropper: ImageCropper,
     private val chatRepository: ChatRepository,
     private val eventRepository: EventRepository,
-) : AiAgent {
+    private val recipeScanAgent: RecipeScanAgent,
+    private val ingredientScanAgent: IngredientScanAgent,
+    private val describeImageAgent: DescribeImageAgent,
+) : ChatAgent {
     override suspend fun RoutingContext.run(
         userId: UserId,
         chatId: ChatId,
@@ -40,7 +47,25 @@ class KoogAiAgent(
                         tools(ingredientStore.toTools(userId))
                         tools(recipeStore.toTools(userId, recipeLookup))
                         tools(ChatNamingTools(chatRepository, eventRepository, userId, chatId))
-                        tools(SharedFileTools(eventRepository, imageCropper, chatId))
+                        tools(UploadedFileTools(eventRepository, chatId))
+                        tools(
+                            ImageEditTools(imageCropper) {
+                                eventRepository
+                                    .sharedAttachments(chatId)
+                                    .filter { it.kind == FileKind.Image }
+                                    .map { it.url }
+                            },
+                        )
+                        tools(
+                            ImageScanTools(
+                                eventRepository,
+                                chatId,
+                                userId,
+                                recipeScanAgent,
+                                ingredientScanAgent,
+                                describeImageAgent,
+                            ),
+                        )
                     },
             )
         agent.run(Unit, chatId.value.toString())

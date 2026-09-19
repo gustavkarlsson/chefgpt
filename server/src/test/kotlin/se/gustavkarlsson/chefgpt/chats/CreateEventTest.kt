@@ -5,18 +5,18 @@ import ai.koog.prompt.message.AttachmentSource
 import ai.koog.prompt.message.Message
 import ai.koog.prompt.message.MessagePart
 import kotlinx.coroutines.test.runTest
-import se.gustavkarlsson.chefgpt.api.ApiAttachment
+import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.files.AttachmentTextLoader
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 private val image =
-    ApiAttachment("https://res.cloudinary.com/demo/image/upload/v1/page.jpg", "image/jpeg", "page.jpg")
+    ApiUploadedFile("https://res.cloudinary.com/demo/image/upload/v1/page.jpg", "image/jpeg", "page.jpg")
 private val pdf =
-    ApiAttachment("https://res.cloudinary.com/demo/image/upload/v1/recipe.pdf", "application/pdf", "recipe.pdf")
+    ApiUploadedFile("https://res.cloudinary.com/demo/image/upload/v1/recipe.pdf", "application/pdf", "recipe.pdf")
 private val text =
-    ApiAttachment("https://res.cloudinary.com/demo/raw/upload/v1/recipe.txt", "text/plain", "recipe.txt")
+    ApiUploadedFile("https://res.cloudinary.com/demo/raw/upload/v1/recipe.txt", "text/plain", "recipe.txt")
 
 class CreateEventTest {
     private val textLoader =

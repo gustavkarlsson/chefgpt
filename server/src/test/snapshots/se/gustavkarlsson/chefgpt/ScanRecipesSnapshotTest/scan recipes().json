@@ -11,7 +11,7 @@
         "body": {
             "type": "json",
             "data": {
-                "attachments": [
+                "files": [
                     {
                         "url": "https://example.com/photo.jpg",
                         "mimeType": "image/jpeg",
@@ -25,17 +25,11 @@
         "status": 200,
         "headers": {
             "Content-Length": "0",
-            "Content-Type": "application/json"
+            "Content-Type": "text/plain; charset=UTF-8"
         },
         "body": {
-            "type": "json",
-            "data": [
-                {
-                    "id": "00000000-0000-0000-0000-000000000000",
-                    "title": "Pasta al pomodoro",
-                    "favorite": false
-                }
-            ]
+            "type": "text",
+            "data": "Pasta al pomodoro"
         }
     }
 }
