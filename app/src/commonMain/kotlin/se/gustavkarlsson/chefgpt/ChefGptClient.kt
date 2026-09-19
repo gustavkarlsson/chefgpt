@@ -39,7 +39,6 @@ import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import se.gustavkarlsson.chefgpt.api.ApiAction
-import se.gustavkarlsson.chefgpt.api.ApiAttachment
 import se.gustavkarlsson.chefgpt.api.ApiChat
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiEvent
@@ -51,10 +50,10 @@ import se.gustavkarlsson.chefgpt.api.ApiRecipeSummary
 import se.gustavkarlsson.chefgpt.api.ApiRecipeUpdate
 import se.gustavkarlsson.chefgpt.api.ApiSaveSpoonacularRecipe
 import se.gustavkarlsson.chefgpt.api.ApiScanRecipe
+import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.api.FILE_NAME_HEADER
-import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.api.IngredientId
 import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.api.SpoonacularId
@@ -118,7 +117,7 @@ class ChefGptClient(
         sessionId: SessionId,
         data: Path,
         contentType: ContentType,
-    ): Result<ApiAttachment, ClientError> =
+    ): Result<ApiUploadedFile, ClientError> =
         request(
             send = { baseUrl ->
                 post("$baseUrl/files") {
@@ -157,7 +156,7 @@ class ChefGptClient(
     // Returns the saved recipes, so the caller can report how many were saved.
     suspend fun scanRecipes(
         sessionId: SessionId,
-        attachments: List<ApiAttachment>,
+        attachments: List<ApiUploadedFile>,
     ): Result<List<ApiRecipeSummary>, ClientError> =
         request(
             send = { baseUrl ->

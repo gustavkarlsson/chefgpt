@@ -4,26 +4,25 @@ import ai.koog.agents.core.tools.annotations.LLMDescription
 import ai.koog.agents.core.tools.annotations.Tool
 import ai.koog.agents.core.tools.reflect.ToolSet
 import kotlinx.serialization.Serializable
-import se.gustavkarlsson.chefgpt.api.ApiAttachment
+import se.gustavkarlsson.chefgpt.agent.toDomain
+import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.chats.Event
 import se.gustavkarlsson.chefgpt.chats.EventRepository
 
 @Serializable
-@LLMDescription("A file the user shared in the chat.")
-data class SharedFile(
-    @property:LLMDescription("The position of the file among the shared files, counting from 1.")
-    val number: Int,
-    @property:LLMDescription("The url of the file, to pass on to other tools.")
+@LLMDescription("A file the user has uploaded.")
+data class UploadedFile(
+    @property:LLMDescription("The url of the file")
     val url: String,
-    @property:LLMDescription("What kind of file it is: image, pdf or text.")
-    val type: String,
+    @property:LLMDescription("The mime type of this file, e.g. image/png")
+    val mimeType: String,
     @property:LLMDescription("The name the file had on the user's device, if it had one.")
     val fileName: String?,
 )
 
-suspend fun EventRepository.sharedAttachments(chatId: ChatId): List<ApiAttachment> =
+suspend fun EventRepository.sharedAttachments(chatId: ChatId): List<ApiUploadedFile> =
     getAll(chatId)
         .filterIsInstance<Event.Message>()
         .flatMap { it.attachments }
@@ -33,7 +32,7 @@ suspend fun EventRepository.sharedAttachments(chatId: ChatId): List<ApiAttachmen
  * the image scanning tools. The chat agent is not shown photos in its own prompt.
  */
 @Suppress("unused")
-class SharedFileTools(
+class UploadedFileTools(
     private val eventRepository: EventRepository,
     private val cropper: ImageCropper,
     private val chatId: ChatId,
@@ -44,14 +43,9 @@ class SharedFileTools(
             "You cannot see photos yourself, so use this to get their urls and hand them to the " +
             "scanning tools (scanRecipesInPhotos, scanIngredientsInPhotos, describePhotos).",
     )
-    suspend fun listSharedFiles(): List<SharedFile> =
-        eventRepository.sharedAttachments(chatId).mapIndexed { index, attachment ->
-            SharedFile(
-                number = index + 1,
-                url = attachment.url,
-                type = attachment.kind?.name?.lowercase() ?: "unknown",
-                fileName = attachment.fileName,
-            )
+    suspend fun listSharedFiles(): List<UploadedFile> =
+        eventRepository.sharedAttachments(chatId).map { attachment ->
+            attachment.toDomain()
         }
 
     @Tool
@@ -76,7 +70,7 @@ class SharedFileTools(
         val shared =
             eventRepository
                 .sharedAttachments(chatId)
-                .firstOrNull { it.url == url && it.kind == AttachmentKind.Image }
+                .firstOrNull { it.url == url && it.kind == FileKind.Image }
         requireNotNull(shared) { "No picture shared in this chat has the url $url" }
         val region =
             runCatching { CropRegion(x, y, width, height) }

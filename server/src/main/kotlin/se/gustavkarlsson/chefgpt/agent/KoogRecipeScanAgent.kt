@@ -6,17 +6,15 @@ import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
-import ai.koog.prompt.message.AttachmentContent
-import ai.koog.prompt.message.AttachmentSource
-import com.github.michaelbull.result.Result
-import com.github.michaelbull.result.map
-import se.gustavkarlsson.chefgpt.api.ApiAttachment
-import se.gustavkarlsson.chefgpt.api.ApiRecipeSummary
+import kotlinx.coroutines.CancellationException
+import org.slf4j.LoggerFactory
 import se.gustavkarlsson.chefgpt.auth.UserId
-import se.gustavkarlsson.chefgpt.files.format
+import se.gustavkarlsson.chefgpt.files.UploadedFile
 import se.gustavkarlsson.chefgpt.recipes.RecipeLookup
 import se.gustavkarlsson.chefgpt.recipes.RecipeStore
 import se.gustavkarlsson.chefgpt.recipes.toTools
+
+private val logger = LoggerFactory.getLogger("KoogRecipeScanAgent")
 
 private val SYSTEM_PROMPT =
     """
@@ -40,10 +38,13 @@ private val SYSTEM_PROMPT =
     Do not call any other tool. Do not modify, delete, or look up existing
     recipes.
 
-    When you are done, reply with exactly one line and nothing else:
-    - "OK: <count>" where <count> is the number of recipes you saved.
-    - "ERROR: <reason>" if anything technical prevents you from reading the
-      photos, for example an image is missing, corrupt, or cannot be loaded.
+    REQUIREMENTS on the response:
+    - Write exactly ONE single response message and only when you are finished
+    - Plain text
+    - Each saved recipe's title on a separate line.
+    - No extra blank lines before, after, between, or within a recipe title.
+    - If no recipes were identified, a single blank line is a valid response.
+    YOU MUST ADHERE STRICTLY TO THESE RULES
     """.trimIndent()
 
 class KoogRecipeScanAgent(
@@ -54,45 +55,41 @@ class KoogRecipeScanAgent(
 ) : RecipeScanAgent {
     override suspend fun scan(
         userId: UserId,
-        images: List<ApiAttachment>,
-    ): Result<List<ApiRecipeSummary>, String> {
-        val knownIds = recipeStore.getRecipeSummaries(userId).mapTo(mutableSetOf()) { it.id }
-        val prompt =
-            prompt("scan-recipes") {
-                system(SYSTEM_PROMPT)
-                user {
-                    images.forEach { image ->
-                        image(
-                            AttachmentSource.Image(
-                                AttachmentContent.URL(image.url),
-                                image.format,
-                                image.mimeType,
-                                image.fileName,
-                            ),
-                        )
+        images: List<UploadedFile>,
+    ): List<String>? =
+        try {
+            val prompt =
+                prompt("scan-recipes") {
+                    system(SYSTEM_PROMPT)
+                    user {
+                        for (image in images) {
+                            image.toImageAttachmentOrNull()?.let {
+                                image(it)
+                            }
+                        }
                     }
                 }
-            }
-        val agent =
-            AIAgent(
-                promptExecutor = promptExecutor,
-                agentConfig =
-                    AIAgentConfig(
-                        prompt = prompt,
-                        model = model,
-                        maxAgentIterations = 10,
-                    ),
-                // The only tools the scanner can reach are the recipe store's.
-                toolRegistry =
-                    ToolRegistry {
-                        tools(recipeStore.toTools(userId, recipeLookup))
-                    },
-            )
-        val reply = agent.run("Scan these photos for recipes and save the ones you find.")
-        // The tool results go back to the LLM, not to us, so the saved recipes are
-        // found by diffing the store against what was there before the run.
-        return parseScanResult(reply).map { _ ->
-            recipeStore.getRecipeSummaries(userId).filter { it.id !in knownIds }
+            val agent =
+                AIAgent(
+                    promptExecutor = promptExecutor,
+                    agentConfig =
+                        AIAgentConfig(
+                            prompt = prompt,
+                            model = model,
+                            maxAgentIterations = 10,
+                        ),
+                    // The only tools the scanner can reach are the recipe store's.
+                    toolRegistry =
+                        ToolRegistry {
+                            tools(recipeStore.toTools(userId, recipeLookup))
+                        },
+                )
+            val rawResponse = agent.run("Scan these photos for recipes and save the ones you find.")
+            return rawResponse.lines()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.error("Failed to scan recipes", e)
+            null
         }
-    }
 }

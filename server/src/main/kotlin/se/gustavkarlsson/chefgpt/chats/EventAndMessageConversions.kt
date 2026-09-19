@@ -10,16 +10,16 @@ import se.gustavkarlsson.chefgpt.api.ApiAction
 import se.gustavkarlsson.chefgpt.api.ApiAgentChatNamed
 import se.gustavkarlsson.chefgpt.api.ApiAgentMessage
 import se.gustavkarlsson.chefgpt.api.ApiAgentMessageChunk
-import se.gustavkarlsson.chefgpt.api.ApiAttachment
 import se.gustavkarlsson.chefgpt.api.ApiEvent
+import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
 import se.gustavkarlsson.chefgpt.api.ApiUserJoined
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserMessage
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.chefGptJson
-import se.gustavkarlsson.chefgpt.files.AttachmentKind
 import se.gustavkarlsson.chefgpt.files.AttachmentTextLoader
+import se.gustavkarlsson.chefgpt.files.FileKind
 import se.gustavkarlsson.chefgpt.files.format
 import se.gustavkarlsson.chefgpt.files.kind
 import kotlin.time.Clock
@@ -52,7 +52,7 @@ fun Event.toApiOrNull(): ApiEvent? =
 private fun KoogMessage.toApiOrNull(
     id: EventId,
     timestamp: Instant,
-    attachments: List<ApiAttachment>,
+    attachments: List<ApiUploadedFile>,
 ): ApiEvent? =
     when (this) {
         is KoogMessage.User -> {
@@ -108,19 +108,19 @@ suspend fun ApiAction.createEvent(textLoader: AttachmentTextLoader): Event =
         }
     }
 
-private suspend fun ApiAttachment.toMessagePartOrNull(textLoader: AttachmentTextLoader): MessagePart.Attachment? {
+private suspend fun ApiUploadedFile.toMessagePartOrNull(textLoader: AttachmentTextLoader): MessagePart.Attachment? {
     val source =
         when (kind) {
-            AttachmentKind.Image -> {
+            FileKind.Image -> {
                 AttachmentSource.Image(AttachmentContent.URL(url), format, mimeType, fileName)
             }
 
-            AttachmentKind.Pdf -> {
+            FileKind.Pdf -> {
                 AttachmentSource.File(AttachmentContent.URL(url), format, mimeType, fileName)
             }
 
             // Anthropic only accepts a url as the source of a pdf, so text has to be inlined.
-            AttachmentKind.Text -> {
+            FileKind.Text -> {
                 val text = textLoader.loadText(url) ?: return null
                 AttachmentSource.File(AttachmentContent.PlainText(text), format, mimeType, fileName)
             }

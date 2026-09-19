@@ -3,22 +3,22 @@ package se.gustavkarlsson.chefgpt.files
 import io.ktor.http.ContentType
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.readRemaining
-import se.gustavkarlsson.chefgpt.api.ApiAttachment
+import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
 
 class FakeFileUploader : FileUploader {
     override suspend fun uploadFile(
         readChannel: ByteReadChannel,
         contentType: ContentType?,
         fileName: String?,
-    ): ApiAttachment {
+    ): ApiUploadedFile {
         readChannel.readRemaining().close()
         val mimeType = contentType?.let { "${it.contentType}/${it.contentSubtype}" } ?: "image/jpeg"
         val url =
-            when (attachmentKindOrNull(mimeType)) {
-                AttachmentKind.Image, null -> "https://cataas.com/cat"
-                AttachmentKind.Pdf -> "https://example.com/fake.pdf"
-                AttachmentKind.Text -> "https://example.com/fake.txt"
+            when (fileKindOrNull(mimeType)) {
+                FileKind.Image, null -> "https://cataas.com/cat"
+                FileKind.Pdf -> "https://example.com/fake.pdf"
+                FileKind.Text -> "https://example.com/fake.txt"
             }
-        return ApiAttachment(url = url, mimeType = mimeType, fileName = fileName)
+        return ApiUploadedFile(url = url, mimeType = mimeType, fileName = fileName)
     }
 }

@@ -4,7 +4,7 @@ import ai.koog.prompt.message.Message
 import ai.koog.prompt.message.MessagePart
 import ai.koog.prompt.message.RequestMetaInfo
 import kotlinx.coroutines.test.runTest
-import se.gustavkarlsson.chefgpt.api.ApiAttachment
+import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.auth.UserId
@@ -37,7 +37,7 @@ class ImageScanToolsTest {
             FakeDescribeImageAgent(),
         )
 
-    private suspend fun share(vararg attachments: ApiAttachment) {
+    private suspend fun share(vararg attachments: ApiUploadedFile) {
         eventRepository.append(
             chatId,
             Event.Message(
@@ -51,7 +51,7 @@ class ImageScanToolsTest {
     @Test
     fun `scans recipes from a shared photo`() =
         runTest {
-            share(ApiAttachment(PAGE, "image/jpeg", "page.jpg"))
+            share(ApiUploadedFile(PAGE, "image/jpeg", "page.jpg"))
 
             val result = tools.scanRecipesInPhotos(listOf(PAGE))
 
@@ -62,7 +62,7 @@ class ImageScanToolsTest {
     @Test
     fun `scans recipes from several shared photos`() =
         runTest {
-            share(ApiAttachment(PAGE, "image/jpeg", "page.jpg"), ApiAttachment(DISH, "image/jpeg", "dish.jpg"))
+            share(ApiUploadedFile(PAGE, "image/jpeg", "page.jpg"), ApiUploadedFile(DISH, "image/jpeg", "dish.jpg"))
 
             val result = tools.scanRecipesInPhotos(listOf(PAGE, DISH))
 
@@ -72,7 +72,7 @@ class ImageScanToolsTest {
     @Test
     fun `scans ingredients from a shared photo`() =
         runTest {
-            share(ApiAttachment(PAGE, "image/jpeg", "page.jpg"))
+            share(ApiUploadedFile(PAGE, "image/jpeg", "page.jpg"))
 
             val result = tools.scanIngredientsInPhotos(listOf(PAGE))
 
@@ -83,7 +83,7 @@ class ImageScanToolsTest {
     @Test
     fun `describes shared photos`() =
         runTest {
-            share(ApiAttachment(PAGE, "image/jpeg", "page.jpg"))
+            share(ApiUploadedFile(PAGE, "image/jpeg", "page.jpg"))
 
             val result = tools.describePhotos(listOf(PAGE))
 
@@ -93,7 +93,7 @@ class ImageScanToolsTest {
     @Test
     fun `refuses a photo url that was not shared here`() =
         runTest {
-            share(ApiAttachment(PAGE, "image/jpeg", "page.jpg"))
+            share(ApiUploadedFile(PAGE, "image/jpeg", "page.jpg"))
 
             assertFailsWith<IllegalArgumentException> {
                 tools.scanRecipesInPhotos(listOf(DISH))
@@ -103,7 +103,7 @@ class ImageScanToolsTest {
     @Test
     fun `refuses a shared file that is not a photo`() =
         runTest {
-            share(ApiAttachment(NOTES, "text/plain", "notes.txt"))
+            share(ApiUploadedFile(NOTES, "text/plain", "notes.txt"))
 
             assertFailsWith<IllegalArgumentException> {
                 tools.scanRecipesInPhotos(listOf(NOTES))

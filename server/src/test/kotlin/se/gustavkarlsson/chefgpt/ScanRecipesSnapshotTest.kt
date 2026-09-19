@@ -8,8 +8,8 @@ import io.ktor.http.contentType
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import se.gustavkarlsson.chefgpt.api.ApiAttachment
 import se.gustavkarlsson.chefgpt.api.ApiScanRecipe
+import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
 import se.gustavkarlsson.slapshot.junit5.JUnit5SnapshotContext
 import se.gustavkarlsson.slapshot.junit5.SnapshotExtension
 
@@ -27,7 +27,7 @@ class ScanRecipesSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             client.post("/recipes/scan") {
                 contentType(ContentType.Application.Json)
-                setBody(ApiScanRecipe(attachments = listOf(photo())))
+                setBody(ApiScanRecipe(files = listOf(photo())))
             }
         }
 
@@ -39,7 +39,7 @@ class ScanRecipesSnapshotTest {
             client.post("/recipes/scan") {
                 header("Session-Id", sessionId)
                 contentType(ContentType.Application.Json)
-                setBody(ApiScanRecipe(attachments = listOf(photo())))
+                setBody(ApiScanRecipe(files = listOf(photo())))
             }
         }
 
@@ -53,9 +53,9 @@ class ScanRecipesSnapshotTest {
                 contentType(ContentType.Application.Json)
                 setBody(
                     ApiScanRecipe(
-                        attachments =
+                        files =
                             listOf(
-                                ApiAttachment(
+                                ApiUploadedFile(
                                     url = "https://example.com/recipe.pdf",
                                     mimeType = "application/pdf",
                                     fileName = "recipe.pdf",
@@ -67,7 +67,7 @@ class ScanRecipesSnapshotTest {
         }
 
     private fun photo() =
-        ApiAttachment(
+        ApiUploadedFile(
             url = "https://example.com/photo.jpg",
             mimeType = "image/jpeg",
             fileName = "photo.jpg",

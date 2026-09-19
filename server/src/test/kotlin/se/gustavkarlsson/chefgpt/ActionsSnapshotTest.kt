@@ -9,7 +9,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import se.gustavkarlsson.chefgpt.api.ApiAction
-import se.gustavkarlsson.chefgpt.api.ApiAttachment
+import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.JoinId
@@ -85,12 +85,12 @@ class ActionsSnapshotTest {
                         text = "Can you save this?",
                         attachments =
                             listOf(
-                                ApiAttachment(
+                                ApiUploadedFile(
                                     url = "https://res.cloudinary.com/demo/image/upload/v1/page.jpg",
                                     mimeType = "image/jpeg",
                                     fileName = "page.jpg",
                                 ),
-                                ApiAttachment(
+                                ApiUploadedFile(
                                     url = "https://res.cloudinary.com/demo/raw/upload/v1/recipe.txt",
                                     mimeType = "text/plain",
                                     fileName = "recipe.txt",
