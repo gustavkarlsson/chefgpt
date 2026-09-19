@@ -77,9 +77,9 @@ docs here are `README.md`, `AGENTS.md`, `CLAUDE.md`, the `.claude/rules/` and
 - **Version and toolchain claims** — any doc that names a Java, Android, iOS, or Gradle
   version must match `gradle/libs.versions.toml`, `.sdkmanrc`, and
   `.github/actions/gradle-setup/action.yml`. Flag any drift.
-- **Setup and helper scripts** — `setup_dev.sh`, `run_dev.sh`, and
-  `install-spotless-pre-commit-hook.sh` are referenced from the docs; confirm they exist
-  and do what the docs say.
+- **Setup and helper scripts** — `setup_dev.sh`, `run_server.sh`, `run_desktop.sh`,
+  `run_android.sh`, `clear_dev_db.sh`, and `install-spotless-pre-commit-hook.sh` are
+  referenced from the docs; confirm they exist and do what the docs say.
 - **Known caveats surfaced** — e.g. the iOS CI job is disabled (`if: false` in
   `verify.yml`); docs that imply iOS is fully CI-verified are stale.
 - **KDoc and comments** — comments that describe behaviour the code no longer has, or

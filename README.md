@@ -89,18 +89,32 @@ Run all tests including Android and iOS (requires platform tools):
 
 ### Server
 
-Start containerized database and the Ktor server (skip servers if you want to manage them manually):
+Start the containerized database and the Ktor server:
 
 ```bash
-./gradlew :server:postgres :server:run
+./run_server.sh
+```
+
+To manage the database yourself, run the server alone:
+
+```bash
+./gradlew :server:run
+```
+
+### Desktop
+
+Build and run the desktop JVM app with hot reload:
+
+```bash
+./run_desktop.sh
 ```
 
 ### Android
 
-Build and install the debug APK:
+Build the debug APK, then install and launch it on the connected device:
 
 ```bash
-./gradlew :androidApp:assembleDebug
+./run_android.sh
 ```
 
 ### iOS
@@ -124,8 +138,4 @@ Both default to port 8080, so stop the Ktor server first.
 
 ### Server + Desktop app together
 
-```bash
-./run_dev.sh
-```
-
-This starts the server (with database) and the desktop JVM app in parallel.
+Run `./run_server.sh` and `./run_desktop.sh` in separate terminals.
