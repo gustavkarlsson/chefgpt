@@ -11,7 +11,7 @@ class FakeRecipeScanAgent(
     override suspend fun scan(
         userId: UserId,
         images: List<UploadedFile>,
-    ): List<String>? {
+    ): List<String> {
         val recipe =
             recipeStore.saveRecipe(
                 userId,

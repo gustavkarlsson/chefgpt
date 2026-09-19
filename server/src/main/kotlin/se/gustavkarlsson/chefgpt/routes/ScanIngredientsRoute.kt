@@ -44,11 +44,6 @@ fun Route.scanIngredientsRoute() {
 
         // Block until the specialized agent has scanned the image.
         val added = scanAgent.scan(userId, listOf(file.toDomain()))
-        if (added != null) {
-            call.respond(HttpStatusCode.OK, added.joinToString())
-        } else {
-            // The failure reason is for us only; the user just sees a 500.
-            call.respond(HttpStatusCode.InternalServerError)
-        }
+        call.respond(HttpStatusCode.OK, added.joinToString())
     }
 }

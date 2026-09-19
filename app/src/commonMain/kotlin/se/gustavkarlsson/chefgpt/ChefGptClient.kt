@@ -10,10 +10,12 @@ import com.github.michaelbull.result.runCatching
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.sse.SSE
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.accept
 import io.ktor.client.request.basicAuth
@@ -63,6 +65,10 @@ import se.gustavkarlsson.chefgpt.sessions.UserCredentials
 import se.gustavkarlsson.chefgpt.util.sseTyped
 import io.ktor.client.plugins.logging.Logger as KtorLogger
 
+// TODO perhaps put all agent work under a specific parent path and have them share a separate client?
+// How long to wait for a request that blocks while an agent runs on the server.
+private const val AGENT_REQUEST_TIMEOUT_MS = 60_000L
+
 private val log = Logger.withTag("${ChefGptClient::class.simpleName}")
 
 class ChefGptClient(
@@ -77,6 +83,7 @@ class ChefGptClient(
                 json(json)
             }
             install(SSE)
+            install(HttpTimeout)
 
             install(Logging) {
                 logger =
@@ -143,6 +150,9 @@ class ChefGptClient(
             send = { baseUrl ->
                 post("$baseUrl/ingredients/scan") {
                     sessionIdHeader(sessionId)
+                    timeout {
+                        requestTimeoutMillis = AGENT_REQUEST_TIMEOUT_MS
+                    }
                     contentType(contentType)
                     accept(ContentType.Text.Plain)
                     setBody(data.byteReadChannel())
@@ -162,6 +172,9 @@ class ChefGptClient(
             send = { baseUrl ->
                 post("$baseUrl/recipes/scan") {
                     sessionIdHeader(sessionId)
+                    timeout {
+                        requestTimeoutMillis = AGENT_REQUEST_TIMEOUT_MS
+                    }
                     contentType(ContentType.Application.Json)
                     accept(ContentType.Application.Json)
                     setBody(ApiScanRecipe(attachments))

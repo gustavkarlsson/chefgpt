@@ -8,7 +8,6 @@ import ai.koog.prompt.Prompt
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
-import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
@@ -44,16 +43,10 @@ class KoogIngredientScanAgent(
     override suspend fun scan(
         userId: UserId,
         images: List<UploadedFile>,
-    ): List<String>? =
-        try {
-            val agent = buildAgent(userId, buildPrompt(images), ingredientScanStrategy())
-            agent.run("Scan these images for ingredients and add the ones you find.")
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            logger.error("Failed to scan ingredients", e)
-            null
-        }
+    ): List<String> {
+        val agent = buildAgent(userId, buildPrompt(images), ingredientScanStrategy())
+        return agent.run("Scan these images for ingredients and add the ones you find.")
+    }
 
     private fun buildAgent(
         userId: UserId,

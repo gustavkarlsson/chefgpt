@@ -8,7 +8,6 @@ import ai.koog.prompt.Prompt
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
-import kotlinx.coroutines.CancellationException
 import org.slf4j.LoggerFactory
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.files.UploadedFile
@@ -38,16 +37,10 @@ class KoogDescribeImageAgent(
     override suspend fun scan(
         userId: UserId,
         images: List<UploadedFile>,
-    ): List<String>? =
-        try {
-            val agent = buildAgent(buildPrompt(images))
-            agent.run("Describe these images.")
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            logger.error("Failed to describe images", e)
-            null
-        }
+    ): List<String> {
+        val agent = buildAgent(buildPrompt(images))
+        return agent.run("Describe these images.")
+    }
 
     private fun buildAgent(prompt: Prompt) =
         AIAgent(

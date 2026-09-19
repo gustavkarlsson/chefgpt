@@ -11,7 +11,6 @@ import se.gustavkarlsson.chefgpt.chats.Event
 import se.gustavkarlsson.chefgpt.chats.InMemoryEventRepository
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.time.Clock
 
 private const val PAGE = "https://res.cloudinary.com/demo/image/upload/v123/page.jpg"
@@ -21,7 +20,7 @@ private const val NOTES = "https://res.cloudinary.com/demo/raw/upload/v123/notes
 class UploadedFileToolsTest {
     private val chatId = ChatId.random()
     private val eventRepository = InMemoryEventRepository()
-    private val tools = UploadedFileTools(eventRepository, CloudinaryImageCropper("demo"), chatId)
+    private val tools = UploadedFileTools(eventRepository, chatId)
 
     private suspend fun share(vararg attachments: ApiUploadedFile) {
         eventRepository.append(
@@ -35,16 +34,16 @@ class UploadedFileToolsTest {
     }
 
     @Test
-    fun `numbers the shared files in the order they were shared`() =
+    fun `lists the shared files in the order they were shared`() =
         runTest {
             share(ApiUploadedFile(PAGE, "image/jpeg", "page.jpg"))
             share(ApiUploadedFile(NOTES, "text/plain", "notes.txt"), ApiUploadedFile(DISH, "image/jpeg", "dish.jpg"))
 
             assertEquals(
                 listOf(
-                    UploadedFile(1, PAGE, "image/jpg", "page.jpg"),
-                    UploadedFile(2, NOTES, "text/plain", "notes.txt"),
-                    UploadedFile(3, DISH, "image/jpg", "dish.jpg"),
+                    UploadedFile(PAGE, "image/jpeg", "page.jpg"),
+                    UploadedFile(NOTES, "text/plain", "notes.txt"),
+                    UploadedFile(DISH, "image/jpeg", "dish.jpg"),
                 ),
                 tools.listSharedFiles(),
             )
@@ -54,47 +53,5 @@ class UploadedFileToolsTest {
     fun `has nothing to list before anything is shared`() =
         runTest {
             assertEquals(emptyList(), tools.listSharedFiles())
-        }
-
-    @Test
-    fun `crops a shared picture`() =
-        runTest {
-            share(ApiUploadedFile(PAGE, "image/jpeg", "page.jpg"))
-
-            assertEquals(
-                "https://res.cloudinary.com/demo/image/upload/" +
-                    "c_crop,x_0.0000,y_0.0000,w_0.9999,h_0.3300/v123/page.jpg",
-                tools.cropImage(PAGE, x = 0.0, y = 0.0, width = 1.0, height = 0.33),
-            )
-        }
-
-    @Test
-    fun `refuses to crop a picture that was not shared here`() =
-        runTest {
-            share(ApiUploadedFile(PAGE, "image/jpeg", "page.jpg"))
-
-            assertFailsWith<IllegalArgumentException> {
-                tools.cropImage(DISH, x = 0.0, y = 0.0, width = 0.5, height = 0.5)
-            }
-        }
-
-    @Test
-    fun `refuses to crop a shared file that is not a picture`() =
-        runTest {
-            share(ApiUploadedFile(NOTES, "text/plain", "notes.txt"))
-
-            assertFailsWith<IllegalArgumentException> {
-                tools.cropImage(NOTES, x = 0.0, y = 0.0, width = 0.5, height = 0.5)
-            }
-        }
-
-    @Test
-    fun `says so when the region is not inside the picture`() =
-        runTest {
-            share(ApiUploadedFile(PAGE, "image/jpeg", "page.jpg"))
-
-            assertFailsWith<IllegalStateException> {
-                tools.cropImage(PAGE, x = 0.8, y = 0.0, width = 0.5, height = 0.5)
-            }
         }
 }

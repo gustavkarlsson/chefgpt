@@ -8,12 +8,15 @@ import ai.koog.prompt.Prompt
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
-import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import org.slf4j.LoggerFactory
 import se.gustavkarlsson.chefgpt.auth.UserId
+import se.gustavkarlsson.chefgpt.files.FileKind
+import se.gustavkarlsson.chefgpt.files.ImageCropper
+import se.gustavkarlsson.chefgpt.files.ImageEditTools
 import se.gustavkarlsson.chefgpt.files.UploadedFile
+import se.gustavkarlsson.chefgpt.files.fileKindOrNull
 import se.gustavkarlsson.chefgpt.recipes.RecipeLookup
 import se.gustavkarlsson.chefgpt.recipes.RecipeStore
 import se.gustavkarlsson.chefgpt.recipes.toTools
@@ -38,38 +41,35 @@ private val SYSTEM_PROMPT =
     whether it's food, baked items, beverages, etc.*
 
     Recipe image URL rules:
-    - If a photo depicts an image of an identified dish. Use that as its image URL.
-    - If the photo contains things that is not the dish (such as text, empty space, etc.),
-      use the cropImage tool to crop out the unwanted parts and use the resulting image URL.
-    - If the photo fully depicts the dish and nothing more, use it as-is.
+    Each photo is shown together with its url.
+
+    - If a photo depicts an image of an identified dish, use its url as the recipe's image URL.
+    - If the photo contains things that are not the dish (text, empty space, etc.),
+      determine the interesting area and call cropImage with the photo's url and use the resulting url.
+    - If the photo fully depicts the dish and nothing more, use its url as-is.
     - If no such photo can be found, leave the image URL null.
 
     Do not modify, delete, or look up existing recipes.
     """.trimIndent()
 
-// TODO Image cropper!
 class KoogRecipeScanAgent(
     private val promptExecutor: PromptExecutor,
     private val model: LLModel,
     private val recipeStore: RecipeStore,
     private val recipeLookup: RecipeLookup,
+    private val imageCropper: ImageCropper,
 ) : RecipeScanAgent {
     override suspend fun scan(
         userId: UserId,
         images: List<UploadedFile>,
-    ): List<String>? =
-        try {
-            val agent = buildAgent(userId, buildPrompt(images), recipeScanStrategy())
-            return agent.run("Scan these photos for recipes and save the ones you find.")
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            logger.error("Failed to scan recipes", e)
-            null
-        }
+    ): List<String> {
+        val agent = buildAgent(userId, images, buildPrompt(images), recipeScanStrategy())
+        return agent.run("Scan these photos for recipes and save the ones you find.")
+    }
 
     private fun buildAgent(
         userId: UserId,
+        images: List<UploadedFile>,
         prompt: Prompt,
         strategy: AIAgentFunctionalStrategy<String, List<String>>,
     ) = AIAgent(
@@ -81,10 +81,16 @@ class KoogRecipeScanAgent(
                 maxAgentIterations = 10,
             ),
         strategy = strategy,
-        // The only tools the scanner can reach are the recipe store's.
         toolRegistry =
             ToolRegistry {
                 tools(recipeStore.toTools(userId, recipeLookup))
+                tools(
+                    ImageEditTools(imageCropper) {
+                        images
+                            .filter { fileKindOrNull(it.mimeType) == FileKind.Image }
+                            .map { it.url }
+                    },
+                )
             },
     )
 }
@@ -94,8 +100,9 @@ private fun buildPrompt(images: List<UploadedFile>) =
         system(SYSTEM_PROMPT)
         user {
             for (image in images) {
-                image.toImageAttachmentOrNull()?.let {
-                    image(it)
+                image.toImageAttachmentOrNull()?.let { attachment ->
+                    text("Photo url: ${image.url}")
+                    image(attachment)
                 }
             }
         }
