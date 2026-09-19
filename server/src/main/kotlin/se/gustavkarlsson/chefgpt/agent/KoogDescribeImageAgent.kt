@@ -2,7 +2,9 @@ package se.gustavkarlsson.chefgpt.agent
 
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.agent.config.AIAgentConfig
+import ai.koog.agents.core.agent.functionalStrategy
 import ai.koog.agents.core.tools.ToolRegistry
+import ai.koog.prompt.Prompt
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
@@ -19,14 +21,14 @@ private val SYSTEM_PROMPT =
     factually and in enough detail to be useful. Do not invent anything that is
     not visible in the images.
 
-    REQUIREMENTS on the response:
-    - Write exactly ONE single response message and only when you are finished
-    - Plain text
-    - One line per file containing the description of that file, in the order the files came in.
-    - No extra blank lines before, after, between, or between descriptions.
-    - No skipped files
-    - If a file is not an image or cannot be described, state that as the description
-    YOU MUST ADHERE STRICTLY TO THESE RULES
+    Describe every image with exactly one line, in the same order as the images.
+    Start each line with the image's 0-based position in brackets:
+
+    [0] A strawberry milkshake in a tall glass
+
+    Do not write anything else — no headings, summaries, or blank lines. If an
+    image cannot be described, write the reason instead of a description, such as
+    "[3] Failed to scan image". Do not skip any files.
     """.trimIndent()
 
 class KoogDescribeImageAgent(
@@ -38,33 +40,48 @@ class KoogDescribeImageAgent(
         images: List<UploadedFile>,
     ): List<String>? =
         try {
-            val agent =
-                AIAgent(
-                    promptExecutor = promptExecutor,
-                    agentConfig =
-                        AIAgentConfig(
-                            prompt =
-                                prompt("describe-images") {
-                                    system(SYSTEM_PROMPT)
-                                    user {
-                                        for (image in images) {
-                                            image.toImageAttachmentOrNull()?.let {
-                                                image(it)
-                                            }
-                                        }
-                                    }
-                                },
-                            model = model,
-                            maxAgentIterations = 1,
-                        ),
-                    toolRegistry = ToolRegistry {},
-                )
-            val rawResponse = agent.run("Describe these images.")
-            rawResponse.lines()
+            val agent = buildAgent(buildPrompt(images))
+            agent.run("Describe these images.")
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             logger.error("Failed to describe images", e)
             null
         }
+
+    private fun buildAgent(prompt: Prompt) =
+        AIAgent(
+            promptExecutor = promptExecutor,
+            agentConfig =
+                AIAgentConfig(
+                    prompt = prompt,
+                    model = model,
+                    maxAgentIterations = 1,
+                ),
+            strategy = describeImageStrategy(),
+            toolRegistry = ToolRegistry {},
+        )
 }
+
+private fun buildPrompt(images: List<UploadedFile>) =
+    prompt("describe-images") {
+        system(SYSTEM_PROMPT)
+        user {
+            for (image in images) {
+                image.toImageAttachmentOrNull()?.let {
+                    image(it)
+                }
+            }
+        }
+    }
+
+private val DESCRIPTION_LINE = Regex("""\[\d+]\s*(.*)""")
+
+private fun describeImageStrategy() =
+    functionalStrategy<String, List<String>>("describe-images") { input ->
+        getTextParts(requestLLM(input))
+            .flatMap { it.text.lines() }
+            .mapNotNull { line -> DESCRIPTION_LINE.matchEntire(line) }
+            .map { match -> match.groupValues[1].trim() }
+            .toList()
+    }
