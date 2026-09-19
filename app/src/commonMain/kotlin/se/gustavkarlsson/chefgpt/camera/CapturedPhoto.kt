@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt.screens.camera
+package se.gustavkarlsson.chefgpt.camera
 
 import kotlinx.io.files.Path
 import kotlinx.serialization.Serializable

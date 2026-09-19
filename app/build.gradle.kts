@@ -88,6 +88,7 @@ kotlin {
             implementation(libs.ktorClientContentNegotiation)
             implementation(libs.ktorSerializationKotlinxJson)
             implementation(libs.kotlinxSerializationJson)
+            implementation(libs.kotlinxIoCore)
             implementation(libs.coilCompose)
             implementation(libs.coilNetworkKtor)
             implementation(libs.emojiCore)
@@ -113,10 +114,6 @@ kotlin {
             implementation(libs.kotlinxCoroutinesSwing)
         }
         androidMain.dependencies {
-            implementation(libs.androidxCameraCore)
-            implementation(libs.androidxCameraCamera2)
-            implementation(libs.androidxCameraLifecycle)
-            implementation(libs.androidxCameraView)
             implementation(libs.androidxConcurrentFutures)
             implementation(libs.androidxActivityCompose)
         }

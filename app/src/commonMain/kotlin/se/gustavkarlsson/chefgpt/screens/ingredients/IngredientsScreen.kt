@@ -41,8 +41,10 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -56,15 +58,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.launch
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import se.gustavkarlsson.chefgpt.camera.TakePhoto
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatar
 import se.gustavkarlsson.chefgpt.navigation.Screen
 import se.gustavkarlsson.chefgpt.navigation.Screen.Id
-import se.gustavkarlsson.chefgpt.pickFiles
 import se.gustavkarlsson.chefgpt.plus
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessage
@@ -313,25 +314,8 @@ private fun IngredientInput(
                         ),
                     keyboardActions = KeyboardActions(onDone = { input.onClickAdd?.invoke() }),
                 )
-                val scope = rememberCoroutineScope()
-                if (input.scanningImage) {
-                    // Scanning can take a while; show progress in place of the camera button.
-                    Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                    }
-                } else {
-                    IconButton(
-                        onClick = {
-                            scope.launch {
-                                pickFiles(multiple = false).firstOrNull()?.let(input.onScanImageSelected)
-                            }
-                        },
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CameraAlt,
-                            contentDescription = "Scan ingredients from image",
-                        )
-                    }
+                input.cameraButton?.let { button ->
+                    PhotoButton(button)
                 }
                 IconButton(
                     onClick = { input.onClickAdd?.invoke() },
@@ -343,6 +327,42 @@ private fun IngredientInput(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun PhotoButton(button: UiCameraButton) {
+    if (button.scanningImage) {
+        // Scanning can take a while; show progress in place of the camera button.
+        Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(modifier = Modifier.size(24.dp))
+        }
+    } else {
+        var takingPhoto by rememberSaveable { mutableStateOf(false) }
+        IconButton(
+            onClick = { takingPhoto = true },
+            enabled = !takingPhoto,
+        ) {
+            Icon(
+                imageVector = Icons.Default.CameraAlt,
+                contentDescription = "Scan ingredients from a photo",
+            )
+        }
+        if (takingPhoto) {
+            TakePhoto(
+                onSuccess = { path ->
+                    button.onPhotoTaken(path)
+                    takingPhoto = false
+                },
+                onCancelled = {
+                    takingPhoto = false
+                },
+                onError = {
+                    button.onError()
+                    takingPhoto = false
+                },
+            )
         }
     }
 }
