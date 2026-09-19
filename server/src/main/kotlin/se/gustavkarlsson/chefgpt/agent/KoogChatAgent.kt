@@ -9,8 +9,12 @@ import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.chats.ChatNamingTools
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventRepository
+import se.gustavkarlsson.chefgpt.files.FileKind
 import se.gustavkarlsson.chefgpt.files.ImageCropper
+import se.gustavkarlsson.chefgpt.files.ImageEditTools
 import se.gustavkarlsson.chefgpt.files.UploadedFileTools
+import se.gustavkarlsson.chefgpt.files.kind
+import se.gustavkarlsson.chefgpt.files.sharedAttachments
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 import se.gustavkarlsson.chefgpt.ingredients.toTools
 import se.gustavkarlsson.chefgpt.recipes.RecipeLookup
@@ -43,7 +47,15 @@ class KoogChatAgent(
                         tools(ingredientStore.toTools(userId))
                         tools(recipeStore.toTools(userId, recipeLookup))
                         tools(ChatNamingTools(chatRepository, eventRepository, userId, chatId))
-                        tools(UploadedFileTools(eventRepository, imageCropper, chatId))
+                        tools(UploadedFileTools(eventRepository, chatId))
+                        tools(
+                            ImageEditTools(imageCropper) {
+                                eventRepository
+                                    .sharedAttachments(chatId)
+                                    .filter { it.kind == FileKind.Image }
+                                    .map { it.url }
+                            },
+                        )
                         tools(
                             ImageScanTools(
                                 eventRepository,

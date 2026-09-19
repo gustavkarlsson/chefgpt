@@ -10,7 +10,7 @@ class FakeIngredientScanAgent(
     override suspend fun scan(
         userId: UserId,
         images: List<UploadedFile>,
-    ): List<String>? {
+    ): List<String> {
         val found = listOf("tomato", "basil")
         ingredientStore.createIngredients(userId, found)
         return found

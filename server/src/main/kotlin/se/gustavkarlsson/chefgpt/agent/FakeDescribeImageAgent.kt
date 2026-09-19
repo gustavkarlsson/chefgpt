@@ -7,5 +7,5 @@ class FakeDescribeImageAgent : DescribeImageAgent {
     override suspend fun scan(
         userId: UserId,
         images: List<UploadedFile>,
-    ): List<String>? = listOf("A fake description of an image", "Another description")
+    ): List<String> = listOf("A fake description of an image", "Another description")
 }

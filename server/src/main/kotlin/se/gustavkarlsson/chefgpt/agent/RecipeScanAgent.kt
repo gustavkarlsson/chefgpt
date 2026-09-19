@@ -7,5 +7,5 @@ interface RecipeScanAgent {
     suspend fun scan(
         userId: UserId,
         images: List<UploadedFile>,
-    ): List<String>?
+    ): List<String>
 }

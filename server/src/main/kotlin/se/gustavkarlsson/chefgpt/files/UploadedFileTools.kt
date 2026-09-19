@@ -7,7 +7,6 @@ import kotlinx.serialization.Serializable
 import se.gustavkarlsson.chefgpt.agent.toDomain
 import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
 import se.gustavkarlsson.chefgpt.api.ChatId
-import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.chats.Event
 import se.gustavkarlsson.chefgpt.chats.EventRepository
 
@@ -34,7 +33,6 @@ suspend fun EventRepository.sharedAttachments(chatId: ChatId): List<ApiUploadedF
 @Suppress("unused")
 class UploadedFileTools(
     private val eventRepository: EventRepository,
-    private val cropper: ImageCropper,
     private val chatId: ChatId,
 ) : ToolSet {
     @Tool
@@ -47,34 +45,4 @@ class UploadedFileTools(
         eventRepository.sharedAttachments(chatId).map { attachment ->
             attachment.toDomain()
         }
-
-    @Tool
-    @LLMDescription(
-        "Cut a picture the user shared down to the part worth keeping, such as just the finished " +
-            "dish on a page that also holds text. Returns the url of the cut-down picture, which " +
-            "you can use like any other picture url. The region is given as fractions of the " +
-            "picture, so x 0.1 and width 0.5 keeps the half starting a tenth in from the left.",
-    )
-    suspend fun cropImage(
-        @LLMDescription("The url of the picture to cut down, from listSharedFiles.")
-        url: String,
-        @LLMDescription("Left edge of the part to keep, as a fraction of the width, from 0 to 1.")
-        x: Double,
-        @LLMDescription("Top edge of the part to keep, as a fraction of the height, from 0 to 1.")
-        y: Double,
-        @LLMDescription("Width of the part to keep, as a fraction of the picture's width.")
-        width: Double,
-        @LLMDescription("Height of the part to keep, as a fraction of the picture's height.")
-        height: Double,
-    ): String {
-        val shared =
-            eventRepository
-                .sharedAttachments(chatId)
-                .firstOrNull { it.url == url && it.kind == FileKind.Image }
-        requireNotNull(shared) { "No picture shared in this chat has the url $url" }
-        val region =
-            runCatching { CropRegion(x, y, width, height) }
-                .getOrElse { error("That is not a region inside the picture: ${it.message}") }
-        return cropper.crop(ImageUrl(url), region).value
-    }
 }

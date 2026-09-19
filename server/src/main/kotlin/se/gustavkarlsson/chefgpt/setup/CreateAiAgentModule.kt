@@ -100,6 +100,7 @@ fun Application.createAiAgentModule() =
                         aiConfig.agentModel(RECIPE_SCAN_AGENT),
                         get<RecipeStore>(),
                         get<RecipeLookup>(),
+                        get<ImageCropper>(),
                     )
                 }
 
