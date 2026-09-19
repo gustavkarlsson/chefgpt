@@ -29,10 +29,10 @@ import se.gustavkarlsson.chefgpt.api.ApiAgentChatNamed
 import se.gustavkarlsson.chefgpt.api.ApiAgentMessage
 import se.gustavkarlsson.chefgpt.api.ApiAgentMessageChunk
 import se.gustavkarlsson.chefgpt.api.ApiAgentReasoning
-import se.gustavkarlsson.chefgpt.api.ApiAttachment
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiIngredient
 import se.gustavkarlsson.chefgpt.api.ApiSystemEvent
+import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
 import se.gustavkarlsson.chefgpt.api.ApiUserJoined
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserMessage
@@ -320,7 +320,7 @@ class ChatViewModel(
         }
     }
 
-    private suspend fun State.uploadAttachments(): Result<List<ApiAttachment>, ClientError> =
+    private suspend fun State.uploadAttachments(): Result<List<ApiUploadedFile>, ClientError> =
         coroutineScope {
             attachments
                 .map { file ->
@@ -449,7 +449,7 @@ data class UiAnswer(
     val selected: Boolean,
 )
 
-private fun ApiAttachment.toUiAttachment(): UiAttachment =
+private fun ApiUploadedFile.toUiAttachment(): UiAttachment =
     UiAttachment(
         url = url,
         isImage = isImage,

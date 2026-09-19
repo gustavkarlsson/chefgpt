@@ -10,10 +10,10 @@ import se.gustavkarlsson.chefgpt.chats.EventRepository
 import kotlin.time.Clock
 import ai.koog.prompt.message.Message as KoogMessage
 
-class FakeAiAgent(
+class FakeChatAgent(
     private val eventRepository: EventRepository,
     private val clock: Clock = Clock.System,
-) : AiAgent {
+) : ChatAgent {
     override suspend fun RoutingContext.run(
         userId: UserId,
         chatId: ChatId,

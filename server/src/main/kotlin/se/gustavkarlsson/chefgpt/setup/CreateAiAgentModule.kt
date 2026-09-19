@@ -7,14 +7,14 @@ import io.ktor.server.application.Application
 import io.ktor.server.application.plugin
 import org.koin.dsl.bind
 import org.koin.dsl.module
-import se.gustavkarlsson.chefgpt.agent.AiAgent
+import se.gustavkarlsson.chefgpt.agent.ChatAgent
 import se.gustavkarlsson.chefgpt.agent.DescribeImageAgent
-import se.gustavkarlsson.chefgpt.agent.FakeAiAgent
+import se.gustavkarlsson.chefgpt.agent.FakeChatAgent
 import se.gustavkarlsson.chefgpt.agent.FakeDescribeImageAgent
 import se.gustavkarlsson.chefgpt.agent.FakeIngredientScanAgent
 import se.gustavkarlsson.chefgpt.agent.FakeRecipeScanAgent
 import se.gustavkarlsson.chefgpt.agent.IngredientScanAgent
-import se.gustavkarlsson.chefgpt.agent.KoogAiAgent
+import se.gustavkarlsson.chefgpt.agent.KoogChatAgent
 import se.gustavkarlsson.chefgpt.agent.KoogDescribeImageAgent
 import se.gustavkarlsson.chefgpt.agent.KoogIngredientScanAgent
 import se.gustavkarlsson.chefgpt.agent.KoogRecipeScanAgent
@@ -49,7 +49,7 @@ fun Application.createAiAgentModule() =
                     val imageCropper = get<ImageCropper>()
                     val chatRepository = get<ChatRepository>()
                     val eventRepository = get<EventRepository>()
-                    KoogAiAgent(
+                    KoogChatAgent(
                         aiConfig.agentModel(CHAT_AGENT),
                         ingredientStore,
                         recipeStore,
@@ -65,14 +65,14 @@ fun Application.createAiAgentModule() =
 
                 "fake" -> {
                     val eventRepository = get<EventRepository>()
-                    FakeAiAgent(eventRepository)
+                    FakeChatAgent(eventRepository)
                 }
 
                 else -> {
                     error("Unknown agent type: '$type'. Expected 'llm' or 'fake'.")
                 }
             }
-        } bind AiAgent::class
+        } bind ChatAgent::class
         single {
             when (val type = config.property("bindings.agent").getString()) {
                 "llm" -> {

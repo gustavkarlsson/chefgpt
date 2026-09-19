@@ -3,15 +3,10 @@ package se.gustavkarlsson.chefgpt.agent
 import ai.koog.agents.core.tools.annotations.LLMDescription
 import ai.koog.agents.core.tools.annotations.Tool
 import ai.koog.agents.core.tools.reflect.ToolSet
-import com.github.michaelbull.result.fold
-import se.gustavkarlsson.chefgpt.api.ApiAttachment
-import se.gustavkarlsson.chefgpt.api.ApiRecipeSummary
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.chats.EventRepository
-import se.gustavkarlsson.chefgpt.files.AttachmentKind
-import se.gustavkarlsson.chefgpt.files.kind
-import se.gustavkarlsson.chefgpt.files.sharedAttachments
+import se.gustavkarlsson.chefgpt.files.UploadedFile
 
 @Suppress("unused")
 class ImageScanTools(
@@ -24,59 +19,32 @@ class ImageScanTools(
 ) : ToolSet {
     @Tool
     @LLMDescription(
-        "Read the recipes in the given photos and save them to the user's recipes. The urls come " +
-            "from listSharedFiles. Returns what was saved.",
-    )
-    suspend fun scanRecipesInPhotos(
-        @LLMDescription("The urls of the photos to scan, from listSharedFiles.")
-        urls: List<String>,
-    ): String =
-        recipeScanAgent.scan(userId, resolveImages(urls)).fold(
-            { summaries -> formatSavedRecipes(summaries) },
-            { reason -> "Could not scan recipes: $reason" },
-        )
-
-    @Tool
-    @LLMDescription(
-        "Read the food ingredients in the given photos and add them to the user's inventory. The " +
-            "urls come from listSharedFiles. Returns how many ingredients were found.",
-    )
-    suspend fun scanIngredientsInPhotos(
-        @LLMDescription("The urls of the photos to scan, from listSharedFiles.")
-        urls: List<String>,
-    ): String =
-        ingredientScanAgent.scan(userId, resolveImages(urls)).fold(
-            { count -> "Found $count ingredient(s)." },
-            { reason -> "Could not scan ingredients: $reason" },
-        )
-
-    @Tool
-    @LLMDescription(
-        "Describe what the given photos show, in plain text. The urls come from listSharedFiles. " +
-            "Use this to learn what a photo shows before deciding what to do with it.",
+        "Describe what the given photos depict, in plain text. The files have been uploaded by the user." +
+            " Use this to before deciding what to do with uploaded photos." +
+            " Returns one description per file, in the same order as the input, or null if there was an error.",
     )
     suspend fun describePhotos(
-        @LLMDescription("The urls of the photos to describe, from listSharedFiles.")
-        urls: List<String>,
-    ): String =
-        describeImageAgent.scan(userId, resolveImages(urls)).fold(
-            { description -> description },
-            { reason -> "Could not describe photos: $reason" },
-        )
+        @LLMDescription("The photo files to describe.")
+        files: List<UploadedFile>,
+    ): List<String>? = describeImageAgent.scan(userId, files)
 
-    private suspend fun resolveImages(urls: List<String>): List<ApiAttachment> {
-        val shared = eventRepository.sharedAttachments(chatId)
-        return urls.map { url ->
-            requireNotNull(shared.firstOrNull { it.url == url && it.kind == AttachmentKind.Image }) {
-                "No picture shared in this chat has the url $url"
-            }
-        }
-    }
+    @Tool
+    @LLMDescription(
+        "Read the food ingredients in the given photos and add them to the user's inventory." +
+            " Returns the added ingredients, or null if there was an error.",
+    )
+    suspend fun scanIngredientsInPhotos(
+        @LLMDescription("The photo files to scan.")
+        files: List<UploadedFile>,
+    ): List<String>? = ingredientScanAgent.scan(userId, files)
+
+    @Tool
+    @LLMDescription(
+        "Read the recipes in the given photos and save them to the user's recipes." +
+            " Returns the saved recipe titles, or null if there was an error.",
+    )
+    suspend fun scanRecipesInPhotos(
+        @LLMDescription("The photo files to scan.")
+        files: List<UploadedFile>,
+    ): List<String>? = recipeScanAgent.scan(userId, files)
 }
-
-private fun formatSavedRecipes(summaries: List<ApiRecipeSummary>): String =
-    when (summaries.size) {
-        0 -> "Saved 0 recipes."
-        1 -> "Saved 1 recipe: ${summaries.title}"
-        else -> "Saved ${summaries.size} recipe(s): ${summaries.joinToString(", ") { it.title }}"
-    }

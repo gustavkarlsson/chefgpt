@@ -10,12 +10,12 @@ import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.FILE_NAME_HEADER
 import se.gustavkarlsson.chefgpt.files.FileUploader
-import se.gustavkarlsson.chefgpt.files.attachmentKindOrNull
+import se.gustavkarlsson.chefgpt.files.fileKindOrNull
 
 fun Route.filesRoute() {
     post("/files") {
         val contentType = call.request.contentType()
-        if (attachmentKindOrNull(contentType) == null) {
+        if (fileKindOrNull(contentType) == null) {
             call.respond(
                 HttpStatusCode.UnsupportedMediaType,
                 ApiError(

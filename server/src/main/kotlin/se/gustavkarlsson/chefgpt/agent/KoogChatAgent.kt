@@ -10,14 +10,14 @@ import se.gustavkarlsson.chefgpt.chats.ChatNamingTools
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventRepository
 import se.gustavkarlsson.chefgpt.files.ImageCropper
-import se.gustavkarlsson.chefgpt.files.SharedFileTools
+import se.gustavkarlsson.chefgpt.files.UploadedFileTools
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 import se.gustavkarlsson.chefgpt.ingredients.toTools
 import se.gustavkarlsson.chefgpt.recipes.RecipeLookup
 import se.gustavkarlsson.chefgpt.recipes.RecipeStore
 import se.gustavkarlsson.chefgpt.recipes.toTools
 
-class KoogAiAgent(
+class KoogChatAgent(
     private val model: LLModel,
     private val ingredientStore: IngredientStore,
     private val recipeStore: RecipeStore,
@@ -28,7 +28,7 @@ class KoogAiAgent(
     private val recipeScanAgent: RecipeScanAgent,
     private val ingredientScanAgent: IngredientScanAgent,
     private val describeImageAgent: DescribeImageAgent,
-) : AiAgent {
+) : ChatAgent {
     override suspend fun RoutingContext.run(
         userId: UserId,
         chatId: ChatId,
@@ -43,7 +43,7 @@ class KoogAiAgent(
                         tools(ingredientStore.toTools(userId))
                         tools(recipeStore.toTools(userId, recipeLookup))
                         tools(ChatNamingTools(chatRepository, eventRepository, userId, chatId))
-                        tools(SharedFileTools(eventRepository, imageCropper, chatId))
+                        tools(UploadedFileTools(eventRepository, imageCropper, chatId))
                         tools(
                             ImageScanTools(
                                 eventRepository,

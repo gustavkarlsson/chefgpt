@@ -6,5 +6,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 @SerialName("api-scan-recipe")
 data class ApiScanRecipe(
-    val attachments: List<ApiAttachment>,
+    val files: List<ApiUploadedFile>,
 )

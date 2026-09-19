@@ -2,7 +2,7 @@ package se.gustavkarlsson.chefgpt.chats
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import se.gustavkarlsson.chefgpt.api.ApiAttachment
+import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.api.JoinId
 import kotlin.time.Instant
@@ -21,7 +21,7 @@ sealed interface Event {
         val message: KoogMessage,
         // The files the user attached, kept alongside the message because a Koog attachment loses
         // its url once the content has been inlined (which text attachments require).
-        val attachments: List<ApiAttachment>,
+        val attachments: List<ApiUploadedFile>,
     ) : Event {
         override val timestamp: Instant
             get() = message.metaInfo.timestamp
