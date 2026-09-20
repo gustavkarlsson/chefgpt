@@ -23,6 +23,7 @@ import se.gustavkarlsson.chefgpt.ai.AiConfig
 import se.gustavkarlsson.chefgpt.ai.loadAiConfig
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventRepository
+import se.gustavkarlsson.chefgpt.facts.FactRepository
 import se.gustavkarlsson.chefgpt.files.ImageCropper
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 import se.gustavkarlsson.chefgpt.recipes.RecipeLookup
@@ -46,6 +47,7 @@ fun Application.createAiAgentModule() =
                     val ingredientStore = get<IngredientStore>()
                     val recipeRepository = get<RecipeRepository>()
                     val recipeLookup = get<RecipeLookup>()
+                    val factRepository = get<FactRepository>()
                     val imageCropper = get<ImageCropper>()
                     val chatRepository = get<ChatRepository>()
                     val eventRepository = get<EventRepository>()
@@ -54,6 +56,7 @@ fun Application.createAiAgentModule() =
                         ingredientStore,
                         recipeRepository,
                         recipeLookup,
+                        factRepository,
                         imageCropper,
                         chatRepository,
                         eventRepository,
@@ -101,6 +104,7 @@ fun Application.createAiAgentModule() =
                         get<RecipeRepository>(),
                         get<RecipeLookup>(),
                         get<ImageCropper>(),
+                        get<FactRepository>(),
                     )
                 }
 

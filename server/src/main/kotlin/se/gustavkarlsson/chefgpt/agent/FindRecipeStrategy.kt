@@ -9,8 +9,9 @@ import ai.koog.agents.core.dsl.extension.nodeExecuteTools
 import ai.koog.agents.core.dsl.extension.nodeLLMSendToolResults
 import ai.koog.agents.core.dsl.extension.onToolCalls
 import ai.koog.prompt.message.Message
+import se.gustavkarlsson.chefgpt.auth.UserId
 
-fun findRecipeStrategy(): AIAgentGraphStrategy<Unit, Unit> =
+fun findRecipeStrategy(): AIAgentGraphStrategy<UserId, Unit> =
     strategy("find-recipe") {
         val nodeExecuteLLM by nodeExecuteLLM("executeLLM")
         val response by nodeDoNothing<Message.Assistant>("response")
@@ -31,7 +32,7 @@ fun findRecipeStrategy(): AIAgentGraphStrategy<Unit, Unit> =
     }
 
 private fun nodeExecuteLLM(name: String) =
-    node<Unit, Message.Assistant>(name) {
+    node<UserId, Message.Assistant>(name) {
         llm
             .writeSession {
                 // Message should have already been appended to history when this runs

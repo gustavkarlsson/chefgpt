@@ -1,0 +1,9 @@
+selectByUserId:
+SELECT facts::text AS facts
+FROM user_fact
+WHERE user_id = ?;
+
+upsert:
+INSERT INTO user_fact (user_id, facts)
+VALUES (?, ?::jsonb)
+ON CONFLICT (user_id) DO UPDATE SET facts = EXCLUDED.facts;
