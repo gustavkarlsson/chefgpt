@@ -42,7 +42,7 @@ private fun pannkakor(
 
 class RecipeStoreToolsCreateRecipeTest {
     private val userId = UserId.random()
-    private val store = InMemoryRecipeStore()
+    private val store = RecipeRepository(InMemoryRecipePersistence())
     private val tools =
         RecipeStoreTools(
             store = store,

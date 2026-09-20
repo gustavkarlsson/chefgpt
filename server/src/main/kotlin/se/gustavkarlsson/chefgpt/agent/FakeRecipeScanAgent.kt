@@ -3,17 +3,17 @@ package se.gustavkarlsson.chefgpt.agent
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.files.UploadedFile
 import se.gustavkarlsson.chefgpt.recipes.NewRecipe
-import se.gustavkarlsson.chefgpt.recipes.RecipeStore
+import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 
 class FakeRecipeScanAgent(
-    private val recipeStore: RecipeStore,
+    private val recipeRepository: RecipeRepository,
 ) : RecipeScanAgent {
     override suspend fun scan(
         userId: UserId,
         images: List<UploadedFile>,
     ): List<String> {
         val recipe =
-            recipeStore.saveRecipe(
+            recipeRepository.saveRecipe(
                 userId,
                 NewRecipe(
                     title = "Pasta al pomodoro",

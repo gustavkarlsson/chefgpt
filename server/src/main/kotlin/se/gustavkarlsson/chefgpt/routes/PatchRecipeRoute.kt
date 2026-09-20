@@ -10,12 +10,12 @@ import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiRecipeUpdate
 import se.gustavkarlsson.chefgpt.api.RecipeId
-import se.gustavkarlsson.chefgpt.recipes.RecipeStore
+import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.patchRecipeRoute() {
     patch("/recipes/{id}") {
-        val recipeStore = get<RecipeStore>()
+        val recipeRepository = get<RecipeRepository>()
         val userId = call.requireSession().user.id
         val id =
             RecipeId.parseOrNull(call.parameters.getOrFail("id"))
@@ -24,7 +24,7 @@ fun Route.patchRecipeRoute() {
                     ApiError("invalid-recipe-id", "Invalid recipe id", userMessage = null),
                 )
         val body = call.receive<ApiRecipeUpdate>()
-        val updated = recipeStore.setFavorite(userId, id, body.favorite)
+        val updated = recipeRepository.setFavorite(userId, id, body.favorite)
         if (updated != null) {
             call.respond(HttpStatusCode.OK, updated)
         } else {

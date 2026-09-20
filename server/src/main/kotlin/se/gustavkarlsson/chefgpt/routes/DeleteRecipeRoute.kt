@@ -8,12 +8,12 @@ import io.ktor.server.util.getOrFail
 import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.RecipeId
-import se.gustavkarlsson.chefgpt.recipes.RecipeStore
+import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.deleteRecipeRoute() {
     delete("/recipes/{id}") {
-        val recipeStore = get<RecipeStore>()
+        val recipeRepository = get<RecipeRepository>()
         val userId = call.requireSession().user.id
         val id =
             RecipeId.parseOrNull(call.parameters.getOrFail("id"))
@@ -21,7 +21,7 @@ fun Route.deleteRecipeRoute() {
                     HttpStatusCode.BadRequest,
                     ApiError("invalid-recipe-id", "Invalid recipe id", userMessage = null),
                 )
-        if (recipeStore.deleteRecipe(userId, id)) {
+        if (recipeRepository.deleteRecipe(userId, id)) {
             call.respond(HttpStatusCode.NoContent)
         } else {
             call.respond(

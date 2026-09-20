@@ -16,10 +16,10 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.minutes
 
-class InMemoryRecipeStoreTest {
+class RecipeRepositoryTest {
     private val userId = UserId.random()
     private val otherUserId = UserId.random()
-    private val store = InMemoryRecipeStore()
+    private val store = RecipeRepository(InMemoryRecipePersistence())
 
     @Test
     fun `getRecipeSummaries returns empty list for new user`() =
@@ -248,6 +248,31 @@ class InMemoryRecipeStoreTest {
             store.deleteRecipe(userId, modified!!.id)
 
             assertEquals(listOf(saved.toSummary()), store.getRecipeSummaries(userId))
+        }
+
+    @Test
+    fun `deleting a recipe detaches its modification`() =
+        runTest {
+            val saved = store.saveRecipe(userId, carbonara())
+            val modified = store.modifyRecipe(userId, saved.id, RecipeUpdate(title = "Vegetarian carbonara"))
+
+            store.deleteRecipe(userId, saved.id)
+
+            assertEquals(modified?.copy(modifiedFrom = null), store.getRecipe(userId, modified!!.id))
+        }
+
+    @Test
+    fun `deleting a recipe leaves its modification in the summaries`() =
+        runTest {
+            val saved = store.saveRecipe(userId, carbonara())
+            val modified = store.modifyRecipe(userId, saved.id, RecipeUpdate(title = "Vegetarian carbonara"))
+
+            store.deleteRecipe(userId, saved.id)
+
+            assertEquals(
+                listOf(modified?.copy(modifiedFrom = null)?.toSummary()),
+                store.getRecipeSummaries(userId),
+            )
         }
 
     @Test

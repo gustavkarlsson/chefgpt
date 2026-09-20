@@ -18,7 +18,7 @@ import se.gustavkarlsson.chefgpt.files.ImageEditTools
 import se.gustavkarlsson.chefgpt.files.UploadedFile
 import se.gustavkarlsson.chefgpt.files.fileKindOrNull
 import se.gustavkarlsson.chefgpt.recipes.RecipeLookup
-import se.gustavkarlsson.chefgpt.recipes.RecipeStore
+import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 import se.gustavkarlsson.chefgpt.recipes.toTools
 
 private val logger = LoggerFactory.getLogger("KoogRecipeScanAgent")
@@ -55,7 +55,7 @@ private val SYSTEM_PROMPT =
 class KoogRecipeScanAgent(
     private val promptExecutor: PromptExecutor,
     private val model: LLModel,
-    private val recipeStore: RecipeStore,
+    private val recipeRepository: RecipeRepository,
     private val recipeLookup: RecipeLookup,
     private val imageCropper: ImageCropper,
 ) : RecipeScanAgent {
@@ -83,7 +83,7 @@ class KoogRecipeScanAgent(
         strategy = strategy,
         toolRegistry =
             ToolRegistry {
-                tools(recipeStore.toTools(userId, recipeLookup))
+                tools(recipeRepository.toTools(userId, recipeLookup))
                 tools(
                     ImageEditTools(imageCropper) {
                         images
