@@ -33,6 +33,25 @@ private val SYSTEM_PROMPT =
     one another are one recipe — or several distinct recipes. Save each recipe
     with its own createRecipe call.
 
+    Some recipes are variants of another recipe in the same set of photos. For
+    example, one photo shows a base pancake recipe and another a blueberry
+    pancake recipe that says "use the base pancake recipe but reduce the milk
+    to 3 dl". When a recipe references another recipe that is also in the
+    photos:
+
+    - Save the base recipe on its own, exactly as written.
+    - Save the variant as a complete recipe on its own too. Start from the
+      base recipe's full contents — ingredients, steps, times, servings — and
+      apply the variant's stated changes on top, with the variant overriding
+      the base wherever they differ. The variant must stand alone and be
+      readable without the base, so never save a variant that only says "see
+      the base recipe" when the base recipe is in the photos.
+
+    If a recipe references a base recipe that is not in the photos, you cannot
+    merge it. Save whatever you can read from the photo and keep the reference
+    to the base recipe in the variant's own text (for example as a step),
+    rather than inventing the base's contents.
+
     Extract as many values you can to match the createRecipe tool parameters.
     Don't invent data. Leave out anything that is is missing rather than filling
     it in yourself.
