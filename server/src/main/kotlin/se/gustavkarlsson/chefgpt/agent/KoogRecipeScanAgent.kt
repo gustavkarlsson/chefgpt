@@ -11,6 +11,9 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import org.slf4j.LoggerFactory
 import se.gustavkarlsson.chefgpt.auth.UserId
+import se.gustavkarlsson.chefgpt.facts.FactRepository
+import se.gustavkarlsson.chefgpt.facts.UserFacts
+import se.gustavkarlsson.chefgpt.facts.toMeasurementPromptText
 import se.gustavkarlsson.chefgpt.files.FileKind
 import se.gustavkarlsson.chefgpt.files.ImageCropper
 import se.gustavkarlsson.chefgpt.files.ImageEditTools
@@ -56,6 +59,13 @@ private val SYSTEM_PROMPT =
     Don't invent data. Leave out anything that is is missing rather than filling
     it in yourself.
 
+    Convert the recipe's measurements to the user's preferences (shown below):
+    apply their measurement preference to compressible dry goods, viscous or
+    sticky liquids, and irregular solids. Easy-to-pour liquids stay volume, and
+    amounts not given as weight or volume (cloves, pinches, dashes) stay as
+    written. Where a preference is unknown, keep the recipe's original
+    measurement.
+
     *Note: From now on, the word "dish" means whatever the recipe makes,
     whether it's food, baked items, beverages, etc.*
 
@@ -77,12 +87,14 @@ class KoogRecipeScanAgent(
     private val recipeRepository: RecipeRepository,
     private val recipeLookup: RecipeLookup,
     private val imageCropper: ImageCropper,
+    private val factRepository: FactRepository,
 ) : RecipeScanAgent {
     override suspend fun scan(
         userId: UserId,
         images: List<UploadedFile>,
     ): List<String> {
-        val agent = buildAgent(userId, images, buildPrompt(images), recipeScanStrategy())
+        val facts = factRepository.getFacts(userId)
+        val agent = buildAgent(userId, images, buildPrompt(images, facts), recipeScanStrategy())
         return agent.run("Scan these photos for recipes and save the ones you find.")
     }
 
@@ -114,18 +126,20 @@ class KoogRecipeScanAgent(
     )
 }
 
-private fun buildPrompt(images: List<UploadedFile>) =
-    prompt("scan-recipes") {
-        system(SYSTEM_PROMPT)
-        user {
-            for (image in images) {
-                image.toImageAttachmentOrNull()?.let { attachment ->
-                    text("Photo url: ${image.url}")
-                    image(attachment)
-                }
+private fun buildPrompt(
+    images: List<UploadedFile>,
+    facts: UserFacts,
+) = prompt("scan-recipes") {
+    system(SYSTEM_PROMPT + "\n\n" + facts.toMeasurementPromptText())
+    user {
+        for (image in images) {
+            image.toImageAttachmentOrNull()?.let { attachment ->
+                text("Photo url: ${image.url}")
+                image(attachment)
             }
         }
     }
+}
 
 // TODO Fix brittle parsing since the tool signature might change
 private fun recipeScanStrategy() =

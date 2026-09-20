@@ -9,6 +9,8 @@ import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.chats.ChatNamingTools
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventRepository
+import se.gustavkarlsson.chefgpt.facts.FactRepository
+import se.gustavkarlsson.chefgpt.facts.toTools
 import se.gustavkarlsson.chefgpt.files.FileKind
 import se.gustavkarlsson.chefgpt.files.ImageCropper
 import se.gustavkarlsson.chefgpt.files.ImageEditTools
@@ -26,6 +28,7 @@ class KoogChatAgent(
     private val ingredientStore: IngredientStore,
     private val recipeRepository: RecipeRepository,
     private val recipeLookup: RecipeLookup,
+    private val factRepository: FactRepository,
     private val imageCropper: ImageCropper,
     private val chatRepository: ChatRepository,
     private val eventRepository: EventRepository,
@@ -46,6 +49,7 @@ class KoogChatAgent(
                         // Scoped to the user and chat, in addition to globally available tools
                         tools(ingredientStore.toTools(userId))
                         tools(recipeRepository.toTools(userId, recipeLookup))
+                        tools(factRepository.toTools(userId))
                         tools(ChatNamingTools(chatRepository, eventRepository, userId, chatId))
                         tools(UploadedFileTools(eventRepository, chatId))
                         tools(
@@ -68,6 +72,6 @@ class KoogChatAgent(
                         )
                     },
             )
-        agent.run(Unit, chatId.value.toString())
+        agent.run(Unit, runId(chatId, userId))
     }
 }

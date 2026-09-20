@@ -5,6 +5,7 @@ import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.agent.EventBackedChatMemory
+import se.gustavkarlsson.chefgpt.agent.UserFactMemory
 import se.gustavkarlsson.chefgpt.ai.AiProvider
 import se.gustavkarlsson.chefgpt.ai.loadAiConfig
 import se.gustavkarlsson.chefgpt.recipes.RecipeClient
@@ -124,6 +125,37 @@ fun Application.installKoog() {
                     answer, "2" for the second) if they typed it — treat both as
                     selecting that answer.
 
+                    The prompt also shows facts you have remembered about the user —
+                    their preferred name, unit system, measurement preference,
+                    temperature unit, and dietary restrictions. Use them when
+                    answering, and treat any fact shown as "unknown" as something
+                    you may need to ask about.
+
+                    Remember new facts about the user as you learn them, using the
+                    fact tools (setPreferredName, setUnitSystem, setMeasurement,
+                    setTemperature, addDietaryRestrictions,
+                    removeDietaryRestrictions). Only remember things the user says
+                    about themselves in general — never a one-off request. "Make me
+                    a vegetarian meal tonight" is a request, not a fact; "I'm
+                    vegetarian" is a fact.
+
+                    When a relevant fact is unknown, ask about it before acting:
+                    ask about the unit system, measurement and temperature before
+                    saving a recipe, and about dietary restrictions before searching
+                    for recipes. Ask with a multiple-choice question, save the
+                    user's answer with the matching fact tool, then continue.
+
+                    When writing ingredient amounts, follow the user's measurement
+                    preference: use it for compressible dry goods, viscous or sticky
+                    liquids, and irregular solids. Easy-to-pour liquids are always
+                    volume, and amounts not given as weight or volume (cloves,
+                    pinches, dashes) stay as written. If the measurement preference
+                    is unknown, keep the recipe's original measurement.
+
+                    When the user states a dietary restriction that makes an earlier
+                    one redundant (vegan makes vegetarian redundant), add the new
+                    one and remove the redundant one.
+
                     As soon as you understand what the user wants to do in this chat,
                     give the chat a short, descriptive name using the nameChat tool.
                     Only name the chat once you have enough context, and feel free to
@@ -136,6 +168,9 @@ fun Application.installKoog() {
                     suggest trying again, without exposing what happened behind the scenes.
                     """.trimIndent(),
                 )
+            }
+            install(UserFactMemory) {
+                this.factRepository = get()
             }
             install(EventBackedChatMemory) {
                 this.eventRepository = get()

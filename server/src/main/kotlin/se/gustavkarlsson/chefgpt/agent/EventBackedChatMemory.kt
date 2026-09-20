@@ -12,7 +12,6 @@ import ai.koog.prompt.message.AttachmentSource
 import ai.koog.prompt.message.Message
 import ai.koog.prompt.message.MessagePart
 import org.slf4j.LoggerFactory
-import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.chats.Event
 import se.gustavkarlsson.chefgpt.chats.EventRepository
@@ -83,7 +82,7 @@ class EventBackedChatMemory {
             eventRepository: EventRepository,
             lastSyncedMessageHolder: AtomicReference<Message?>,
         ) {
-            val chatId = ChatId.parse(runId)
+            val chatId = runId.chatIdFromRunId()
             llm.writeSession {
                 val chatMessages =
                     eventRepository
@@ -137,7 +136,7 @@ class EventBackedChatMemory {
                     .takeLastWhile { it != lastSyncedMessage }
 
             if (newPromptMessages.isNotEmpty()) {
-                val chatId = ChatId.parse(runId)
+                val chatId = runId.chatIdFromRunId()
                 for (message in newPromptMessages) {
                     val event = Event.Message(EventId.random(), message, attachments = emptyList())
                     eventRepository.append(chatId, event)
