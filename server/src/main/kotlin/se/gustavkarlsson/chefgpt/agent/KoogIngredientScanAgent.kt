@@ -1,5 +1,4 @@
 package se.gustavkarlsson.chefgpt.agent
-
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.agent.AIAgentFunctionalStrategy
 import ai.koog.agents.core.agent.config.AIAgentConfig
@@ -16,6 +15,7 @@ import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.files.UploadedFile
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 import se.gustavkarlsson.chefgpt.ingredients.toTools
+import se.gustavkarlsson.chefgpt.toImageAttachmentOrNull
 
 private val logger = LoggerFactory.getLogger("KoogIngredientScanAgent")
 

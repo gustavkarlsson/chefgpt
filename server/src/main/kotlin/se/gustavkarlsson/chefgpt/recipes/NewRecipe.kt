@@ -1,10 +1,8 @@
 package se.gustavkarlsson.chefgpt.recipes
 
 import se.gustavkarlsson.chefgpt.api.ApiNutrient
-import se.gustavkarlsson.chefgpt.api.ApiRecipe
 import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
 import se.gustavkarlsson.chefgpt.api.ImageUrl
-import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.api.SpoonacularId
 import kotlin.time.Duration
 
@@ -23,40 +21,3 @@ data class NewRecipe(
     // Only a recipe looked up from Spoonacular has one; the agent writes recipes without.
     val spoonacularId: SpoonacularId?,
 )
-
-fun NewRecipe.toApiRecipe(
-    id: RecipeId,
-    favorite: Boolean,
-    modifiedFrom: RecipeId? = null,
-): ApiRecipe =
-    ApiRecipe(
-        id = id,
-        spoonacularId = spoonacularId,
-        title = title,
-        imageUrl = imageUrl,
-        steps = steps,
-        favorite = favorite,
-        modifiedFrom = modifiedFrom,
-        description = description,
-        preparationDuration = preparationDuration,
-        cookingDuration = cookingDuration,
-        duration = duration,
-        servings = servings,
-        ingredients = ingredients,
-        nutrients = nutrients,
-    )
-
-fun ApiRecipe.toNewRecipe(): NewRecipe =
-    NewRecipe(
-        title = title,
-        steps = steps,
-        spoonacularId = spoonacularId,
-        imageUrl = imageUrl,
-        description = description,
-        preparationDuration = preparationDuration,
-        cookingDuration = cookingDuration,
-        duration = duration,
-        servings = servings,
-        ingredients = ingredients,
-        nutrients = nutrients,
-    )

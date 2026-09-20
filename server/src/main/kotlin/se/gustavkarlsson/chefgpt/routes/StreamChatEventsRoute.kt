@@ -15,8 +15,8 @@ import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.chats.EventRepository
-import se.gustavkarlsson.chefgpt.chats.toApiOrNull
 import se.gustavkarlsson.chefgpt.getChatId
+import se.gustavkarlsson.chefgpt.toApiOrNull
 import se.gustavkarlsson.chefgpt.util.sse
 
 // TODO Add tests (Not snapshot test, as they are not possible)

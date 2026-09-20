@@ -1,8 +1,7 @@
-package se.gustavkarlsson.chefgpt.chats
+package se.gustavkarlsson.chefgpt
 
 import ai.koog.prompt.message.AttachmentContent
 import ai.koog.prompt.message.AttachmentSource
-import ai.koog.prompt.message.Message
 import ai.koog.prompt.message.MessagePart
 import ai.koog.prompt.message.RequestMetaInfo
 import kotlinx.serialization.Serializable
@@ -10,21 +9,32 @@ import se.gustavkarlsson.chefgpt.api.ApiAction
 import se.gustavkarlsson.chefgpt.api.ApiAgentChatNamed
 import se.gustavkarlsson.chefgpt.api.ApiAgentMessage
 import se.gustavkarlsson.chefgpt.api.ApiAgentMessageChunk
+import se.gustavkarlsson.chefgpt.api.ApiChat
 import se.gustavkarlsson.chefgpt.api.ApiEvent
+import se.gustavkarlsson.chefgpt.api.ApiRecipe
 import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
 import se.gustavkarlsson.chefgpt.api.ApiUserJoined
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserMessage
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.EventId
-import se.gustavkarlsson.chefgpt.chefGptJson
+import se.gustavkarlsson.chefgpt.api.RecipeId
+import se.gustavkarlsson.chefgpt.chats.Chat
+import se.gustavkarlsson.chefgpt.chats.Event
 import se.gustavkarlsson.chefgpt.files.AttachmentTextLoader
 import se.gustavkarlsson.chefgpt.files.FileKind
+import se.gustavkarlsson.chefgpt.files.UploadedFile
+import se.gustavkarlsson.chefgpt.files.fileKindOrNull
 import se.gustavkarlsson.chefgpt.files.format
 import se.gustavkarlsson.chefgpt.files.kind
+import se.gustavkarlsson.chefgpt.recipes.NewRecipe
 import kotlin.time.Clock
 import kotlin.time.Instant
 import ai.koog.prompt.message.Message as KoogMessage
+
+// All conversions between Koog, Api and domain models, grouped by direction.
+
+// Domain -> Api
 
 fun Event.toApiOrNull(): ApiEvent? =
     when (this) {
@@ -48,6 +58,113 @@ fun Event.toApiOrNull(): ApiEvent? =
             )
         }
     }
+
+fun Chat.toApi(): ApiChat = ApiChat(id, createdAt, name)
+
+fun NewRecipe.toApiRecipe(
+    id: RecipeId,
+    favorite: Boolean,
+    modifiedFrom: RecipeId? = null,
+): ApiRecipe =
+    ApiRecipe(
+        id = id,
+        spoonacularId = spoonacularId,
+        title = title,
+        imageUrl = imageUrl,
+        steps = steps,
+        favorite = favorite,
+        modifiedFrom = modifiedFrom,
+        description = description,
+        preparationDuration = preparationDuration,
+        cookingDuration = cookingDuration,
+        duration = duration,
+        servings = servings,
+        ingredients = ingredients,
+        nutrients = nutrients,
+    )
+
+// Api -> Domain
+
+suspend fun ApiAction.createEvent(textLoader: AttachmentTextLoader): Event =
+    when (this) {
+        is ApiUserJoinedChat -> {
+            Event.UserJoined(EventId.random(), Clock.System.now(), joinId)
+        }
+
+        is ApiUserSendsMessage -> {
+            val parts =
+                buildList {
+                    text?.let { add(MessagePart.Text(it)) }
+                    attachments.forEach { attachment ->
+                        attachment.toMessagePartOrNull(textLoader)?.let(::add)
+                    }
+                }
+            val koogMessage = KoogMessage.User(parts, RequestMetaInfo(Clock.System.now()))
+            Event.Message(EventId.random(), koogMessage, attachments)
+        }
+    }
+
+fun ApiUploadedFile.toDomain() =
+    UploadedFile(
+        url = url,
+        mimeType = mimeType,
+        fileName = fileName,
+    )
+
+fun ApiRecipe.toNewRecipe(): NewRecipe =
+    NewRecipe(
+        title = title,
+        steps = steps,
+        spoonacularId = spoonacularId,
+        imageUrl = imageUrl,
+        description = description,
+        preparationDuration = preparationDuration,
+        cookingDuration = cookingDuration,
+        duration = duration,
+        servings = servings,
+        ingredients = ingredients,
+        nutrients = nutrients,
+    )
+
+// Domain -> Koog
+
+fun UploadedFile.toImageAttachmentOrNull(): AttachmentSource.Image? {
+    if (fileKindOrNull(mimeType) != FileKind.Image) return null
+    return AttachmentSource.Image(
+        content = AttachmentContent.URL(url),
+        format = mimeType.substringAfter('/', mimeType),
+        mimeType = mimeType,
+        fileName = fileName,
+    )
+}
+
+// Api -> Koog
+
+private suspend fun ApiUploadedFile.toMessagePartOrNull(textLoader: AttachmentTextLoader): MessagePart.Attachment? {
+    val source =
+        when (kind) {
+            FileKind.Image -> {
+                AttachmentSource.Image(AttachmentContent.URL(url), format, mimeType, fileName)
+            }
+
+            FileKind.Pdf -> {
+                AttachmentSource.File(AttachmentContent.URL(url), format, mimeType, fileName)
+            }
+
+            // Anthropic only accepts a url as the source of a pdf, so text has to be inlined.
+            FileKind.Text -> {
+                val text = textLoader.loadText(url) ?: return null
+                AttachmentSource.File(AttachmentContent.PlainText(text), format, mimeType, fileName)
+            }
+
+            null -> {
+                return null
+            }
+        }
+    return MessagePart.Attachment(source)
+}
+
+// Koog -> Api
 
 private fun KoogMessage.toApiOrNull(
     id: EventId,
@@ -89,61 +206,7 @@ private fun KoogMessage.toApiOrNull(
         }
     }
 
-suspend fun ApiAction.createEvent(textLoader: AttachmentTextLoader): Event =
-    when (this) {
-        is ApiUserJoinedChat -> {
-            Event.UserJoined(EventId.random(), Clock.System.now(), joinId)
-        }
-
-        is ApiUserSendsMessage -> {
-            val parts =
-                buildList {
-                    text?.let { add(MessagePart.Text(it)) }
-                    attachments.forEach { attachment ->
-                        attachment.toMessagePartOrNull(textLoader)?.let(::add)
-                    }
-                }
-            val koogMessage = Message.User(parts, RequestMetaInfo(Clock.System.now()))
-            Event.Message(EventId.random(), koogMessage, attachments)
-        }
-    }
-
-private suspend fun ApiUploadedFile.toMessagePartOrNull(textLoader: AttachmentTextLoader): MessagePart.Attachment? {
-    val source =
-        when (kind) {
-            FileKind.Image -> {
-                AttachmentSource.Image(AttachmentContent.URL(url), format, mimeType, fileName)
-            }
-
-            FileKind.Pdf -> {
-                AttachmentSource.File(AttachmentContent.URL(url), format, mimeType, fileName)
-            }
-
-            // Anthropic only accepts a url as the source of a pdf, so text has to be inlined.
-            FileKind.Text -> {
-                val text = textLoader.loadText(url) ?: return null
-                AttachmentSource.File(AttachmentContent.PlainText(text), format, mimeType, fileName)
-            }
-
-            null -> {
-                return null
-            }
-        }
-    return MessagePart.Attachment(source)
-}
-
-private const val QUESTION_FENCE = "```multiple-choice-question"
-private const val CLOSING_FENCE = "```"
-
-// Forgiving: this parses whatever the agent wrote, which we don't control.
-private val chunkJson = chefGptJson(strict = false)
-
-@Serializable
-private data class MultipleChoiceQuestionJson(
-    val question: String,
-    val answers: List<String>,
-)
-
+// Parses the assistant's text into displayable chunks, including any multiple-choice question.
 fun parseAgentMessageChunks(text: String): List<ApiAgentMessageChunk> {
     val chunks = mutableListOf<ApiAgentMessageChunk>()
     val markdown = StringBuilder()
@@ -189,3 +252,15 @@ private fun parseMultipleChoiceQuestionOrNull(content: String): ApiAgentMessageC
     if (question.isEmpty() || answers.size < 2 || answers.any { it.isEmpty() }) return null
     return ApiAgentMessageChunk.MultipleChoiceQuestion(question, answers)
 }
+
+private const val QUESTION_FENCE = "```multiple-choice-question"
+private const val CLOSING_FENCE = "```"
+
+// Forgiving: this parses whatever the agent wrote, which we don't control.
+private val chunkJson = chefGptJson(strict = false)
+
+@Serializable
+private data class MultipleChoiceQuestionJson(
+    val question: String,
+    val answers: List<String>,
+)

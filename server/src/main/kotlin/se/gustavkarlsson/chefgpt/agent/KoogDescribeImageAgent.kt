@@ -1,5 +1,4 @@
 package se.gustavkarlsson.chefgpt.agent
-
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.agent.config.AIAgentConfig
 import ai.koog.agents.core.agent.functionalStrategy
@@ -11,6 +10,7 @@ import ai.koog.prompt.llm.LLModel
 import org.slf4j.LoggerFactory
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.files.UploadedFile
+import se.gustavkarlsson.chefgpt.toImageAttachmentOrNull
 
 private val logger = LoggerFactory.getLogger("KoogDescribeImageAgent")
 
