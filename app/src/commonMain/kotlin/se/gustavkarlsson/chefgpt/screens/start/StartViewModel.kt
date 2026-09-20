@@ -18,6 +18,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.ImageUrl
@@ -27,7 +29,6 @@ import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.displayName
 import se.gustavkarlsson.chefgpt.isImageFile
 import se.gustavkarlsson.chefgpt.jobs.AwaitJobUseCase
-import se.gustavkarlsson.chefgpt.jobs.resultStrings
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 import se.gustavkarlsson.chefgpt.recipes.RecipeSummary
@@ -274,7 +275,7 @@ class StartViewModel(
         viewModelScope.launch {
             try {
                 val result =
-                    awaitJob.await(credentials.sessionId) {
+                    awaitJob.await(credentials.sessionId, ListSerializer(String.serializer())) {
                         coroutineScope {
                             images
                                 .map { file ->
@@ -292,7 +293,7 @@ class StartViewModel(
                     }
                 result
                     .onOk { job ->
-                        val saved = job.resultStrings().size
+                        val saved = job.result.orEmpty().size
                         if (saved == 0) {
                             showSnackbar("Couldn't find a recipe in those photos")
                         } else {

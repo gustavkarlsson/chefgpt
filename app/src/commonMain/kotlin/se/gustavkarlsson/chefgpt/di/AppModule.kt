@@ -2,6 +2,7 @@ package se.gustavkarlsson.chefgpt.di
 
 import kotlinx.io.files.FileSystem
 import kotlinx.io.files.SystemFileSystem
+import kotlinx.serialization.json.Json
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
 import org.koin.dsl.KoinAppDeclaration
@@ -17,6 +18,7 @@ import se.gustavkarlsson.chefgpt.chats.ApiConversationFactory
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.ConversationFactory
 import se.gustavkarlsson.chefgpt.chats.EventHistoryStore
+import se.gustavkarlsson.chefgpt.chefGptJson
 import se.gustavkarlsson.chefgpt.debug.Settings
 import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
 import se.gustavkarlsson.chefgpt.jobs.AwaitJobUseCase
@@ -37,6 +39,7 @@ val singletonModule =
     module {
         single<Settings>()
         single<ChefGptClient>()
+        single<Json> { chefGptJson(strict = false) }
         // TODO Should be activity retained scoped for Android.
         single<Navigator>()
         single<LastSessionFileStore>()

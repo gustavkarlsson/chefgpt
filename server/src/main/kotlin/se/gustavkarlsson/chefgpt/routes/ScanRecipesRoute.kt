@@ -5,21 +5,15 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.launch
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import org.koin.ktor.ext.get
-import org.slf4j.LoggerFactory
 import se.gustavkarlsson.chefgpt.agent.RecipeScanAgent
 import se.gustavkarlsson.chefgpt.agent.toDomain
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiScanRecipe
-import se.gustavkarlsson.chefgpt.jobs.AgentJobScope
-import se.gustavkarlsson.chefgpt.jobs.JobRepository
+import se.gustavkarlsson.chefgpt.jobs.JobRunner
 import se.gustavkarlsson.chefgpt.requireSession
-
-private val logger = LoggerFactory.getLogger("ScanRecipesRoute")
 
 fun Route.scanRecipesRoute() {
     post("/recipes/scan") {
@@ -56,19 +50,10 @@ fun Route.scanRecipesRoute() {
         }
 
         val scanAgent = get<RecipeScanAgent>()
-        val jobRepository = get<JobRepository>()
-        val job = jobRepository.create()
-        get<AgentJobScope>().launch {
-            try {
-                val added = scanAgent.scan(userId, sharedFiles)
-                jobRepository.succeed(job.id, JsonArray(added.map { JsonPrimitive(it) }))
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logger.error("Recipe scan failed", e)
-                jobRepository.fail(job.id, ApiError("agent-failed", e.message ?: "Agent failed", userMessage = null))
+        val job =
+            get<JobRunner>().run("Recipe scan", ListSerializer(String.serializer())) {
+                scanAgent.scan(userId, sharedFiles)
             }
-        }
         call.respond(HttpStatusCode.Accepted, job)
     }
 }

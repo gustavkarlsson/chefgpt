@@ -38,6 +38,7 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
+import kotlinx.serialization.json.JsonElement
 import se.gustavkarlsson.chefgpt.api.ApiChat
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiEvent
@@ -141,7 +142,7 @@ class ChefGptClient(
         sessionId: SessionId,
         data: Path,
         contentType: ContentType,
-    ): Result<ApiJob, ClientError> =
+    ): Result<ApiJob<List<String>>, ClientError> =
         request(
             send = { baseUrl ->
                 post("$baseUrl/ingredients/scan") {
@@ -158,7 +159,7 @@ class ChefGptClient(
     suspend fun scanRecipes(
         sessionId: SessionId,
         attachments: List<ApiUploadedFile>,
-    ): Result<ApiJob, ClientError> =
+    ): Result<ApiJob<List<String>>, ClientError> =
         request(
             send = { baseUrl ->
                 post("$baseUrl/recipes/scan") {
@@ -406,7 +407,7 @@ class ChefGptClient(
         sessionId: SessionId,
         chatId: ChatId,
         message: ApiUserSendsMessage,
-    ): Result<ApiJob, ClientError> =
+    ): Result<ApiJob<Unit>, ClientError> =
         request(
             send = { baseUrl ->
                 post("$baseUrl/chats/$chatId/actions") {
@@ -439,7 +440,7 @@ class ChefGptClient(
     suspend fun getJob(
         sessionId: SessionId,
         jobId: JobId,
-    ): Result<ApiJob, ClientError> =
+    ): Result<ApiJob<JsonElement>, ClientError> =
         request(
             send = { baseUrl ->
                 get("$baseUrl/jobs/$jobId") {

@@ -14,12 +14,12 @@ private val JOB_EXPIRY = 60.minutes
 class InMemoryJobRepository(
     private val clock: Clock = Clock.System,
 ) : JobRepository {
-    private val jobs = ConcurrentHashMap<JobId, ApiJob>()
+    private val jobs = ConcurrentHashMap<JobId, ApiJob<JsonElement>>()
 
-    override suspend fun create(): ApiJob {
+    override suspend fun create(): ApiJob<JsonElement> {
         expireOldJobs()
         val job =
-            ApiJob(
+            ApiJob<JsonElement>(
                 id = JobId.random(),
                 state = ApiJobState.Working,
                 createdAt = clock.now(),
@@ -31,7 +31,7 @@ class InMemoryJobRepository(
         return job
     }
 
-    override suspend operator fun get(jobId: JobId): ApiJob? = jobs[jobId]
+    override suspend operator fun get(jobId: JobId): ApiJob<JsonElement>? = jobs[jobId]
 
     override suspend fun succeed(
         jobId: JobId,

@@ -3,10 +3,11 @@ package se.gustavkarlsson.chefgpt.jobs
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
-import com.github.michaelbull.result.flatMap
-import com.github.michaelbull.result.fold
-import com.github.michaelbull.result.mapError
+import com.github.michaelbull.result.get
+import com.github.michaelbull.result.getError
 import kotlinx.coroutines.delay
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.json.Json
 import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.ClientError
 import se.gustavkarlsson.chefgpt.api.ApiError
@@ -20,34 +21,47 @@ private val POLL_INTERVAL = 1.seconds
 
 class AwaitJobUseCase(
     private val client: ChefGptClient,
+    private val json: Json,
 ) {
-    suspend fun await(
+    suspend fun <T> await(
         sessionId: SessionId,
-        createJob: suspend () -> Result<ApiJob, ClientError>,
-    ): Result<ApiJob, AwaitJobError> =
-        createJob()
-            .mapError { AwaitJobError.RequestFailed(it) }
-            .flatMap { job -> poll(sessionId, job.id) }
+        deserializer: KSerializer<T>,
+        createJob: suspend () -> Result<ApiJob<T>, ClientError>,
+    ): Result<ApiJob<T>, AwaitJobError> {
+        val created = createJob()
+        val job = created.get()
+        if (job == null) {
+            return Err(AwaitJobError.RequestFailed(created.getError()!!))
+        }
 
-    private suspend fun poll(
-        sessionId: SessionId,
-        jobId: JobId,
-    ): Result<ApiJob, AwaitJobError> {
         while (true) {
             delay(POLL_INTERVAL)
-            val polled: Result<ApiJob, AwaitJobError>? =
-                client.getJob(sessionId, jobId).fold(
-                    success = { job ->
-                        when (job.state) {
-                            ApiJobState.Working -> null
-                            ApiJobState.Success -> Ok(job)
-                            ApiJobState.Failure -> Err(AwaitJobError.JobFailed(job.error))
-                        }
-                    },
-                    failure = { error -> Err(AwaitJobError.RequestFailed(error)) },
-                )
-            if (polled != null) {
-                return polled
+            val jobResult = client.getJob(sessionId, job.id)
+            val polled = jobResult.get()
+            if (polled == null) {
+                return Err(AwaitJobError.RequestFailed(jobResult.getError()!!))
+            }
+            when (polled.state) {
+                ApiJobState.Working -> {
+                    Unit
+                }
+
+                ApiJobState.Success -> {
+                    return Ok(
+                        ApiJob(
+                            id = polled.id,
+                            state = polled.state,
+                            createdAt = polled.createdAt,
+                            finishedAt = polled.finishedAt,
+                            result = polled.result?.let { json.decodeFromJsonElement(deserializer, it) },
+                            error = polled.error,
+                        ),
+                    )
+                }
+
+                ApiJobState.Failure -> {
+                    return Err(AwaitJobError.JobFailed(polled.error))
+                }
             }
         }
     }
