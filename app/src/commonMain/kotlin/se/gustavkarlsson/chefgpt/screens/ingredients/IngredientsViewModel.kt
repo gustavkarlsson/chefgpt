@@ -23,6 +23,8 @@ import se.gustavkarlsson.chefgpt.api.IngredientId
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatarModel
 import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
 import se.gustavkarlsson.chefgpt.ingredients.IngredientWords
+import se.gustavkarlsson.chefgpt.jobs.AwaitJobUseCase
+import se.gustavkarlsson.chefgpt.jobs.resultStrings
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
 import se.gustavkarlsson.chefgpt.sessions.SessionId
@@ -36,6 +38,7 @@ private const val EMPTY_DESCRIPTION =
 
 class IngredientsViewModel(
     private val client: ChefGptClient,
+    private val awaitJob: AwaitJobUseCase,
     private val navigator: Navigator,
     private val deviceConfig: DeviceConfig,
     emojiResolverFactory: IngredientEmojiResolver.Factory,
@@ -285,9 +288,11 @@ class IngredientsViewModel(
         }
         viewModelScope.launch {
             try {
-                client
-                    .scanIngredients(sessionId, image, ContentType.defaultForFilePath(image.name))
-                    .onOk { count -> log.i { "Scan found $count ingredient(s)" } }
+                awaitJob
+                    .await(
+                        sessionId,
+                    ) { client.scanIngredients(sessionId, image, ContentType.defaultForFilePath(image.name)) }
+                    .onOk { job -> log.i { "Scan found ${job.resultStrings().size} ingredient(s)" } }
                     .onErr {
                         log.e { "Failed to scan ingredients: $it" }
                         showSnackbar("Couldn't scan ingredients from the image", isError = true)

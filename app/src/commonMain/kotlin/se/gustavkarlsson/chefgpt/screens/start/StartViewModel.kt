@@ -26,6 +26,8 @@ import se.gustavkarlsson.chefgpt.chats.Chat
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.displayName
 import se.gustavkarlsson.chefgpt.isImageFile
+import se.gustavkarlsson.chefgpt.jobs.AwaitJobUseCase
+import se.gustavkarlsson.chefgpt.jobs.resultStrings
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 import se.gustavkarlsson.chefgpt.recipes.RecipeSummary
@@ -44,6 +46,7 @@ private val log = Logger.withTag("${StartViewModel::class.simpleName}")
 
 class StartViewModel(
     private val client: ChefGptClient,
+    private val awaitJob: AwaitJobUseCase,
     private val chatRepository: ChatRepository,
     private val recipeRepository: RecipeRepository,
     private val sessionRepository: SessionRepository,
@@ -271,26 +274,29 @@ class StartViewModel(
         viewModelScope.launch {
             try {
                 val result =
-                    coroutineScope {
-                        images
-                            .map { file ->
-                                async {
-                                    client.uploadFile(
-                                        credentials.sessionId,
-                                        file,
-                                        ContentType.defaultForFilePath(file.name),
-                                    )
-                                }
-                            }.awaitAll()
-                            .combine()
-                            .flatMap { attachments -> client.scanRecipes(credentials.sessionId, attachments) }
+                    awaitJob.await(credentials.sessionId) {
+                        coroutineScope {
+                            images
+                                .map { file ->
+                                    async {
+                                        client.uploadFile(
+                                            credentials.sessionId,
+                                            file,
+                                            ContentType.defaultForFilePath(file.name),
+                                        )
+                                    }
+                                }.awaitAll()
+                                .combine()
+                                .flatMap { attachments -> client.scanRecipes(credentials.sessionId, attachments) }
+                        }
                     }
                 result
-                    .onOk { summaries ->
-                        if (summaries.isEmpty()) {
+                    .onOk { job ->
+                        val saved = job.resultStrings().size
+                        if (saved == 0) {
                             showSnackbar("Couldn't find a recipe in those photos")
                         } else {
-                            showSnackbar("Saved ${summaries.size} recipe(s)")
+                            showSnackbar("Saved $saved recipe(s)")
                         }
                     }.onErr { error ->
                         log.e { "Failed to scan recipes: $error" }

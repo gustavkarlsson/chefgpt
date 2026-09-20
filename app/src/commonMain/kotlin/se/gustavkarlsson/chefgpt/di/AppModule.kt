@@ -19,6 +19,7 @@ import se.gustavkarlsson.chefgpt.chats.ConversationFactory
 import se.gustavkarlsson.chefgpt.chats.EventHistoryStore
 import se.gustavkarlsson.chefgpt.debug.Settings
 import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
+import se.gustavkarlsson.chefgpt.jobs.AwaitJobUseCase
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.readDeviceConfig
 import se.gustavkarlsson.chefgpt.recipes.ApiRecipeRepository
@@ -44,6 +45,7 @@ val singletonModule =
         single<ApiChatRepository>() bind ChatRepository::class
         single<ApiRecipeRepository>() bind RecipeRepository::class
         single<ApiConversationFactory>() bind ConversationFactory::class
+        single<AwaitJobUseCase>()
         single<IngredientEmojiResolver.Factory>()
         single<FileSystem> { SystemFileSystem }
         single<DeviceConfig> { readDeviceConfig() }

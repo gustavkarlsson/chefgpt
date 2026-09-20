@@ -29,9 +29,18 @@
         }
     },
     "response": {
-        "status": 204,
+        "status": 202,
         "headers": {
-            "Content-Length": "0"
+            "Content-Length": "0",
+            "Content-Type": "application/json"
+        },
+        "body": {
+            "type": "json",
+            "data": {
+                "id": "00000000-0000-0000-0000-000000000000",
+                "state": "working",
+                "createdAt": "2000-01-01T00:00:00Z"
+            }
         }
     }
 }
