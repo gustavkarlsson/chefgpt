@@ -22,14 +22,18 @@
         }
     },
     "response": {
-        "status": 200,
+        "status": 202,
         "headers": {
             "Content-Length": "0",
-            "Content-Type": "text/plain; charset=UTF-8"
+            "Content-Type": "application/json"
         },
         "body": {
-            "type": "text",
-            "data": "Pasta al pomodoro"
+            "type": "json",
+            "data": {
+                "id": "00000000-0000-0000-0000-000000000000",
+                "state": "working",
+                "createdAt": "2000-01-01T00:00:00Z"
+            }
         }
     }
 }

@@ -4,6 +4,8 @@ import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
+import com.github.michaelbull.result.map
+import com.github.michaelbull.result.mapError
 import com.github.michaelbull.result.onErr
 import com.github.michaelbull.result.onOk
 import kotlinx.coroutines.CancellationException
@@ -12,11 +14,14 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.transformWhile
 import se.gustavkarlsson.chefgpt.ChefGptClient
-import se.gustavkarlsson.chefgpt.ClientError
 import se.gustavkarlsson.chefgpt.api.ApiAction
 import se.gustavkarlsson.chefgpt.api.ApiEvent
+import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
+import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
+import se.gustavkarlsson.chefgpt.jobs.AwaitJobError
+import se.gustavkarlsson.chefgpt.jobs.AwaitJobUseCase
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 
 private val log = Logger.withTag("${ApiConversationFactory::class.simpleName}")
@@ -24,11 +29,12 @@ private val log = Logger.withTag("${ApiConversationFactory::class.simpleName}")
 class ApiConversationFactory(
     private val client: ChefGptClient,
     private val history: EventHistoryStore,
+    private val awaitJob: AwaitJobUseCase,
 ) : ConversationFactory {
     override fun create(
         sessionId: SessionId,
         chatId: ChatId,
-    ): Conversation = ApiConversation(sessionId, chatId, client, history)
+    ): Conversation = ApiConversation(sessionId, chatId, client, history, awaitJob)
 }
 
 private class ApiConversation(
@@ -36,9 +42,22 @@ private class ApiConversation(
     override val chatId: ChatId,
     private val client: ChefGptClient,
     private val history: EventHistoryStore,
+    private val awaitJob: AwaitJobUseCase,
 ) : Conversation {
-    override suspend fun sendAction(action: ApiAction): Result<Unit, ClientError> =
-        client.sendAction(sessionId, chatId, action)
+    override suspend fun sendAction(action: ApiAction): Result<Unit, AwaitJobError> =
+        when (action) {
+            is ApiUserJoinedChat -> {
+                client
+                    .joinChat(sessionId, chatId, action.joinId)
+                    .mapError { AwaitJobError.RequestFailed(it) }
+            }
+
+            is ApiUserSendsMessage -> {
+                awaitJob
+                    .await(sessionId) { client.sendAction(sessionId, chatId, action) }
+                    .map { Unit }
+            }
+        }
 
     override fun events(): Flow<Result<ApiEvent, EventStreamError>> =
         flow {

@@ -15,7 +15,6 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.sse.SSE
-import io.ktor.client.plugins.timeout
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.accept
 import io.ktor.client.request.basicAuth
@@ -28,7 +27,6 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.request.url
 import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
@@ -40,12 +38,12 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
-import se.gustavkarlsson.chefgpt.api.ApiAction
 import se.gustavkarlsson.chefgpt.api.ApiChat
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiIngredient
 import se.gustavkarlsson.chefgpt.api.ApiIngredientUpdate
+import se.gustavkarlsson.chefgpt.api.ApiJob
 import se.gustavkarlsson.chefgpt.api.ApiNewIngredient
 import se.gustavkarlsson.chefgpt.api.ApiRecipe
 import se.gustavkarlsson.chefgpt.api.ApiRecipeSummary
@@ -53,10 +51,14 @@ import se.gustavkarlsson.chefgpt.api.ApiRecipeUpdate
 import se.gustavkarlsson.chefgpt.api.ApiSaveSpoonacularRecipe
 import se.gustavkarlsson.chefgpt.api.ApiScanRecipe
 import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
+import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
+import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.api.FILE_NAME_HEADER
 import se.gustavkarlsson.chefgpt.api.IngredientId
+import se.gustavkarlsson.chefgpt.api.JobId
+import se.gustavkarlsson.chefgpt.api.JoinId
 import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.api.SpoonacularId
 import se.gustavkarlsson.chefgpt.debug.Settings
@@ -64,10 +66,6 @@ import se.gustavkarlsson.chefgpt.sessions.SessionId
 import se.gustavkarlsson.chefgpt.sessions.UserCredentials
 import se.gustavkarlsson.chefgpt.util.sseTyped
 import io.ktor.client.plugins.logging.Logger as KtorLogger
-
-// TODO perhaps put all agent work under a specific parent path and have them share a separate client?
-// How long to wait for a request that blocks while an agent runs on the server.
-private const val AGENT_REQUEST_TIMEOUT_MS = 60_000L
 
 private val log = Logger.withTag("${ChefGptClient::class.simpleName}")
 
@@ -138,43 +136,33 @@ class ChefGptClient(
             readSafe = { body() },
         )
 
-    // Uploads the image to the ingredient scanner. The server blocks until the
-    // scanning agent has produced a result, so this call can take a while.
-    // Returns how many ingredients were found in the image.
+    // Starts an ingredient scan and returns the job to poll for its result.
     suspend fun scanIngredients(
         sessionId: SessionId,
         data: Path,
         contentType: ContentType,
-    ): Result<Int, ClientError> =
+    ): Result<ApiJob, ClientError> =
         request(
             send = { baseUrl ->
                 post("$baseUrl/ingredients/scan") {
                     sessionIdHeader(sessionId)
-                    timeout {
-                        requestTimeoutMillis = AGENT_REQUEST_TIMEOUT_MS
-                    }
                     contentType(contentType)
-                    accept(ContentType.Text.Plain)
+                    accept(ContentType.Application.Json)
                     setBody(data.byteReadChannel())
                 }
             },
-            readSafe = { bodyAsText().toInt() },
+            readSafe = { body() },
         )
 
-    // Uploads the images to the recipe scanner. The server blocks until the
-    // scanning agent has produced a result, so this call can take a while.
-    // Returns the saved recipes, so the caller can report how many were saved.
+    // Starts a recipe scan and returns the job to poll for its result.
     suspend fun scanRecipes(
         sessionId: SessionId,
         attachments: List<ApiUploadedFile>,
-    ): Result<List<ApiRecipeSummary>, ClientError> =
+    ): Result<ApiJob, ClientError> =
         request(
             send = { baseUrl ->
                 post("$baseUrl/recipes/scan") {
                     sessionIdHeader(sessionId)
-                    timeout {
-                        requestTimeoutMillis = AGENT_REQUEST_TIMEOUT_MS
-                    }
                     contentType(ContentType.Application.Json)
                     accept(ContentType.Application.Json)
                     setBody(ApiScanRecipe(attachments))
@@ -413,20 +401,53 @@ class ChefGptClient(
             readSafe = { body<ApiRecipe>() },
         )
 
+    // Sends a message that starts the chat agent, and returns the job to poll for completion.
     suspend fun sendAction(
         sessionId: SessionId,
         chatId: ChatId,
-        action: ApiAction,
+        message: ApiUserSendsMessage,
+    ): Result<ApiJob, ClientError> =
+        request(
+            send = { baseUrl ->
+                post("$baseUrl/chats/$chatId/actions") {
+                    sessionIdHeader(sessionId)
+                    contentType(ContentType.Application.Json)
+                    accept(ContentType.Application.Json)
+                    setBody(message)
+                }
+            },
+            readSafe = { body() },
+        )
+
+    // Joins a chat. This starts no agent, so it completes synchronously.
+    suspend fun joinChat(
+        sessionId: SessionId,
+        chatId: ChatId,
+        joinId: JoinId,
     ): Result<Unit, ClientError> =
         request(
             send = { baseUrl ->
                 post("$baseUrl/chats/$chatId/actions") {
                     sessionIdHeader(sessionId)
                     contentType(ContentType.Application.Json)
-                    setBody(action)
+                    setBody(ApiUserJoinedChat(joinId))
                 }
             },
             readSafe = {},
+        )
+
+    suspend fun getJob(
+        sessionId: SessionId,
+        jobId: JobId,
+    ): Result<ApiJob, ClientError> =
+        request(
+            send = { baseUrl ->
+                get("$baseUrl/jobs/$jobId") {
+                    sessionIdHeader(sessionId)
+                    accept(ContentType.Application.Json)
+                }
+            },
+            readSafe = { body() },
         )
 
     // Runs the request, turning any failure — connection problems included —

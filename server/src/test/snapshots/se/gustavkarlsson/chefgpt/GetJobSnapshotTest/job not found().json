@@ -1,20 +1,15 @@
 {
     "request": {
-        "method": "POST",
-        "url": "http://localhost/ingredients/scan",
+        "method": "GET",
+        "url": "http://localhost/jobs/00000000-0000-0000-0000-000000000000",
         "headers": {
             "Session-Id": "00000000000000000000000000000000",
             "Accept": "application/json",
-            "Content-Type": "image/jpeg",
             "Content-Length": "0"
-        },
-        "body": {
-            "type": "binary-base64",
-            "data": "AQID"
         }
     },
     "response": {
-        "status": 202,
+        "status": 404,
         "headers": {
             "Content-Length": "0",
             "Content-Type": "application/json"
@@ -22,9 +17,8 @@
         "body": {
             "type": "json",
             "data": {
-                "id": "00000000-0000-0000-0000-000000000000",
-                "state": "working",
-                "createdAt": "2000-01-01T00:00:00Z"
+                "type": "job-not-found",
+                "message": "Job not found"
             }
         }
     }
