@@ -39,6 +39,7 @@ import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.serialization.json.JsonElement
+import se.gustavkarlsson.chefgpt.api.ApiAction
 import se.gustavkarlsson.chefgpt.api.ApiChat
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiEvent
@@ -414,7 +415,7 @@ class ChefGptClient(
                     sessionIdHeader(sessionId)
                     contentType(ContentType.Application.Json)
                     accept(ContentType.Application.Json)
-                    setBody(message)
+                    setBody<ApiAction>(message)
                 }
             },
             readSafe = { body() },
@@ -431,7 +432,7 @@ class ChefGptClient(
                 post("$baseUrl/chats/$chatId/actions") {
                     sessionIdHeader(sessionId)
                     contentType(ContentType.Application.Json)
-                    setBody(ApiUserJoinedChat(joinId))
+                    setBody<ApiAction>(ApiUserJoinedChat(joinId))
                 }
             },
             readSafe = {},
