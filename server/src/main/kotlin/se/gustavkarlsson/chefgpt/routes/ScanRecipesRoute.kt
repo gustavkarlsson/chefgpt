@@ -9,11 +9,11 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
 import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.agent.RecipeScanAgent
-import se.gustavkarlsson.chefgpt.agent.toDomain
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiScanRecipe
 import se.gustavkarlsson.chefgpt.jobs.JobRunner
 import se.gustavkarlsson.chefgpt.requireSession
+import se.gustavkarlsson.chefgpt.toDomain
 
 fun Route.scanRecipesRoute() {
     post("/recipes/scan") {

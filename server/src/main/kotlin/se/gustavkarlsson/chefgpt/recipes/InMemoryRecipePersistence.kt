@@ -1,5 +1,4 @@
 package se.gustavkarlsson.chefgpt.recipes
-
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.updateAndGet
 import se.gustavkarlsson.chefgpt.api.ApiRecipe
@@ -7,6 +6,7 @@ import se.gustavkarlsson.chefgpt.api.ApiRecipeSummary
 import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.api.toSummary
 import se.gustavkarlsson.chefgpt.auth.UserId
+import se.gustavkarlsson.chefgpt.toApiRecipe
 import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryRecipePersistence(

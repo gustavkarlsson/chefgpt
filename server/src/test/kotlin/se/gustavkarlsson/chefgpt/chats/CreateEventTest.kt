@@ -1,5 +1,4 @@
 package se.gustavkarlsson.chefgpt.chats
-
 import ai.koog.prompt.message.AttachmentContent
 import ai.koog.prompt.message.AttachmentSource
 import ai.koog.prompt.message.Message
@@ -7,6 +6,7 @@ import ai.koog.prompt.message.MessagePart
 import kotlinx.coroutines.test.runTest
 import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
+import se.gustavkarlsson.chefgpt.createEvent
 import se.gustavkarlsson.chefgpt.files.AttachmentTextLoader
 import kotlin.test.Test
 import kotlin.test.assertEquals

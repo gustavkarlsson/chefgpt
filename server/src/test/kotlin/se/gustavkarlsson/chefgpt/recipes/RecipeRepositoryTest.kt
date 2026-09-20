@@ -1,5 +1,4 @@
 package se.gustavkarlsson.chefgpt.recipes
-
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import se.gustavkarlsson.chefgpt.api.ApiNutrient
@@ -9,6 +8,7 @@ import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.api.SpoonacularId
 import se.gustavkarlsson.chefgpt.api.toSummary
 import se.gustavkarlsson.chefgpt.auth.UserId
+import se.gustavkarlsson.chefgpt.toApiRecipe
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

@@ -10,13 +10,13 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
 import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.agent.IngredientScanAgent
-import se.gustavkarlsson.chefgpt.agent.toDomain
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.files.FileKind
 import se.gustavkarlsson.chefgpt.files.FileUploader
 import se.gustavkarlsson.chefgpt.files.fileKindOrNull
 import se.gustavkarlsson.chefgpt.jobs.JobRunner
 import se.gustavkarlsson.chefgpt.requireSession
+import se.gustavkarlsson.chefgpt.toDomain
 
 fun Route.scanIngredientsRoute() {
     post("/ingredients/scan") {
