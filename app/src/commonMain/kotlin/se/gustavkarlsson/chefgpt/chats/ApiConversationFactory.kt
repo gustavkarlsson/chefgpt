@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.transformWhile
 import se.gustavkarlsson.chefgpt.ChefGptClient
+import se.gustavkarlsson.chefgpt.UnitSerializer
 import se.gustavkarlsson.chefgpt.api.ApiAction
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
@@ -54,7 +55,7 @@ private class ApiConversation(
 
             is ApiUserSendsMessage -> {
                 awaitJob
-                    .await(sessionId) { client.sendAction(sessionId, chatId, action) }
+                    .await(sessionId, UnitSerializer) { client.sendAction(sessionId, chatId, action) }
                     .map { Unit }
             }
         }

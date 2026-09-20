@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import org.koin.core.annotation.InjectedParam
 import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.DeviceConfig
@@ -24,7 +26,6 @@ import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatarModel
 import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
 import se.gustavkarlsson.chefgpt.ingredients.IngredientWords
 import se.gustavkarlsson.chefgpt.jobs.AwaitJobUseCase
-import se.gustavkarlsson.chefgpt.jobs.resultStrings
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
 import se.gustavkarlsson.chefgpt.sessions.SessionId
@@ -291,8 +292,9 @@ class IngredientsViewModel(
                 awaitJob
                     .await(
                         sessionId,
+                        ListSerializer(String.serializer()),
                     ) { client.scanIngredients(sessionId, image, ContentType.defaultForFilePath(image.name)) }
-                    .onOk { job -> log.i { "Scan found ${job.resultStrings().size} ingredient(s)" } }
+                    .onOk { job -> log.i { "Scan found ${job.result.orEmpty().size} ingredient(s)" } }
                     .onErr {
                         log.e { "Failed to scan ingredients: $it" }
                         showSnackbar("Couldn't scan ingredients from the image", isError = true)

@@ -6,9 +6,9 @@ import se.gustavkarlsson.chefgpt.api.ApiJob
 import se.gustavkarlsson.chefgpt.api.JobId
 
 interface JobRepository {
-    suspend fun create(): ApiJob
+    suspend fun create(): ApiJob<JsonElement>
 
-    suspend operator fun get(jobId: JobId): ApiJob?
+    suspend operator fun get(jobId: JobId): ApiJob<JsonElement>?
 
     suspend fun succeed(
         jobId: JobId,

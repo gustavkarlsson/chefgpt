@@ -6,23 +6,17 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.launch
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import org.koin.ktor.ext.get
-import org.slf4j.LoggerFactory
 import se.gustavkarlsson.chefgpt.agent.IngredientScanAgent
 import se.gustavkarlsson.chefgpt.agent.toDomain
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.files.FileKind
 import se.gustavkarlsson.chefgpt.files.FileUploader
 import se.gustavkarlsson.chefgpt.files.fileKindOrNull
-import se.gustavkarlsson.chefgpt.jobs.AgentJobScope
-import se.gustavkarlsson.chefgpt.jobs.JobRepository
+import se.gustavkarlsson.chefgpt.jobs.JobRunner
 import se.gustavkarlsson.chefgpt.requireSession
-
-private val logger = LoggerFactory.getLogger("ScanIngredientsRoute")
 
 fun Route.scanIngredientsRoute() {
     post("/ingredients/scan") {
@@ -41,7 +35,6 @@ fun Route.scanIngredientsRoute() {
         }
         val fileUploader = get<FileUploader>()
         val scanAgent = get<IngredientScanAgent>()
-        val jobRepository = get<JobRepository>()
 
         val file = fileUploader.uploadFile(call.receive(), contentType)
         if (file == null) {
@@ -49,18 +42,10 @@ fun Route.scanIngredientsRoute() {
             return@post
         }
 
-        val job = jobRepository.create()
-        get<AgentJobScope>().launch {
-            try {
-                val added = scanAgent.scan(userId, listOf(file.toDomain()))
-                jobRepository.succeed(job.id, JsonArray(added.map { JsonPrimitive(it) }))
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                logger.error("Ingredient scan failed", e)
-                jobRepository.fail(job.id, ApiError("agent-failed", e.message ?: "Agent failed", userMessage = null))
+        val job =
+            get<JobRunner>().run("Ingredient scan", ListSerializer(String.serializer())) {
+                scanAgent.scan(userId, listOf(file.toDomain()))
             }
-        }
         call.respond(HttpStatusCode.Accepted, job)
     }
 }
