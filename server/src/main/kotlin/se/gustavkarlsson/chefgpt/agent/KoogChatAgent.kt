@@ -18,13 +18,13 @@ import se.gustavkarlsson.chefgpt.files.sharedAttachments
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 import se.gustavkarlsson.chefgpt.ingredients.toTools
 import se.gustavkarlsson.chefgpt.recipes.RecipeLookup
-import se.gustavkarlsson.chefgpt.recipes.RecipeStore
+import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 import se.gustavkarlsson.chefgpt.recipes.toTools
 
 class KoogChatAgent(
     private val model: LLModel,
     private val ingredientStore: IngredientStore,
-    private val recipeStore: RecipeStore,
+    private val recipeRepository: RecipeRepository,
     private val recipeLookup: RecipeLookup,
     private val imageCropper: ImageCropper,
     private val chatRepository: ChatRepository,
@@ -45,7 +45,7 @@ class KoogChatAgent(
                     ToolRegistry {
                         // Scoped to the user and chat, in addition to globally available tools
                         tools(ingredientStore.toTools(userId))
-                        tools(recipeStore.toTools(userId, recipeLookup))
+                        tools(recipeRepository.toTools(userId, recipeLookup))
                         tools(ChatNamingTools(chatRepository, eventRepository, userId, chatId))
                         tools(UploadedFileTools(eventRepository, chatId))
                         tools(

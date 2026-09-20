@@ -26,7 +26,7 @@ import se.gustavkarlsson.chefgpt.chats.EventRepository
 import se.gustavkarlsson.chefgpt.files.ImageCropper
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 import se.gustavkarlsson.chefgpt.recipes.RecipeLookup
-import se.gustavkarlsson.chefgpt.recipes.RecipeStore
+import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 
 private const val CHAT_AGENT = "chat"
 private const val INGREDIENT_SCAN_AGENT = "ingredientScan"
@@ -44,7 +44,7 @@ fun Application.createAiAgentModule() =
             when (val type = config.property("bindings.agent").getString()) {
                 "llm" -> {
                     val ingredientStore = get<IngredientStore>()
-                    val recipeStore = get<RecipeStore>()
+                    val recipeRepository = get<RecipeRepository>()
                     val recipeLookup = get<RecipeLookup>()
                     val imageCropper = get<ImageCropper>()
                     val chatRepository = get<ChatRepository>()
@@ -52,7 +52,7 @@ fun Application.createAiAgentModule() =
                     KoogChatAgent(
                         aiConfig.agentModel(CHAT_AGENT),
                         ingredientStore,
-                        recipeStore,
+                        recipeRepository,
                         recipeLookup,
                         imageCropper,
                         chatRepository,
@@ -98,14 +98,14 @@ fun Application.createAiAgentModule() =
                     KoogRecipeScanAgent(
                         get<PromptExecutor>(),
                         aiConfig.agentModel(RECIPE_SCAN_AGENT),
-                        get<RecipeStore>(),
+                        get<RecipeRepository>(),
                         get<RecipeLookup>(),
                         get<ImageCropper>(),
                     )
                 }
 
                 "fake" -> {
-                    FakeRecipeScanAgent(get<RecipeStore>())
+                    FakeRecipeScanAgent(get<RecipeRepository>())
                 }
 
                 else -> {

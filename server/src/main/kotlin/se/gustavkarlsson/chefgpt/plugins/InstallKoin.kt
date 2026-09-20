@@ -15,7 +15,7 @@ import se.gustavkarlsson.chefgpt.setup.createJobModule
 import se.gustavkarlsson.chefgpt.setup.createJsonModule
 import se.gustavkarlsson.chefgpt.setup.createRecipeClientModule
 import se.gustavkarlsson.chefgpt.setup.createRecipeLookupModule
-import se.gustavkarlsson.chefgpt.setup.createRecipeStoreModule
+import se.gustavkarlsson.chefgpt.setup.createRecipeRepositoryModule
 import se.gustavkarlsson.chefgpt.setup.createSessionStorageModule
 import se.gustavkarlsson.chefgpt.setup.createUserRepositoryModule
 
@@ -32,7 +32,7 @@ fun Application.installKoin(extraKoinModules: List<Module> = emptyList()) {
             createSessionStorageModule(),
             createRecipeClientModule(),
             createRecipeLookupModule(),
-            createRecipeStoreModule(),
+            createRecipeRepositoryModule(),
             createUserRepositoryModule(),
             createIngredientStoreModule(),
             createJobModule(),

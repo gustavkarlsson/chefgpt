@@ -48,33 +48,18 @@ insertNutrient:
 INSERT INTO recipe_nutrient (recipe_id, position, name, amount, unit)
 VALUES (?, ?, ?, ?, ?);
 
-updateByUserIdAndId:
+updateAllByUserIdAndId:
 UPDATE recipe
-SET title               = COALESCE(:title, title),
-    image_url           = COALESCE(:imageUrl, image_url),
-    description         = COALESCE(:description, description),
-    preparation_minutes = COALESCE(:preparationMinutes, preparation_minutes),
-    cooking_minutes     = COALESCE(:cookingMinutes, cooking_minutes),
-    total_minutes       = COALESCE(:totalMinutes, total_minutes),
-    min_servings        = COALESCE(:minServings, min_servings),
-    max_servings        = COALESCE(:maxServings, max_servings)
-WHERE user_id = :userId AND id = :id
-RETURNING id;
-
-selectIdByUserIdAndModifiedFrom:
-SELECT id
-FROM recipe
-WHERE user_id = ? AND modified_from = ?;
-
-clearModifiedFromByUserIdAndId:
-UPDATE recipe
-SET modified_from = NULL
-WHERE user_id = :userId AND id = :id
-RETURNING id;
-
-setFavoriteByUserIdAndId:
-UPDATE recipe
-SET favorite = :favorite
+SET title               = :title,
+    image_url           = :imageUrl,
+    description         = :description,
+    preparation_minutes = :preparationMinutes,
+    cooking_minutes     = :cookingMinutes,
+    total_minutes       = :totalMinutes,
+    min_servings        = :minServings,
+    max_servings        = :maxServings,
+    favorite            = :favorite,
+    modified_from       = :modifiedFrom
 WHERE user_id = :userId AND id = :id
 RETURNING id;
 

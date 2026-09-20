@@ -8,12 +8,12 @@ import io.ktor.server.util.getOrFail
 import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.RecipeId
-import se.gustavkarlsson.chefgpt.recipes.RecipeStore
+import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.overwriteOriginalRecipeRoute() {
     post("/recipes/{id}/overwrite-original") {
-        val recipeStore = get<RecipeStore>()
+        val recipeRepository = get<RecipeRepository>()
         val userId = call.requireSession().user.id
         val id =
             RecipeId.parseOrNull(call.parameters.getOrFail("id"))
@@ -22,7 +22,7 @@ fun Route.overwriteOriginalRecipeRoute() {
                     ApiError("invalid-recipe-id", "Invalid recipe id", userMessage = null),
                 )
         val recipe =
-            recipeStore.getRecipe(userId, id)
+            recipeRepository.getRecipe(userId, id)
                 ?: return@post call.respond(
                     HttpStatusCode.NotFound,
                     ApiError("recipe-not-found", "Recipe not found", userMessage = null),
@@ -39,7 +39,7 @@ fun Route.overwriteOriginalRecipeRoute() {
         }
 
         val overwritten =
-            recipeStore.overwriteOriginal(userId, id)
+            recipeRepository.overwriteOriginal(userId, id)
                 ?: return@post call.respond(
                     HttpStatusCode.NotFound,
                     ApiError("recipe-not-found", "Recipe not found", userMessage = null),

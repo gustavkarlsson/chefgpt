@@ -15,7 +15,7 @@ import se.gustavkarlsson.chefgpt.api.ApiRecipeUpdate
 import se.gustavkarlsson.chefgpt.api.ApiSaveSpoonacularRecipe
 import se.gustavkarlsson.chefgpt.api.SpoonacularId
 import se.gustavkarlsson.chefgpt.recipes.RecipeUpdate
-import se.gustavkarlsson.chefgpt.recipes.TestRecipeStore
+import se.gustavkarlsson.chefgpt.recipes.TestRecipeRepository
 import se.gustavkarlsson.slapshot.junit5.JUnit5SnapshotContext
 import se.gustavkarlsson.slapshot.junit5.SnapshotExtension
 
@@ -24,7 +24,7 @@ private const val MISSING_ID = "11111111-1111-1111-1111-111111111111"
 @ExtendWith(SnapshotExtension::class)
 class RecipesSnapshotTest {
     private lateinit var snapshotContext: JUnit5SnapshotContext
-    private val recipeStore = TestRecipeStore()
+    private val recipeRepository = TestRecipeRepository()
 
     @BeforeEach
     fun initSnapshotContext(snapshotContext: JUnit5SnapshotContext) {
@@ -143,10 +143,10 @@ class RecipesSnapshotTest {
 
     @Test
     fun `overwrite original recipe`() =
-        snapshotTestApplication(snapshotContext, extraKoinModules = listOf(recipeStore.koinModule)) { client ->
+        snapshotTestApplication(snapshotContext, extraKoinModules = listOf(recipeRepository.koinModule)) { client ->
             val sessionId = registerUser()
             val recipe = saveRecipe(sessionId, SpoonacularId(716429L))
-            val modified = recipeStore.modifyRecipe(recipe.id, RecipeUpdate(title = "Vegetarian carbonara"))
+            val modified = recipeRepository.modifyRecipe(recipe.id, RecipeUpdate(title = "Vegetarian carbonara"))
 
             client.post("/recipes/${modified.id}/overwrite-original") {
                 header("Session-Id", sessionId)
@@ -176,10 +176,10 @@ class RecipesSnapshotTest {
 
     @Test
     fun `save recipe as copy`() =
-        snapshotTestApplication(snapshotContext, extraKoinModules = listOf(recipeStore.koinModule)) { client ->
+        snapshotTestApplication(snapshotContext, extraKoinModules = listOf(recipeRepository.koinModule)) { client ->
             val sessionId = registerUser()
             val recipe = saveRecipe(sessionId, SpoonacularId(716429L))
-            val modified = recipeStore.modifyRecipe(recipe.id, RecipeUpdate(title = "Vegetarian carbonara"))
+            val modified = recipeRepository.modifyRecipe(recipe.id, RecipeUpdate(title = "Vegetarian carbonara"))
 
             client.post("/recipes/${modified.id}/save-as-copy") {
                 header("Session-Id", sessionId)

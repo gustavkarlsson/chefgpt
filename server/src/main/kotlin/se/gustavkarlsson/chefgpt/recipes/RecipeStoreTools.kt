@@ -15,7 +15,7 @@ import kotlin.time.Duration.Companion.minutes
 
 @Suppress("unused")
 class RecipeStoreTools(
-    private val store: RecipeStore,
+    private val store: RecipeRepository,
     private val lookup: RecipeLookup,
     private val userId: UserId,
 ) : ToolSet {
@@ -197,7 +197,7 @@ class RecipeStoreTools(
             ?: error("No modified recipe found with ID $recipeId")
 }
 
-fun RecipeStore.toTools(
+fun RecipeRepository.toTools(
     userId: UserId,
     lookup: RecipeLookup,
 ): ToolSet = RecipeStoreTools(this, lookup, userId)

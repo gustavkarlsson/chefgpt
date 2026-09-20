@@ -9,12 +9,12 @@ import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiSaveSpoonacularRecipe
 import se.gustavkarlsson.chefgpt.recipes.RecipeLookup
-import se.gustavkarlsson.chefgpt.recipes.RecipeStore
+import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.saveRecipeRoute() {
     post("/recipes") {
-        val recipeStore = get<RecipeStore>()
+        val recipeRepository = get<RecipeRepository>()
         val recipeLookup = get<RecipeLookup>()
         val userId = call.requireSession().user.id
         val spoonacularId = call.receive<ApiSaveSpoonacularRecipe>().spoonacularId
@@ -26,7 +26,7 @@ fun Route.saveRecipeRoute() {
                     ApiError("recipe-not-found", "Recipe not found", userMessage = null),
                 )
 
-        val saved = recipeStore.saveRecipe(userId, lookedUp)
+        val saved = recipeRepository.saveRecipe(userId, lookedUp)
         call.respond(HttpStatusCode.Created, saved)
     }
 }
