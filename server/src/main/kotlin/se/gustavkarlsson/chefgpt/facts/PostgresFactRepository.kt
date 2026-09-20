@@ -15,7 +15,7 @@ class PostgresFactRepository(
                 factQueries
                     .selectByUserId(userId.value.toJavaUuid())
                     .executeAsOneOrNull()
-            }?.let { json.decodeFromString<UserFacts>(it) }
+            }?.let { json.decodeFromString<UserFacts>(it) } // TODO Consider more SQL-structured facts
             ?: UserFacts.UNKNOWN
 
     override suspend fun updateFacts(

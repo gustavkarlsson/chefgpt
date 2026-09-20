@@ -26,7 +26,7 @@ class FactRepositoryTools(
     @Tool
     @LLMDescription("Remember the user's unit system. Call this when they state whether they use metric or imperial.")
     suspend fun setUnitSystem(
-        @LLMDescription("The unit system to use: METRIC or IMPERIAL.")
+        @LLMDescription("The unit system to use: Metric or Imperial.")
         unitSystem: UnitSystem,
     ): UserFacts = repository.updateFacts(userId, UserFactsUpdate(unitSystem = unitSystem))
 
@@ -35,7 +35,7 @@ class FactRepositoryTools(
         "Remember how the user prefers ingredient amounts to be expressed. Call this when they state whether they prefer weight or volume.",
     )
     suspend fun setMeasurement(
-        @LLMDescription("How to express ingredient amounts: WEIGHT or VOLUME.")
+        @LLMDescription("How to express ingredient amounts: Weight or Volume.")
         measurement: Measurement,
     ): UserFacts = repository.updateFacts(userId, UserFactsUpdate(measurement = measurement))
 
@@ -44,7 +44,7 @@ class FactRepositoryTools(
         "Remember the user's temperature unit. Call this when they state whether they use celsius or fahrenheit.",
     )
     suspend fun setTemperature(
-        @LLMDescription("The temperature unit to use: CELSIUS or FAHRENHEIT.")
+        @LLMDescription("The temperature unit to use: Celsius or Fahrenheit.")
         temperature: TemperatureUnit,
     ): UserFacts = repository.updateFacts(userId, UserFactsUpdate(temperature = temperature))
 
