@@ -21,25 +21,25 @@ class FactRepositoryToolsTest {
     @Test
     fun `setUnitSystem remembers the unit system`() =
         runTest {
-            tools.setUnitSystem(UnitSystem.IMPERIAL)
+            tools.setUnitSystem(UnitSystem.Imperial)
 
-            assertEquals(UnitSystem.IMPERIAL, repository.getFacts(userId).unitSystem)
+            assertEquals(UnitSystem.Imperial, repository.getFacts(userId).unitSystem)
         }
 
     @Test
     fun `setMeasurement remembers the measurement`() =
         runTest {
-            tools.setMeasurement(Measurement.WEIGHT)
+            tools.setMeasurement(Measurement.Weight)
 
-            assertEquals(Measurement.WEIGHT, repository.getFacts(userId).measurement)
+            assertEquals(Measurement.Weight, repository.getFacts(userId).measurement)
         }
 
     @Test
     fun `setTemperature remembers the temperature unit`() =
         runTest {
-            tools.setTemperature(TemperatureUnit.FAHRENHEIT)
+            tools.setTemperature(TemperatureUnit.Fahrenheit)
 
-            assertEquals(TemperatureUnit.FAHRENHEIT, repository.getFacts(userId).temperature)
+            assertEquals(TemperatureUnit.Fahrenheit, repository.getFacts(userId).temperature)
         }
 
     @Test

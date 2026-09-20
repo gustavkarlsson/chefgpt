@@ -21,17 +21,17 @@ class InMemoryFactRepositoryTest {
     @Test
     fun `updateFacts returns the updated facts`() =
         runTest {
-            val updated = repository.updateFacts(userId, UserFactsUpdate(unitSystem = UnitSystem.METRIC))
+            val updated = repository.updateFacts(userId, UserFactsUpdate(unitSystem = UnitSystem.Metric))
 
-            assertEquals(UnitSystem.METRIC, updated.unitSystem)
+            assertEquals(UnitSystem.Metric, updated.unitSystem)
         }
 
     @Test
     fun `updateFacts persists facts`() =
         runTest {
-            repository.updateFacts(userId, UserFactsUpdate(unitSystem = UnitSystem.METRIC))
+            repository.updateFacts(userId, UserFactsUpdate(unitSystem = UnitSystem.Metric))
 
-            assertEquals(UnitSystem.METRIC, repository.getFacts(userId).unitSystem)
+            assertEquals(UnitSystem.Metric, repository.getFacts(userId).unitSystem)
         }
 
     @Test
@@ -46,7 +46,7 @@ class InMemoryFactRepositoryTest {
     @Test
     fun `facts are independent per user`() =
         runTest {
-            repository.updateFacts(userId, UserFactsUpdate(unitSystem = UnitSystem.METRIC))
+            repository.updateFacts(userId, UserFactsUpdate(unitSystem = UnitSystem.Metric))
 
             assertEquals(UserFacts.UNKNOWN, repository.getFacts(otherUserId))
         }

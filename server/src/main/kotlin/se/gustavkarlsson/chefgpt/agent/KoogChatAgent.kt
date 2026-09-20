@@ -40,6 +40,9 @@ class KoogChatAgent(
         userId: UserId,
         chatId: ChatId,
     ) {
+        // TODO Migrate to the same pattern as the scan agents: build the prompt
+        //  manually (system + facts + event history) and run the strategy,
+        //  dropping the ktor plugin features and the userId-as-input.
         val agent =
             aiAgent(
                 strategy = findRecipeStrategy(),
@@ -72,6 +75,6 @@ class KoogChatAgent(
                         )
                     },
             )
-        agent.run(Unit, runId(chatId, userId))
+        agent.run(userId, chatId.value.toString())
     }
 }

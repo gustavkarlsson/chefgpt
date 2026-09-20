@@ -2,6 +2,7 @@ package se.gustavkarlsson.chefgpt.agent
 
 import ai.koog.agents.core.agent.config.AIAgentConfig
 import ai.koog.agents.core.agent.context.AIAgentContext
+import ai.koog.agents.core.agent.context.agentInput
 import ai.koog.agents.core.agent.entity.AIAgentStorageKey
 import ai.koog.agents.core.agent.entity.createStorageKey
 import ai.koog.agents.core.feature.AIAgentGraphFeature
@@ -41,7 +42,7 @@ class UserFactMemory {
         }
 
         private suspend fun AIAgentContext.injectFacts(repository: FactRepository) {
-            val facts = repository.getFacts(runId.userIdFromRunId())
+            val facts = repository.getFacts(agentInput())
             llm.writeSession {
                 appendPrompt {
                     system(facts.toPromptText())

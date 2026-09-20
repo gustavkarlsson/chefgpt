@@ -9,19 +9,19 @@ class UserFactsTest {
 
     @Test
     fun `applyUpdate sets a scalar fact`() {
-        val updated = unknown.applyUpdate(UserFactsUpdate(unitSystem = UnitSystem.METRIC))
+        val updated = unknown.applyUpdate(UserFactsUpdate(unitSystem = UnitSystem.Metric))
 
-        assertEquals(UnitSystem.METRIC, updated.unitSystem)
+        assertEquals(UnitSystem.Metric, updated.unitSystem)
     }
 
     @Test
     fun `applyUpdate leaves unspecified facts unchanged`() {
-        val current = unknown.applyUpdate(UserFactsUpdate(unitSystem = UnitSystem.METRIC))
+        val current = unknown.applyUpdate(UserFactsUpdate(unitSystem = UnitSystem.Metric))
 
-        val updated = current.applyUpdate(UserFactsUpdate(measurement = Measurement.WEIGHT))
+        val updated = current.applyUpdate(UserFactsUpdate(measurement = Measurement.Weight))
 
-        assertEquals(UnitSystem.METRIC, updated.unitSystem)
-        assertEquals(Measurement.WEIGHT, updated.measurement)
+        assertEquals(UnitSystem.Metric, updated.unitSystem)
+        assertEquals(Measurement.Weight, updated.measurement)
     }
 
     @Test
@@ -78,9 +78,9 @@ class UserFactsTest {
         val facts =
             UserFacts(
                 preferredName = "Gustav",
-                unitSystem = UnitSystem.METRIC,
-                measurement = Measurement.WEIGHT,
-                temperature = TemperatureUnit.CELSIUS,
+                unitSystem = UnitSystem.Metric,
+                measurement = Measurement.Weight,
+                temperature = TemperatureUnit.Celsius,
                 dietary = setOf("vegan", "gluten-free"),
             )
 

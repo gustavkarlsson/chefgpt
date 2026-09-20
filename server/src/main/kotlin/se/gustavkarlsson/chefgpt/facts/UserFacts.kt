@@ -4,20 +4,20 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 enum class UnitSystem {
-    METRIC,
-    IMPERIAL,
+    Metric,
+    Imperial,
 }
 
 @Serializable
 enum class Measurement {
-    WEIGHT,
-    VOLUME,
+    Weight,
+    Volume,
 }
 
 @Serializable
 enum class TemperatureUnit {
-    CELSIUS,
-    FAHRENHEIT,
+    Celsius,
+    Fahrenheit,
 }
 
 /**
