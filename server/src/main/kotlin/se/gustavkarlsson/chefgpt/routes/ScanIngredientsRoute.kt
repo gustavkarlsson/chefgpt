@@ -9,7 +9,7 @@ import io.ktor.server.routing.post
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
 import org.koin.ktor.ext.get
-import se.gustavkarlsson.chefgpt.agent.IngredientScanAgent
+import se.gustavkarlsson.chefgpt.agent.scaningredients.ScanIngredientsAgent
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.files.FileKind
 import se.gustavkarlsson.chefgpt.files.FileUploader
@@ -34,7 +34,7 @@ fun Route.scanIngredientsRoute() {
             return@post
         }
         val fileUploader = get<FileUploader>()
-        val scanAgent = get<IngredientScanAgent>()
+        val scanAgent = get<ScanIngredientsAgent>()
 
         val file = fileUploader.uploadFile(call.receive(), contentType)
         if (file == null) {

@@ -3,6 +3,8 @@ package se.gustavkarlsson.chefgpt.agent
 import ai.koog.agents.core.tools.annotations.LLMDescription
 import ai.koog.agents.core.tools.annotations.Tool
 import ai.koog.agents.core.tools.reflect.ToolSet
+import se.gustavkarlsson.chefgpt.agent.describeimage.DescribeImagesAgent
+import se.gustavkarlsson.chefgpt.agent.scaningredients.ScanIngredientsAgent
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.chats.EventRepository
@@ -14,8 +16,8 @@ class ImageScanTools(
     private val chatId: ChatId,
     private val userId: UserId,
     private val recipeScanAgent: RecipeScanAgent,
-    private val ingredientScanAgent: IngredientScanAgent,
-    private val describeImageAgent: DescribeImageAgent,
+    private val scanIngredientsAgent: ScanIngredientsAgent,
+    private val describeImagesAgent: DescribeImagesAgent,
 ) : ToolSet {
     @Tool
     @LLMDescription(
@@ -26,7 +28,7 @@ class ImageScanTools(
     suspend fun describePhotos(
         @LLMDescription("The photo files to describe.")
         files: List<UploadedFile>,
-    ): List<String> = describeImageAgent.scan(userId, files)
+    ): List<String> = describeImagesAgent.scan(files)
 
     @Tool
     @LLMDescription(
@@ -36,7 +38,7 @@ class ImageScanTools(
     suspend fun scanIngredientsInPhotos(
         @LLMDescription("The photo files to scan.")
         files: List<UploadedFile>,
-    ): List<String> = ingredientScanAgent.scan(userId, files)
+    ): List<String> = scanIngredientsAgent.scan(userId, files)
 
     @Tool
     @LLMDescription(

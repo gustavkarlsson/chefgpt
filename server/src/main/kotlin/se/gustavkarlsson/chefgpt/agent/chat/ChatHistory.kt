@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt.agent
+package se.gustavkarlsson.chefgpt.agent.chat
 
 import ai.koog.prompt.message.AttachmentSource
 import ai.koog.prompt.message.Message

@@ -1,9 +1,9 @@
-package se.gustavkarlsson.chefgpt.agent
+package se.gustavkarlsson.chefgpt.agent.scaningredients
 
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.files.UploadedFile
 
-interface IngredientScanAgent {
+interface ScanIngredientsAgent {
     suspend fun scan(
         userId: UserId,
         images: List<UploadedFile>,

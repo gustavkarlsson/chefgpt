@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt.agent
+package se.gustavkarlsson.chefgpt.agent.chat
 
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.agent.config.AIAgentConfig
@@ -8,6 +8,10 @@ import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
 import ai.koog.prompt.message.Message
+import se.gustavkarlsson.chefgpt.agent.ImageScanTools
+import se.gustavkarlsson.chefgpt.agent.RecipeScanAgent
+import se.gustavkarlsson.chefgpt.agent.describeimage.DescribeImagesAgent
+import se.gustavkarlsson.chefgpt.agent.scaningredients.ScanIngredientsAgent
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.auth.UserId
@@ -190,8 +194,8 @@ class KoogChatAgent(
     private val chatRepository: ChatRepository,
     private val eventRepository: EventRepository,
     private val recipeScanAgent: RecipeScanAgent,
-    private val ingredientScanAgent: IngredientScanAgent,
-    private val describeImageAgent: DescribeImageAgent,
+    private val scanIngredientsAgent: ScanIngredientsAgent,
+    private val describeImagesAgent: DescribeImagesAgent,
 ) : ChatAgent {
     override suspend fun run(
         userId: UserId,
@@ -267,8 +271,8 @@ class KoogChatAgent(
                         chatId,
                         userId,
                         recipeScanAgent,
-                        ingredientScanAgent,
-                        describeImageAgent,
+                        scanIngredientsAgent,
+                        describeImagesAgent,
                     ),
                 )
             },

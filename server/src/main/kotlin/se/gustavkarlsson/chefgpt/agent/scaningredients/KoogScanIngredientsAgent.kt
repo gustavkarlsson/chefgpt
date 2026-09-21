@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt.agent
+package se.gustavkarlsson.chefgpt.agent.scaningredients
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.agent.AIAgentFunctionalStrategy
 import ai.koog.agents.core.agent.config.AIAgentConfig
@@ -11,6 +11,7 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
 import org.slf4j.LoggerFactory
+import se.gustavkarlsson.chefgpt.agent.scanStrategy
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.files.UploadedFile
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
@@ -35,11 +36,11 @@ private val SYSTEM_PROMPT =
     For new ingredients, use simple, plain-text lowercase names (e.g. "tomatoes", "eggs", "milk", "black pepper").
     """.trimIndent()
 
-class KoogIngredientScanAgent(
+class KoogScanIngredientsAgent(
     private val promptExecutor: PromptExecutor,
     private val model: LLModel,
     private val ingredientStore: IngredientStore,
-) : IngredientScanAgent {
+) : ScanIngredientsAgent {
     override suspend fun scan(
         userId: UserId,
         images: List<UploadedFile>,
@@ -61,7 +62,6 @@ class KoogIngredientScanAgent(
                 maxAgentIterations = 10,
             ),
         strategy = strategy,
-        // The only tools the scanner can reach are the ingredient store's.
         toolRegistry =
             ToolRegistry {
                 tools(ingredientStore.toTools(userId))

@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt.agent
+package se.gustavkarlsson.chefgpt.agent.chat
 
 import ai.koog.prompt.message.ResponseMetaInfo
 import se.gustavkarlsson.chefgpt.api.ChatId

@@ -9,7 +9,7 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.UnitSerializer
-import se.gustavkarlsson.chefgpt.agent.ChatAgent
+import se.gustavkarlsson.chefgpt.agent.chat.ChatAgent
 import se.gustavkarlsson.chefgpt.api.ApiAction
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage

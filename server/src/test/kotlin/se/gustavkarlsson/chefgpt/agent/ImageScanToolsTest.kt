@@ -1,6 +1,8 @@
 package se.gustavkarlsson.chefgpt.agent
 
 import kotlinx.coroutines.test.runTest
+import se.gustavkarlsson.chefgpt.agent.describeimage.FakeDescribeImagesAgent
+import se.gustavkarlsson.chefgpt.agent.scaningredients.FakeScanIngredientsAgent
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.chats.InMemoryEventRepository
@@ -26,8 +28,8 @@ class ImageScanToolsTest {
             chatId,
             userId,
             FakeRecipeScanAgent(recipeRepository),
-            FakeIngredientScanAgent(ingredientStore),
-            FakeDescribeImageAgent(),
+            FakeScanIngredientsAgent(ingredientStore),
+            FakeDescribeImagesAgent(),
         )
 
     @Test

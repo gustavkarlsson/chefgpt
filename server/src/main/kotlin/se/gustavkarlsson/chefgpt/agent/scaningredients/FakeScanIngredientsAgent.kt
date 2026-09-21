@@ -1,12 +1,12 @@
-package se.gustavkarlsson.chefgpt.agent
+package se.gustavkarlsson.chefgpt.agent.scaningredients
 
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.files.UploadedFile
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 
-class FakeIngredientScanAgent(
+class FakeScanIngredientsAgent(
     private val ingredientStore: IngredientStore,
-) : IngredientScanAgent {
+) : ScanIngredientsAgent {
     override suspend fun scan(
         userId: UserId,
         images: List<UploadedFile>,

@@ -5,18 +5,18 @@ import ai.koog.prompt.llm.LLModel
 import io.ktor.server.application.Application
 import org.koin.dsl.bind
 import org.koin.dsl.module
-import se.gustavkarlsson.chefgpt.agent.ChatAgent
-import se.gustavkarlsson.chefgpt.agent.DescribeImageAgent
-import se.gustavkarlsson.chefgpt.agent.FakeChatAgent
-import se.gustavkarlsson.chefgpt.agent.FakeDescribeImageAgent
-import se.gustavkarlsson.chefgpt.agent.FakeIngredientScanAgent
 import se.gustavkarlsson.chefgpt.agent.FakeRecipeScanAgent
-import se.gustavkarlsson.chefgpt.agent.IngredientScanAgent
-import se.gustavkarlsson.chefgpt.agent.KoogChatAgent
-import se.gustavkarlsson.chefgpt.agent.KoogDescribeImageAgent
-import se.gustavkarlsson.chefgpt.agent.KoogIngredientScanAgent
 import se.gustavkarlsson.chefgpt.agent.KoogRecipeScanAgent
 import se.gustavkarlsson.chefgpt.agent.RecipeScanAgent
+import se.gustavkarlsson.chefgpt.agent.chat.ChatAgent
+import se.gustavkarlsson.chefgpt.agent.chat.FakeChatAgent
+import se.gustavkarlsson.chefgpt.agent.chat.KoogChatAgent
+import se.gustavkarlsson.chefgpt.agent.describeimage.DescribeImagesAgent
+import se.gustavkarlsson.chefgpt.agent.describeimage.FakeDescribeImagesAgent
+import se.gustavkarlsson.chefgpt.agent.describeimage.KoogDescribeImagesAgent
+import se.gustavkarlsson.chefgpt.agent.scaningredients.FakeScanIngredientsAgent
+import se.gustavkarlsson.chefgpt.agent.scaningredients.KoogScanIngredientsAgent
+import se.gustavkarlsson.chefgpt.agent.scaningredients.ScanIngredientsAgent
 import se.gustavkarlsson.chefgpt.ai.AiConfig
 import se.gustavkarlsson.chefgpt.ai.loadAiConfig
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
@@ -52,8 +52,8 @@ fun Application.createAiAgentsModule() =
                         chatRepository = get<ChatRepository>(),
                         eventRepository = get<EventRepository>(),
                         recipeScanAgent = get<RecipeScanAgent>(),
-                        ingredientScanAgent = get<IngredientScanAgent>(),
-                        describeImageAgent = get<DescribeImageAgent>(),
+                        scanIngredientsAgent = get<ScanIngredientsAgent>(),
+                        describeImagesAgent = get<DescribeImagesAgent>(),
                     )
                 }
 
@@ -69,7 +69,7 @@ fun Application.createAiAgentsModule() =
         single {
             when (val type = config.property("bindings.agent").getString()) {
                 "llm" -> {
-                    KoogIngredientScanAgent(
+                    KoogScanIngredientsAgent(
                         get<PromptExecutor>(),
                         aiConfig.agentModel(INGREDIENT_SCAN_AGENT),
                         get<IngredientStore>(),
@@ -77,14 +77,14 @@ fun Application.createAiAgentsModule() =
                 }
 
                 "fake" -> {
-                    FakeIngredientScanAgent(get<IngredientStore>())
+                    FakeScanIngredientsAgent(get<IngredientStore>())
                 }
 
                 else -> {
                     error("Unknown agent type: '$type'. Expected 'llm' or 'fake'.")
                 }
             }
-        } bind IngredientScanAgent::class
+        } bind ScanIngredientsAgent::class
         single {
             when (val type = config.property("bindings.agent").getString()) {
                 "llm" -> {
@@ -109,11 +109,11 @@ fun Application.createAiAgentsModule() =
         } bind RecipeScanAgent::class
         single {
             when (val type = config.property("bindings.agent").getString()) {
-                "llm" -> KoogDescribeImageAgent(get<PromptExecutor>(), aiConfig.agentModel(DESCRIBE_IMAGE_AGENT))
-                "fake" -> FakeDescribeImageAgent()
+                "llm" -> KoogDescribeImagesAgent(get<PromptExecutor>(), aiConfig.agentModel(DESCRIBE_IMAGE_AGENT))
+                "fake" -> FakeDescribeImagesAgent()
                 else -> error("Unknown agent type: '$type'. Expected 'llm' or 'fake'.")
             }
-        } bind DescribeImageAgent::class
+        } bind DescribeImagesAgent::class
     }
 
 private fun AiConfig.agentModel(agentId: String): LLModel {
