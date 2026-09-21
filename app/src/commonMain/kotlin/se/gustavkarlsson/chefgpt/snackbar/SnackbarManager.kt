@@ -19,10 +19,12 @@ data class SnackbarMessage(
     val duration: Duration,
 )
 
-// Reusable one-shot snackbar message stream for a ViewModel. Hold one instance, expose
-// its [messages] alongside `uiState`, and call [show] from action functions or collectors
-// to surface a message. The UI renders it with `rememberSnackbarHostState` + a Scaffold.
-class SnackbarMessages {
+/**
+ * The single app-wide source of snackbar messages. Any screen or background job can
+ * [show] a message; a root [SnackbarMessageHost] renders it, so a message survives the
+ * sender (a ViewModel) being cleared.
+ */
+class SnackbarManager {
     private val channel = Channel<SnackbarMessage>(Channel.UNLIMITED)
     val messages: Flow<SnackbarMessage> = channel.receiveAsFlow()
 

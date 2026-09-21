@@ -2,32 +2,21 @@ package se.gustavkarlsson.chefgpt.screens.start
 
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
-import com.github.michaelbull.result.combine
-import com.github.michaelbull.result.flatMap
 import com.github.michaelbull.result.onErr
 import com.github.michaelbull.result.onOk
-import io.ktor.http.ContentType
-import io.ktor.http.defaultForFilePath
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.io.files.Path
-import kotlinx.serialization.builtins.ListSerializer
-import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.chats.Chat
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.displayName
-import se.gustavkarlsson.chefgpt.isImageFile
-import se.gustavkarlsson.chefgpt.jobs.AwaitJobUseCase
+import se.gustavkarlsson.chefgpt.jobs.ScanRecipes
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 import se.gustavkarlsson.chefgpt.recipes.RecipeSummary
@@ -36,21 +25,23 @@ import se.gustavkarlsson.chefgpt.screens.chat.ChatScreen
 import se.gustavkarlsson.chefgpt.screens.debug.DebugScreen
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsScreen
 import se.gustavkarlsson.chefgpt.screens.recipe.RecipeDetailScreen
+import se.gustavkarlsson.chefgpt.screens.recipescan.RecipeScanSheet
 import se.gustavkarlsson.chefgpt.sessions.RegisterError
 import se.gustavkarlsson.chefgpt.sessions.SessionCredentials
 import se.gustavkarlsson.chefgpt.sessions.SessionRepository
 import se.gustavkarlsson.chefgpt.sessions.UserCredentials
+import se.gustavkarlsson.chefgpt.snackbar.SnackbarManager
 import kotlin.time.Duration.Companion.seconds
 
 private val log = Logger.withTag("${StartViewModel::class.simpleName}")
 
 class StartViewModel(
-    private val client: ChefGptClient,
-    private val awaitJob: AwaitJobUseCase,
     private val chatRepository: ChatRepository,
     private val recipeRepository: RecipeRepository,
     private val sessionRepository: SessionRepository,
     private val navigator: Navigator,
+    private val scanRecipes: ScanRecipes,
+    private val snackbarManager: SnackbarManager,
 ) : StateViewModel<State, UiState>() {
     private val streamChatsJob = atomic<Job?>(null)
     private val streamRecipesJob = atomic<Job?>(null)
@@ -94,7 +85,7 @@ class StartViewModel(
                 UiState.Content.LoggedIn(
                     username = sessionCredentials.username.value,
                     chats = chats.toUiChats(),
-                    onClickScanRecipes = if (scanningRecipes) null else ::scanRecipes,
+                    onClickScanRecipes = if (scanningRecipes) null else ::openScanSheet,
                     recipeSummaries = recipeSummaries.toUiRecipeSummaries(),
                     onClickNewChat = ::createChat,
                     onClickIngredients = ::openIngredients,
@@ -144,6 +135,11 @@ class StartViewModel(
                 }
             innerState.update { it.copy(initialized = true) }
         }
+        viewModelScope.launch {
+            scanRecipes.isScanning.collect { scanning ->
+                innerState.update { it.copy(scanningRecipes = scanning) }
+            }
+        }
     }
 
     private fun updateUsername(username: String) {
@@ -168,12 +164,12 @@ class StartViewModel(
                         when (error) {
                             is RegisterError.ServerError -> {
                                 log.i { "Registration failed for '$username': ${error.error}" }
-                                showSnackbar("Registration failed", isError = true)
+                                snackbarManager.show("Registration failed", isError = true)
                             }
 
                             RegisterError.StorageFailed -> {
                                 log.e { "Registration succeeded but failed to save session for '$username'" }
-                                showSnackbar("Couldn't save your session", isError = true)
+                                snackbarManager.show("Couldn't save your session", isError = true)
                             }
                         }
                     }
@@ -195,7 +191,7 @@ class StartViewModel(
                     .onOk { onAuthenticated(username, it, "Logged in") }
                     .onErr {
                         log.i { "Login failed for '$username': $it" }
-                        showSnackbar("Login failed", isError = true)
+                        snackbarManager.show("Login failed", isError = true)
                     }
             } finally {
                 innerState.update { it.copy(authenticating = false) }
@@ -224,7 +220,7 @@ class StartViewModel(
                     navigator.push(ChatScreen(credentials.sessionId, chat.id))
                 }.onErr {
                     log.e { "Failed to create chat: $it" }
-                    showSnackbar("Couldn't create chat", isError = true)
+                    snackbarManager.show("Couldn't create chat", isError = true)
                 }
         }
     }
@@ -242,7 +238,7 @@ class StartViewModel(
                 .onOk { log.i { "Chat deleted: $chatId" } }
                 .onErr {
                     log.e { "Failed to delete chat: $it" }
-                    showSnackbar("Couldn't delete chat", isError = true)
+                    snackbarManager.show("Couldn't delete chat", isError = true)
                 }
         }
     }
@@ -261,51 +257,9 @@ class StartViewModel(
         navigator.push(RecipeDetailScreen(credentials.sessionId, recipeId))
     }
 
-    private fun scanRecipes(files: List<Path>) {
+    private fun openScanSheet() {
         val credentials = innerState.value.sessionCredentials ?: return
-        if (innerState.value.scanningRecipes) return // Already scanning
-        // The picker offers documents too, but the scanner only reads photos.
-        val images = files.filter { isImageFile(it.name) }
-        if (images.isEmpty()) {
-            showSnackbar("That's not a photo I can scan", isError = true)
-            return
-        }
-        innerState.update { it.copy(scanningRecipes = true) }
-        viewModelScope.launch {
-            try {
-                val result =
-                    awaitJob.await(credentials.sessionId, ListSerializer(RecipeId.serializer())) {
-                        coroutineScope {
-                            images
-                                .map { file ->
-                                    async {
-                                        client.uploadFile(
-                                            credentials.sessionId,
-                                            file,
-                                            ContentType.defaultForFilePath(file.name),
-                                        )
-                                    }
-                                }.awaitAll()
-                                .combine()
-                                .flatMap { attachments -> client.scanRecipes(credentials.sessionId, attachments) }
-                        }
-                    }
-                result
-                    .onOk { job ->
-                        val saved = job.result.orEmpty().size
-                        if (saved == 0) {
-                            showSnackbar("Couldn't find a recipe in those photos")
-                        } else {
-                            showSnackbar("Saved $saved recipe(s)")
-                        }
-                    }.onErr { error ->
-                        log.e { "Failed to scan recipes: $error" }
-                        showSnackbar("Couldn't scan recipes from the photos", isError = true)
-                    }
-            } finally {
-                innerState.update { it.copy(scanningRecipes = false) }
-            }
-        }
+        navigator.push(RecipeScanSheet(credentials.sessionId))
     }
 
     private fun toggleRecipeFavorite(recipeId: RecipeId) {
@@ -319,7 +273,7 @@ class StartViewModel(
                 .onErr {
                     log.e { "Failed to set favorite=$favorite on recipe: $it" }
                     val message = if (favorite) "Couldn't favorite recipe" else "Couldn't unfavorite recipe"
-                    showSnackbar(message, isError = true)
+                    snackbarManager.show(message, isError = true)
                 }
         }
     }
@@ -332,7 +286,7 @@ class StartViewModel(
                 .onOk { log.i { "Recipe deleted: $recipeId" } }
                 .onErr {
                     log.e { "Failed to delete recipe: $it" }
-                    showSnackbar("Couldn't delete recipe", isError = true)
+                    snackbarManager.show("Couldn't delete recipe", isError = true)
                 }
         }
     }
@@ -429,7 +383,7 @@ data class UiState(
         data class LoggedIn(
             val username: String,
             val chats: List<UiChat>,
-            val onClickScanRecipes: ((List<Path>) -> Unit)?,
+            val onClickScanRecipes: (() -> Unit)?,
             val recipeSummaries: List<UiRecipeSummary>,
             val onClickNewChat: () -> Unit,
             val onClickIngredients: () -> Unit,

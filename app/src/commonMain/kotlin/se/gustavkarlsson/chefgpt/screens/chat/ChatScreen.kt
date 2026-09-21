@@ -98,9 +98,6 @@ import se.gustavkarlsson.chefgpt.navigation.Screen.Id
 import se.gustavkarlsson.chefgpt.pickFiles
 import se.gustavkarlsson.chefgpt.plus
 import se.gustavkarlsson.chefgpt.sessions.SessionId
-import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessage
-import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessageHost
-import se.gustavkarlsson.chefgpt.snackbar.rememberSnackbarHostState
 import se.gustavkarlsson.chefgpt.theme.LocalMarkdownTypography
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -115,7 +112,7 @@ data class ChatScreen(
     override fun Content() {
         val viewModel = koinViewModel<ChatViewModel> { parametersOf(this) }
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-        Content(uiState, viewModel.ingredientChanges, viewModel.snackbarMessages)
+        Content(uiState, viewModel.ingredientChanges)
     }
 }
 
@@ -123,13 +120,10 @@ data class ChatScreen(
 private fun Content(
     uiState: UiState,
     ingredientChanges: Flow<IngredientChange>,
-    snackbarMessages: Flow<SnackbarMessage>,
     modifier: Modifier = Modifier,
 ) {
-    val snackbarHostState = rememberSnackbarHostState(snackbarMessages)
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        snackbarHost = { SnackbarMessageHost(snackbarHostState) },
         topBar = {
             Surface(color = MaterialTheme.colorScheme.background) {
                 Row(

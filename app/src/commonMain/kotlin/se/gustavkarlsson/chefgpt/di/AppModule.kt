@@ -22,6 +22,8 @@ import se.gustavkarlsson.chefgpt.chefGptJson
 import se.gustavkarlsson.chefgpt.debug.Settings
 import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
 import se.gustavkarlsson.chefgpt.jobs.AwaitJobUseCase
+import se.gustavkarlsson.chefgpt.jobs.JobManager
+import se.gustavkarlsson.chefgpt.jobs.ScanRecipes
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.readDeviceConfig
 import se.gustavkarlsson.chefgpt.recipes.ApiRecipeRepository
@@ -30,10 +32,12 @@ import se.gustavkarlsson.chefgpt.screens.chat.ChatViewModel
 import se.gustavkarlsson.chefgpt.screens.debug.DebugViewModel
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsViewModel
 import se.gustavkarlsson.chefgpt.screens.recipe.RecipeDetailViewModel
+import se.gustavkarlsson.chefgpt.screens.recipescan.RecipeScanSheetViewModel
 import se.gustavkarlsson.chefgpt.screens.start.StartViewModel
 import se.gustavkarlsson.chefgpt.sessions.LastSessionFileStore
 import se.gustavkarlsson.chefgpt.sessions.SessionRepository
 import se.gustavkarlsson.chefgpt.sessions.SessionRepositoryImpl
+import se.gustavkarlsson.chefgpt.snackbar.SnackbarManager
 
 val singletonModule =
     module {
@@ -49,6 +53,9 @@ val singletonModule =
         single<ApiRecipeRepository>() bind RecipeRepository::class
         single<ApiConversationFactory>() bind ConversationFactory::class
         single<AwaitJobUseCase>()
+        single<JobManager>()
+        single<ScanRecipes>()
+        single<SnackbarManager>()
         single<IngredientEmojiResolver.Factory>()
         single<FileSystem> { SystemFileSystem }
         single<DeviceConfig> { readDeviceConfig() }
@@ -62,6 +69,7 @@ val viewModelModule =
         viewModel<IngredientsViewModel>()
         viewModel<DebugViewModel>()
         viewModel<RecipeDetailViewModel>()
+        viewModel<RecipeScanSheetViewModel>()
     }
 
 val nativeModule =

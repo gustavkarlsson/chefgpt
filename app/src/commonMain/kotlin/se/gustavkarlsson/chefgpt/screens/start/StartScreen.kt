@@ -86,19 +86,13 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
-import kotlinx.io.files.Path
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
 import se.gustavkarlsson.chefgpt.navigation.Screen
 import se.gustavkarlsson.chefgpt.navigation.Screen.Id
-import se.gustavkarlsson.chefgpt.pickFiles
 import se.gustavkarlsson.chefgpt.plus
-import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessage
-import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessageHost
-import se.gustavkarlsson.chefgpt.snackbar.rememberSnackbarHostState
 
 @Serializable
 @SerialName("start")
@@ -109,17 +103,15 @@ data class StartScreen(
     override fun Content() {
         val viewModel = koinViewModel<StartViewModel>()
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-        Content(uiState, viewModel.snackbarMessages)
+        Content(uiState)
     }
 }
 
 @Composable
 private fun Content(
     uiState: UiState,
-    snackbarMessages: Flow<SnackbarMessage>,
     modifier: Modifier = Modifier,
 ) {
-    val snackbarHostState = rememberSnackbarHostState(snackbarMessages)
     Surface(color = MaterialTheme.colorScheme.background) {
         Box(modifier = modifier.fillMaxSize()) {
             when (val content = uiState.content) {
@@ -140,10 +132,6 @@ private fun Content(
                     contentDescription = "Debug",
                 )
             }
-            SnackbarMessageHost(
-                hostState = snackbarHostState,
-                modifier = Modifier.align(Alignment.BottomCenter).safeDrawingPadding(),
-            )
         }
     }
 }
@@ -561,7 +549,7 @@ private fun ChatItem(
 private fun RecipeSidebar(
     recipes: List<UiRecipeSummary>,
     modifier: Modifier = Modifier,
-    onClickScanRecipes: ((List<Path>) -> Unit)? = null,
+    onClickScanRecipes: (() -> Unit)? = null,
     onClickBack: (() -> Unit)? = null,
 ) {
     Surface(
@@ -641,27 +629,16 @@ private fun RecipeSidebar(
 
 @Composable
 private fun ScanRecipeButton(
-    onClickScanRecipes: ((List<Path>) -> Unit)?,
+    onClickScanRecipes: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
-    val scope = rememberCoroutineScope()
     if (onClickScanRecipes == null) {
         // Scanning can take a while; show progress in place of the camera button.
         Box(modifier = modifier.size(48.dp), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(modifier = Modifier.size(24.dp))
         }
     } else {
-        IconButton(
-            modifier = modifier,
-            onClick = {
-                scope.launch {
-                    val files = pickFiles(multiple = true)
-                    if (files.isNotEmpty()) {
-                        onClickScanRecipes(files)
-                    }
-                }
-            },
-        ) {
+        IconButton(modifier = modifier, onClick = onClickScanRecipes) {
             Icon(
                 imageVector = Icons.Default.CameraAlt,
                 contentDescription = "Scan recipes from photos",

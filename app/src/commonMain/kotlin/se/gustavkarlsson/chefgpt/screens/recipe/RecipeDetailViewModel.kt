@@ -14,12 +14,14 @@ import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.recipes.Recipe
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
+import se.gustavkarlsson.chefgpt.snackbar.SnackbarManager
 
 private val log = Logger.withTag("${RecipeDetailViewModel::class.simpleName}")
 
 class RecipeDetailViewModel(
     private val recipeRepository: RecipeRepository,
     private val navigator: Navigator,
+    private val snackbarManager: SnackbarManager,
     @InjectedParam private val screen: RecipeDetailScreen,
 ) : StateViewModel<RecipeDetailState, RecipeDetailUiState>() {
     override fun createInitialState() =
@@ -93,7 +95,7 @@ class RecipeDetailViewModel(
                     log.e { "Failed to set favorite=$favorite on recipe ${recipe.id}: $error" }
                     setFavorite(recipe, !favorite)
                     val message = if (favorite) "Couldn't favorite recipe" else "Couldn't unfavorite recipe"
-                    showSnackbar(message, isError = true)
+                    snackbarManager.show(message, isError = true)
                 }
         }
     }
@@ -134,7 +136,7 @@ class RecipeDetailViewModel(
                 }.onErr { error ->
                     log.e { "Failed to resolve modified recipe $recipeId: $error" }
                     innerState.update { it.copy(resolving = false) }
-                    showSnackbar(errorMessage, isError = true)
+                    snackbarManager.show(errorMessage, isError = true)
                 }
         }
     }
@@ -151,7 +153,7 @@ class RecipeDetailViewModel(
                 }.onErr { error ->
                     log.e { "Failed to discard modified recipe $recipeId: $error" }
                     innerState.update { it.copy(resolving = false) }
-                    showSnackbar("Couldn't discard the changes", isError = true)
+                    snackbarManager.show("Couldn't discard the changes", isError = true)
                 }
         }
     }

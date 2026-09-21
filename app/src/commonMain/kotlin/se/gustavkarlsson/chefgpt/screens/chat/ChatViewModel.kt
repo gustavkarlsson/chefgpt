@@ -49,6 +49,7 @@ import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsScreen
 import se.gustavkarlsson.chefgpt.sessions.SessionId
+import se.gustavkarlsson.chefgpt.snackbar.SnackbarManager
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 
@@ -76,6 +77,7 @@ class ChatViewModel(
     private val navigator: Navigator,
     private val deviceConfig: DeviceConfig,
     private val emojiResolverFactory: IngredientEmojiResolver.Factory,
+    private val snackbarManager: SnackbarManager,
     @InjectedParam private val screen: ChatScreen,
 ) : StateViewModel<State, UiState>() {
     private val sessionId: SessionId = screen.sessionId
@@ -270,7 +272,7 @@ class ChatViewModel(
     }
 
     private fun showPhotoError() {
-        showSnackbar("Could not take a photo", isError = true)
+        snackbarManager.show("Could not take a photo", isError = true)
     }
 
     private fun removeAttachment(file: Path) {
@@ -291,7 +293,7 @@ class ChatViewModel(
             log.i { "Sending answer to ${conversation.chatId}" }
             conversation.sendAction(ApiUserSendsMessage(answer, attachments = emptyList())).onErr { error ->
                 log.e { "Failed to send answer: $error" }
-                showSnackbar("Couldn't send answer", isError = true)
+                snackbarManager.show("Couldn't send answer", isError = true)
             }
         }
     }
@@ -315,7 +317,7 @@ class ChatViewModel(
                     )
                 }.onErr { error ->
                     log.e { "Failed to send message: $error" }
-                    showSnackbar("Couldn't send message", isError = true)
+                    snackbarManager.show("Couldn't send message", isError = true)
                 }
         }
     }

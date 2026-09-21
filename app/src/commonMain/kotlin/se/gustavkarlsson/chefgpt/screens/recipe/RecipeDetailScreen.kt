@@ -65,7 +65,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.mikepenz.markdown.m3.Markdown
-import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
@@ -78,9 +77,6 @@ import se.gustavkarlsson.chefgpt.recipes.Ingredient
 import se.gustavkarlsson.chefgpt.recipes.Nutrient
 import se.gustavkarlsson.chefgpt.recipes.Recipe
 import se.gustavkarlsson.chefgpt.sessions.SessionId
-import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessage
-import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessageHost
-import se.gustavkarlsson.chefgpt.snackbar.rememberSnackbarHostState
 import se.gustavkarlsson.chefgpt.theme.LocalMarkdownTypography
 import kotlin.time.Duration
 
@@ -98,7 +94,7 @@ data class RecipeDetailScreen(
     override fun Content() {
         val viewModel = koinViewModel<RecipeDetailViewModel> { parametersOf(this) }
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-        Content(uiState, viewModel.snackbarMessages)
+        Content(uiState)
     }
 }
 
@@ -106,14 +102,11 @@ data class RecipeDetailScreen(
 @Composable
 private fun Content(
     uiState: RecipeDetailUiState,
-    snackbarMessages: Flow<SnackbarMessage>,
     modifier: Modifier = Modifier,
 ) {
     val loaded = uiState.content as? RecipeDetailUiState.Content.Loaded
-    val snackbarHostState = rememberSnackbarHostState(snackbarMessages)
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        snackbarHost = { SnackbarMessageHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 windowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),

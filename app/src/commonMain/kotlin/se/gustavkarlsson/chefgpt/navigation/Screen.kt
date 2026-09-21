@@ -24,6 +24,12 @@ interface Screen : NavKey {
     interface ResultProvider<R : Any> : Screen
 
     /**
+     * A Screen presented as a modal bottom sheet over the previous screen, rather
+     * than as a full-screen push. [BottomSheetSceneStrategy] renders these.
+     */
+    interface BottomSheet : Screen
+
+    /**
      * A stable ID that uniquely identifies a route in the back stack.
      *
      * Screens default their `id` to [new], which a `@Serializable` type in this project is otherwise
