@@ -92,7 +92,6 @@ fun Application.createAiAgentsModule() =
                         get<PromptExecutor>(),
                         aiConfig.agentModel(RECIPE_SCAN_AGENT),
                         get<RecipeRepository>(),
-                        get<RecipeLookup>(),
                         get<ImageCropper>(),
                         get<FactRepository>(),
                     )

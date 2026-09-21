@@ -73,25 +73,22 @@ class RecipeStoreTools(
                 "minServings, or the servings are left out.",
         )
         maxServings: Int = 0,
-    ): ApiRecipeSummary {
-        require(title.isNotBlank()) { "A recipe needs a title" }
-        require(steps.isNotEmpty()) { "A recipe needs at least one step" }
-        val recipe =
-            NewRecipe(
-                title = title,
-                steps = steps,
-                spoonacularId = null,
-                imageUrl = recipePhotoUrlOrNull(imageUrl),
-                description = description.ifBlank { null },
-                preparationDuration = preparationMinutes.minutesOrNull(),
-                cookingDuration = cookingMinutes.minutesOrNull(),
-                duration = totalMinutes.minutesOrNull(),
-                servings = servingsOrNull(minServings, maxServings),
-                ingredients = ingredients,
-                nutrients = nutrients,
-            )
-        return store.saveRecipe(userId, recipe).toSummary()
-    }
+    ): ApiRecipeSummary =
+        store
+            .createRecipe(
+                userId,
+                title,
+                steps,
+                ingredients,
+                nutrients,
+                description,
+                imageUrl,
+                preparationMinutes,
+                cookingMinutes,
+                totalMinutes,
+                minServings,
+                maxServings,
+            ).toSummary()
 
     @Tool
     @LLMDescription("Get all the user's recipes, without their instructions and ingredients.")
@@ -201,6 +198,41 @@ fun RecipeRepository.toTools(
     userId: UserId,
     lookup: RecipeLookup,
 ): ToolSet = RecipeStoreTools(this, lookup, userId)
+
+// The createRecipe tool's operation, shared by RecipeStoreTools and the single-tool
+// save-recipes agent so the parameter handling lives in one place.
+suspend fun RecipeRepository.createRecipe(
+    userId: UserId,
+    title: String,
+    steps: List<String>,
+    ingredients: List<ApiRecipeIngredient>,
+    nutrients: List<ApiNutrient>,
+    description: String,
+    imageUrl: String,
+    preparationMinutes: Int,
+    cookingMinutes: Int,
+    totalMinutes: Int,
+    minServings: Int,
+    maxServings: Int,
+): ApiRecipe {
+    require(title.isNotBlank()) { "A recipe needs a title" }
+    require(steps.isNotEmpty()) { "A recipe needs at least one step" }
+    val recipe =
+        NewRecipe(
+            title = title,
+            steps = steps,
+            spoonacularId = null,
+            imageUrl = recipePhotoUrlOrNull(imageUrl),
+            description = description.ifBlank { null },
+            preparationDuration = preparationMinutes.minutesOrNull(),
+            cookingDuration = cookingMinutes.minutesOrNull(),
+            duration = totalMinutes.minutesOrNull(),
+            servings = servingsOrNull(minServings, maxServings),
+            ingredients = ingredients,
+            nutrients = nutrients,
+        )
+    return saveRecipe(userId, recipe)
+}
 
 private fun String.toRecipeId(): RecipeId = RecipeId.parseOrNull(this) ?: error("Invalid recipe ID: $this")
 
