@@ -1,0 +1,10 @@
+id = "chefgpt.worktree-setup"
+name = "ChefGPT worktree setup"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+description = "Copy server/application_dev.conf from the repo into a new worktree, then run setup_dev.sh"
+platforms = ["linux", "macos"]
+
+[[events]]
+on = "worktree.created"
+command = ["sh", "./setup.sh"]
