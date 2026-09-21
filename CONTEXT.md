@@ -17,3 +17,7 @@ The user's preferred way of expressing ingredient amounts — **weight** or **vo
 **Self-description**:
 A user statement about their own persistent attributes ("I'm vegetarian"). These update a fact.
 _Avoid_: Request ("make me a vegetarian meal tonight"), which must never update a fact.
+
+**Message history**:
+The ordered transcript of a chat — the user's and assistant's turns, including the tool calls and results the agent made — replayed into the prompt each turn so the agent has the whole conversation.
+_Avoid_: Memory (reserved for the durable cross-conversation facts above), event log (names the persistence, not the conversation).

@@ -1,10 +1,8 @@
 package se.gustavkarlsson.chefgpt.setup
 
-import ai.koog.ktor.Koog
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
 import io.ktor.server.application.Application
-import io.ktor.server.application.plugin
 import org.koin.dsl.bind
 import org.koin.dsl.module
 import se.gustavkarlsson.chefgpt.agent.ChatAgent
@@ -26,6 +24,7 @@ import se.gustavkarlsson.chefgpt.chats.EventRepository
 import se.gustavkarlsson.chefgpt.facts.FactRepository
 import se.gustavkarlsson.chefgpt.files.ImageCropper
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
+import se.gustavkarlsson.chefgpt.recipes.RecipeClient
 import se.gustavkarlsson.chefgpt.recipes.RecipeLookup
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 
@@ -34,41 +33,32 @@ private const val INGREDIENT_SCAN_AGENT = "ingredientScan"
 private const val RECIPE_SCAN_AGENT = "recipeScan"
 private const val DESCRIBE_IMAGE_AGENT = "describeImage"
 
-fun Application.createAiAgentModule() =
+fun Application.createAiAgentsModule() =
     module {
         val config = environment.config
         val aiConfig = config.loadAiConfig()
-        single<PromptExecutor> {
-            plugin(Koog).promptExecutor
-        }
         single {
             when (val type = config.property("bindings.agent").getString()) {
                 "llm" -> {
-                    val ingredientStore = get<IngredientStore>()
-                    val recipeRepository = get<RecipeRepository>()
-                    val recipeLookup = get<RecipeLookup>()
-                    val factRepository = get<FactRepository>()
-                    val imageCropper = get<ImageCropper>()
-                    val chatRepository = get<ChatRepository>()
-                    val eventRepository = get<EventRepository>()
                     KoogChatAgent(
-                        aiConfig.agentModel(CHAT_AGENT),
-                        ingredientStore,
-                        recipeRepository,
-                        recipeLookup,
-                        factRepository,
-                        imageCropper,
-                        chatRepository,
-                        eventRepository,
-                        get<RecipeScanAgent>(),
-                        get<IngredientScanAgent>(),
-                        get<DescribeImageAgent>(),
+                        promptExecutor = get<PromptExecutor>(),
+                        model = aiConfig.agentModel(CHAT_AGENT),
+                        ingredientStore = get<IngredientStore>(),
+                        recipeRepository = get<RecipeRepository>(),
+                        recipeLookup = get<RecipeLookup>(),
+                        recipeClient = get<RecipeClient>(),
+                        factRepository = get<FactRepository>(),
+                        imageCropper = get<ImageCropper>(),
+                        chatRepository = get<ChatRepository>(),
+                        eventRepository = get<EventRepository>(),
+                        recipeScanAgent = get<RecipeScanAgent>(),
+                        ingredientScanAgent = get<IngredientScanAgent>(),
+                        describeImageAgent = get<DescribeImageAgent>(),
                     )
                 }
 
                 "fake" -> {
-                    val eventRepository = get<EventRepository>()
-                    FakeChatAgent(eventRepository)
+                    FakeChatAgent(get<EventRepository>())
                 }
 
                 else -> {

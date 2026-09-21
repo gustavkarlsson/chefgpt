@@ -23,7 +23,6 @@ import se.gustavkarlsson.chefgpt.requireSession
 fun Route.chatActionsRoute() {
     post("/chats/{chatId}/actions") {
         val userId = call.requireSession().user.id
-        val routingContext = this
         call
             .getChatId()
             .onOk { chatId ->
@@ -39,7 +38,7 @@ fun Route.chatActionsRoute() {
                         val chatAgent = get<ChatAgent>()
                         val job =
                             get<JobRunner>().run("Chat agent", UnitSerializer) {
-                                with(chatAgent) { routingContext.run(userId, chatId) }
+                                chatAgent.run(userId, chatId)
                             }
                         call.respond(HttpStatusCode.Accepted, job)
                     }
