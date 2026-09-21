@@ -1,6 +1,7 @@
-package se.gustavkarlsson.chefgpt.files
+package se.gustavkarlsson.chefgpt.agent.tools
 
 import kotlinx.coroutines.test.runTest
+import se.gustavkarlsson.chefgpt.files.CloudinaryImageCropper
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -9,7 +10,7 @@ private const val PAGE = "https://res.cloudinary.com/demo/image/upload/v123/page
 private const val DISH = "https://res.cloudinary.com/demo/image/upload/v123/dish.jpg"
 
 class ImageEditToolsTest {
-    private val tools = ImageEditTools(CloudinaryImageCropper("demo")) { listOf(PAGE) }
+    private val tools = CropImageTool(CloudinaryImageCropper("demo")) { listOf(PAGE) }
 
     @Test
     fun `crops a picture`() =

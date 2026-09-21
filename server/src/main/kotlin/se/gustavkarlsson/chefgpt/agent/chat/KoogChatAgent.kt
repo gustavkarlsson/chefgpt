@@ -8,32 +8,54 @@ import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
 import ai.koog.prompt.message.Message
-import se.gustavkarlsson.chefgpt.agent.ImageScanTools
 import se.gustavkarlsson.chefgpt.agent.describeimages.DescribeImagesAgent
 import se.gustavkarlsson.chefgpt.agent.saverecipes.SaveRecipesAgent
 import se.gustavkarlsson.chefgpt.agent.scaningredients.ScanIngredientsAgent
+import se.gustavkarlsson.chefgpt.agent.tools.AddDietaryRestrictionsTool
+import se.gustavkarlsson.chefgpt.agent.tools.AddIngredientsFromPhotosTool
+import se.gustavkarlsson.chefgpt.agent.tools.AddIngredientsTool
+import se.gustavkarlsson.chefgpt.agent.tools.AddRecipesFromPhotosTool
+import se.gustavkarlsson.chefgpt.agent.tools.CreateRecipeTool
+import se.gustavkarlsson.chefgpt.agent.tools.CropImageTool
+import se.gustavkarlsson.chefgpt.agent.tools.DescribePhotosTool
+import se.gustavkarlsson.chefgpt.agent.tools.DestroyIngredientsTool
+import se.gustavkarlsson.chefgpt.agent.tools.GetDietaryRestrictionsTool
+import se.gustavkarlsson.chefgpt.agent.tools.GetIngredientsTool
+import se.gustavkarlsson.chefgpt.agent.tools.GetMeasurementTool
+import se.gustavkarlsson.chefgpt.agent.tools.GetPreferredNameTool
+import se.gustavkarlsson.chefgpt.agent.tools.GetRecipeTool
+import se.gustavkarlsson.chefgpt.agent.tools.GetTemperatureTool
+import se.gustavkarlsson.chefgpt.agent.tools.GetUnitSystemTool
+import se.gustavkarlsson.chefgpt.agent.tools.ListRecipesTool
+import se.gustavkarlsson.chefgpt.agent.tools.ListSharedFilesTool
+import se.gustavkarlsson.chefgpt.agent.tools.ModifyRecipeTool
+import se.gustavkarlsson.chefgpt.agent.tools.OverwriteOriginalRecipeTool
+import se.gustavkarlsson.chefgpt.agent.tools.RemoveDietaryRestrictionsTool
+import se.gustavkarlsson.chefgpt.agent.tools.RemoveIngredientsTool
+import se.gustavkarlsson.chefgpt.agent.tools.RenameChatTool
+import se.gustavkarlsson.chefgpt.agent.tools.SaveRecipeAsCopyTool
+import se.gustavkarlsson.chefgpt.agent.tools.SaveRecipeTool
+import se.gustavkarlsson.chefgpt.agent.tools.SetMeasurementTool
+import se.gustavkarlsson.chefgpt.agent.tools.SetPreferredNameTool
+import se.gustavkarlsson.chefgpt.agent.tools.SetRecipeFavoriteTool
+import se.gustavkarlsson.chefgpt.agent.tools.SetTemperatureTool
+import se.gustavkarlsson.chefgpt.agent.tools.SetUnitSystemTool
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.auth.UserId
-import se.gustavkarlsson.chefgpt.chats.ChatNamingTools
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.Event
 import se.gustavkarlsson.chefgpt.chats.EventRepository
 import se.gustavkarlsson.chefgpt.facts.FactRepository
 import se.gustavkarlsson.chefgpt.facts.toPromptText
-import se.gustavkarlsson.chefgpt.facts.toTools
 import se.gustavkarlsson.chefgpt.files.FileKind
 import se.gustavkarlsson.chefgpt.files.ImageCropper
-import se.gustavkarlsson.chefgpt.files.ImageEditTools
-import se.gustavkarlsson.chefgpt.files.UploadedFileTools
 import se.gustavkarlsson.chefgpt.files.kind
 import se.gustavkarlsson.chefgpt.files.sharedAttachments
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
-import se.gustavkarlsson.chefgpt.ingredients.toTools
 import se.gustavkarlsson.chefgpt.recipes.RecipeClient
 import se.gustavkarlsson.chefgpt.recipes.RecipeLookup
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
-import se.gustavkarlsson.chefgpt.recipes.toTools
 
 private val SYSTEM_PROMPT =
     """
@@ -77,17 +99,17 @@ private val SYSTEM_PROMPT =
     You cannot see photos yourself, and must never try to read their
     content. Call listSharedFiles to get the urls of the photos the
     user shared, then hand those urls to a scanning tool:
-    - scanRecipesInPhotos when they ask you to save a recipe from
+    - addRecipesFromPhotos when they ask you to save a recipe from
       the photos.
-    - scanIngredientsInPhotos when they ask you to add ingredients
+    - addIngredientsFromPhotos when they ask you to add ingredients
       from the photos.
     - describePhotos when they ask what a photo shows.
 
     When it is not clear what the user wants done with a photo,
     first call describePhotos to learn what it shows. If the
     description sounds like a recipe, delegate to
-    scanRecipesInPhotos; if it sounds like groceries, delegate to
-    scanIngredientsInPhotos; otherwise just tell the user what
+    addRecipesFromPhotos; if it sounds like groceries, delegate to
+    addIngredientsFromPhotos; otherwise just tell the user what
     describePhotos said. Only ask the user a multiple-choice
     question if you still cannot tell what they want after that.
 
@@ -171,7 +193,7 @@ private val SYSTEM_PROMPT =
     one and remove the redundant one.
 
     As soon as you understand what the user wants to do in this chat,
-    give the chat a short, descriptive name using the nameChat tool.
+    give the chat a short, descriptive name using the renameChat tool.
     Only name the chat once you have enough context, and feel free to
     rename it later if the topic changes.
 
@@ -252,30 +274,42 @@ class KoogChatAgent(
             ToolRegistry {
                 // Recipe search tools are not user-scoped, unlike the rest.
                 tools(recipeClient)
-                tools(ingredientStore.toTools(userId))
-                tools(recipeRepository.toTools(userId, recipeLookup))
-                tools(factRepository.toTools(userId))
-                tools(ChatNamingTools(chatRepository, eventRepository, userId, chatId))
-                tools(UploadedFileTools(eventRepository, chatId))
+                tools(GetIngredientsTool(ingredientStore, userId))
+                tools(AddIngredientsTool(ingredientStore, userId))
+                tools(RemoveIngredientsTool(ingredientStore, userId))
+                tools(DestroyIngredientsTool(ingredientStore, userId))
+                tools(SaveRecipeTool(recipeRepository, recipeLookup, userId))
+                tools(CreateRecipeTool(recipeRepository, userId))
+                tools(ListRecipesTool(recipeRepository, userId))
+                tools(SetRecipeFavoriteTool(recipeRepository, userId))
+                tools(GetRecipeTool(recipeRepository, userId))
+                tools(ModifyRecipeTool(recipeRepository, userId))
+                tools(OverwriteOriginalRecipeTool(recipeRepository, userId))
+                tools(SaveRecipeAsCopyTool(recipeRepository, userId))
+                tools(GetPreferredNameTool(factRepository, userId))
+                tools(GetUnitSystemTool(factRepository, userId))
+                tools(GetMeasurementTool(factRepository, userId))
+                tools(GetTemperatureTool(factRepository, userId))
+                tools(GetDietaryRestrictionsTool(factRepository, userId))
+                tools(SetPreferredNameTool(factRepository, userId))
+                tools(SetUnitSystemTool(factRepository, userId))
+                tools(SetMeasurementTool(factRepository, userId))
+                tools(SetTemperatureTool(factRepository, userId))
+                tools(AddDietaryRestrictionsTool(factRepository, userId))
+                tools(RemoveDietaryRestrictionsTool(factRepository, userId))
+                tools(RenameChatTool(chatRepository, eventRepository, userId, chatId))
+                tools(ListSharedFilesTool(eventRepository, chatId))
                 tools(
-                    ImageEditTools(imageCropper) {
+                    CropImageTool(imageCropper) {
                         eventRepository
                             .sharedAttachments(chatId)
                             .filter { it.kind == FileKind.Image }
                             .map { it.url }
                     },
                 )
-                tools(
-                    ImageScanTools(
-                        eventRepository,
-                        chatId,
-                        userId,
-                        saveRecipesAgent,
-                        scanIngredientsAgent,
-                        describeImagesAgent,
-                        ingredientStore,
-                    ),
-                )
+                tools(DescribePhotosTool(describeImagesAgent))
+                tools(AddIngredientsFromPhotosTool(scanIngredientsAgent, ingredientStore, userId))
+                tools(AddRecipesFromPhotosTool(saveRecipesAgent, userId))
             },
     )
 }

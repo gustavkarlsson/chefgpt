@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt.recipes
+package se.gustavkarlsson.chefgpt.agent.tools
 
 import ai.koog.agents.core.tools.annotations.LLMDescription
 import ai.koog.agents.core.tools.annotations.Tool
@@ -11,11 +11,15 @@ import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.api.SpoonacularId
 import se.gustavkarlsson.chefgpt.api.toSummary
 import se.gustavkarlsson.chefgpt.auth.UserId
+import se.gustavkarlsson.chefgpt.recipes.NewRecipe
+import se.gustavkarlsson.chefgpt.recipes.RecipeLookup
+import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
+import se.gustavkarlsson.chefgpt.recipes.RecipeUpdate
+import se.gustavkarlsson.chefgpt.recipes.recipePhotoUrlOrNull
 import kotlin.time.Duration.Companion.minutes
 
-@Suppress("unused")
-class RecipeStoreTools(
-    private val store: RecipeRepository,
+class SaveRecipeTool(
+    private val repository: RecipeRepository,
     private val lookup: RecipeLookup,
     private val userId: UserId,
 ) : ToolSet {
@@ -28,15 +32,23 @@ class RecipeStoreTools(
         val recipe =
             lookup.lookUp(SpoonacularId(spoonacularId))
                 ?: error("No recipe found with Spoonacular ID $spoonacularId")
-        return store.saveRecipe(userId, recipe).toSummary()
+        return repository.saveRecipe(userId, recipe).toSummary()
     }
+}
+
+class CreateRecipeTool(
+    private val repository: RecipeRepository,
+    private val userId: UserId,
+) : ToolSet {
+    // The recipes this tool has created in this agent run, so the caller can report exactly what it saved.
+    val createdIds: Set<RecipeId>
+        field = mutableSetOf()
 
     @Tool
     @LLMDescription(
         "Write a recipe of your own into the user's recipes, for example one you read in a photo " +
             "or a document they shared. Fit what you can read into the fields and leave out what " +
-            "is missing — never invent ingredients or steps. Use saveRecipe instead when the " +
-            "recipe already exists in Spoonacular.",
+            "is missing — never invent ingredients or steps.",
     )
     suspend fun createRecipe(
         @LLMDescription("The name of the dish.")
@@ -73,27 +85,42 @@ class RecipeStoreTools(
                 "minServings, or the servings are left out.",
         )
         maxServings: Int = 0,
-    ): ApiRecipeSummary =
-        store
-            .createRecipe(
-                userId,
-                title,
-                steps,
-                ingredients,
-                nutrients,
-                description,
-                imageUrl,
-                preparationMinutes,
-                cookingMinutes,
-                totalMinutes,
-                minServings,
-                maxServings,
-            ).toSummary()
+    ): ApiRecipeSummary {
+        require(title.isNotBlank()) { "A recipe needs a title" }
+        require(steps.isNotEmpty()) { "A recipe needs at least one step" }
+        val recipe =
+            NewRecipe(
+                title = title,
+                steps = steps,
+                spoonacularId = null,
+                imageUrl = recipePhotoUrlOrNull(imageUrl),
+                description = description.ifBlank { null },
+                preparationDuration = preparationMinutes.minutesOrNull(),
+                cookingDuration = cookingMinutes.minutesOrNull(),
+                duration = totalMinutes.minutesOrNull(),
+                servings = servingsOrNull(minServings, maxServings),
+                ingredients = ingredients,
+                nutrients = nutrients,
+            )
+        val saved = repository.saveRecipe(userId, recipe)
+        createdIds += saved.id
+        return saved.toSummary()
+    }
+}
 
+class ListRecipesTool(
+    private val repository: RecipeRepository,
+    private val userId: UserId,
+) : ToolSet {
     @Tool
     @LLMDescription("Get all the user's recipes, without their instructions and ingredients.")
-    suspend fun listRecipes(): List<ApiRecipeSummary> = store.getRecipeSummaries(userId)
+    suspend fun listRecipes(): List<ApiRecipeSummary> = repository.getRecipeSummaries(userId)
+}
 
+class SetRecipeFavoriteTool(
+    private val repository: RecipeRepository,
+    private val userId: UserId,
+) : ToolSet {
     @Tool
     @LLMDescription(
         "Mark one of the user's recipes as a favorite, meaning one they intend to come back to, " +
@@ -105,16 +132,26 @@ class RecipeStoreTools(
         @LLMDescription("True to make the recipe a favorite, false to make it an ordinary saved recipe.")
         favorite: Boolean,
     ): ApiRecipe =
-        store.setFavorite(userId, recipeId.toRecipeId(), favorite)
+        repository.setFavorite(userId, recipeId.toRecipeId(), favorite)
             ?: error("No recipe found with ID $recipeId")
+}
 
+class GetRecipeTool(
+    private val repository: RecipeRepository,
+    private val userId: UserId,
+) : ToolSet {
     @Tool
     @LLMDescription("Get one of the user's recipes in full, including instructions, ingredients and nutrients.")
     suspend fun getRecipe(
         @LLMDescription("The ID of the recipe.")
         recipeId: String,
-    ): ApiRecipe = store.getRecipe(userId, recipeId.toRecipeId()) ?: error("No recipe found with ID $recipeId")
+    ): ApiRecipe = repository.getRecipe(userId, recipeId.toRecipeId()) ?: error("No recipe found with ID $recipeId")
+}
 
+class ModifyRecipeTool(
+    private val repository: RecipeRepository,
+    private val userId: UserId,
+) : ToolSet {
     @Tool
     @LLMDescription(
         "Rewrite parts of one of the user's recipes, for example to substitute an ingredient or change servings. " +
@@ -167,10 +204,15 @@ class RecipeStoreTools(
                 ingredients = ingredients.ifEmpty { null },
                 nutrients = nutrients.ifEmpty { null },
             )
-        return store.modifyRecipe(userId, recipeId.toRecipeId(), update)
+        return repository.modifyRecipe(userId, recipeId.toRecipeId(), update)
             ?: error("No recipe found with ID $recipeId")
     }
+}
 
+class OverwriteOriginalRecipeTool(
+    private val repository: RecipeRepository,
+    private val userId: UserId,
+) : ToolSet {
     @Tool
     @LLMDescription(
         "Let a modified recipe replace the recipe it was modified from, deleting that one.",
@@ -179,9 +221,14 @@ class RecipeStoreTools(
         @LLMDescription("The ID of the modified recipe.")
         recipeId: String,
     ): ApiRecipe =
-        store.overwriteOriginal(userId, recipeId.toRecipeId())
+        repository.overwriteOriginal(userId, recipeId.toRecipeId())
             ?: error("No modified recipe found with ID $recipeId")
+}
 
+class SaveRecipeAsCopyTool(
+    private val repository: RecipeRepository,
+    private val userId: UserId,
+) : ToolSet {
     @Tool
     @LLMDescription(
         "Keep a modified recipe alongside the recipe it was modified from, so the user has both.",
@@ -190,48 +237,8 @@ class RecipeStoreTools(
         @LLMDescription("The ID of the modified recipe.")
         recipeId: String,
     ): ApiRecipe =
-        store.saveAsCopy(userId, recipeId.toRecipeId())
+        repository.saveAsCopy(userId, recipeId.toRecipeId())
             ?: error("No modified recipe found with ID $recipeId")
-}
-
-fun RecipeRepository.toTools(
-    userId: UserId,
-    lookup: RecipeLookup,
-): ToolSet = RecipeStoreTools(this, lookup, userId)
-
-// The createRecipe tool's operation, shared by RecipeStoreTools and the single-tool
-// save-recipes agent so the parameter handling lives in one place.
-suspend fun RecipeRepository.createRecipe(
-    userId: UserId,
-    title: String,
-    steps: List<String>,
-    ingredients: List<ApiRecipeIngredient>,
-    nutrients: List<ApiNutrient>,
-    description: String,
-    imageUrl: String,
-    preparationMinutes: Int,
-    cookingMinutes: Int,
-    totalMinutes: Int,
-    minServings: Int,
-    maxServings: Int,
-): ApiRecipe {
-    require(title.isNotBlank()) { "A recipe needs a title" }
-    require(steps.isNotEmpty()) { "A recipe needs at least one step" }
-    val recipe =
-        NewRecipe(
-            title = title,
-            steps = steps,
-            spoonacularId = null,
-            imageUrl = recipePhotoUrlOrNull(imageUrl),
-            description = description.ifBlank { null },
-            preparationDuration = preparationMinutes.minutesOrNull(),
-            cookingDuration = cookingMinutes.minutesOrNull(),
-            duration = totalMinutes.minutesOrNull(),
-            servings = servingsOrNull(minServings, maxServings),
-            ingredients = ingredients,
-            nutrients = nutrients,
-        )
-    return saveRecipe(userId, recipe)
 }
 
 private fun String.toRecipeId(): RecipeId = RecipeId.parseOrNull(this) ?: error("Invalid recipe ID: $this")

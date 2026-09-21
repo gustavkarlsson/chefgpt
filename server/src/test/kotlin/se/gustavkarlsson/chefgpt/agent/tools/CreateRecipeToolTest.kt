@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt.recipes
+package se.gustavkarlsson.chefgpt.agent.tools
 
 import kotlinx.coroutines.test.runTest
 import se.gustavkarlsson.chefgpt.api.ApiRecipe
@@ -6,7 +6,8 @@ import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.auth.UserId
-import se.gustavkarlsson.chefgpt.chefGptJson
+import se.gustavkarlsson.chefgpt.recipes.InMemoryRecipePersistence
+import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -40,15 +41,10 @@ private fun pannkakor(
     nutrients = emptyList(),
 )
 
-class RecipeStoreToolsCreateRecipeTest {
+class CreateRecipeToolTest {
     private val userId = UserId.random()
     private val store = RecipeRepository(InMemoryRecipePersistence())
-    private val tools =
-        RecipeStoreTools(
-            store = store,
-            lookup = RecipeLookup(FakeRecipeClient(), chefGptJson(strict = true)),
-            userId = userId,
-        )
+    private val tools = CreateRecipeTool(store, userId)
 
     @Test
     fun `stores what was read out of the shared file`() =

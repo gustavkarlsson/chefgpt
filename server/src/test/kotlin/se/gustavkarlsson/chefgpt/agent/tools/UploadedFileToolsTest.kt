@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt.files
+package se.gustavkarlsson.chefgpt.agent.tools
 
 import ai.koog.prompt.message.Message
 import ai.koog.prompt.message.MessagePart
@@ -9,6 +9,7 @@ import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.chats.Event
 import se.gustavkarlsson.chefgpt.chats.InMemoryEventRepository
+import se.gustavkarlsson.chefgpt.files.UploadedFile
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Clock
@@ -20,7 +21,7 @@ private const val NOTES = "https://res.cloudinary.com/demo/raw/upload/v123/notes
 class UploadedFileToolsTest {
     private val chatId = ChatId.random()
     private val eventRepository = InMemoryEventRepository()
-    private val tools = UploadedFileTools(eventRepository, chatId)
+    private val tools = ListSharedFilesTool(eventRepository, chatId)
 
     private suspend fun share(vararg attachments: ApiUploadedFile) {
         eventRepository.append(

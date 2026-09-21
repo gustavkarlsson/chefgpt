@@ -2,6 +2,8 @@ package se.gustavkarlsson.chefgpt.files
 
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 
+// TODO Consider if using pixels might be easier
+
 /**
  * A rectangle expressed as fractions of the image, so a caller never needs to know its pixel size.
  */
