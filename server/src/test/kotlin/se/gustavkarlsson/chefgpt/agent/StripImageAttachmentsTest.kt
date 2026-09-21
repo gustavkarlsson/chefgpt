@@ -5,6 +5,7 @@ import ai.koog.prompt.message.AttachmentSource
 import ai.koog.prompt.message.Message
 import ai.koog.prompt.message.MessagePart
 import ai.koog.prompt.message.RequestMetaInfo
+import se.gustavkarlsson.chefgpt.agent.chat.stripImageAttachments
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Clock

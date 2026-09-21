@@ -62,7 +62,8 @@ dependencies {
     implementation(libs.kotlinResult)
 
     // Koog
-    implementation(libs.koogKtor)
+    implementation(libs.koogAgents)
+    implementation(libs.koogDeepseekClient)
 
     // Database (JDBC + SQLDelight + HikariCP)
     implementation(libs.sqldelightJdbcDriver)

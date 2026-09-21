@@ -8,7 +8,6 @@ import se.gustavkarlsson.chefgpt.plugins.installAuthentication
 import se.gustavkarlsson.chefgpt.plugins.installCallLogging
 import se.gustavkarlsson.chefgpt.plugins.installContentNegotiation
 import se.gustavkarlsson.chefgpt.plugins.installKoin
-import se.gustavkarlsson.chefgpt.plugins.installKoog
 import se.gustavkarlsson.chefgpt.plugins.installRouting
 import se.gustavkarlsson.chefgpt.plugins.installSSE
 import se.gustavkarlsson.chefgpt.plugins.installSessions
@@ -25,7 +24,6 @@ fun Application.moduleWithExtraKoinModules(extraKoinModules: List<Module>) {
     installCallLogging()
     installContentNegotiation()
     installSSE()
-    installKoog()
     installSessions()
     installAuthentication()
     installRouting()

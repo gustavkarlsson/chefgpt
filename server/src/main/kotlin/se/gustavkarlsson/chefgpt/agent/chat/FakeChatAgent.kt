@@ -1,7 +1,6 @@
-package se.gustavkarlsson.chefgpt.agent
+package se.gustavkarlsson.chefgpt.agent.chat
 
 import ai.koog.prompt.message.ResponseMetaInfo
-import io.ktor.server.routing.RoutingContext
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.auth.UserId
@@ -14,7 +13,7 @@ class FakeChatAgent(
     private val eventRepository: EventRepository,
     private val clock: Clock = Clock.System,
 ) : ChatAgent {
-    override suspend fun RoutingContext.run(
+    override suspend fun run(
         userId: UserId,
         chatId: ChatId,
     ) {

@@ -17,9 +17,9 @@ jvmToolchain = "25" # Must stay within what the Jetbrains Hot-Reload JBR support
 kermit = "2.1.0"
 koin = "4.2.2"
 koinPlugin = "1.1.0"
-# koog-ktor trails koog-agents by a beta suffix and pulls koog-agents transitively; keep the two pinned as a matched pair on the same version.
 koogAgents = "1.2.0"
-koogKtor = "1.2.0-beta"
+# The DeepSeek versions are not 100% in sync with koogAgents
+koogDeepseekClient = "1.2.0-beta"
 kotlin = "2.4.10"
 kotlinResult = "2.3.1"
 kotlinxCoroutines = "1.11.0"
@@ -78,7 +78,7 @@ koinLoggerSlf4j = { module = "io.insert-koin:koin-logger-slf4j", version.ref = "
 
 # Koog
 koogAgents = { module = "ai.koog:koog-agents", version.ref = "koogAgents" }
-koogKtor = { module = "ai.koog:koog-ktor", version.ref = "koogKtor" }
+koogDeepseekClient = { module = "ai.koog:prompt-executor-deepseek-client", version.ref = "koogDeepseekClient" }
 
 # Kotlin
 kotlinTest = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }

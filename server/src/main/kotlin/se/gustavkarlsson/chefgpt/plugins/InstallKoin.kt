@@ -5,7 +5,7 @@ import io.ktor.server.application.install
 import org.koin.core.module.Module
 import org.koin.ktor.plugin.Koin
 import org.koin.logger.slf4jLogger
-import se.gustavkarlsson.chefgpt.setup.createAiAgentModule
+import se.gustavkarlsson.chefgpt.setup.createAiAgentsModule
 import se.gustavkarlsson.chefgpt.setup.createChatRepositoryModule
 import se.gustavkarlsson.chefgpt.setup.createDatabaseModule
 import se.gustavkarlsson.chefgpt.setup.createEventRepositoryModule
@@ -14,6 +14,7 @@ import se.gustavkarlsson.chefgpt.setup.createFilesModule
 import se.gustavkarlsson.chefgpt.setup.createIngredientStoreModule
 import se.gustavkarlsson.chefgpt.setup.createJobModule
 import se.gustavkarlsson.chefgpt.setup.createJsonModule
+import se.gustavkarlsson.chefgpt.setup.createPromptExecutorModule
 import se.gustavkarlsson.chefgpt.setup.createRecipeClientModule
 import se.gustavkarlsson.chefgpt.setup.createRecipeLookupModule
 import se.gustavkarlsson.chefgpt.setup.createRecipeRepositoryModule
@@ -25,7 +26,8 @@ fun Application.installKoin(extraKoinModules: List<Module> = emptyList()) {
         slf4jLogger()
         modules(
             createDatabaseModule(),
-            createAiAgentModule(),
+            createPromptExecutorModule(),
+            createAiAgentsModule(),
             createChatRepositoryModule(),
             createEventRepositoryModule(),
             createFilesModule(),

@@ -1,15 +1,21 @@
-package se.gustavkarlsson.chefgpt.agent
+package se.gustavkarlsson.chefgpt.agent.saverecipes
+
 import ai.koog.agents.core.agent.AIAgent
-import ai.koog.agents.core.agent.AIAgentFunctionalStrategy
 import ai.koog.agents.core.agent.config.AIAgentConfig
+import ai.koog.agents.core.agent.functionalStrategy
 import ai.koog.agents.core.tools.ToolRegistry
+import ai.koog.agents.core.tools.annotations.LLMDescription
+import ai.koog.agents.core.tools.annotations.Tool
+import ai.koog.agents.core.tools.reflect.ToolSet
 import ai.koog.prompt.Prompt
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonPrimitive
-import org.slf4j.LoggerFactory
+import se.gustavkarlsson.chefgpt.api.ApiNutrient
+import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
+import se.gustavkarlsson.chefgpt.api.ApiRecipeSummary
+import se.gustavkarlsson.chefgpt.api.RecipeId
+import se.gustavkarlsson.chefgpt.api.toSummary
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.facts.FactRepository
 import se.gustavkarlsson.chefgpt.facts.UserFacts
@@ -19,12 +25,9 @@ import se.gustavkarlsson.chefgpt.files.ImageCropper
 import se.gustavkarlsson.chefgpt.files.ImageEditTools
 import se.gustavkarlsson.chefgpt.files.UploadedFile
 import se.gustavkarlsson.chefgpt.files.fileKindOrNull
-import se.gustavkarlsson.chefgpt.recipes.RecipeLookup
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
-import se.gustavkarlsson.chefgpt.recipes.toTools
+import se.gustavkarlsson.chefgpt.recipes.createRecipe
 import se.gustavkarlsson.chefgpt.toImageAttachmentOrNull
-
-private val logger = LoggerFactory.getLogger("KoogRecipeScanAgent")
 
 private val SYSTEM_PROMPT =
     """
@@ -81,28 +84,28 @@ private val SYSTEM_PROMPT =
     Do not modify, delete, or look up existing recipes.
     """.trimIndent()
 
-class KoogRecipeScanAgent(
+class KoogSaveRecipesAgent(
     private val promptExecutor: PromptExecutor,
     private val model: LLModel,
     private val recipeRepository: RecipeRepository,
-    private val recipeLookup: RecipeLookup,
     private val imageCropper: ImageCropper,
     private val factRepository: FactRepository,
-) : RecipeScanAgent {
+) : SaveRecipesAgent {
     override suspend fun scan(
         userId: UserId,
         images: List<UploadedFile>,
-    ): List<String> {
+    ): List<RecipeId> {
+        val createRecipeTool = RecordingCreateRecipeTool(recipeRepository, userId)
         val facts = factRepository.getFacts(userId)
-        val agent = buildAgent(userId, images, buildPrompt(images, facts), recipeScanStrategy())
-        return agent.run("Scan these photos for recipes and save the ones you find.")
+        val agent = buildAgent(images, createRecipeTool, buildPrompt(images, facts))
+        agent.run("Scan these photos for recipes and save the ones you find.")
+        return createRecipeTool.savedIds.toList()
     }
 
     private fun buildAgent(
-        userId: UserId,
         images: List<UploadedFile>,
+        tool: ToolSet,
         prompt: Prompt,
-        strategy: AIAgentFunctionalStrategy<String, List<String>>,
     ) = AIAgent(
         promptExecutor = promptExecutor,
         agentConfig =
@@ -111,10 +114,10 @@ class KoogRecipeScanAgent(
                 model = model,
                 maxAgentIterations = 10,
             ),
-        strategy = strategy,
+        strategy = saveRecipesStrategy(),
         toolRegistry =
             ToolRegistry {
-                tools(recipeRepository.toTools(userId, recipeLookup))
+                tools(tool)
                 tools(
                     ImageEditTools(imageCropper) {
                         images
@@ -126,10 +129,81 @@ class KoogRecipeScanAgent(
     )
 }
 
+// Exposes only createRecipe, and records every successfully created ID so scan can report exactly what it added.
+private class RecordingCreateRecipeTool(
+    private val store: RecipeRepository,
+    private val userId: UserId,
+) : ToolSet {
+    val savedIds: Set<RecipeId>
+        field = mutableSetOf()
+
+    @Suppress("unused")
+    @Tool
+    @LLMDescription(
+        "Write a recipe of your own into the user's recipes, for example one you read in a photo " +
+            "or a document they shared. Fit what you can read into the fields and leave out what " +
+            "is missing — never invent ingredients or steps.",
+    )
+    suspend fun createRecipe(
+        @LLMDescription("The name of the dish.")
+        title: String,
+        @LLMDescription("The instructions, one per step.")
+        steps: List<String>,
+        @LLMDescription("The ingredients, or an empty list if they are unknown.")
+        ingredients: List<ApiRecipeIngredient> = emptyList(),
+        @LLMDescription("The nutrients, or an empty list if they are unknown.")
+        nutrients: List<ApiNutrient> = emptyList(),
+        @LLMDescription("A short summary of the dish, or an empty string to leave it out.")
+        description: String = "",
+        @LLMDescription(
+            "The url of a picture to use as the recipe's photo: from listSharedFiles when the " +
+                "picture is nothing but the food, and from cropImage when it also holds writing " +
+                "or background. Empty string for no photo.",
+        )
+        imageUrl: String = "",
+        @LLMDescription("The preparation time in minutes, or 0 if it is unknown.")
+        preparationMinutes: Int = 0,
+        @LLMDescription("The cooking time in minutes, or 0 if it is unknown.")
+        cookingMinutes: Int = 0,
+        @LLMDescription("The total time in minutes, or 0 if it is unknown.")
+        totalMinutes: Int = 0,
+        @LLMDescription(
+            "The lower end of how many servings the recipe makes, for example 4 for \"4-6 servings\" " +
+                "or 4 for an exact \"4 servings\". Must be given together with maxServings, " +
+                "or the servings are left out.",
+        )
+        minServings: Int = 0,
+        @LLMDescription(
+            "The upper end of how many servings the recipe makes, for example 6 for \"4-6 servings\" " +
+                "or 4 for an exact \"4 servings\" (same as minServings). Must be given together with " +
+                "minServings, or the servings are left out.",
+        )
+        maxServings: Int = 0,
+    ): ApiRecipeSummary {
+        val recipe =
+            store.createRecipe(
+                userId,
+                title,
+                steps,
+                ingredients,
+                nutrients,
+                description,
+                imageUrl,
+                preparationMinutes,
+                cookingMinutes,
+                totalMinutes,
+                minServings,
+                maxServings,
+            )
+        savedIds += recipe.id
+        return recipe.toSummary()
+    }
+}
+
 private fun buildPrompt(
     images: List<UploadedFile>,
     facts: UserFacts,
-) = prompt("scan-recipes") {
+) = prompt("save-recipes") {
     system(SYSTEM_PROMPT + "\n\n" + facts.toMeasurementPromptText())
     user {
         for (image in images) {
@@ -141,17 +215,15 @@ private fun buildPrompt(
     }
 }
 
-// TODO Fix brittle parsing since the tool signature might change
-private fun recipeScanStrategy() =
-    scanStrategy("scan-recipes") { call ->
-        if (call.tool == "createRecipe") {
-            val titles =
-                call.argsJson["title"]
-                    ?.jsonPrimitive
-                    ?.takeIf { it.isString }
-                    ?.contentOrNull
-            listOfNotNull(titles)
-        } else {
-            emptyList()
+private fun saveRecipesStrategy() =
+    functionalStrategy<String, Unit>("save-recipes") { input ->
+        var message = requestLLM(input)
+        repeat(config.maxAgentIterations) {
+            val toolCalls = getToolCalls(message)
+            if (toolCalls.isEmpty()) {
+                return@repeat
+            }
+            val toolResults = executeTools(toolCalls)
+            message = sendToolResults(toolResults)
         }
     }

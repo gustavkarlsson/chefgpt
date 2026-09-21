@@ -1,6 +1,9 @@
 package se.gustavkarlsson.chefgpt.agent
 
 import kotlinx.coroutines.test.runTest
+import se.gustavkarlsson.chefgpt.agent.describeimages.FakeDescribeImagesAgent
+import se.gustavkarlsson.chefgpt.agent.saverecipes.FakeSaveRecipesAgent
+import se.gustavkarlsson.chefgpt.agent.scaningredients.FakeScanIngredientsAgent
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.chats.InMemoryEventRepository
@@ -25,9 +28,10 @@ class ImageScanToolsTest {
             eventRepository,
             chatId,
             userId,
-            FakeRecipeScanAgent(recipeRepository),
-            FakeIngredientScanAgent(ingredientStore),
-            FakeDescribeImageAgent(),
+            FakeSaveRecipesAgent(recipeRepository),
+            FakeScanIngredientsAgent(),
+            FakeDescribeImagesAgent(),
+            ingredientStore,
         )
 
     @Test
@@ -35,8 +39,8 @@ class ImageScanToolsTest {
         runTest {
             val result = tools.scanRecipesInPhotos(listOf(PAGE))
 
-            assertEquals(listOf("Pasta al pomodoro"), result)
             assertEquals(listOf("Pasta al pomodoro"), recipeRepository.getRecipeSummaries(userId).map { it.title })
+            assertEquals(recipeRepository.getRecipeSummaries(userId).map { it.id }, result)
         }
 
     @Test
@@ -44,7 +48,7 @@ class ImageScanToolsTest {
         runTest {
             val result = tools.scanRecipesInPhotos(listOf(PAGE, DISH))
 
-            assertEquals(listOf("Pasta al pomodoro"), result)
+            assertEquals(recipeRepository.getRecipeSummaries(userId).map { it.id }, result)
         }
 
     @Test

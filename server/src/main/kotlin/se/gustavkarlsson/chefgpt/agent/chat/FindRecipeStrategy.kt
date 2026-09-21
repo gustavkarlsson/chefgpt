@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt.agent
+package se.gustavkarlsson.chefgpt.agent.chat
 
 import ai.koog.agents.core.agent.asMermaidDiagram
 import ai.koog.agents.core.agent.entity.AIAgentGraphStrategy
@@ -9,9 +9,8 @@ import ai.koog.agents.core.dsl.extension.nodeExecuteTools
 import ai.koog.agents.core.dsl.extension.nodeLLMSendToolResults
 import ai.koog.agents.core.dsl.extension.onToolCalls
 import ai.koog.prompt.message.Message
-import se.gustavkarlsson.chefgpt.auth.UserId
 
-fun findRecipeStrategy(): AIAgentGraphStrategy<UserId, Unit> =
+fun findRecipeStrategy(): AIAgentGraphStrategy<Unit, Unit> =
     strategy("find-recipe") {
         val nodeExecuteLLM by nodeExecuteLLM("executeLLM")
         val response by nodeDoNothing<Message.Assistant>("response")
@@ -32,7 +31,7 @@ fun findRecipeStrategy(): AIAgentGraphStrategy<UserId, Unit> =
     }
 
 private fun nodeExecuteLLM(name: String) =
-    node<UserId, Message.Assistant>(name) {
+    node<Unit, Message.Assistant>(name) {
         llm
             .writeSession {
                 // Message should have already been appended to history when this runs

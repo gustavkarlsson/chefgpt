@@ -160,7 +160,7 @@ class ChefGptClient(
     suspend fun scanRecipes(
         sessionId: SessionId,
         attachments: List<ApiUploadedFile>,
-    ): Result<ApiJob<List<String>>, ClientError> =
+    ): Result<ApiJob<List<RecipeId>>, ClientError> =
         request(
             send = { baseUrl ->
                 post("$baseUrl/recipes/scan") {

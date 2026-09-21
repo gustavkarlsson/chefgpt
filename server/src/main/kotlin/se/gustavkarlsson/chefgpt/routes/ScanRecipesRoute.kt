@@ -6,11 +6,11 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.builtins.serializer
 import org.koin.ktor.ext.get
-import se.gustavkarlsson.chefgpt.agent.RecipeScanAgent
+import se.gustavkarlsson.chefgpt.agent.saverecipes.SaveRecipesAgent
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiScanRecipe
+import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.jobs.JobRunner
 import se.gustavkarlsson.chefgpt.requireSession
 import se.gustavkarlsson.chefgpt.toDomain
@@ -49,9 +49,9 @@ fun Route.scanRecipesRoute() {
             return@post
         }
 
-        val scanAgent = get<RecipeScanAgent>()
+        val scanAgent = get<SaveRecipesAgent>()
         val job =
-            get<JobRunner>().run("Recipe scan", ListSerializer(String.serializer())) {
+            get<JobRunner>().run("Recipe scan", ListSerializer(RecipeId.serializer())) {
                 scanAgent.scan(userId, sharedFiles)
             }
         call.respond(HttpStatusCode.Accepted, job)
