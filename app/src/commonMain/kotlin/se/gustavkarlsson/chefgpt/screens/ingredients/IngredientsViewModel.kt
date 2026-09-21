@@ -29,6 +29,7 @@ import se.gustavkarlsson.chefgpt.jobs.AwaitJobUseCase
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
 import se.gustavkarlsson.chefgpt.sessions.SessionId
+import se.gustavkarlsson.chefgpt.snackbar.SnackbarManager
 import kotlin.time.Duration.Companion.seconds
 
 private val log = Logger.withTag("${IngredientsViewModel::class.simpleName}")
@@ -43,6 +44,7 @@ class IngredientsViewModel(
     private val navigator: Navigator,
     private val deviceConfig: DeviceConfig,
     emojiResolverFactory: IngredientEmojiResolver.Factory,
+    private val snackbarManager: SnackbarManager,
     @InjectedParam screen: IngredientsScreen,
 ) : StateViewModel<State, UiState>() {
     private val sessionId: SessionId = screen.sessionId
@@ -239,7 +241,7 @@ class IngredientsViewModel(
             val result = client.createIngredient(sessionId, name)
             result.onErr {
                 log.e { "Failed to create ingredient '$name': $it" }
-                showSnackbar("Couldn't add $name", isError = true)
+                snackbarManager.show("Couldn't add $name", isError = true)
             }
         }
     }
@@ -250,7 +252,7 @@ class IngredientsViewModel(
             val result = client.destroyIngredient(sessionId, id)
             result.onErr {
                 log.e { "Failed to destroy ingredient $id: $it" }
-                showSnackbar("Couldn't delete ingredient", isError = true)
+                snackbarManager.show("Couldn't delete ingredient", isError = true)
             }
         }
     }
@@ -261,7 +263,7 @@ class IngredientsViewModel(
             val result = client.setIngredientInventory(sessionId, id, inInventory = true)
             result.onErr {
                 log.e { "Failed to add ingredient $id: $it" }
-                showSnackbar("Couldn't move ingredient to your inventory", isError = true)
+                snackbarManager.show("Couldn't move ingredient to your inventory", isError = true)
             }
         }
     }
@@ -272,7 +274,7 @@ class IngredientsViewModel(
             val result = client.setIngredientInventory(sessionId, id, inInventory = false)
             result.onErr {
                 log.e { "Failed to remove ingredient $id: $it" }
-                showSnackbar("Couldn't remove ingredient from your inventory", isError = true)
+                snackbarManager.show("Couldn't remove ingredient from your inventory", isError = true)
             }
         }
     }
@@ -297,7 +299,7 @@ class IngredientsViewModel(
                     .onOk { job -> log.i { "Scan found ${job.result.orEmpty().size} ingredient(s)" } }
                     .onErr {
                         log.e { "Failed to scan ingredients: $it" }
-                        showSnackbar("Couldn't scan ingredients from the image", isError = true)
+                        snackbarManager.show("Couldn't scan ingredients from the image", isError = true)
                     }
             } finally {
                 innerState.update { it.copy(scanningImage = false) }
@@ -306,7 +308,7 @@ class IngredientsViewModel(
     }
 
     private fun showPhotoError() {
-        showSnackbar("Could not take a photo", isError = true)
+        snackbarManager.show("Could not take a photo", isError = true)
     }
 }
 

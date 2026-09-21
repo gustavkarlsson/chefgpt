@@ -21,3 +21,7 @@ _Avoid_: Request ("make me a vegetarian meal tonight"), which must never update 
 **Message history**:
 The ordered transcript of a chat — the user's and assistant's turns, including the tool calls and results the agent made — replayed into the prompt each turn so the agent has the whole conversation.
 _Avoid_: Memory (reserved for the durable cross-conversation facts above), event log (names the persistence, not the conversation).
+
+**Sheet**:
+A screen presented as a modal bottom sheet over the previous screen, leaving it visible behind. It is a distinct navigation concept in this app (a screen marked `Screen.BottomSheet`), not a plain full-screen push.
+_Avoid_: Dialog (a separate floating window), modal (too generic).

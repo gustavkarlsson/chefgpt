@@ -68,9 +68,6 @@ import se.gustavkarlsson.chefgpt.navigation.Screen
 import se.gustavkarlsson.chefgpt.navigation.Screen.Id
 import se.gustavkarlsson.chefgpt.plus
 import se.gustavkarlsson.chefgpt.sessions.SessionId
-import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessage
-import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessageHost
-import se.gustavkarlsson.chefgpt.snackbar.rememberSnackbarHostState
 
 @Serializable
 @SerialName("ingredients")
@@ -82,21 +79,18 @@ data class IngredientsScreen(
     override fun Content() {
         val viewModel = koinViewModel<IngredientsViewModel> { parametersOf(this) }
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-        Content(uiState, viewModel.snackbarMessages, viewModel.focusInputEvents)
+        Content(uiState, viewModel.focusInputEvents)
     }
 }
 
 @Composable
 private fun Content(
     uiState: UiState,
-    snackbarMessages: Flow<SnackbarMessage>,
     focusInputEvents: Flow<Unit>,
     modifier: Modifier = Modifier,
 ) {
-    val snackbarHostState = rememberSnackbarHostState(snackbarMessages)
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        snackbarHost = { SnackbarMessageHost(snackbarHostState) },
         topBar = {
             Surface(color = MaterialTheme.colorScheme.background) {
                 Row(
