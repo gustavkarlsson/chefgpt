@@ -9,6 +9,7 @@ import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.chats.EventRepository
 import se.gustavkarlsson.chefgpt.files.UploadedFile
+import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 
 @Suppress("unused")
 class ImageScanTools(
@@ -18,6 +19,7 @@ class ImageScanTools(
     private val recipeScanAgent: RecipeScanAgent,
     private val scanIngredientsAgent: ScanIngredientsAgent,
     private val describeImagesAgent: DescribeImagesAgent,
+    private val ingredientStore: IngredientStore,
 ) : ToolSet {
     @Tool
     @LLMDescription(
@@ -38,7 +40,11 @@ class ImageScanTools(
     suspend fun scanIngredientsInPhotos(
         @LLMDescription("The photo files to scan.")
         files: List<UploadedFile>,
-    ): List<String> = scanIngredientsAgent.scan(userId, files)
+    ): List<String> {
+        val scanned = scanIngredientsAgent.scan(userId, files)
+        val added = ingredientStore.createIngredients(userId, scanned)
+        return added.map { it.name }
+    }
 
     @Tool
     @LLMDescription(

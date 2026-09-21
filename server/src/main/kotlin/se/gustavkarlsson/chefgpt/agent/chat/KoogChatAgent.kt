@@ -273,6 +273,7 @@ class KoogChatAgent(
                         recipeScanAgent,
                         scanIngredientsAgent,
                         describeImagesAgent,
+                        ingredientStore,
                     ),
                 )
             },

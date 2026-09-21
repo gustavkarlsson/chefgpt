@@ -6,6 +6,6 @@ import se.gustavkarlsson.chefgpt.files.UploadedFile
 interface ScanIngredientsAgent {
     suspend fun scan(
         userId: UserId,
-        images: List<UploadedFile>,
+        files: List<UploadedFile>,
     ): List<String>
 }

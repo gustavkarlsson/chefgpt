@@ -14,6 +14,7 @@ import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.files.FileKind
 import se.gustavkarlsson.chefgpt.files.FileUploader
 import se.gustavkarlsson.chefgpt.files.fileKindOrNull
+import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 import se.gustavkarlsson.chefgpt.jobs.JobRunner
 import se.gustavkarlsson.chefgpt.requireSession
 import se.gustavkarlsson.chefgpt.toDomain
@@ -35,6 +36,7 @@ fun Route.scanIngredientsRoute() {
         }
         val fileUploader = get<FileUploader>()
         val scanAgent = get<ScanIngredientsAgent>()
+        val ingredientStore = get<IngredientStore>()
 
         val file = fileUploader.uploadFile(call.receive(), contentType)
         if (file == null) {
@@ -44,7 +46,9 @@ fun Route.scanIngredientsRoute() {
 
         val job =
             get<JobRunner>().run("Ingredient scan", ListSerializer(String.serializer())) {
-                scanAgent.scan(userId, listOf(file.toDomain()))
+                val scanned = scanAgent.scan(userId, listOf(file.toDomain()))
+                val added = ingredientStore.createIngredients(userId, scanned)
+                added.map { it.name }
             }
         call.respond(HttpStatusCode.Accepted, job)
     }

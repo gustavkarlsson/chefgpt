@@ -77,7 +77,7 @@ fun Application.createAiAgentsModule() =
                 }
 
                 "fake" -> {
-                    FakeScanIngredientsAgent(get<IngredientStore>())
+                    FakeScanIngredientsAgent()
                 }
 
                 else -> {

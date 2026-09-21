@@ -28,8 +28,9 @@ class ImageScanToolsTest {
             chatId,
             userId,
             FakeRecipeScanAgent(recipeRepository),
-            FakeScanIngredientsAgent(ingredientStore),
+            FakeScanIngredientsAgent(),
             FakeDescribeImagesAgent(),
+            ingredientStore,
         )
 
     @Test
