@@ -1,0 +1,10 @@
+id = "chefgpt.worktree-cleanup"
+name = "ChefGPT worktree cleanup"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+description = "Run ./gradlew clean when a worktree workspace is closed"
+platforms = ["linux", "macos"]
+
+[[events]]
+on = "workspace.closed"
+command = ["sh", "./cleanup.sh"]
