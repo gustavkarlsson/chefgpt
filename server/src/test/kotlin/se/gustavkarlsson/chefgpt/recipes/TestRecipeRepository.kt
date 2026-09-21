@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class TestRecipeRepository {
     private val storage = ConcurrentHashMap<UserId, MutableStateFlow<Map<RecipeId, ApiRecipe>>>()
-    private val repository = PersistenceBackedRecipeRepository(InMemoryRecipePersistence(storage))
+    private val repository = RecipeRepository(InMemoryRecipePersistence(storage))
 
     val koinModule: Module = module { single<RecipeRepository> { repository } }
 

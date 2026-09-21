@@ -50,7 +50,7 @@ class PostgresRecipeRepositoryTest {
         }
 
         private val repository: RecipeRepository by lazy {
-            PersistenceBackedRecipeRepository(
+            RecipeRepository(
                 PostgresRecipePersistence(DatabaseAccess(ChefGptDatabase(dataSource.asJdbcDriver()))),
             )
         }
