@@ -11,9 +11,9 @@ import se.gustavkarlsson.chefgpt.agent.RecipeScanAgent
 import se.gustavkarlsson.chefgpt.agent.chat.ChatAgent
 import se.gustavkarlsson.chefgpt.agent.chat.FakeChatAgent
 import se.gustavkarlsson.chefgpt.agent.chat.KoogChatAgent
-import se.gustavkarlsson.chefgpt.agent.describeimage.DescribeImagesAgent
-import se.gustavkarlsson.chefgpt.agent.describeimage.FakeDescribeImagesAgent
-import se.gustavkarlsson.chefgpt.agent.describeimage.KoogDescribeImagesAgent
+import se.gustavkarlsson.chefgpt.agent.describeimages.DescribeImagesAgent
+import se.gustavkarlsson.chefgpt.agent.describeimages.FakeDescribeImagesAgent
+import se.gustavkarlsson.chefgpt.agent.describeimages.KoogDescribeImagesAgent
 import se.gustavkarlsson.chefgpt.agent.scaningredients.FakeScanIngredientsAgent
 import se.gustavkarlsson.chefgpt.agent.scaningredients.KoogScanIngredientsAgent
 import se.gustavkarlsson.chefgpt.agent.scaningredients.ScanIngredientsAgent

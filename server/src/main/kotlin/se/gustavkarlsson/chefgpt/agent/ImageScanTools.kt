@@ -3,7 +3,7 @@ package se.gustavkarlsson.chefgpt.agent
 import ai.koog.agents.core.tools.annotations.LLMDescription
 import ai.koog.agents.core.tools.annotations.Tool
 import ai.koog.agents.core.tools.reflect.ToolSet
-import se.gustavkarlsson.chefgpt.agent.describeimage.DescribeImagesAgent
+import se.gustavkarlsson.chefgpt.agent.describeimages.DescribeImagesAgent
 import se.gustavkarlsson.chefgpt.agent.scaningredients.ScanIngredientsAgent
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.auth.UserId
@@ -28,7 +28,7 @@ class ImageScanTools(
     suspend fun describePhotos(
         @LLMDescription("The photo files to describe.")
         files: List<UploadedFile>,
-    ): List<String> = describeImagesAgent.scan(files)
+    ): List<String> = describeImagesAgent.run(files)
 
     @Tool
     @LLMDescription(
