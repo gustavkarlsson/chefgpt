@@ -5,15 +5,15 @@ import ai.koog.prompt.llm.LLModel
 import io.ktor.server.application.Application
 import org.koin.dsl.bind
 import org.koin.dsl.module
-import se.gustavkarlsson.chefgpt.agent.FakeRecipeScanAgent
-import se.gustavkarlsson.chefgpt.agent.KoogRecipeScanAgent
-import se.gustavkarlsson.chefgpt.agent.RecipeScanAgent
 import se.gustavkarlsson.chefgpt.agent.chat.ChatAgent
 import se.gustavkarlsson.chefgpt.agent.chat.FakeChatAgent
 import se.gustavkarlsson.chefgpt.agent.chat.KoogChatAgent
 import se.gustavkarlsson.chefgpt.agent.describeimages.DescribeImagesAgent
 import se.gustavkarlsson.chefgpt.agent.describeimages.FakeDescribeImagesAgent
 import se.gustavkarlsson.chefgpt.agent.describeimages.KoogDescribeImagesAgent
+import se.gustavkarlsson.chefgpt.agent.saverecipes.FakeSaveRecipesAgent
+import se.gustavkarlsson.chefgpt.agent.saverecipes.KoogSaveRecipesAgent
+import se.gustavkarlsson.chefgpt.agent.saverecipes.SaveRecipesAgent
 import se.gustavkarlsson.chefgpt.agent.scaningredients.FakeScanIngredientsAgent
 import se.gustavkarlsson.chefgpt.agent.scaningredients.KoogScanIngredientsAgent
 import se.gustavkarlsson.chefgpt.agent.scaningredients.ScanIngredientsAgent
@@ -51,7 +51,7 @@ fun Application.createAiAgentsModule() =
                         imageCropper = get<ImageCropper>(),
                         chatRepository = get<ChatRepository>(),
                         eventRepository = get<EventRepository>(),
-                        recipeScanAgent = get<RecipeScanAgent>(),
+                        saveRecipesAgent = get<SaveRecipesAgent>(),
                         scanIngredientsAgent = get<ScanIngredientsAgent>(),
                         describeImagesAgent = get<DescribeImagesAgent>(),
                     )
@@ -88,7 +88,7 @@ fun Application.createAiAgentsModule() =
         single {
             when (val type = config.property("bindings.agent").getString()) {
                 "llm" -> {
-                    KoogRecipeScanAgent(
+                    KoogSaveRecipesAgent(
                         get<PromptExecutor>(),
                         aiConfig.agentModel(RECIPE_SCAN_AGENT),
                         get<RecipeRepository>(),
@@ -99,14 +99,14 @@ fun Application.createAiAgentsModule() =
                 }
 
                 "fake" -> {
-                    FakeRecipeScanAgent(get<RecipeRepository>())
+                    FakeSaveRecipesAgent(get<RecipeRepository>())
                 }
 
                 else -> {
                     error("Unknown agent type: '$type'. Expected 'llm' or 'fake'.")
                 }
             }
-        } bind RecipeScanAgent::class
+        } bind SaveRecipesAgent::class
         single {
             when (val type = config.property("bindings.agent").getString()) {
                 "llm" -> KoogDescribeImagesAgent(get<PromptExecutor>(), aiConfig.agentModel(DESCRIBE_IMAGE_AGENT))

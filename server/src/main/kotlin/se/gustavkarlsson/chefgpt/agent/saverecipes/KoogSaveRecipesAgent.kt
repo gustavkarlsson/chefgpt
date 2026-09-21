@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt.agent
+package se.gustavkarlsson.chefgpt.agent.saverecipes
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.agent.AIAgentFunctionalStrategy
 import ai.koog.agents.core.agent.config.AIAgentConfig
@@ -10,6 +10,7 @@ import ai.koog.prompt.llm.LLModel
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import org.slf4j.LoggerFactory
+import se.gustavkarlsson.chefgpt.agent.scanStrategy
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.facts.FactRepository
 import se.gustavkarlsson.chefgpt.facts.UserFacts
@@ -81,14 +82,14 @@ private val SYSTEM_PROMPT =
     Do not modify, delete, or look up existing recipes.
     """.trimIndent()
 
-class KoogRecipeScanAgent(
+class KoogSaveRecipesAgent(
     private val promptExecutor: PromptExecutor,
     private val model: LLModel,
     private val recipeRepository: RecipeRepository,
     private val recipeLookup: RecipeLookup,
     private val imageCropper: ImageCropper,
     private val factRepository: FactRepository,
-) : RecipeScanAgent {
+) : SaveRecipesAgent {
     override suspend fun scan(
         userId: UserId,
         images: List<UploadedFile>,

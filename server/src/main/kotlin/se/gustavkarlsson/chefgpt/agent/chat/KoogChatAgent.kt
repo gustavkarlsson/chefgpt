@@ -9,8 +9,8 @@ import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
 import ai.koog.prompt.message.Message
 import se.gustavkarlsson.chefgpt.agent.ImageScanTools
-import se.gustavkarlsson.chefgpt.agent.RecipeScanAgent
 import se.gustavkarlsson.chefgpt.agent.describeimages.DescribeImagesAgent
+import se.gustavkarlsson.chefgpt.agent.saverecipes.SaveRecipesAgent
 import se.gustavkarlsson.chefgpt.agent.scaningredients.ScanIngredientsAgent
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
@@ -193,7 +193,7 @@ class KoogChatAgent(
     private val imageCropper: ImageCropper,
     private val chatRepository: ChatRepository,
     private val eventRepository: EventRepository,
-    private val recipeScanAgent: RecipeScanAgent,
+    private val saveRecipesAgent: SaveRecipesAgent,
     private val scanIngredientsAgent: ScanIngredientsAgent,
     private val describeImagesAgent: DescribeImagesAgent,
 ) : ChatAgent {
@@ -270,7 +270,7 @@ class KoogChatAgent(
                         eventRepository,
                         chatId,
                         userId,
-                        recipeScanAgent,
+                        saveRecipesAgent,
                         scanIngredientsAgent,
                         describeImagesAgent,
                         ingredientStore,

@@ -1,13 +1,13 @@
-package se.gustavkarlsson.chefgpt.agent
+package se.gustavkarlsson.chefgpt.agent.saverecipes
 
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.files.UploadedFile
 import se.gustavkarlsson.chefgpt.recipes.NewRecipe
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 
-class FakeRecipeScanAgent(
+class FakeSaveRecipesAgent(
     private val recipeRepository: RecipeRepository,
-) : RecipeScanAgent {
+) : SaveRecipesAgent {
     override suspend fun scan(
         userId: UserId,
         images: List<UploadedFile>,
