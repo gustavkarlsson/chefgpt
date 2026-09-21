@@ -3,7 +3,6 @@ package se.gustavkarlsson.chefgpt.agent.describeimage
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.agent.config.AIAgentConfig
 import ai.koog.agents.core.agent.functionalStrategy
-import ai.koog.prompt.Prompt
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
@@ -12,7 +11,7 @@ import org.slf4j.LoggerFactory
 import se.gustavkarlsson.chefgpt.files.UploadedFile
 import se.gustavkarlsson.chefgpt.toImageAttachmentOrNull
 
-private val logger = LoggerFactory.getLogger("KoogDescribeImageAgent")
+private val logger = LoggerFactory.getLogger("KoogDescribeImagesAgent")
 
 private val SYSTEM_PROMPT =
     """
@@ -31,17 +30,17 @@ private val SYSTEM_PROMPT =
     """.trimIndent()
 
 class KoogDescribeImagesAgent(
-    private val promptExecutor: PromptExecutor,
-    private val model: LLModel,
+    private val describeImages: DescribeImages,
 ) : DescribeImagesAgent {
+    constructor(promptExecutor: PromptExecutor, model: LLModel) : this(AgenticDescribeImages(promptExecutor, model))
+
     override suspend fun scan(files: List<UploadedFile>): List<String> {
         val imagesByFileIndex = getImagesByFileIndex(files)
         val images = imagesByFileIndex.mapNotNull { it?.second }
         if (images.isEmpty()) {
             return files.map { "Not an image" }
         }
-        val agent = buildAgent(buildPrompt(images))
-        val descriptionsByImageIndex = agent.run("Describe these images.")
+        val descriptionsByImageIndex = describeImages.invoke(images)
         return getDescriptions(imagesByFileIndex, descriptionsByImageIndex)
     }
 
@@ -72,18 +71,26 @@ class KoogDescribeImagesAgent(
                 description ?: "Skipped by agent"
             }
         }
+}
 
-    private fun buildAgent(prompt: Prompt) =
-        AIAgent(
-            promptExecutor = promptExecutor,
-            agentConfig =
-                AIAgentConfig(
-                    prompt = prompt,
-                    model = model,
-                    maxAgentIterations = 1,
-                ),
-            strategy = describeImageStrategy(),
-        )
+private class AgenticDescribeImages(
+    private val promptExecutor: PromptExecutor,
+    private val model: LLModel,
+) : DescribeImages {
+    override suspend fun invoke(images: List<AttachmentSource.Image>): Map<Int, String> {
+        val agent =
+            AIAgent(
+                promptExecutor = promptExecutor,
+                agentConfig =
+                    AIAgentConfig(
+                        prompt = buildPrompt(images),
+                        model = model,
+                        maxAgentIterations = 1,
+                    ),
+                strategy = describeImageStrategy(),
+            )
+        return agent.run("Describe these images.")
+    }
 }
 
 private fun buildPrompt(imageAttachments: List<AttachmentSource.Image>) =
