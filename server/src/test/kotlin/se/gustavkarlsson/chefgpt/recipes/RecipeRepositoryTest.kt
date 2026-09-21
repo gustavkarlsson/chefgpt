@@ -19,7 +19,7 @@ import kotlin.time.Duration.Companion.minutes
 class RecipeRepositoryTest {
     private val userId = UserId.random()
     private val otherUserId = UserId.random()
-    private val store = RecipeRepository(InMemoryRecipePersistence())
+    private val store = PersistenceBackedRecipeRepository(InMemoryRecipePersistence())
 
     @Test
     fun `getRecipeSummaries returns empty list for new user`() =

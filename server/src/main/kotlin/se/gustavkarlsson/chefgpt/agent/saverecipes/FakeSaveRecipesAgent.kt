@@ -1,5 +1,6 @@
 package se.gustavkarlsson.chefgpt.agent.saverecipes
 
+import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.files.UploadedFile
 import se.gustavkarlsson.chefgpt.recipes.NewRecipe
@@ -11,7 +12,7 @@ class FakeSaveRecipesAgent(
     override suspend fun scan(
         userId: UserId,
         images: List<UploadedFile>,
-    ): List<String> {
+    ): List<RecipeId> {
         val recipe =
             recipeRepository.saveRecipe(
                 userId,
@@ -29,6 +30,6 @@ class FakeSaveRecipesAgent(
                     spoonacularId = null,
                 ),
             )
-        return listOf(recipe.title)
+        return listOf(recipe.id)
     }
 }

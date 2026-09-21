@@ -10,7 +10,7 @@ import se.gustavkarlsson.chefgpt.chats.InMemoryEventRepository
 import se.gustavkarlsson.chefgpt.files.UploadedFile
 import se.gustavkarlsson.chefgpt.ingredients.InMemoryIngredientStore
 import se.gustavkarlsson.chefgpt.recipes.InMemoryRecipePersistence
-import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
+import se.gustavkarlsson.chefgpt.recipes.PersistenceBackedRecipeRepository
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -21,7 +21,7 @@ class ImageScanToolsTest {
     private val chatId = ChatId.random()
     private val userId = UserId.random()
     private val eventRepository = InMemoryEventRepository()
-    private val recipeRepository = RecipeRepository(InMemoryRecipePersistence())
+    private val recipeRepository = PersistenceBackedRecipeRepository(InMemoryRecipePersistence())
     private val ingredientStore = InMemoryIngredientStore()
     private val tools =
         ImageScanTools(
@@ -39,8 +39,8 @@ class ImageScanToolsTest {
         runTest {
             val result = tools.scanRecipesInPhotos(listOf(PAGE))
 
-            assertEquals(listOf("Pasta al pomodoro"), result)
             assertEquals(listOf("Pasta al pomodoro"), recipeRepository.getRecipeSummaries(userId).map { it.title })
+            assertEquals(recipeRepository.getRecipeSummaries(userId).map { it.id }, result)
         }
 
     @Test
@@ -48,7 +48,7 @@ class ImageScanToolsTest {
         runTest {
             val result = tools.scanRecipesInPhotos(listOf(PAGE, DISH))
 
-            assertEquals(listOf("Pasta al pomodoro"), result)
+            assertEquals(recipeRepository.getRecipeSummaries(userId).map { it.id }, result)
         }
 
     @Test

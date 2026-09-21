@@ -1,16 +1,15 @@
 package se.gustavkarlsson.chefgpt.agent.saverecipes
+
 import ai.koog.agents.core.agent.AIAgent
-import ai.koog.agents.core.agent.AIAgentFunctionalStrategy
 import ai.koog.agents.core.agent.config.AIAgentConfig
+import ai.koog.agents.core.agent.functionalStrategy
 import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.prompt.Prompt
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonPrimitive
-import org.slf4j.LoggerFactory
-import se.gustavkarlsson.chefgpt.agent.scanStrategy
+import se.gustavkarlsson.chefgpt.api.ApiRecipe
+import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.facts.FactRepository
 import se.gustavkarlsson.chefgpt.facts.UserFacts
@@ -20,12 +19,11 @@ import se.gustavkarlsson.chefgpt.files.ImageCropper
 import se.gustavkarlsson.chefgpt.files.ImageEditTools
 import se.gustavkarlsson.chefgpt.files.UploadedFile
 import se.gustavkarlsson.chefgpt.files.fileKindOrNull
+import se.gustavkarlsson.chefgpt.recipes.NewRecipe
 import se.gustavkarlsson.chefgpt.recipes.RecipeLookup
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 import se.gustavkarlsson.chefgpt.recipes.toTools
 import se.gustavkarlsson.chefgpt.toImageAttachmentOrNull
-
-private val logger = LoggerFactory.getLogger("KoogRecipeScanAgent")
 
 private val SYSTEM_PROMPT =
     """
@@ -93,17 +91,19 @@ class KoogSaveRecipesAgent(
     override suspend fun scan(
         userId: UserId,
         images: List<UploadedFile>,
-    ): List<String> {
+    ): List<RecipeId> {
         val facts = factRepository.getFacts(userId)
-        val agent = buildAgent(userId, images, buildPrompt(images, facts), recipeScanStrategy())
-        return agent.run("Scan these photos for recipes and save the ones you find.")
+        val recordingRepository = RecordingRecipeRepository(recipeRepository)
+        val agent = buildAgent(userId, images, recordingRepository, buildPrompt(images, facts))
+        agent.run("Scan these photos for recipes and save the ones you find.")
+        return recordingRepository.savedIds.toList()
     }
 
     private fun buildAgent(
         userId: UserId,
         images: List<UploadedFile>,
+        repository: RecipeRepository,
         prompt: Prompt,
-        strategy: AIAgentFunctionalStrategy<String, List<String>>,
     ) = AIAgent(
         promptExecutor = promptExecutor,
         agentConfig =
@@ -112,10 +112,10 @@ class KoogSaveRecipesAgent(
                 model = model,
                 maxAgentIterations = 10,
             ),
-        strategy = strategy,
+        strategy = saveRecipesStrategy(),
         toolRegistry =
             ToolRegistry {
-                tools(recipeRepository.toTools(userId, recipeLookup))
+                tools(repository.toTools(userId, recipeLookup))
                 tools(
                     ImageEditTools(imageCropper) {
                         images
@@ -127,10 +127,29 @@ class KoogSaveRecipesAgent(
     )
 }
 
+// Records which recipes the agent creates and removes, so the caller can learn
+// exactly what was created by the end of the scan. Delegates every operation to
+// the shared repository so its change notifications still fire.
+private class RecordingRecipeRepository(
+    private val delegate: RecipeRepository,
+) : RecipeRepository by delegate {
+    val savedIds: Set<RecipeId>
+        field = mutableSetOf()
+
+    override suspend fun saveRecipe(
+        userId: UserId,
+        recipe: NewRecipe,
+    ): ApiRecipe {
+        val saved = delegate.saveRecipe(userId, recipe)
+        savedIds += saved.id
+        return saved
+    }
+}
+
 private fun buildPrompt(
     images: List<UploadedFile>,
     facts: UserFacts,
-) = prompt("scan-recipes") {
+) = prompt("save-recipes") {
     system(SYSTEM_PROMPT + "\n\n" + facts.toMeasurementPromptText())
     user {
         for (image in images) {
@@ -142,17 +161,15 @@ private fun buildPrompt(
     }
 }
 
-// TODO Fix brittle parsing since the tool signature might change
-private fun recipeScanStrategy() =
-    scanStrategy("scan-recipes") { call ->
-        if (call.tool == "createRecipe") {
-            val titles =
-                call.argsJson["title"]
-                    ?.jsonPrimitive
-                    ?.takeIf { it.isString }
-                    ?.contentOrNull
-            listOfNotNull(titles)
-        } else {
-            emptyList()
+private fun saveRecipesStrategy() =
+    functionalStrategy<String, Unit>("save-recipes") { input ->
+        var message = requestLLM(input)
+        repeat(config.maxAgentIterations) {
+            val toolCalls = getToolCalls(message)
+            if (toolCalls.isEmpty()) {
+                return@repeat
+            }
+            val toolResults = executeTools(toolCalls)
+            message = sendToolResults(toolResults)
         }
     }

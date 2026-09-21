@@ -19,7 +19,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
 import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.builtins.serializer
 import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.ImageUrl
@@ -275,7 +274,7 @@ class StartViewModel(
         viewModelScope.launch {
             try {
                 val result =
-                    awaitJob.await(credentials.sessionId, ListSerializer(String.serializer())) {
+                    awaitJob.await(credentials.sessionId, ListSerializer(RecipeId.serializer())) {
                         coroutineScope {
                             images
                                 .map { file ->
