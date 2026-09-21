@@ -1,0 +1,14 @@
+id = "chefgpt.worktree-claude-autostart"
+name = "ChefGPT worktree Claude autostart"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+description = "Start Claude Code in a worktree when it is opened"
+platforms = ["linux", "macos"]
+
+[[events]]
+on = "worktree.created"
+command = ["sh", "./autostart.sh"]
+
+[[events]]
+on = "worktree.opened"
+command = ["sh", "./autostart.sh"]
