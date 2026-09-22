@@ -52,6 +52,7 @@ import se.gustavkarlsson.chefgpt.api.ApiRecipeSummary
 import se.gustavkarlsson.chefgpt.api.ApiRecipeUpdate
 import se.gustavkarlsson.chefgpt.api.ApiSaveSpoonacularRecipe
 import se.gustavkarlsson.chefgpt.api.ApiScanRecipe
+import se.gustavkarlsson.chefgpt.api.ApiScrapeRecipe
 import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
@@ -168,6 +169,23 @@ class ChefGptClient(
                     contentType(ContentType.Application.Json)
                     accept(ContentType.Application.Json)
                     setBody(ApiScanRecipe(attachments))
+                }
+            },
+            readSafe = { body() },
+        )
+
+    // Starts a recipe scrape and returns the job to poll for its result.
+    suspend fun scrapeRecipe(
+        sessionId: SessionId,
+        url: String,
+    ): Result<ApiJob<List<RecipeId>>, ClientError> =
+        request(
+            send = { baseUrl ->
+                post("$baseUrl/recipes/scrape") {
+                    sessionIdHeader(sessionId)
+                    contentType(ContentType.Application.Json)
+                    accept(ContentType.Application.Json)
+                    setBody(ApiScrapeRecipe(url))
                 }
             },
             readSafe = { body() },

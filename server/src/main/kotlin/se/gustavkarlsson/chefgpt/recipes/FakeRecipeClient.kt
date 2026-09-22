@@ -126,7 +126,7 @@ class FakeRecipeClient : RecipeClient {
         includeNutrition: Boolean,
         includeTaste: Boolean,
     ): String =
-        """{"title":"Extracted Recipe","readyInMinutes":45,"servings":4,"instructions":"Step 1: Prepare ingredients. Step 2: Cook. Step 3: Serve.","extendedIngredients":[{"name":"chicken breast","amount":500.0,"unit":"g"},{"name":"olive oil","amount":2.0,"unit":"tbsp"}]}"""
+        """{"title":"Extracted Recipe","image":"https://img.spoonacular.com/recipes/716429-556x370.jpg","readyInMinutes":45,"servings":4,"instructions":"Step 1: Prepare ingredients. Step 2: Cook. Step 3: Serve.","extendedIngredients":[{"name":"chicken breast","amount":500.0,"unit":"g"},{"name":"olive oil","amount":2.0,"unit":"tbsp"}]}"""
 
     override suspend fun classifyCuisine(
         title: String,

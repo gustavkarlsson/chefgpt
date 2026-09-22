@@ -14,6 +14,7 @@ import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.recipes.NewRecipe
 import se.gustavkarlsson.chefgpt.recipes.RecipeLookup
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
+import se.gustavkarlsson.chefgpt.recipes.RecipeScraper
 import se.gustavkarlsson.chefgpt.recipes.RecipeUpdate
 import se.gustavkarlsson.chefgpt.recipes.recipePhotoUrlOrNull
 import kotlin.time.Duration.Companion.minutes
@@ -33,6 +34,24 @@ class SaveRecipeTool(
             lookup.lookUp(SpoonacularId(spoonacularId))
                 ?: error("No recipe found with Spoonacular ID $spoonacularId")
         return repository.saveRecipe(userId, recipe).toSummary()
+    }
+}
+
+class ScrapeRecipeTool(
+    private val scraper: RecipeScraper,
+    private val userId: UserId,
+) : ToolSet {
+    @Tool
+    @LLMDescription(
+        "Scrape a recipe from a website URL and save it to the user's recipes. " +
+            "Use this when the user gives a link to a recipe.",
+    )
+    suspend fun scrapeRecipe(
+        @LLMDescription("The URL of the page that contains the recipe.")
+        url: String,
+    ): ApiRecipeSummary {
+        val recipe = scraper.scrape(userId, url) ?: error("No recipe found at $url")
+        return recipe.toSummary()
     }
 }
 

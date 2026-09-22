@@ -35,6 +35,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Visibility
@@ -283,6 +284,7 @@ private fun LoggedInContent(
                 RecipeSidebar(
                     modifier = Modifier.fillMaxSize(),
                     scanRecipesButton = state.scanRecipesButton,
+                    scrapeRecipeButton = state.scrapeRecipeButton,
                     recipes = state.recipeSummaries,
                     onClickBack =
                         if (navigator.canNavigateBack()) {
@@ -549,6 +551,7 @@ private fun ChatItem(
 private fun RecipeSidebar(
     recipes: List<UiRecipeSummary>,
     scanRecipesButton: UiScanRecipesButton?,
+    scrapeRecipeButton: UiScrapeRecipeButton,
     modifier: Modifier = Modifier,
     onClickBack: (() -> Unit)? = null,
 ) {
@@ -593,12 +596,11 @@ private fun RecipeSidebar(
                                 WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Bottom),
                             ).padding(16.dp),
                 )
-                scanRecipesButton?.let { button ->
-                    ScanRecipeButton(
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                        button = button,
-                    )
-                }
+                RecipeAddButtons(
+                    scanRecipesButton = scanRecipesButton,
+                    scrapeRecipeButton = scrapeRecipeButton,
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                )
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth(),
@@ -615,15 +617,12 @@ private fun RecipeSidebar(
                             modifier = Modifier.animateItem(),
                         )
                     }
-                    scanRecipesButton?.let { button ->
-                        item {
-                            Column(Modifier.fillParentMaxWidth()) {
-                                ScanRecipeButton(
-                                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                                    button = button,
-                                )
-                            }
-                        }
+                    item {
+                        RecipeAddButtons(
+                            scanRecipesButton = scanRecipesButton,
+                            scrapeRecipeButton = scrapeRecipeButton,
+                            modifier = Modifier.fillParentMaxWidth(),
+                        )
                     }
                 }
             }
@@ -648,6 +647,44 @@ private fun ScanRecipeButton(
                 contentDescription = "Scan recipes from photos",
             )
         }
+    }
+}
+
+@Composable
+private fun ScrapeRecipeButton(
+    button: UiScrapeRecipeButton,
+    modifier: Modifier = Modifier,
+) {
+    if (button.scraping) {
+        // Scraping can take a while; show progress in place of the link button.
+        Box(modifier = modifier.size(48.dp), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(modifier = Modifier.size(24.dp))
+        }
+    } else {
+        IconButton(modifier = modifier, onClick = button.onClick) {
+            Icon(
+                imageVector = Icons.Default.Link,
+                contentDescription = "Scrape recipe from website",
+            )
+        }
+    }
+}
+
+@Composable
+private fun RecipeAddButtons(
+    scanRecipesButton: UiScanRecipesButton?,
+    scrapeRecipeButton: UiScrapeRecipeButton,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        scanRecipesButton?.let { button ->
+            ScanRecipeButton(button = button)
+        }
+        ScrapeRecipeButton(button = scrapeRecipeButton)
     }
 }
 

@@ -1,0 +1,33 @@
+{
+    "request": {
+        "method": "POST",
+        "url": "http://localhost/recipes/scrape",
+        "headers": {
+            "Session-Id": "00000000000000000000000000000000",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Content-Length": "0"
+        },
+        "body": {
+            "type": "json",
+            "data": {
+                "url": ""
+            }
+        }
+    },
+    "response": {
+        "status": 400,
+        "headers": {
+            "Content-Length": "0",
+            "Content-Type": "application/json"
+        },
+        "body": {
+            "type": "json",
+            "data": {
+                "type": "no-url",
+                "message": "No URL",
+                "userMessage": "Paste a website URL to scrape."
+            }
+        }
+    }
+}

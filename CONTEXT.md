@@ -25,3 +25,7 @@ _Avoid_: Memory (reserved for the durable cross-conversation facts above), event
 **Sheet**:
 A screen presented as a modal bottom sheet over the previous screen, leaving it visible behind. It is a distinct navigation concept in this app (a screen marked `Screen.BottomSheet`), not a plain full-screen push.
 _Avoid_: Dialog (a separate floating window), modal (too generic).
+
+**Scrape**:
+A method of adding a recipe from a website URL: the user pastes a URL and the backend saves the single recipe it finds, via Spoonacular's recipe-extraction endpoint. Contrast with adding recipes by scanning photos.
+_Avoid_: Extract (the underlying Spoonacular call `RecipeClient.extractRecipeFromWebsite`, not the feature), import.

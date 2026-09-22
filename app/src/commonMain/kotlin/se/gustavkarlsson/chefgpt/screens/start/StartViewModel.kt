@@ -20,6 +20,7 @@ import se.gustavkarlsson.chefgpt.chats.usecases.CreateChat
 import se.gustavkarlsson.chefgpt.chats.usecases.DeleteChat
 import se.gustavkarlsson.chefgpt.chats.usecases.StreamChats
 import se.gustavkarlsson.chefgpt.jobs.usecases.StreamScanState
+import se.gustavkarlsson.chefgpt.jobs.usecases.StreamScrapeState
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.recipes.RecipeSummary
 import se.gustavkarlsson.chefgpt.recipes.usecases.DeleteRecipe
@@ -31,6 +32,7 @@ import se.gustavkarlsson.chefgpt.screens.debug.DebugScreen
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsScreen
 import se.gustavkarlsson.chefgpt.screens.recipe.RecipeDetailScreen
 import se.gustavkarlsson.chefgpt.screens.recipescan.RecipeScanSheet
+import se.gustavkarlsson.chefgpt.screens.recipescrape.RecipeScrapeSheet
 import se.gustavkarlsson.chefgpt.sessions.RegisterError
 import se.gustavkarlsson.chefgpt.sessions.SessionCredentials
 import se.gustavkarlsson.chefgpt.sessions.UserCredentials
@@ -55,6 +57,7 @@ class StartViewModel(
     private val setRecipeFavorite: SetRecipeFavorite,
     private val deleteRecipe: DeleteRecipe,
     private val streamScanState: StreamScanState,
+    private val streamScrapeState: StreamScrapeState,
     private val showSnackbar: ShowSnackbar,
     private val navigator: Navigator,
     private val deviceConfig: DeviceConfig,
@@ -72,6 +75,7 @@ class StartViewModel(
             inputPassword = "",
             authenticating = false,
             scanningRecipes = false,
+            scrapingRecipe = false,
         )
 
     override fun State.toUiState(): UiState =
@@ -107,6 +111,7 @@ class StartViewModel(
                         } else {
                             null
                         },
+                    scrapeRecipeButton = UiScrapeRecipeButton(scraping = scrapingRecipe, onClick = ::openScrapeSheet),
                     recipeSummaries = recipeSummaries.toUiRecipeSummaries(),
                     onClickNewChat = ::createNewChat,
                     onClickIngredients = ::openIngredients,
@@ -158,6 +163,11 @@ class StartViewModel(
         viewModelScope.launch {
             streamScanState().collect { scanning ->
                 innerState.update { it.copy(scanningRecipes = scanning) }
+            }
+        }
+        viewModelScope.launch {
+            streamScrapeState().collect { scraping ->
+                innerState.update { it.copy(scrapingRecipe = scraping) }
             }
         }
     }
@@ -278,6 +288,11 @@ class StartViewModel(
         navigator.push(RecipeScanSheet(credentials.sessionId))
     }
 
+    private fun openScrapeSheet() {
+        val credentials = innerState.value.sessionCredentials ?: return
+        navigator.push(RecipeScrapeSheet(credentials.sessionId))
+    }
+
     private fun toggleRecipeFavorite(recipeId: RecipeId) {
         val credentials = innerState.value.sessionCredentials ?: return
         val summary = innerState.value.recipeSummaries.firstOrNull { it.id == recipeId } ?: return
@@ -371,6 +386,7 @@ data class State(
     val inputPassword: String,
     val authenticating: Boolean,
     val scanningRecipes: Boolean,
+    val scrapingRecipe: Boolean,
 ) {
     val inputCredentials: UserCredentials
         get() = UserCredentials(inputUsername, inputPassword)
@@ -397,6 +413,7 @@ data class UiState(
             val chats: List<UiChat>,
             // Null on devices without a camera, where the button is hidden.
             val scanRecipesButton: UiScanRecipesButton?,
+            val scrapeRecipeButton: UiScrapeRecipeButton,
             val recipeSummaries: List<UiRecipeSummary>,
             val onClickNewChat: () -> Unit,
             val onClickIngredients: () -> Unit,
@@ -407,6 +424,11 @@ data class UiState(
 
 data class UiScanRecipesButton(
     val scanning: Boolean,
+    val onClick: () -> Unit,
+)
+
+data class UiScrapeRecipeButton(
+    val scraping: Boolean,
     val onClick: () -> Unit,
 )
 

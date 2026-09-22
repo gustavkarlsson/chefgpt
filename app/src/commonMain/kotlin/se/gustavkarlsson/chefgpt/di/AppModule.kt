@@ -49,9 +49,13 @@ import se.gustavkarlsson.chefgpt.jobs.JobManager
 import se.gustavkarlsson.chefgpt.jobs.usecases.AwaitJob
 import se.gustavkarlsson.chefgpt.jobs.usecases.HttpAwaitJob
 import se.gustavkarlsson.chefgpt.jobs.usecases.HttpScanRecipes
+import se.gustavkarlsson.chefgpt.jobs.usecases.HttpScrapeRecipe
 import se.gustavkarlsson.chefgpt.jobs.usecases.RealStreamScanState
+import se.gustavkarlsson.chefgpt.jobs.usecases.RealStreamScrapeState
 import se.gustavkarlsson.chefgpt.jobs.usecases.ScanRecipes
+import se.gustavkarlsson.chefgpt.jobs.usecases.ScrapeRecipe
 import se.gustavkarlsson.chefgpt.jobs.usecases.StreamScanState
+import se.gustavkarlsson.chefgpt.jobs.usecases.StreamScrapeState
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.readDeviceConfig
 import se.gustavkarlsson.chefgpt.recipes.HttpRecipeRepository
@@ -73,6 +77,7 @@ import se.gustavkarlsson.chefgpt.screens.debug.DebugViewModel
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsViewModel
 import se.gustavkarlsson.chefgpt.screens.recipe.RecipeDetailViewModel
 import se.gustavkarlsson.chefgpt.screens.recipescan.RecipeScanSheetViewModel
+import se.gustavkarlsson.chefgpt.screens.recipescrape.RecipeScrapeSheetViewModel
 import se.gustavkarlsson.chefgpt.screens.start.StartViewModel
 import se.gustavkarlsson.chefgpt.sessions.HttpSessionRepository
 import se.gustavkarlsson.chefgpt.sessions.LastSessionFileStore
@@ -142,7 +147,9 @@ val singletonModule =
         // Use cases — jobs
         single<HttpAwaitJob>() bind AwaitJob::class
         single<HttpScanRecipes>() bind ScanRecipes::class
+        single<HttpScrapeRecipe>() bind ScrapeRecipe::class
         single<RealStreamScanState>() bind StreamScanState::class
+        single<RealStreamScrapeState>() bind StreamScrapeState::class
 
         // Use cases — files
         single<HttpUploadFile>() bind UploadFile::class
@@ -161,6 +168,7 @@ val viewModelModule =
         viewModel<DebugViewModel>()
         viewModel<RecipeDetailViewModel>()
         viewModel<RecipeScanSheetViewModel>()
+        viewModel<RecipeScrapeSheetViewModel>()
     }
 
 val nativeModule =

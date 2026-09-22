@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 /** The kinds of long-running work [JobManager] hosts. */
 enum class JobType {
     ScanPhotos,
+    ScrapeRecipe,
 }
 
 /**

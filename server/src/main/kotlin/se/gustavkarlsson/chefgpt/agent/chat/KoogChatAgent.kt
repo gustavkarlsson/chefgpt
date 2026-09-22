@@ -35,6 +35,7 @@ import se.gustavkarlsson.chefgpt.agent.tools.RemoveIngredientsTool
 import se.gustavkarlsson.chefgpt.agent.tools.RenameChatTool
 import se.gustavkarlsson.chefgpt.agent.tools.SaveRecipeAsCopyTool
 import se.gustavkarlsson.chefgpt.agent.tools.SaveRecipeTool
+import se.gustavkarlsson.chefgpt.agent.tools.ScrapeRecipeTool
 import se.gustavkarlsson.chefgpt.agent.tools.SetMeasurementTool
 import se.gustavkarlsson.chefgpt.agent.tools.SetPreferredNameTool
 import se.gustavkarlsson.chefgpt.agent.tools.SetRecipeFavoriteTool
@@ -56,6 +57,7 @@ import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 import se.gustavkarlsson.chefgpt.recipes.RecipeClient
 import se.gustavkarlsson.chefgpt.recipes.RecipeLookup
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
+import se.gustavkarlsson.chefgpt.recipes.RecipeScraper
 
 private val SYSTEM_PROMPT =
     """
@@ -84,7 +86,8 @@ private val SYSTEM_PROMPT =
     If there are too few results, suggest that the user updates their ingredients.
 
     When the user asks you to keep or save a recipe, save it with
-    the saveRecipe tool.
+    the saveRecipe tool. When they give you a link to a recipe,
+    use the scrapeRecipe tool instead.
 
     The user can attach photos, PDFs and text files to a message.
     Read PDFs and text files directly. When one holds a recipe — a
@@ -211,6 +214,7 @@ class KoogChatAgent(
     private val recipeRepository: RecipeRepository,
     private val recipeLookup: RecipeLookup,
     private val recipeClient: RecipeClient,
+    private val recipeScraper: RecipeScraper,
     private val factRepository: FactRepository,
     private val imageCropper: ImageCropper,
     private val chatRepository: ChatRepository,
@@ -310,6 +314,7 @@ class KoogChatAgent(
                 tools(DescribePhotosTool(describeImagesAgent))
                 tools(AddIngredientsFromPhotosTool(scanIngredientsAgent, ingredientStore, userId))
                 tools(AddRecipesFromPhotosTool(saveRecipesAgent, userId))
+                tools(ScrapeRecipeTool(recipeScraper, userId))
             },
     )
 }

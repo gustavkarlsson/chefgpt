@@ -5,6 +5,8 @@ import se.gustavkarlsson.chefgpt.DurationSerializer
 import se.gustavkarlsson.chefgpt.IntRangeSerializer
 import kotlin.time.Duration
 
+// TODO: Add recipe attribution/source fields (source URL, site name, author)
+// once website scraping is implemented — needed for provenance and deduplication.
 @Serializable
 data class ApiRecipe(
     val id: RecipeId,
