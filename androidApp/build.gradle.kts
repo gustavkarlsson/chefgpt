@@ -29,8 +29,19 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    signingConfigs {
+        getByName("debug") {
+            // Checked in so every machine and CI sign debug builds identically.
+            storeFile = file("debug.keystore")
+            storeType = "PKCS12"
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
     buildTypes {
         getByName("debug") {
+            signingConfig = signingConfigs.getByName("debug")
             // Allow plain-HTTP traffic so debug builds can reach the local dev server.
             manifestPlaceholders["usesCleartextTraffic"] = "true"
         }
