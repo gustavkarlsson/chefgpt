@@ -126,10 +126,6 @@ Its certificate fingerprint is:
 SHA-1: 88:8A:0F:A1:47:A8:7B:0C:6C:29:7E:65:9B:DD:F4:35:BA:EF:8A:BA
 ```
 
-A debug build installed before this keystore existed was signed with the
-machine-local `~/.android/debug.keystore` and must be uninstalled once before
-the new one will install.
-
 ### iOS
 
 Build the debug app, then install and launch it on a connected iPhone, falling
