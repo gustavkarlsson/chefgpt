@@ -12,14 +12,26 @@ expect val BASE_URL_HINT: String?
 
 data class DeviceConfig(
     val platform: Platform,
+    // The device has a camera, so screens may offer to take a photo.
     val supportsCamera: Boolean,
+    // CapturePhoto can produce photos at all. Implies [supportsCamera] on mobile, but
+    // desktop has no camera and picks image files instead.
+    val supportsPhotoCapture: Boolean,
 )
 
-fun readDeviceConfig(): DeviceConfig =
-    DeviceConfig(
+fun readDeviceConfig(): DeviceConfig {
+    val supportsCamera = deviceSupportsCamera()
+    return DeviceConfig(
         platform = devicePlatform,
-        supportsCamera = deviceSupportsCamera(),
+        supportsCamera = supportsCamera,
+        supportsPhotoCapture =
+            when (devicePlatform) {
+                Platform.Android, Platform.Ios -> supportsCamera
+                Platform.Desktop -> true
+                Platform.Web -> false
+            },
     )
+}
 
 expect fun deviceSupportsCamera(): Boolean
 

@@ -121,7 +121,7 @@ class ChatViewModel(
                     onClickRemoveAttachment = ::removeAttachment,
                     cameraButton =
                         if (deviceConfig.supportsCamera) {
-                            UiCameraButton(onPhotoTaken = ::addPhotoAttachment, onError = ::showPhotoError)
+                            UiCameraButton(onPhotosTaken = ::addPhotoAttachments, onError = ::showPhotoError)
                         } else {
                             null
                         },
@@ -267,8 +267,8 @@ class ChatViewModel(
         innerState.update { it.copy(attachments = (it.attachments + files).distinct()) }
     }
 
-    private fun addPhotoAttachment(photoPath: String) {
-        innerState.update { it.copy(attachments = it.attachments + Path(photoPath)) }
+    private fun addPhotoAttachments(photos: List<Path>) {
+        innerState.update { it.copy(attachments = it.attachments + photos) }
     }
 
     private fun showPhotoError() {
@@ -407,7 +407,7 @@ data class UiSendFileButton(
 )
 
 data class UiCameraButton(
-    val onPhotoTaken: (photoPath: String) -> Unit,
+    val onPhotosTaken: (photos: List<Path>) -> Unit,
     val onError: () -> Unit,
 )
 

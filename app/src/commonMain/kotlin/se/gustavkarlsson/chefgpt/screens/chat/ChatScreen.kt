@@ -90,7 +90,7 @@ import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import se.gustavkarlsson.chefgpt.api.ChatId
-import se.gustavkarlsson.chefgpt.camera.TakePhoto
+import se.gustavkarlsson.chefgpt.camera.CapturePhoto
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatar
 import se.gustavkarlsson.chefgpt.isImageFile
 import se.gustavkarlsson.chefgpt.navigation.Screen
@@ -583,9 +583,9 @@ private fun TakePhotoButton(
         )
     }
     if (takingPhoto) {
-        TakePhoto(
-            onSuccess = { path ->
-                button.onPhotoTaken(path)
+        CapturePhoto(
+            onPhotos = { photos ->
+                button.onPhotosTaken(photos)
                 takingPhoto = false
             },
             onCancelled = {

@@ -283,8 +283,7 @@ class IngredientsViewModel(
         innerState.update { it.copy(inputText = text) }
     }
 
-    private fun scanImage(path: String) {
-        val image = Path(path)
+    private fun scanImage(image: Path) {
         innerState.update {
             if (it.scanningImage) return // Already scanning
             it.copy(scanningImage = true)
@@ -357,7 +356,7 @@ data class UiInput(
 
 data class UiCameraButton(
     val scanningImage: Boolean,
-    val onPhotoTaken: (photoPath: String) -> Unit,
+    val onPhotoTaken: (photo: Path) -> Unit,
     val onError: () -> Unit,
 )
 

@@ -1,7 +1,5 @@
 package se.gustavkarlsson.chefgpt
 
-actual fun deviceSupportsCamera(): Boolean {
-    TODO("Not yet implemented")
-}
+actual fun deviceSupportsCamera(): Boolean = false
 
 actual val devicePlatform: Platform = Platform.Web
