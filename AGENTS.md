@@ -29,6 +29,16 @@ Individual modules can also be tested if changes are isolated.
 
 If a build fails for toolchain reasons (JDK, Android SDK, Xcode, Docker), use the setup skill.
 
+## Use cases
+
+The app's business logic lives in use cases — verb-first `fun interface`s with a
+single `operator fun invoke`. See the `use-cases` skill for the full pattern
+(naming, one file per use case, statelessness, wiring).
+
+ViewModels depend only on use-case interfaces, never on repositories, clients, or
+managers. The only direct non-use-case dependencies are `Navigator` and config
+models such as `DeviceConfig`.
+
 ## Completing a task
 
 Before considering a task as done, use the verify skill to find any issues.

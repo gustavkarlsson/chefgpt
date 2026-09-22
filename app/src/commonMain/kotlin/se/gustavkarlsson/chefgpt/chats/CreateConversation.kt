@@ -21,29 +21,36 @@ import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
+import se.gustavkarlsson.chefgpt.jobs.AwaitJob
 import se.gustavkarlsson.chefgpt.jobs.AwaitJobError
-import se.gustavkarlsson.chefgpt.jobs.AwaitJobUseCase
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 
-private val log = Logger.withTag("${ApiConversationFactory::class.simpleName}")
+private val log = Logger.withTag("${HttpCreateConversation::class.simpleName}")
 
-class ApiConversationFactory(
-    private val client: ChefGptClient,
-    private val history: EventHistoryStore,
-    private val awaitJob: AwaitJobUseCase,
-) : ConversationFactory {
-    override fun create(
+fun interface CreateConversation {
+    operator fun invoke(
         sessionId: SessionId,
         chatId: ChatId,
-    ): Conversation = ApiConversation(sessionId, chatId, client, history, awaitJob)
+    ): Conversation
 }
 
-private class ApiConversation(
+class HttpCreateConversation(
+    private val client: ChefGptClient,
+    private val history: EventHistoryStore,
+    private val awaitJob: AwaitJob,
+) : CreateConversation {
+    override operator fun invoke(
+        sessionId: SessionId,
+        chatId: ChatId,
+    ): Conversation = HttpConversation(sessionId, chatId, client, history, awaitJob)
+}
+
+private class HttpConversation(
     override val sessionId: SessionId,
     override val chatId: ChatId,
     private val client: ChefGptClient,
     private val history: EventHistoryStore,
-    private val awaitJob: AwaitJobUseCase,
+    private val awaitJob: AwaitJob,
 ) : Conversation {
     override suspend fun sendAction(action: ApiAction): Result<Unit, AwaitJobError> =
         when (action) {
@@ -54,8 +61,7 @@ private class ApiConversation(
             }
 
             is ApiUserSendsMessage -> {
-                awaitJob
-                    .await(sessionId, UnitSerializer) { client.sendAction(sessionId, chatId, action) }
+                awaitJob(sessionId, UnitSerializer) { client.sendAction(sessionId, chatId, action) }
                     .map { Unit }
             }
         }

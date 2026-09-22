@@ -11,17 +11,25 @@ import org.koin.core.annotation.InjectedParam
 import se.gustavkarlsson.chefgpt.ClientError
 import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.navigation.Navigator
+import se.gustavkarlsson.chefgpt.recipes.DeleteRecipe
+import se.gustavkarlsson.chefgpt.recipes.GetRecipe
+import se.gustavkarlsson.chefgpt.recipes.OverwriteOriginalRecipe
 import se.gustavkarlsson.chefgpt.recipes.Recipe
-import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
+import se.gustavkarlsson.chefgpt.recipes.SaveRecipeAsCopy
+import se.gustavkarlsson.chefgpt.recipes.SetRecipeFavorite
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
-import se.gustavkarlsson.chefgpt.snackbar.SnackbarManager
+import se.gustavkarlsson.chefgpt.snackbar.ShowSnackbar
 
 private val log = Logger.withTag("${RecipeDetailViewModel::class.simpleName}")
 
 class RecipeDetailViewModel(
-    private val recipeRepository: RecipeRepository,
+    private val getRecipe: GetRecipe,
+    private val setRecipeFavorite: SetRecipeFavorite,
+    private val overwriteOriginalRecipe: OverwriteOriginalRecipe,
+    private val saveRecipeAsCopy: SaveRecipeAsCopy,
+    private val deleteRecipe: DeleteRecipe,
+    private val showSnackbar: ShowSnackbar,
     private val navigator: Navigator,
-    private val snackbarManager: SnackbarManager,
     @InjectedParam private val screen: RecipeDetailScreen,
 ) : StateViewModel<RecipeDetailState, RecipeDetailUiState>() {
     override fun createInitialState() =
@@ -72,8 +80,7 @@ class RecipeDetailViewModel(
     private fun load() {
         innerState.update { it.copy(loading = true, recipe = null) }
         viewModelScope.launch {
-            recipeRepository
-                .get(screen.sessionId, screen.recipeId)
+            getRecipe(screen.sessionId, screen.recipeId)
                 .onOk { recipe ->
                     log.i { "Loaded recipe: ${recipe.id}" }
                     innerState.update { it.copy(loading = false, recipe = recipe) }
@@ -89,13 +96,12 @@ class RecipeDetailViewModel(
         val favorite = !recipe.favorite
         setFavorite(recipe, favorite)
         viewModelScope.launch {
-            recipeRepository
-                .setFavorite(screen.sessionId, recipe.id, favorite)
+            setRecipeFavorite(screen.sessionId, recipe.id, favorite)
                 .onErr { error ->
                     log.e { "Failed to set favorite=$favorite on recipe ${recipe.id}: $error" }
                     setFavorite(recipe, !favorite)
                     val message = if (favorite) "Couldn't favorite recipe" else "Couldn't unfavorite recipe"
-                    snackbarManager.show(message, isError = true)
+                    showSnackbar(message, isError = true)
                 }
         }
     }
@@ -112,13 +118,13 @@ class RecipeDetailViewModel(
 
     private fun overwriteOriginal() {
         resolveModification("Couldn't overwrite the original recipe") { recipeId ->
-            recipeRepository.overwriteOriginal(screen.sessionId, recipeId)
+            overwriteOriginalRecipe(screen.sessionId, recipeId)
         }
     }
 
     private fun saveAsCopy() {
         resolveModification("Couldn't save the recipe as a copy") { recipeId ->
-            recipeRepository.saveAsCopy(screen.sessionId, recipeId)
+            saveRecipeAsCopy(screen.sessionId, recipeId)
         }
     }
 
@@ -136,7 +142,7 @@ class RecipeDetailViewModel(
                 }.onErr { error ->
                     log.e { "Failed to resolve modified recipe $recipeId: $error" }
                     innerState.update { it.copy(resolving = false) }
-                    snackbarManager.show(errorMessage, isError = true)
+                    showSnackbar(errorMessage, isError = true)
                 }
         }
     }
@@ -145,15 +151,14 @@ class RecipeDetailViewModel(
         val recipeId = innerState.value.recipe?.id ?: return
         innerState.update { it.copy(resolving = true) }
         viewModelScope.launch {
-            recipeRepository
-                .delete(screen.sessionId, recipeId)
+            deleteRecipe(screen.sessionId, recipeId)
                 .onOk {
                     log.i { "Discarded modified recipe: $recipeId" }
                     navigateBack()
                 }.onErr { error ->
                     log.e { "Failed to discard modified recipe $recipeId: $error" }
                     innerState.update { it.copy(resolving = false) }
-                    snackbarManager.show("Couldn't discard the changes", isError = true)
+                    showSnackbar("Couldn't discard the changes", isError = true)
                 }
         }
     }

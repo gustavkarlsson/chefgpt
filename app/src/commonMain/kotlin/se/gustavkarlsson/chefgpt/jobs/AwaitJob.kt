@@ -13,17 +13,25 @@ import se.gustavkarlsson.chefgpt.ClientError
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiJob
 import se.gustavkarlsson.chefgpt.api.ApiJobState
-import se.gustavkarlsson.chefgpt.api.JobId
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 import kotlin.time.Duration.Companion.seconds
 
 private val POLL_INTERVAL = 1.seconds
 
-class AwaitJobUseCase(
+// Not a `fun interface`: its single `invoke` is generic, which a SAM type cannot express.
+interface AwaitJob {
+    suspend operator fun <T> invoke(
+        sessionId: SessionId,
+        deserializer: KSerializer<T>,
+        createJob: suspend () -> Result<ApiJob<T>, ClientError>,
+    ): Result<ApiJob<T>, AwaitJobError>
+}
+
+class HttpAwaitJob(
     private val client: ChefGptClient,
     private val json: Json,
-) {
-    suspend fun <T> await(
+) : AwaitJob {
+    override suspend fun <T> invoke(
         sessionId: SessionId,
         deserializer: KSerializer<T>,
         createJob: suspend () -> Result<ApiJob<T>, ClientError>,

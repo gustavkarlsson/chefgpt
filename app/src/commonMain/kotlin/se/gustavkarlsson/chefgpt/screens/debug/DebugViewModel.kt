@@ -5,12 +5,14 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import se.gustavkarlsson.chefgpt.BASE_URL_HINT
 import se.gustavkarlsson.chefgpt.SERVER_BASE_URL
-import se.gustavkarlsson.chefgpt.debug.Settings
+import se.gustavkarlsson.chefgpt.debug.GetBaseUrl
+import se.gustavkarlsson.chefgpt.debug.SetBaseUrl
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
 
 class DebugViewModel(
-    private val settings: Settings,
+    private val getBaseUrl: GetBaseUrl,
+    private val setBaseUrl: SetBaseUrl,
     private val navigator: Navigator,
 ) : StateViewModel<State, UiState>() {
     override fun createInitialState() = State(baseUrl = SERVER_BASE_URL)
@@ -36,13 +38,13 @@ class DebugViewModel(
 
     init {
         viewModelScope.launch {
-            innerState.update { it.copy(baseUrl = settings.getBaseUrl()) }
+            innerState.update { it.copy(baseUrl = getBaseUrl()) }
         }
     }
 
     private fun updateBaseUrl(value: String) {
         innerState.update { it.copy(baseUrl = value) }
-        viewModelScope.launch { settings.setBaseUrl(value) }
+        viewModelScope.launch { setBaseUrl(value) }
     }
 }
 

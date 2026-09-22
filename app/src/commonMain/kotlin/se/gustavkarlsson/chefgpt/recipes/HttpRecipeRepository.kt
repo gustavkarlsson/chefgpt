@@ -14,9 +14,9 @@ import se.gustavkarlsson.chefgpt.api.ApiRecipeSummary
 import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 
-private val log = Logger.withTag("${ApiRecipeRepository::class.simpleName}")
+private val log = Logger.withTag("${HttpRecipeRepository::class.simpleName}")
 
-class ApiRecipeRepository(
+class HttpRecipeRepository(
     private val client: ChefGptClient,
 ) : RecipeRepository {
     override suspend fun streamSummaries(sessionId: SessionId): Flow<List<RecipeSummary>> =

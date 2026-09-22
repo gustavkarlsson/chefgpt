@@ -111,7 +111,7 @@ val ingredientChanges: Flow<IngredientChange> = ingredientChangeChannel.receiveA
 
 ### Snackbars
 
-Snackbars (e.g. for surfacing backend errors) are one-shot events, but don't hand-roll a `Channel` for them — the base `StateViewModel` already provides this. It exposes a public `snackbarMessages: Flow<SnackbarMessage>` and a `protected fun showSnackbar(...)`. Just call `showSnackbar(...)` from action functions or collectors; no field to declare:
+Snackbars (e.g. for surfacing backend errors) are one-shot events, but don't hand-roll a `Channel` for them — inject the `ShowSnackbar` use case (see the **use-cases** skill) and call it from action functions or collectors:
 
 ```kotlin
 // ...in an error branch:
@@ -121,7 +121,7 @@ result.onErr {
 }
 ```
 
-`showSnackbar(text, isError)` covers the common case (`isError = true` is error-styled and stays until dismissed). For control over `dismissText` or `duration`, use `SnackbarMessages.show(...)`, whose parameters default the same way. The UI renders it via `rememberSnackbarHostState` + `SnackbarMessageHost` (see the **screen-ui** skill). `IngredientsViewModel` (in `screens/ingredients/`) is the reference example.
+`showSnackbar(text, isError)` covers the common case (`isError = true` is error-styled and stays until dismissed). The UI renders the app-wide `SnackbarManager` stream via `rememberSnackbarHostState` + `SnackbarMessageHost` (see the **screen-ui** skill). `IngredientsViewModel` (in `screens/ingredients/`) is the reference example.
 
 ## Callbacks
 
@@ -135,13 +135,13 @@ result.onErr {
 ## Actions
 
 - Each user action is a `private fun`. Side-effecting work runs in `viewModelScope.launch { ... }`.
-- Repositories/clients return results (`com.github.michaelbull.result.Result`). Handle both branches with `.onOk { }` / `.onErr { }`; log failures via `log.e`. Never swallow errors silently.
+- Use cases return results (`com.github.michaelbull.result.Result`). Handle both branches with `.onOk { }` / `.onErr { }`; log failures via `log.e`. Never swallow errors silently.
 - Update `innerState` with `.update { it.copy(...) }`. Use `.getAndUpdate { }` when you need the pre-update snapshot (e.g. clearing an input while keeping its value to send).
 
 ## Dependencies & DI
 
 - Don't construct dependencies inside the ViewModel.
-- Inject collaborators (repositories, `ChefGptClient`, `Navigator`, factories) as constructor params, `private val` or without a backing field if possible. Inject interfaces instead of concrete implementation when available.
+- Inject use cases (interfaces) as constructor params, `private val` or without a backing field if possible — see the **use-cases** skill. Never inject repositories, `ChefGptClient`, managers, or factories directly; the only exceptions are `Navigator` and config models like `DeviceConfig`.
 - Navigation route arguments come in via `@InjectedParam private val route: Route.X`.
 
 ## Long-running streams

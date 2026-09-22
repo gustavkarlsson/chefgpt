@@ -22,7 +22,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
 import org.koin.core.annotation.InjectedParam
-import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.ClientError
 import se.gustavkarlsson.chefgpt.DeviceConfig
 import se.gustavkarlsson.chefgpt.api.ApiAgentChatNamed
@@ -39,17 +38,19 @@ import se.gustavkarlsson.chefgpt.api.ApiUserMessage
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.JoinId
 import se.gustavkarlsson.chefgpt.chats.Chat
-import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.Conversation
-import se.gustavkarlsson.chefgpt.chats.ConversationFactory
+import se.gustavkarlsson.chefgpt.chats.CreateConversation
+import se.gustavkarlsson.chefgpt.chats.StreamChats
 import se.gustavkarlsson.chefgpt.chats.displayName
+import se.gustavkarlsson.chefgpt.files.UploadFile
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatarModel
-import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
+import se.gustavkarlsson.chefgpt.ingredients.ResolveEmoji
+import se.gustavkarlsson.chefgpt.ingredients.StreamIngredients
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsScreen
 import se.gustavkarlsson.chefgpt.sessions.SessionId
-import se.gustavkarlsson.chefgpt.snackbar.SnackbarManager
+import se.gustavkarlsson.chefgpt.snackbar.ShowSnackbar
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 
@@ -71,17 +72,18 @@ private val EXAMPLE_PROMPTS =
 
 // TODO Fix error handling
 class ChatViewModel(
-    private val client: ChefGptClient,
-    conversationFactory: ConversationFactory,
-    private val chatRepository: ChatRepository,
+    private val createConversation: CreateConversation,
+    private val streamChats: StreamChats,
+    private val streamIngredients: StreamIngredients,
+    private val resolveEmoji: ResolveEmoji,
+    private val uploadFile: UploadFile,
+    private val showSnackbar: ShowSnackbar,
     private val navigator: Navigator,
     private val deviceConfig: DeviceConfig,
-    private val emojiResolverFactory: IngredientEmojiResolver.Factory,
-    private val snackbarManager: SnackbarManager,
     @InjectedParam private val screen: ChatScreen,
 ) : StateViewModel<State, UiState>() {
     private val sessionId: SessionId = screen.sessionId
-    private val conversation: Conversation = conversationFactory.create(sessionId, screen.chatId)
+    private val conversation: Conversation = createConversation(sessionId, screen.chatId)
 
     // One example prompt per chat, chosen deterministically from the chat ID so it stays stable.
     private val examplePrompt: String =
@@ -209,16 +211,15 @@ class ChatViewModel(
 
     init {
         viewModelScope.launch {
-            chatRepository.stream(sessionId).collect { chats ->
+            streamChats(sessionId).collect { chats ->
                 val chat = chats.firstOrNull { it.id == conversation.chatId }
                 innerState.update { it.copy(chat = chat) }
             }
         }
         viewModelScope.launch {
-            val emojiResolver = emojiResolverFactory.create()
             // Skip the first emission so the initial inventory doesn't flash as changes.
             var previous: List<ApiIngredient>? = null
-            client.listenToIngredients(sessionId).collect { ingredients ->
+            streamIngredients(sessionId).collect { ingredients ->
                 val current = ingredients.filter { it.inInventory }
                 previous?.let { prev ->
                     val previousIds = prev.map { it.id }.toSet()
@@ -227,14 +228,14 @@ class ChatViewModel(
                         .filter { it.id !in previousIds }
                         .forEach {
                             ingredientChangeChannel.send(
-                                IngredientChange.Added(EmojiAvatarModel.of(emojiResolver.resolve(it.name), it.name)),
+                                IngredientChange.Added(EmojiAvatarModel.of(resolveEmoji(it.name), it.name)),
                             )
                         }
                     prev
                         .filter { it.id !in currentIds }
                         .forEach {
                             ingredientChangeChannel.send(
-                                IngredientChange.Removed(EmojiAvatarModel.of(emojiResolver.resolve(it.name), it.name)),
+                                IngredientChange.Removed(EmojiAvatarModel.of(resolveEmoji(it.name), it.name)),
                             )
                         }
                 }
@@ -272,7 +273,7 @@ class ChatViewModel(
     }
 
     private fun showPhotoError() {
-        snackbarManager.show("Could not take a photo", isError = true)
+        showSnackbar("Could not take a photo", isError = true)
     }
 
     private fun removeAttachment(file: Path) {
@@ -293,7 +294,7 @@ class ChatViewModel(
             log.i { "Sending answer to ${conversation.chatId}" }
             conversation.sendAction(ApiUserSendsMessage(answer, attachments = emptyList())).onErr { error ->
                 log.e { "Failed to send answer: $error" }
-                snackbarManager.show("Couldn't send answer", isError = true)
+                showSnackbar("Couldn't send answer", isError = true)
             }
         }
     }
@@ -308,7 +309,6 @@ class ChatViewModel(
                 }
             log.i { "Sending message to ${conversation.chatId}" }
 
-            // TODO Introduce use-case
             lastState
                 .uploadAttachments()
                 .map { attachments ->
@@ -317,7 +317,7 @@ class ChatViewModel(
                     )
                 }.onErr { error ->
                     log.e { "Failed to send message: $error" }
-                    snackbarManager.show("Couldn't send message", isError = true)
+                    showSnackbar("Couldn't send message", isError = true)
                 }
         }
     }
@@ -326,7 +326,7 @@ class ChatViewModel(
         coroutineScope {
             attachments
                 .map { file ->
-                    async { client.uploadFile(sessionId, file, ContentType.defaultForFilePath(file.name)) }
+                    async { uploadFile(sessionId, file, ContentType.defaultForFilePath(file.name)) }
                 }.awaitAll()
                 .combine()
         }
