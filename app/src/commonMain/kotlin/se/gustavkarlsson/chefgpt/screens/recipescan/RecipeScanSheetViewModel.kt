@@ -5,21 +5,21 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.io.files.FileSystem
 import kotlinx.io.files.Path
 import org.koin.core.annotation.InjectedParam
 import se.gustavkarlsson.chefgpt.IoOrDefault
-import se.gustavkarlsson.chefgpt.jobs.ScanRecipes
+import se.gustavkarlsson.chefgpt.files.usecases.DeleteFile
+import se.gustavkarlsson.chefgpt.jobs.usecases.ScanRecipes
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
 import se.gustavkarlsson.chefgpt.sessions.SessionId
-import se.gustavkarlsson.chefgpt.snackbar.SnackbarManager
+import se.gustavkarlsson.chefgpt.snackbar.usecases.ShowSnackbar
 
 class RecipeScanSheetViewModel(
     private val navigator: Navigator,
     private val scanRecipes: ScanRecipes,
-    private val snackbarManager: SnackbarManager,
-    private val fileSystem: FileSystem,
+    private val showSnackbar: ShowSnackbar,
+    private val deleteFile: DeleteFile,
     @InjectedParam screen: RecipeScanSheet,
 ) : StateViewModel<RecipeScanSheetState, RecipeScanSheetUiState>() {
     private val sessionId: SessionId = screen.sessionId
@@ -57,11 +57,7 @@ class RecipeScanSheetViewModel(
     override fun onCleared() {
         if (scanStarted) return
         for (photo in innerState.value.photos) {
-            try {
-                fileSystem.delete(photo, mustExist = false)
-            } catch (_: Exception) {
-                // Best-effort cleanup; the cache dir is reclaimed by the OS anyway.
-            }
+            deleteFile(photo)
         }
     }
 
@@ -84,7 +80,7 @@ class RecipeScanSheetViewModel(
     private fun onCaptureError() {
         initialCapture = false
         innerState.update { it.copy(capturing = false) }
-        snackbarManager.show("Could not take a photo", isError = true)
+        showSnackbar("Could not take a photo", isError = true)
     }
 
     private fun requestDiscard(photo: Path) {
@@ -98,25 +94,15 @@ class RecipeScanSheetViewModel(
     private fun discard() {
         val photo = innerState.value.discardTarget ?: return
         innerState.update { it.copy(discardTarget = null, photos = it.photos - photo) }
-        deleteFile(photo)
+        viewModelScope.launch {
+            withContext(Dispatchers.IoOrDefault) { deleteFile(photo) }
+        }
     }
 
     private fun confirm() {
         scanStarted = true
-        scanRecipes.scan(sessionId, innerState.value.photos)
+        scanRecipes(sessionId, innerState.value.photos)
         navigator.pop()
-    }
-
-    private fun deleteFile(photo: Path) {
-        viewModelScope.launch {
-            withContext(Dispatchers.IoOrDefault) {
-                try {
-                    fileSystem.delete(photo, mustExist = false)
-                } catch (_: Exception) {
-                    // Best-effort cleanup
-                }
-            }
-        }
     }
 }
 

@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt.jobs
+package se.gustavkarlsson.chefgpt.jobs.usecases
 
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
@@ -10,20 +10,28 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.ClientError
-import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiJob
 import se.gustavkarlsson.chefgpt.api.ApiJobState
-import se.gustavkarlsson.chefgpt.api.JobId
+import se.gustavkarlsson.chefgpt.jobs.AwaitJobError
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 import kotlin.time.Duration.Companion.seconds
 
 private val POLL_INTERVAL = 1.seconds
 
-class AwaitJobUseCase(
+// Not a `fun interface`: its single `invoke` is generic, which a SAM type cannot express.
+interface AwaitJob {
+    suspend operator fun <T> invoke(
+        sessionId: SessionId,
+        deserializer: KSerializer<T>,
+        createJob: suspend () -> Result<ApiJob<T>, ClientError>,
+    ): Result<ApiJob<T>, AwaitJobError>
+}
+
+class HttpAwaitJob(
     private val client: ChefGptClient,
     private val json: Json,
-) {
-    suspend fun <T> await(
+) : AwaitJob {
+    override suspend fun <T> invoke(
         sessionId: SessionId,
         deserializer: KSerializer<T>,
         createJob: suspend () -> Result<ApiJob<T>, ClientError>,
@@ -65,14 +73,4 @@ class AwaitJobUseCase(
             }
         }
     }
-}
-
-sealed interface AwaitJobError {
-    data class RequestFailed(
-        val error: ClientError,
-    ) : AwaitJobError
-
-    data class JobFailed(
-        val error: ApiError?,
-    ) : AwaitJobError
 }

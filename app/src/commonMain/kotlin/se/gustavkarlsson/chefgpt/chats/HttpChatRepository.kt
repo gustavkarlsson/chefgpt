@@ -13,9 +13,9 @@ import se.gustavkarlsson.chefgpt.api.ApiChat
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 
-private val log = Logger.withTag("${ApiChatRepository::class.simpleName}")
+private val log = Logger.withTag("${HttpChatRepository::class.simpleName}")
 
-class ApiChatRepository(
+class HttpChatRepository(
     private val client: ChefGptClient,
 ) : ChatRepository {
     override suspend fun create(sessionId: SessionId): Result<Chat, ClientError> =

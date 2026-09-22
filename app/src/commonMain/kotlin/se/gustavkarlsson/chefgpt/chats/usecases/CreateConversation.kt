@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt.chats
+package se.gustavkarlsson.chefgpt.chats.usecases
 
 import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.Err
@@ -21,18 +21,28 @@ import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
+import se.gustavkarlsson.chefgpt.chats.Conversation
+import se.gustavkarlsson.chefgpt.chats.EventHistoryStore
+import se.gustavkarlsson.chefgpt.chats.EventStreamError
 import se.gustavkarlsson.chefgpt.jobs.AwaitJobError
-import se.gustavkarlsson.chefgpt.jobs.AwaitJobUseCase
+import se.gustavkarlsson.chefgpt.jobs.usecases.AwaitJob
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 
-private val log = Logger.withTag("${ApiConversationFactory::class.simpleName}")
+private val log = Logger.withTag("${HttpCreateConversation::class.simpleName}")
 
-class ApiConversationFactory(
+fun interface CreateConversation {
+    operator fun invoke(
+        sessionId: SessionId,
+        chatId: ChatId,
+    ): Conversation
+}
+
+class HttpCreateConversation(
     private val client: ChefGptClient,
     private val history: EventHistoryStore,
-    private val awaitJob: AwaitJobUseCase,
-) : ConversationFactory {
-    override fun create(
+    private val awaitJob: AwaitJob,
+) : CreateConversation {
+    override operator fun invoke(
         sessionId: SessionId,
         chatId: ChatId,
     ): Conversation = ApiConversation(sessionId, chatId, client, history, awaitJob)
@@ -43,7 +53,7 @@ private class ApiConversation(
     override val chatId: ChatId,
     private val client: ChefGptClient,
     private val history: EventHistoryStore,
-    private val awaitJob: AwaitJobUseCase,
+    private val awaitJob: AwaitJob,
 ) : Conversation {
     override suspend fun sendAction(action: ApiAction): Result<Unit, AwaitJobError> =
         when (action) {
@@ -54,8 +64,7 @@ private class ApiConversation(
             }
 
             is ApiUserSendsMessage -> {
-                awaitJob
-                    .await(sessionId, UnitSerializer) { client.sendAction(sessionId, chatId, action) }
+                awaitJob(sessionId, UnitSerializer) { client.sendAction(sessionId, chatId, action) }
                     .map { Unit }
             }
         }

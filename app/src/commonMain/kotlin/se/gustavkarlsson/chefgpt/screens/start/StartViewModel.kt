@@ -15,12 +15,16 @@ import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.chats.Chat
-import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.displayName
-import se.gustavkarlsson.chefgpt.jobs.ScanRecipes
+import se.gustavkarlsson.chefgpt.chats.usecases.CreateChat
+import se.gustavkarlsson.chefgpt.chats.usecases.DeleteChat
+import se.gustavkarlsson.chefgpt.chats.usecases.StreamChats
+import se.gustavkarlsson.chefgpt.jobs.usecases.StreamScanState
 import se.gustavkarlsson.chefgpt.navigation.Navigator
-import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 import se.gustavkarlsson.chefgpt.recipes.RecipeSummary
+import se.gustavkarlsson.chefgpt.recipes.usecases.DeleteRecipe
+import se.gustavkarlsson.chefgpt.recipes.usecases.SetRecipeFavorite
+import se.gustavkarlsson.chefgpt.recipes.usecases.StreamRecipeSummaries
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
 import se.gustavkarlsson.chefgpt.screens.chat.ChatScreen
 import se.gustavkarlsson.chefgpt.screens.debug.DebugScreen
@@ -29,20 +33,30 @@ import se.gustavkarlsson.chefgpt.screens.recipe.RecipeDetailScreen
 import se.gustavkarlsson.chefgpt.screens.recipescan.RecipeScanSheet
 import se.gustavkarlsson.chefgpt.sessions.RegisterError
 import se.gustavkarlsson.chefgpt.sessions.SessionCredentials
-import se.gustavkarlsson.chefgpt.sessions.SessionRepository
 import se.gustavkarlsson.chefgpt.sessions.UserCredentials
-import se.gustavkarlsson.chefgpt.snackbar.SnackbarManager
+import se.gustavkarlsson.chefgpt.sessions.usecases.GetCurrentSession
+import se.gustavkarlsson.chefgpt.sessions.usecases.LogIn
+import se.gustavkarlsson.chefgpt.sessions.usecases.LogOut
+import se.gustavkarlsson.chefgpt.sessions.usecases.Register
+import se.gustavkarlsson.chefgpt.snackbar.usecases.ShowSnackbar
 import kotlin.time.Duration.Companion.seconds
 
 private val log = Logger.withTag("${StartViewModel::class.simpleName}")
 
 class StartViewModel(
-    private val chatRepository: ChatRepository,
-    private val recipeRepository: RecipeRepository,
-    private val sessionRepository: SessionRepository,
+    private val getCurrentSession: GetCurrentSession,
+    private val register: Register,
+    private val logIn: LogIn,
+    private val logOut: LogOut,
+    private val createChat: CreateChat,
+    private val deleteChat: DeleteChat,
+    private val streamChats: StreamChats,
+    private val streamRecipeSummaries: StreamRecipeSummaries,
+    private val setRecipeFavorite: SetRecipeFavorite,
+    private val deleteRecipe: DeleteRecipe,
+    private val streamScanState: StreamScanState,
+    private val showSnackbar: ShowSnackbar,
     private val navigator: Navigator,
-    private val scanRecipes: ScanRecipes,
-    private val snackbarManager: SnackbarManager,
     private val deviceConfig: DeviceConfig,
 ) : StateViewModel<State, UiState>() {
     private val streamChatsJob = atomic<Job?>(null)
@@ -78,8 +92,8 @@ class StartViewModel(
                     password = inputPassword,
                     onUsernameChange = ::updateUsername,
                     onPasswordChange = ::updatePassword,
-                    onClickRegister = if (canAuthenticate) ::register else null,
-                    onClickLogin = if (canAuthenticate) ::logIn else null,
+                    onClickRegister = if (canAuthenticate) ::registerUser else null,
+                    onClickLogin = if (canAuthenticate) ::logInUser else null,
                 )
             }
 
@@ -94,9 +108,9 @@ class StartViewModel(
                             null
                         },
                     recipeSummaries = recipeSummaries.toUiRecipeSummaries(),
-                    onClickNewChat = ::createChat,
+                    onClickNewChat = ::createNewChat,
                     onClickIngredients = ::openIngredients,
-                    onClickLogout = ::logOut,
+                    onClickLogout = ::logOutUser,
                 )
             }
         }
@@ -110,7 +124,7 @@ class StartViewModel(
                 id = chat.id,
                 title = chat.displayName,
                 onClick = ::openChat,
-                onClickDelete = ::deleteChat,
+                onClickDelete = ::deleteChatById,
             )
         }
 
@@ -124,15 +138,14 @@ class StartViewModel(
                 modified = summary.modifiedFrom != null,
                 onClickOpen = ::openRecipe,
                 onClickToggleFavorite = ::toggleRecipeFavorite,
-                onClickDelete = ::deleteRecipe,
+                onClickDelete = ::deleteRecipeById,
             )
         }
 
     init {
         viewModelScope.launch {
             // Ignore errors, as we can just start with a fresh session
-            sessionRepository
-                .getCurrentSession()
+            getCurrentSession()
                 .onOk { credentials ->
                     if (credentials != null) {
                         innerState.update { it.copy(sessionCredentials = credentials) }
@@ -143,7 +156,7 @@ class StartViewModel(
             innerState.update { it.copy(initialized = true) }
         }
         viewModelScope.launch {
-            scanRecipes.isScanning.collect { scanning ->
+            streamScanState().collect { scanning ->
                 innerState.update { it.copy(scanningRecipes = scanning) }
             }
         }
@@ -157,26 +170,25 @@ class StartViewModel(
         innerState.update { it.copy(inputPassword = password) }
     }
 
-    private fun register() {
+    private fun registerUser() {
         val state = innerState.value
         if (state.authenticating) return
         val username = state.inputUsername
         innerState.update { it.copy(authenticating = true) }
         viewModelScope.launch {
             try {
-                sessionRepository
-                    .register(state.inputCredentials)
+                register(state.inputCredentials)
                     .onOk { onAuthenticated(username, it, "Registered") }
                     .onErr { error ->
                         when (error) {
                             is RegisterError.ServerError -> {
                                 log.i { "Registration failed for '$username': ${error.error}" }
-                                snackbarManager.show("Registration failed", isError = true)
+                                showSnackbar("Registration failed", isError = true)
                             }
 
                             RegisterError.StorageFailed -> {
                                 log.e { "Registration succeeded but failed to save session for '$username'" }
-                                snackbarManager.show("Couldn't save your session", isError = true)
+                                showSnackbar("Couldn't save your session", isError = true)
                             }
                         }
                     }
@@ -186,19 +198,18 @@ class StartViewModel(
         }
     }
 
-    private fun logIn() {
+    private fun logInUser() {
         val state = innerState.value
         if (state.authenticating) return
         val username = state.inputUsername
         innerState.update { it.copy(authenticating = true) }
         viewModelScope.launch {
             try {
-                sessionRepository
-                    .login(state.inputCredentials)
+                logIn(state.inputCredentials)
                     .onOk { onAuthenticated(username, it, "Logged in") }
                     .onErr {
                         log.i { "Login failed for '$username': $it" }
-                        snackbarManager.show("Login failed", isError = true)
+                        showSnackbar("Login failed", isError = true)
                     }
             } finally {
                 innerState.update { it.copy(authenticating = false) }
@@ -217,17 +228,16 @@ class StartViewModel(
         restartRecipeStream(credentials)
     }
 
-    private fun createChat() {
+    private fun createNewChat() {
         val credentials = innerState.value.sessionCredentials ?: return
         viewModelScope.launch {
-            chatRepository
-                .create(credentials.sessionId)
+            createChat(credentials.sessionId)
                 .onOk { chat ->
                     log.i { "Chat created: ${chat.id}" }
                     navigator.push(ChatScreen(credentials.sessionId, chat.id))
                 }.onErr {
                     log.e { "Failed to create chat: $it" }
-                    snackbarManager.show("Couldn't create chat", isError = true)
+                    showSnackbar("Couldn't create chat", isError = true)
                 }
         }
     }
@@ -237,15 +247,14 @@ class StartViewModel(
         navigator.push(ChatScreen(credentials.sessionId, chatId))
     }
 
-    private fun deleteChat(chatId: ChatId) {
+    private fun deleteChatById(chatId: ChatId) {
         val credentials = innerState.value.sessionCredentials ?: return
         viewModelScope.launch {
-            chatRepository
-                .delete(credentials.sessionId, chatId)
+            deleteChat(credentials.sessionId, chatId)
                 .onOk { log.i { "Chat deleted: $chatId" } }
                 .onErr {
                     log.e { "Failed to delete chat: $it" }
-                    snackbarManager.show("Couldn't delete chat", isError = true)
+                    showSnackbar("Couldn't delete chat", isError = true)
                 }
         }
     }
@@ -274,36 +283,34 @@ class StartViewModel(
         val summary = innerState.value.recipeSummaries.firstOrNull { it.id == recipeId } ?: return
         val favorite = !summary.favorite
         viewModelScope.launch {
-            recipeRepository
-                .setFavorite(credentials.sessionId, recipeId, favorite)
+            setRecipeFavorite(credentials.sessionId, recipeId, favorite)
                 .onOk { log.i { "Recipe favorite=$favorite: $recipeId" } }
                 .onErr {
                     log.e { "Failed to set favorite=$favorite on recipe: $it" }
                     val message = if (favorite) "Couldn't favorite recipe" else "Couldn't unfavorite recipe"
-                    snackbarManager.show(message, isError = true)
+                    showSnackbar(message, isError = true)
                 }
         }
     }
 
-    private fun deleteRecipe(recipeId: RecipeId) {
+    private fun deleteRecipeById(recipeId: RecipeId) {
         val credentials = innerState.value.sessionCredentials ?: return
         viewModelScope.launch {
-            recipeRepository
-                .delete(credentials.sessionId, recipeId)
+            deleteRecipe(credentials.sessionId, recipeId)
                 .onOk { log.i { "Recipe deleted: $recipeId" } }
                 .onErr {
                     log.e { "Failed to delete recipe: $it" }
-                    snackbarManager.show("Couldn't delete recipe", isError = true)
+                    showSnackbar("Couldn't delete recipe", isError = true)
                 }
         }
     }
 
-    private fun logOut() {
+    private fun logOutUser() {
         restartChatStream(credentials = null)
         restartRecipeStream(credentials = null)
         viewModelScope.launch {
             // TODO Handle failure to log out?
-            sessionRepository.logOut()
+            logOut()
         }
         innerState.update {
             it.copy(
@@ -317,15 +324,14 @@ class StartViewModel(
     }
 
     private fun restartChatStream(credentials: SessionCredentials?) {
-        val job = credentials?.let { creds -> viewModelScope.launch { streamChats(creds) } }
+        val job = credentials?.let { creds -> viewModelScope.launch { collectChats(creds) } }
         streamChatsJob.getAndSet(job)?.cancel()
     }
 
-    private suspend fun streamChats(credentials: SessionCredentials) {
+    private suspend fun collectChats(credentials: SessionCredentials) {
         while (true) {
             try {
-                chatRepository
-                    .stream(credentials.sessionId)
+                streamChats(credentials.sessionId)
                     .collect { chats -> innerState.update { it.copy(chats = chats) } }
             } catch (e: CancellationException) {
                 throw e
@@ -337,15 +343,14 @@ class StartViewModel(
     }
 
     private fun restartRecipeStream(credentials: SessionCredentials?) {
-        val job = credentials?.let { creds -> viewModelScope.launch { streamRecipes(creds) } }
+        val job = credentials?.let { creds -> viewModelScope.launch { collectRecipes(creds) } }
         streamRecipesJob.getAndSet(job)?.cancel()
     }
 
-    private suspend fun streamRecipes(credentials: SessionCredentials) {
+    private suspend fun collectRecipes(credentials: SessionCredentials) {
         while (true) {
             try {
-                recipeRepository
-                    .streamSummaries(credentials.sessionId)
+                streamRecipeSummaries(credentials.sessionId)
                     .collect { summaries -> innerState.update { it.copy(recipeSummaries = summaries) } }
             } catch (e: CancellationException) {
                 throw e

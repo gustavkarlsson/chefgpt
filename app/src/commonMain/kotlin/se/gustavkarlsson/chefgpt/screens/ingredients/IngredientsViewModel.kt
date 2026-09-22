@@ -17,19 +17,25 @@ import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
+import org.kodein.emoji.Emoji
 import org.koin.core.annotation.InjectedParam
-import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.DeviceConfig
 import se.gustavkarlsson.chefgpt.api.ApiIngredient
 import se.gustavkarlsson.chefgpt.api.IngredientId
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatarModel
-import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
 import se.gustavkarlsson.chefgpt.ingredients.IngredientWords
-import se.gustavkarlsson.chefgpt.jobs.AwaitJobUseCase
+import se.gustavkarlsson.chefgpt.ingredients.usecases.CreateIngredient
+import se.gustavkarlsson.chefgpt.ingredients.usecases.DestroyIngredient
+import se.gustavkarlsson.chefgpt.ingredients.usecases.ResolveEmoji
+import se.gustavkarlsson.chefgpt.ingredients.usecases.ResolveEmojiAlias
+import se.gustavkarlsson.chefgpt.ingredients.usecases.ScanIngredients
+import se.gustavkarlsson.chefgpt.ingredients.usecases.SetIngredientInventory
+import se.gustavkarlsson.chefgpt.ingredients.usecases.StreamIngredients
+import se.gustavkarlsson.chefgpt.jobs.usecases.AwaitJob
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
 import se.gustavkarlsson.chefgpt.sessions.SessionId
-import se.gustavkarlsson.chefgpt.snackbar.SnackbarManager
+import se.gustavkarlsson.chefgpt.snackbar.usecases.ShowSnackbar
 import kotlin.time.Duration.Companion.seconds
 
 private val log = Logger.withTag("${IngredientsViewModel::class.simpleName}")
@@ -39,12 +45,17 @@ private const val EMPTY_DESCRIPTION =
     "Type the ingredients you have in the field below and I'll help you cook something up."
 
 class IngredientsViewModel(
-    private val client: ChefGptClient,
-    private val awaitJob: AwaitJobUseCase,
+    private val streamIngredients: StreamIngredients,
+    private val createIngredient: CreateIngredient,
+    private val destroyIngredient: DestroyIngredient,
+    private val setIngredientInventory: SetIngredientInventory,
+    private val scanIngredients: ScanIngredients,
+    private val awaitJob: AwaitJob,
+    private val resolveEmoji: ResolveEmoji,
+    private val resolveEmojiAlias: ResolveEmojiAlias,
+    private val showSnackbar: ShowSnackbar,
     private val navigator: Navigator,
     private val deviceConfig: DeviceConfig,
-    emojiResolverFactory: IngredientEmojiResolver.Factory,
-    private val snackbarManager: SnackbarManager,
     @InjectedParam screen: IngredientsScreen,
 ) : StateViewModel<State, UiState>() {
     private val sessionId: SessionId = screen.sessionId
@@ -60,7 +71,7 @@ class IngredientsViewModel(
             ingredients = null,
             inputText = "",
             scanningImage = false,
-            emojiResolver = null,
+            emojiByIngredient = emptyMap(),
             baselineInInventory = null,
         )
 
@@ -81,7 +92,7 @@ class IngredientsViewModel(
                         } else {
                             null
                         },
-                    onClickAdd = if (inputText.isNotBlank() && emojiResolver != null) ::createIngredient else null,
+                    onClickAdd = if (inputText.isNotBlank()) ::addIngredientFromInput else null,
                 ),
             onClickBack = navigator::pop,
         )
@@ -92,7 +103,7 @@ class IngredientsViewModel(
         if (ingredients == null) return UiContent.Loading
         val inInventory =
             ingredients.toUiIngredients(
-                emojiResolver,
+                emojiByIngredient,
                 inInventory = true,
                 baseline = baselineInInventory,
             )
@@ -106,7 +117,7 @@ class IngredientsViewModel(
                     title = "Previously in store",
                     ingredients =
                         ingredients.toUiIngredients(
-                            emojiResolver,
+                            emojiByIngredient,
                             inInventory = false,
                             baseline = baselineInInventory,
                         ),
@@ -120,7 +131,6 @@ class IngredientsViewModel(
     }
 
     private fun State.toSuggestions(): List<UiIngredient> {
-        val emojiResolver = emojiResolver ?: return emptyList()
         if (inputText.isBlank()) return emptyList()
         val needle = inputText.trim().lowercase()
 
@@ -135,7 +145,7 @@ class IngredientsViewModel(
                     UiIngredient(
                         key = ingredient.id.toString(),
                         name = ingredient.name,
-                        icon = EmojiAvatarModel.of(emojiResolver.resolve(ingredient.name), ingredient.name),
+                        icon = EmojiAvatarModel.of(emojiByIngredient[ingredient.name], ingredient.name),
                         dimmed = false,
                         isNew = false,
                         onClick = ::addIngredient,
@@ -150,7 +160,7 @@ class IngredientsViewModel(
                 UiIngredient(
                     key = name,
                     name = name,
-                    icon = EmojiAvatarModel.of(emojiResolver.resolve(name), name),
+                    icon = EmojiAvatarModel.of(emojiByIngredient[name], name),
                     dimmed = false,
                     isNew = false,
                     onClick = ::addSuggestion,
@@ -162,33 +172,27 @@ class IngredientsViewModel(
     }
 
     private fun List<ApiIngredient>.toUiIngredients(
-        emojiResolver: IngredientEmojiResolver?,
+        emojiByIngredient: Map<String, Emoji?>,
         inInventory: Boolean,
         baseline: Set<IngredientId>?,
-    ): List<UiIngredient> {
-        if (emojiResolver == null) return emptyList()
-        return this.filter { it.inInventory == inInventory }.sortedBy { it.lastModified }.map { ingredient ->
+    ): List<UiIngredient> =
+        filter { it.inInventory == inInventory }.sortedBy { it.lastModified }.map { ingredient ->
             UiIngredient(
                 key = ingredient.id.toString(),
                 name = ingredient.name,
-                icon = EmojiAvatarModel.of(emojiResolver.resolve(ingredient.name), ingredient.name),
+                icon = EmojiAvatarModel.of(emojiByIngredient[ingredient.name], ingredient.name),
                 dimmed = !inInventory,
                 isNew = inInventory && baseline != null && ingredient.id !in baseline,
                 onClick = if (inInventory) ::removeIngredient else ::addIngredient,
-                onClickDestroy = if (inInventory) null else ::destroyIngredient,
+                onClickDestroy = if (inInventory) null else ::destroyIngredientById,
             )
         }
-    }
 
     init {
         viewModelScope.launch {
-            val resolver = emojiResolverFactory.create()
-            innerState.update { it.copy(emojiResolver = resolver) }
-        }
-        viewModelScope.launch {
             while (true) {
                 try {
-                    client.listenToIngredients(sessionId).collect { ingredients ->
+                    streamIngredients(sessionId).collect { ingredients ->
                         val previous =
                             innerState.getAndUpdate { state ->
                                 // The first emission establishes the baseline of what was already in stock.
@@ -198,6 +202,7 @@ class IngredientsViewModel(
                                         .mapTo(mutableSetOf()) { it.id }
                                 state.copy(ingredients = ingredients, baselineInInventory = baseline)
                             }
+                        resolveEmojisFor(ingredients.map { it.name })
                         // Fire whenever the list transitions to empty; previous is null until the first load.
                         if (ingredients.isEmpty() && previous.ingredients?.isEmpty() != true) {
                             focusInputChannel.send(Unit)
@@ -215,20 +220,18 @@ class IngredientsViewModel(
         }
     }
 
-    private fun createIngredient() {
+    private fun addIngredientFromInput() {
         val previousState =
             innerState.getAndUpdate { state ->
-                if (state.inputText.isBlank() || state.emojiResolver == null) {
-                    // Abort if input is blank or emoji resolver is not ready
-                    return
-                } else {
-                    state.copy(inputText = "")
-                }
+                if (state.inputText.isBlank()) return
+                state.copy(inputText = "")
             }
         val trimmed = previousState.inputText.trim()
-        val emojiResolver = checkNotNull(previousState.emojiResolver)
-        // Turn a pasted emoji glyph into its alias (e.g. "🍌" -> "banana") so the backend stores a name.
-        create(emojiResolver.resolveAlias(trimmed) ?: trimmed)
+        viewModelScope.launch {
+            // Turn a pasted emoji glyph into its alias (e.g. "🍌" -> "banana") so the backend stores a name.
+            val alias = resolveEmojiAlias(trimmed)
+            create(alias ?: trimmed)
+        }
     }
 
     private fun addSuggestion(name: String) {
@@ -238,49 +241,50 @@ class IngredientsViewModel(
 
     private fun create(name: String) {
         viewModelScope.launch {
-            val result = client.createIngredient(sessionId, name)
-            result.onErr {
-                log.e { "Failed to create ingredient '$name': $it" }
-                snackbarManager.show("Couldn't add $name", isError = true)
-            }
+            createIngredient(sessionId, name)
+                .onErr {
+                    log.e { "Failed to create ingredient '$name': $it" }
+                    showSnackbar("Couldn't add $name", isError = true)
+                }
         }
     }
 
-    private fun destroyIngredient(key: String) {
+    private fun destroyIngredientById(key: String) {
         val id = IngredientId.parse(key)
         viewModelScope.launch {
-            val result = client.destroyIngredient(sessionId, id)
-            result.onErr {
-                log.e { "Failed to destroy ingredient $id: $it" }
-                snackbarManager.show("Couldn't delete ingredient", isError = true)
-            }
+            destroyIngredient(sessionId, id)
+                .onErr {
+                    log.e { "Failed to destroy ingredient $id: $it" }
+                    showSnackbar("Couldn't delete ingredient", isError = true)
+                }
         }
     }
 
     private fun addIngredient(key: String) {
         val id = IngredientId.parse(key)
         viewModelScope.launch {
-            val result = client.setIngredientInventory(sessionId, id, inInventory = true)
-            result.onErr {
-                log.e { "Failed to add ingredient $id: $it" }
-                snackbarManager.show("Couldn't move ingredient to your inventory", isError = true)
-            }
+            setIngredientInventory(sessionId, id, inInventory = true)
+                .onErr {
+                    log.e { "Failed to add ingredient $id: $it" }
+                    showSnackbar("Couldn't move ingredient to your inventory", isError = true)
+                }
         }
     }
 
     private fun removeIngredient(key: String) {
         val id = IngredientId.parse(key)
         viewModelScope.launch {
-            val result = client.setIngredientInventory(sessionId, id, inInventory = false)
-            result.onErr {
-                log.e { "Failed to remove ingredient $id: $it" }
-                snackbarManager.show("Couldn't remove ingredient from your inventory", isError = true)
-            }
+            setIngredientInventory(sessionId, id, inInventory = false)
+                .onErr {
+                    log.e { "Failed to remove ingredient $id: $it" }
+                    showSnackbar("Couldn't remove ingredient from your inventory", isError = true)
+                }
         }
     }
 
     private fun updateInputText(text: String) {
         innerState.update { it.copy(inputText = text) }
+        resolveEmojisFor(IngredientWords.match(text))
     }
 
     private fun scanImage(image: Path) {
@@ -290,15 +294,14 @@ class IngredientsViewModel(
         }
         viewModelScope.launch {
             try {
-                awaitJob
-                    .await(
-                        sessionId,
-                        ListSerializer(String.serializer()),
-                    ) { client.scanIngredients(sessionId, image, ContentType.defaultForFilePath(image.name)) }
+                awaitJob(
+                    sessionId,
+                    ListSerializer(String.serializer()),
+                ) { scanIngredients(sessionId, image, ContentType.defaultForFilePath(image.name)) }
                     .onOk { job -> log.i { "Scan found ${job.result.orEmpty().size} ingredient(s)" } }
                     .onErr {
                         log.e { "Failed to scan ingredients: $it" }
-                        snackbarManager.show("Couldn't scan ingredients from the image", isError = true)
+                        showSnackbar("Couldn't scan ingredients from the image", isError = true)
                     }
             } finally {
                 innerState.update { it.copy(scanningImage = false) }
@@ -307,7 +310,19 @@ class IngredientsViewModel(
     }
 
     private fun showPhotoError() {
-        snackbarManager.show("Could not take a photo", isError = true)
+        showSnackbar("Could not take a photo", isError = true)
+    }
+
+    private fun resolveEmojisFor(names: List<String>) {
+        val missing = names.filter { it !in innerState.value.emojiByIngredient }
+        if (missing.isEmpty()) return
+        viewModelScope.launch {
+            val resolved = mutableMapOf<String, Emoji?>()
+            for (name in missing) {
+                resolved[name] = resolveEmoji(name)
+            }
+            innerState.update { state -> state.copy(emojiByIngredient = state.emojiByIngredient + resolved) }
+        }
     }
 }
 
@@ -316,7 +331,8 @@ data class State(
     val ingredients: List<ApiIngredient>?, // null until the first ingredient emission arrives.
     val inputText: String,
     val scanningImage: Boolean,
-    val emojiResolver: IngredientEmojiResolver?, // null until the emoji catalog has loaded.
+    // Ingredient name to resolved emoji; filled lazily as names first appear.
+    val emojiByIngredient: Map<String, Emoji?>,
     // Ids in the inventory when the screen opened (first stream emission). Anything in stock now but
     // absent here is "new"; an ingredient removed and re-added returns to the baseline, so it isn't.
     val baselineInInventory: Set<IngredientId>?,

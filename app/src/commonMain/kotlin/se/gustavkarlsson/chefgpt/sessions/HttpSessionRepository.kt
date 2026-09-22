@@ -11,9 +11,9 @@ import com.github.michaelbull.result.onOk
 import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.ClientError
 
-private val log = Logger.withTag("${SessionRepositoryImpl::class.simpleName}")
+private val log = Logger.withTag("${HttpSessionRepository::class.simpleName}")
 
-class SessionRepositoryImpl(
+class HttpSessionRepository(
     private val client: ChefGptClient,
     private val lastSessionFileStore: LastSessionFileStore,
 ) : SessionRepository {
