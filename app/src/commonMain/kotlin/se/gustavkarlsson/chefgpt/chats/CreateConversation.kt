@@ -42,10 +42,10 @@ class HttpCreateConversation(
     override operator fun invoke(
         sessionId: SessionId,
         chatId: ChatId,
-    ): Conversation = HttpConversation(sessionId, chatId, client, history, awaitJob)
+    ): Conversation = ApiConversation(sessionId, chatId, client, history, awaitJob)
 }
 
-private class HttpConversation(
+private class ApiConversation(
     override val sessionId: SessionId,
     override val chatId: ChatId,
     private val client: ChefGptClient,

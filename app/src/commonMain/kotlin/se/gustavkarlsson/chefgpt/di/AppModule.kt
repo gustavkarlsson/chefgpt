@@ -25,10 +25,6 @@ import se.gustavkarlsson.chefgpt.chats.HttpDeleteChat
 import se.gustavkarlsson.chefgpt.chats.HttpStreamChats
 import se.gustavkarlsson.chefgpt.chats.StreamChats
 import se.gustavkarlsson.chefgpt.chefGptJson
-import se.gustavkarlsson.chefgpt.debug.GetBaseUrl
-import se.gustavkarlsson.chefgpt.debug.RealGetBaseUrl
-import se.gustavkarlsson.chefgpt.debug.RealSetBaseUrl
-import se.gustavkarlsson.chefgpt.debug.SetBaseUrl
 import se.gustavkarlsson.chefgpt.debug.Settings
 import se.gustavkarlsson.chefgpt.files.DeleteFile
 import se.gustavkarlsson.chefgpt.files.HttpUploadFile
@@ -152,10 +148,8 @@ val singletonModule =
         single<HttpUploadFile>() bind UploadFile::class
         single<RealDeleteFile>() bind DeleteFile::class
 
-        // Use cases — snackbar & settings
+        // Use cases — snackbar
         single<RealShowSnackbar>() bind ShowSnackbar::class
-        single<RealGetBaseUrl>() bind GetBaseUrl::class
-        single<RealSetBaseUrl>() bind SetBaseUrl::class
     }
 
 // TODO Consider adding a viewModelScope and providing more VM-scoped dependencies
