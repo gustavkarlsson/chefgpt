@@ -6,5 +6,16 @@
 	<true/>
 	<key>CFBundleDisplayName</key>
 	<string>ChefGPT</string>
+	<key>NSCameraUsageDescription</key>
+	<string>ChefGPT uses the camera to scan ingredients and recipes.</string>
+	<!-- Preprocessed: INFOPLIST_PREPROCESS is on for both configurations, but only
+	     Debug defines DEBUG=1, so this block is stripped from Release builds. -->
+#ifdef DEBUG
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+#endif
 </dict>
 </plist>
