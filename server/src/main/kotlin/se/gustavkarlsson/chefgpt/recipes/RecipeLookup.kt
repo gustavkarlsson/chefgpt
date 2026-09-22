@@ -18,7 +18,7 @@ import se.gustavkarlsson.chefgpt.api.SpoonacularId
 import kotlin.math.floor
 import kotlin.time.Duration.Companion.minutes
 
-// Looks up recipes from the recipe client, which only speaks raw JSON meant for the LLM.
+// Turns the recipe client's raw JSON into a NewRecipe, whether by Spoonacular id or by scraping a URL.
 class RecipeLookup(
     private val recipeClient: RecipeClient,
     private val json: Json,
@@ -42,22 +42,36 @@ class RecipeLookup(
             cookingDuration = info.minutesOrNull("cookingMinutes"),
             duration = info.minutesOrNull("readyInMinutes"),
             servings = info.servingsOrNull(),
-            ingredients =
-                info["extendedIngredients"]
-                    ?.jsonArray
-                    ?.mapNotNull { ingredient ->
-                        val amount = ingredient.jsonObject.toAmountOrNull() ?: return@mapNotNull null
-                        ApiRecipeIngredient(amount.name, amount.value, amount.unit)
-                    }.orEmpty(),
-            nutrients =
-                info["nutrition"]
-                    ?.jsonObject
-                    ?.get("nutrients")
-                    ?.jsonArray
-                    ?.mapNotNull { nutrient ->
-                        val amount = nutrient.jsonObject.toAmountOrNull() ?: return@mapNotNull null
-                        ApiNutrient(amount.name, amount.value, amount.unit)
-                    }.orEmpty(),
+            ingredients = info.toIngredients(),
+            nutrients = info.toNutrients(),
+        )
+    }
+
+    suspend fun scrape(url: String): NewRecipe? {
+        val extract =
+            json
+                .parseToJsonElement(recipeClient.extractRecipeFromWebsite(url, includeNutrition = true))
+                .jsonObject
+        val title = extract["title"]?.jsonPrimitive?.contentOrNull ?: return null
+        val instructions = extract["instructions"]?.jsonPrimitive?.contentOrNull ?: return null
+        val parsedInstructions =
+            json
+                .parseToJsonElement(recipeClient.getAnalyzedRecipeInstructions(instructions))
+                .jsonObject["parsedInstructions"] ?: return null
+        val steps = parsedInstructions.toSteps()
+        if (steps.isEmpty()) return null
+        return NewRecipe(
+            title = title,
+            steps = steps,
+            spoonacularId = null,
+            imageUrl = extract["image"]?.jsonPrimitive?.contentOrNull?.let(::recipePhotoUrlOrNull),
+            description = extract["summary"]?.jsonPrimitive?.contentOrNull,
+            preparationDuration = extract.minutesOrNull("preparationMinutes"),
+            cookingDuration = extract.minutesOrNull("cookingMinutes"),
+            duration = extract.minutesOrNull("readyInMinutes"),
+            servings = extract.servingsOrNull(),
+            ingredients = extract.toIngredients(),
+            nutrients = extract.toNutrients(),
         )
     }
 }
@@ -74,6 +88,24 @@ private fun JsonObject.toAmountOrNull(): Amount? {
     val unit = get("unit")?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }
     return Amount(name, formatValue(amount), unit)
 }
+
+private fun JsonObject.toIngredients(): List<ApiRecipeIngredient> =
+    get("extendedIngredients")
+        ?.jsonArray
+        ?.mapNotNull { ingredient ->
+            val amount = ingredient.jsonObject.toAmountOrNull() ?: return@mapNotNull null
+            ApiRecipeIngredient(amount.name, amount.value, amount.unit)
+        }.orEmpty()
+
+private fun JsonObject.toNutrients(): List<ApiNutrient> =
+    get("nutrition")
+        ?.jsonObject
+        ?.get("nutrients")
+        ?.jsonArray
+        ?.mapNotNull { nutrient ->
+            val amount = nutrient.jsonObject.toAmountOrNull() ?: return@mapNotNull null
+            ApiNutrient(amount.name, amount.value, amount.unit)
+        }.orEmpty()
 
 private fun JsonObject.minutesOrNull(key: String) =
     get(key)

@@ -27,6 +27,7 @@ import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 import se.gustavkarlsson.chefgpt.recipes.RecipeClient
 import se.gustavkarlsson.chefgpt.recipes.RecipeLookup
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
+import se.gustavkarlsson.chefgpt.recipes.RecipeScraper
 
 private const val CHAT_AGENT = "chat"
 private const val INGREDIENT_SCAN_AGENT = "ingredientScan"
@@ -47,6 +48,7 @@ fun Application.createAiAgentsModule() =
                         recipeRepository = get<RecipeRepository>(),
                         recipeLookup = get<RecipeLookup>(),
                         recipeClient = get<RecipeClient>(),
+                        recipeScraper = get<RecipeScraper>(),
                         factRepository = get<FactRepository>(),
                         imageCropper = get<ImageCropper>(),
                         chatRepository = get<ChatRepository>(),
