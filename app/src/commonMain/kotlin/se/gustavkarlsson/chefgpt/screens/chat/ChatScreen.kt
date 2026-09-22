@@ -584,8 +584,8 @@ private fun TakePhotoButton(
     }
     if (takingPhoto) {
         CapturePhoto(
-            onPhotos = { photos ->
-                button.onPhotosTaken(photos)
+            onPhoto = { photo ->
+                button.onPhotoTaken(photo)
                 takingPhoto = false
             },
             onCancelled = {

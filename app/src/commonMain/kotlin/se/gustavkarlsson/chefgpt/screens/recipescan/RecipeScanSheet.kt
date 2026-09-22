@@ -117,7 +117,7 @@ private fun Content(
 
     if (uiState.capturing) {
         CapturePhoto(
-            onPhotos = uiState.onPhotosCaptured,
+            onPhoto = uiState.onPhotoCaptured,
             onCancelled = uiState.onCaptureCancelled,
             onError = uiState.onCaptureError,
         )

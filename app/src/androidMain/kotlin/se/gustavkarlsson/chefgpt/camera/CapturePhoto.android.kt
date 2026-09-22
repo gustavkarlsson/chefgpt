@@ -20,7 +20,7 @@ private const val TAG = "CameraCapture"
 
 @Composable
 actual fun CapturePhoto(
-    onPhotos: (photos: List<Path>) -> Unit,
+    onPhoto: (photo: Path) -> Unit,
     onCancelled: () -> Unit,
     onError: () -> Unit,
 ) {
@@ -47,7 +47,7 @@ actual fun CapturePhoto(
 
                 else -> {
                     filePath = null
-                    onPhotos(listOf(Path(path)))
+                    onPhoto(Path(path))
                 }
             }
         }

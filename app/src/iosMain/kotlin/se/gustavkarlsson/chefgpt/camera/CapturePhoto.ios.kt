@@ -32,13 +32,13 @@ private const val JPEG_QUALITY = 0.9
 
 @Composable
 actual fun CapturePhoto(
-    onPhotos: (photos: List<Path>) -> Unit,
+    onPhoto: (photo: Path) -> Unit,
     onCancelled: () -> Unit,
     onError: () -> Unit,
 ) {
     val hostController = LocalUIViewController.current
     val scope = rememberCoroutineScope()
-    val currentOnPhotos by rememberUpdatedState(onPhotos)
+    val currentOnPhoto by rememberUpdatedState(onPhoto)
     val currentOnCancelled by rememberUpdatedState(onCancelled)
     val currentOnError by rememberUpdatedState(onError)
 
@@ -50,7 +50,7 @@ actual fun CapturePhoto(
                     scope.launch {
                         val path = image?.let { withContext(Dispatchers.IoOrDefault) { writeToPhotoCache(it) } }
                         if (path != null) {
-                            currentOnPhotos(listOf(Path(path)))
+                            currentOnPhoto(Path(path))
                         } else {
                             currentOnError()
                         }

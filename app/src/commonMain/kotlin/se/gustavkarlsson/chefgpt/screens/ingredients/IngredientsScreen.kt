@@ -345,11 +345,8 @@ private fun PhotoButton(button: UiCameraButton) {
         }
         if (takingPhoto) {
             CapturePhoto(
-                // Scanning takes a single image, and the platforms that offer this button
-                // capture one photo at a time.
-                onPhotos = { photos ->
-                    val photo = photos.firstOrNull()
-                    if (photo == null) button.onError() else button.onPhotoTaken(photo)
+                onPhoto = { photo ->
+                    button.onPhotoTaken(photo)
                     takingPhoto = false
                 },
                 onCancelled = {

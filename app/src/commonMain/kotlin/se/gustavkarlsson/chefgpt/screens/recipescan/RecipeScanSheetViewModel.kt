@@ -47,7 +47,7 @@ class RecipeScanSheetViewModel(
             onClickAddPhoto = ::addPhoto,
             onClickPhoto = ::requestDiscard,
             onClickConfirm = if (photos.isEmpty()) null else ::confirm,
-            onPhotosCaptured = ::onPhotosCaptured,
+            onPhotoCaptured = ::onPhotoCaptured,
             onCaptureCancelled = ::onCaptureCancelled,
             onCaptureError = ::onCaptureError,
             onDiscardConfirmed = ::discard,
@@ -69,9 +69,9 @@ class RecipeScanSheetViewModel(
         innerState.update { it.copy(capturing = true) }
     }
 
-    private fun onPhotosCaptured(photos: List<Path>) {
+    private fun onPhotoCaptured(photo: Path) {
         initialCapture = false
-        innerState.update { it.copy(capturing = false, photos = it.photos + photos) }
+        innerState.update { it.copy(capturing = false, photos = it.photos + photo) }
     }
 
     private fun onCaptureCancelled() {
@@ -133,7 +133,7 @@ data class RecipeScanSheetUiState(
     val onClickAddPhoto: () -> Unit,
     val onClickPhoto: (Path) -> Unit,
     val onClickConfirm: (() -> Unit)?,
-    val onPhotosCaptured: (List<Path>) -> Unit,
+    val onPhotoCaptured: (Path) -> Unit,
     val onCaptureCancelled: () -> Unit,
     val onCaptureError: () -> Unit,
     val onDiscardConfirmed: () -> Unit,

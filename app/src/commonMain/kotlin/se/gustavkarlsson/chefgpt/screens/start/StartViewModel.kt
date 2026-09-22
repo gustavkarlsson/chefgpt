@@ -88,7 +88,7 @@ class StartViewModel(
                     username = sessionCredentials.username.value,
                     chats = chats.toUiChats(),
                     scanRecipesButton =
-                        if (deviceConfig.supportsPhotoCapture) {
+                        if (deviceConfig.supportsCamera) {
                             UiScanRecipesButton(scanning = scanningRecipes, onClick = ::openScanSheet)
                         } else {
                             null
@@ -390,7 +390,7 @@ data class UiState(
         data class LoggedIn(
             val username: String,
             val chats: List<UiChat>,
-            // Null on devices that cannot produce photos at all, where the button is hidden.
+            // Null on devices without a camera, where the button is hidden.
             val scanRecipesButton: UiScanRecipesButton?,
             val recipeSummaries: List<UiRecipeSummary>,
             val onClickNewChat: () -> Unit,
