@@ -1,7 +1,10 @@
-package se.gustavkarlsson.chefgpt.sessions
+package se.gustavkarlsson.chefgpt.sessions.usecases
 
 import com.github.michaelbull.result.Result
 import se.gustavkarlsson.chefgpt.ClientError
+import se.gustavkarlsson.chefgpt.sessions.SessionCredentials
+import se.gustavkarlsson.chefgpt.sessions.SessionRepository
+import se.gustavkarlsson.chefgpt.sessions.UserCredentials
 
 fun interface LogIn {
     suspend operator fun invoke(credentials: UserCredentials): Result<SessionCredentials, ClientError>

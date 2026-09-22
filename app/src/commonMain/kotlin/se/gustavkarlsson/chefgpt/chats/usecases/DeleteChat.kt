@@ -1,8 +1,9 @@
-package se.gustavkarlsson.chefgpt.chats
+package se.gustavkarlsson.chefgpt.chats.usecases
 
 import com.github.michaelbull.result.Result
 import se.gustavkarlsson.chefgpt.ClientError
 import se.gustavkarlsson.chefgpt.api.ChatId
+import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 
 fun interface DeleteChat {

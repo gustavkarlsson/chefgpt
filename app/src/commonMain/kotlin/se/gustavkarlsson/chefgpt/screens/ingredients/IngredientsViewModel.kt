@@ -22,20 +22,20 @@ import org.koin.core.annotation.InjectedParam
 import se.gustavkarlsson.chefgpt.DeviceConfig
 import se.gustavkarlsson.chefgpt.api.ApiIngredient
 import se.gustavkarlsson.chefgpt.api.IngredientId
-import se.gustavkarlsson.chefgpt.ingredients.CreateIngredient
-import se.gustavkarlsson.chefgpt.ingredients.DestroyIngredient
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatarModel
 import se.gustavkarlsson.chefgpt.ingredients.IngredientWords
-import se.gustavkarlsson.chefgpt.ingredients.ResolveEmoji
-import se.gustavkarlsson.chefgpt.ingredients.ResolveEmojiAlias
-import se.gustavkarlsson.chefgpt.ingredients.ScanIngredients
-import se.gustavkarlsson.chefgpt.ingredients.SetIngredientInventory
-import se.gustavkarlsson.chefgpt.ingredients.StreamIngredients
-import se.gustavkarlsson.chefgpt.jobs.AwaitJob
+import se.gustavkarlsson.chefgpt.ingredients.usecases.CreateIngredient
+import se.gustavkarlsson.chefgpt.ingredients.usecases.DestroyIngredient
+import se.gustavkarlsson.chefgpt.ingredients.usecases.ResolveEmoji
+import se.gustavkarlsson.chefgpt.ingredients.usecases.ResolveEmojiAlias
+import se.gustavkarlsson.chefgpt.ingredients.usecases.ScanIngredients
+import se.gustavkarlsson.chefgpt.ingredients.usecases.SetIngredientInventory
+import se.gustavkarlsson.chefgpt.ingredients.usecases.StreamIngredients
+import se.gustavkarlsson.chefgpt.jobs.usecases.AwaitJob
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
 import se.gustavkarlsson.chefgpt.sessions.SessionId
-import se.gustavkarlsson.chefgpt.snackbar.ShowSnackbar
+import se.gustavkarlsson.chefgpt.snackbar.usecases.ShowSnackbar
 import kotlin.time.Duration.Companion.seconds
 
 private val log = Logger.withTag("${IngredientsViewModel::class.simpleName}")

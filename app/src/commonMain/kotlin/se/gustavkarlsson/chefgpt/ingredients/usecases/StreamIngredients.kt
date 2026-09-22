@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt.ingredients
+package se.gustavkarlsson.chefgpt.ingredients.usecases
 
 import kotlinx.coroutines.flow.Flow
 import se.gustavkarlsson.chefgpt.ChefGptClient

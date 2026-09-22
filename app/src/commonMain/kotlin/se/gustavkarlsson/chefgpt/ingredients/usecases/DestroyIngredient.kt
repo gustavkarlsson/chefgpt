@@ -1,22 +1,23 @@
-package se.gustavkarlsson.chefgpt.ingredients
+package se.gustavkarlsson.chefgpt.ingredients.usecases
 
 import com.github.michaelbull.result.Result
 import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.ClientError
+import se.gustavkarlsson.chefgpt.api.IngredientId
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 
-fun interface CreateIngredient {
+fun interface DestroyIngredient {
     suspend operator fun invoke(
         sessionId: SessionId,
-        name: String,
+        ingredientId: IngredientId,
     ): Result<Unit, ClientError>
 }
 
-class HttpCreateIngredient(
+class HttpDestroyIngredient(
     private val client: ChefGptClient,
-) : CreateIngredient {
+) : DestroyIngredient {
     override suspend fun invoke(
         sessionId: SessionId,
-        name: String,
-    ): Result<Unit, ClientError> = client.createIngredient(sessionId, name)
+        ingredientId: IngredientId,
+    ): Result<Unit, ClientError> = client.destroyIngredient(sessionId, ingredientId)
 }

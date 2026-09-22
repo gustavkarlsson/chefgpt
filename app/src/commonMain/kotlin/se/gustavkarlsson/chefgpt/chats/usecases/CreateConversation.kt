@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt.chats
+package se.gustavkarlsson.chefgpt.chats.usecases
 
 import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.Err
@@ -21,8 +21,11 @@ import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
-import se.gustavkarlsson.chefgpt.jobs.AwaitJob
+import se.gustavkarlsson.chefgpt.chats.Conversation
+import se.gustavkarlsson.chefgpt.chats.EventHistoryStore
+import se.gustavkarlsson.chefgpt.chats.EventStreamError
 import se.gustavkarlsson.chefgpt.jobs.AwaitJobError
+import se.gustavkarlsson.chefgpt.jobs.usecases.AwaitJob
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 
 private val log = Logger.withTag("${HttpCreateConversation::class.simpleName}")

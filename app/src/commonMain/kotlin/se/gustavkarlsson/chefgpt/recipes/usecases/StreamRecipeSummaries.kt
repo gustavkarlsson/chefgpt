@@ -1,6 +1,8 @@
-package se.gustavkarlsson.chefgpt.recipes
+package se.gustavkarlsson.chefgpt.recipes.usecases
 
 import kotlinx.coroutines.flow.Flow
+import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
+import se.gustavkarlsson.chefgpt.recipes.RecipeSummary
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 
 fun interface StreamRecipeSummaries {

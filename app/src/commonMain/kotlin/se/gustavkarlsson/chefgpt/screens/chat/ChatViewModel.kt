@@ -39,18 +39,18 @@ import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.JoinId
 import se.gustavkarlsson.chefgpt.chats.Chat
 import se.gustavkarlsson.chefgpt.chats.Conversation
-import se.gustavkarlsson.chefgpt.chats.CreateConversation
-import se.gustavkarlsson.chefgpt.chats.StreamChats
 import se.gustavkarlsson.chefgpt.chats.displayName
-import se.gustavkarlsson.chefgpt.files.UploadFile
+import se.gustavkarlsson.chefgpt.chats.usecases.CreateConversation
+import se.gustavkarlsson.chefgpt.chats.usecases.StreamChats
+import se.gustavkarlsson.chefgpt.files.usecases.UploadFile
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatarModel
-import se.gustavkarlsson.chefgpt.ingredients.ResolveEmoji
-import se.gustavkarlsson.chefgpt.ingredients.StreamIngredients
+import se.gustavkarlsson.chefgpt.ingredients.usecases.ResolveEmoji
+import se.gustavkarlsson.chefgpt.ingredients.usecases.StreamIngredients
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsScreen
 import se.gustavkarlsson.chefgpt.sessions.SessionId
-import se.gustavkarlsson.chefgpt.snackbar.ShowSnackbar
+import se.gustavkarlsson.chefgpt.snackbar.usecases.ShowSnackbar
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 

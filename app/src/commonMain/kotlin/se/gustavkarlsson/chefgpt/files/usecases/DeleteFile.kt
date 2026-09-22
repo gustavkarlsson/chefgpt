@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt.files
+package se.gustavkarlsson.chefgpt.files.usecases
 
 import kotlinx.io.files.FileSystem
 import kotlinx.io.files.Path

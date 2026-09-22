@@ -1,4 +1,6 @@
-package se.gustavkarlsson.chefgpt.snackbar
+package se.gustavkarlsson.chefgpt.snackbar.usecases
+
+import se.gustavkarlsson.chefgpt.snackbar.SnackbarManager
 
 fun interface ShowSnackbar {
     operator fun invoke(

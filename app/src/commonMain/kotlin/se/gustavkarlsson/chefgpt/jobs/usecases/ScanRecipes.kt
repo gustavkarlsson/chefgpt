@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt.jobs
+package se.gustavkarlsson.chefgpt.jobs.usecases
 
 import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.combine
@@ -15,8 +15,10 @@ import kotlinx.serialization.builtins.ListSerializer
 import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.isImageFile
+import se.gustavkarlsson.chefgpt.jobs.JobManager
+import se.gustavkarlsson.chefgpt.jobs.JobType
 import se.gustavkarlsson.chefgpt.sessions.SessionId
-import se.gustavkarlsson.chefgpt.snackbar.ShowSnackbar
+import se.gustavkarlsson.chefgpt.snackbar.usecases.ShowSnackbar
 
 private val log = Logger.withTag("${HttpScanRecipes::class.simpleName}")
 

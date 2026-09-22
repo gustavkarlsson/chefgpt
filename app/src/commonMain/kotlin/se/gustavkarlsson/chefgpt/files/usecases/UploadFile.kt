@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt.files
+package se.gustavkarlsson.chefgpt.files.usecases
 
 import com.github.michaelbull.result.Result
 import io.ktor.http.ContentType

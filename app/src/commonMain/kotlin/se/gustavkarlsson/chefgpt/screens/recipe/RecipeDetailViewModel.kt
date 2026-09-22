@@ -11,14 +11,14 @@ import org.koin.core.annotation.InjectedParam
 import se.gustavkarlsson.chefgpt.ClientError
 import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.navigation.Navigator
-import se.gustavkarlsson.chefgpt.recipes.DeleteRecipe
-import se.gustavkarlsson.chefgpt.recipes.GetRecipe
-import se.gustavkarlsson.chefgpt.recipes.OverwriteOriginalRecipe
 import se.gustavkarlsson.chefgpt.recipes.Recipe
-import se.gustavkarlsson.chefgpt.recipes.SaveRecipeAsCopy
-import se.gustavkarlsson.chefgpt.recipes.SetRecipeFavorite
+import se.gustavkarlsson.chefgpt.recipes.usecases.DeleteRecipe
+import se.gustavkarlsson.chefgpt.recipes.usecases.GetRecipe
+import se.gustavkarlsson.chefgpt.recipes.usecases.OverwriteOriginalRecipe
+import se.gustavkarlsson.chefgpt.recipes.usecases.SaveRecipeAsCopy
+import se.gustavkarlsson.chefgpt.recipes.usecases.SetRecipeFavorite
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
-import se.gustavkarlsson.chefgpt.snackbar.ShowSnackbar
+import se.gustavkarlsson.chefgpt.snackbar.usecases.ShowSnackbar
 
 private val log = Logger.withTag("${RecipeDetailViewModel::class.simpleName}")
 

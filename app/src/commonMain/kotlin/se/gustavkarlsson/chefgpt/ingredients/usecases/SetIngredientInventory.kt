@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt.ingredients
+package se.gustavkarlsson.chefgpt.ingredients.usecases
 
 import com.github.michaelbull.result.Result
 import se.gustavkarlsson.chefgpt.ChefGptClient

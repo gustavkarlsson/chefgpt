@@ -8,12 +8,12 @@ import kotlinx.coroutines.withContext
 import kotlinx.io.files.Path
 import org.koin.core.annotation.InjectedParam
 import se.gustavkarlsson.chefgpt.IoOrDefault
-import se.gustavkarlsson.chefgpt.files.DeleteFile
-import se.gustavkarlsson.chefgpt.jobs.ScanRecipes
+import se.gustavkarlsson.chefgpt.files.usecases.DeleteFile
+import se.gustavkarlsson.chefgpt.jobs.usecases.ScanRecipes
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
 import se.gustavkarlsson.chefgpt.sessions.SessionId
-import se.gustavkarlsson.chefgpt.snackbar.ShowSnackbar
+import se.gustavkarlsson.chefgpt.snackbar.usecases.ShowSnackbar
 
 class RecipeScanSheetViewModel(
     private val navigator: Navigator,

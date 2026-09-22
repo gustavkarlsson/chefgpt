@@ -55,10 +55,11 @@ class HttpGetRecipe(
 ## Location
 
 One file per use case, holding the `fun interface` and its single default
-implementation together. Place it alongside the repository/domain it belongs to:
+implementation together. Place it in a `usecases` sub-package of the domain it
+belongs to:
 
 ```
-app/src/commonMain/kotlin/se/gustavkarlsson/chefgpt/<domain>/<VerbDomain>.kt
+app/src/commonMain/kotlin/se/gustavkarlsson/chefgpt/<domain>/usecases/<VerbDomain>.kt
 ```
 
 ## Statelessness

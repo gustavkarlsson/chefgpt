@@ -1,8 +1,9 @@
-package se.gustavkarlsson.chefgpt.recipes
+package se.gustavkarlsson.chefgpt.recipes.usecases
 
 import com.github.michaelbull.result.Result
 import se.gustavkarlsson.chefgpt.ClientError
 import se.gustavkarlsson.chefgpt.api.RecipeId
+import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 
 fun interface SetRecipeFavorite {
