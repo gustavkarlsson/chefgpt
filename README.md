@@ -119,7 +119,19 @@ Build the debug APK, then install and launch it on the connected device:
 
 ### iOS
 
-Open `iosApp/iosApp.xcodeproj` in Xcode and run the scheme, or build the framework manually:
+Build the debug app, then install and launch it on a connected iPhone, falling
+back to a simulator (booting or creating one) when no device is attached:
+
+```bash
+./run_ios.sh
+```
+
+Set `SIMULATOR_DEVICE` to pick another device type, as listed by
+`xcrun simctl list devicetypes`. Running on a physical device needs `TEAM_ID`
+set in `iosApp/Configuration/Config.xcconfig`.
+
+Alternatively open `iosApp/iosApp.xcodeproj` in Xcode and run the scheme, or
+build the framework manually:
 
 ```bash
 ./gradlew :app:linkDebugFrameworkIosSimulatorArm64

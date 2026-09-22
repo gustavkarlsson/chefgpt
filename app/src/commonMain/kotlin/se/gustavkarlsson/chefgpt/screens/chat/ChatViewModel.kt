@@ -267,8 +267,8 @@ class ChatViewModel(
         innerState.update { it.copy(attachments = (it.attachments + files).distinct()) }
     }
 
-    private fun addPhotoAttachment(photoPath: String) {
-        innerState.update { it.copy(attachments = it.attachments + Path(photoPath)) }
+    private fun addPhotoAttachment(photo: Path) {
+        innerState.update { it.copy(attachments = it.attachments + photo) }
     }
 
     private fun showPhotoError() {
@@ -407,7 +407,7 @@ data class UiSendFileButton(
 )
 
 data class UiCameraButton(
-    val onPhotoTaken: (photoPath: String) -> Unit,
+    val onPhotoTaken: (photo: Path) -> Unit,
     val onError: () -> Unit,
 )
 

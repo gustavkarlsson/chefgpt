@@ -12,33 +12,31 @@ import se.gustavkarlsson.chefgpt.pickFiles
 
 @Composable
 actual fun CapturePhoto(
-    onPhotos: (photos: List<Path>) -> Unit,
+    onPhoto: (photo: Path) -> Unit,
     onCancelled: () -> Unit,
     onError: () -> Unit,
 ) {
     LaunchedEffect(Unit) {
-        val picked = pickFiles(multiple = true)
-        if (picked.isEmpty()) {
+        val picked = pickFiles(multiple = false).firstOrNull()
+        if (picked == null) {
             onCancelled()
             return@LaunchedEffect
         }
-        onPhotos(copyIntoPhotoCache(picked))
+        onPhoto(copyIntoPhotoCache(picked))
     }
 }
 
-// The picker returns the user's own files; copy them into a cache dir so the caller can
-// delete them without touching the originals.
-private suspend fun copyIntoPhotoCache(files: List<Path>): List<Path> =
+// The picker returns the user's own file; copy it into a cache dir so the caller can
+// delete it without touching the original.
+private suspend fun copyIntoPhotoCache(file: Path): Path =
     withContext(Dispatchers.IoOrDefault) {
         val dir = Path("${System.getProperty("java.io.tmpdir")}/chefgpt/photos")
         SystemFileSystem.createDirectories(dir)
-        files.map { file ->
-            val target = Path("$dir/${file.name}")
-            SystemFileSystem.sink(target).buffered().use { sink ->
-                SystemFileSystem.source(file).buffered().use { source ->
-                    source.transferTo(sink)
-                }
+        val target = Path("$dir/${file.name}")
+        SystemFileSystem.sink(target).buffered().use { sink ->
+            SystemFileSystem.source(file).buffered().use { source ->
+                source.transferTo(sink)
             }
-            target
         }
+        target
     }

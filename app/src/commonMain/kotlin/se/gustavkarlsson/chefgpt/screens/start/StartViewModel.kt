@@ -10,6 +10,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import se.gustavkarlsson.chefgpt.DeviceConfig
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.api.RecipeId
@@ -42,6 +43,7 @@ class StartViewModel(
     private val navigator: Navigator,
     private val scanRecipes: ScanRecipes,
     private val snackbarManager: SnackbarManager,
+    private val deviceConfig: DeviceConfig,
 ) : StateViewModel<State, UiState>() {
     private val streamChatsJob = atomic<Job?>(null)
     private val streamRecipesJob = atomic<Job?>(null)
@@ -85,7 +87,12 @@ class StartViewModel(
                 UiState.Content.LoggedIn(
                     username = sessionCredentials.username.value,
                     chats = chats.toUiChats(),
-                    onClickScanRecipes = if (scanningRecipes) null else ::openScanSheet,
+                    scanRecipesButton =
+                        if (deviceConfig.supportsCamera) {
+                            UiScanRecipesButton(scanning = scanningRecipes, onClick = ::openScanSheet)
+                        } else {
+                            null
+                        },
                     recipeSummaries = recipeSummaries.toUiRecipeSummaries(),
                     onClickNewChat = ::createChat,
                     onClickIngredients = ::openIngredients,
@@ -383,7 +390,8 @@ data class UiState(
         data class LoggedIn(
             val username: String,
             val chats: List<UiChat>,
-            val onClickScanRecipes: (() -> Unit)?,
+            // Null on devices without a camera, where the button is hidden.
+            val scanRecipesButton: UiScanRecipesButton?,
             val recipeSummaries: List<UiRecipeSummary>,
             val onClickNewChat: () -> Unit,
             val onClickIngredients: () -> Unit,
@@ -391,6 +399,11 @@ data class UiState(
         ) : Content
     }
 }
+
+data class UiScanRecipesButton(
+    val scanning: Boolean,
+    val onClick: () -> Unit,
+)
 
 data class UiChat(
     val id: ChatId,

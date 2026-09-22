@@ -6,7 +6,7 @@ import kotlinx.io.files.Path
 
 @Composable
 actual fun CapturePhoto(
-    onPhotos: (photos: List<Path>) -> Unit,
+    onPhoto: (photo: Path) -> Unit,
     onCancelled: () -> Unit,
     onError: () -> Unit,
 ) {

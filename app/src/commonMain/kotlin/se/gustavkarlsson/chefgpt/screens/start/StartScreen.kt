@@ -282,7 +282,7 @@ private fun LoggedInContent(
             AnimatedPane {
                 RecipeSidebar(
                     modifier = Modifier.fillMaxSize(),
-                    onClickScanRecipes = state.onClickScanRecipes,
+                    scanRecipesButton = state.scanRecipesButton,
                     recipes = state.recipeSummaries,
                     onClickBack =
                         if (navigator.canNavigateBack()) {
@@ -548,8 +548,8 @@ private fun ChatItem(
 @Composable
 private fun RecipeSidebar(
     recipes: List<UiRecipeSummary>,
+    scanRecipesButton: UiScanRecipesButton?,
     modifier: Modifier = Modifier,
-    onClickScanRecipes: (() -> Unit)? = null,
     onClickBack: (() -> Unit)? = null,
 ) {
     Surface(
@@ -593,10 +593,12 @@ private fun RecipeSidebar(
                                 WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Bottom),
                             ).padding(16.dp),
                 )
-                ScanRecipeButton(
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                    onClickScanRecipes = onClickScanRecipes,
-                )
+                scanRecipesButton?.let { button ->
+                    ScanRecipeButton(
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        button = button,
+                    )
+                }
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth(),
@@ -613,12 +615,14 @@ private fun RecipeSidebar(
                             modifier = Modifier.animateItem(),
                         )
                     }
-                    item {
-                        Column(Modifier.fillParentMaxWidth()) {
-                            ScanRecipeButton(
-                                modifier = Modifier.align(Alignment.CenterHorizontally),
-                                onClickScanRecipes = onClickScanRecipes,
-                            )
+                    scanRecipesButton?.let { button ->
+                        item {
+                            Column(Modifier.fillParentMaxWidth()) {
+                                ScanRecipeButton(
+                                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                                    button = button,
+                                )
+                            }
                         }
                     }
                 }
@@ -629,16 +633,16 @@ private fun RecipeSidebar(
 
 @Composable
 private fun ScanRecipeButton(
-    onClickScanRecipes: (() -> Unit)?,
+    button: UiScanRecipesButton,
     modifier: Modifier = Modifier,
 ) {
-    if (onClickScanRecipes == null) {
+    if (button.scanning) {
         // Scanning can take a while; show progress in place of the camera button.
         Box(modifier = modifier.size(48.dp), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(modifier = Modifier.size(24.dp))
         }
     } else {
-        IconButton(modifier = modifier, onClick = onClickScanRecipes) {
+        IconButton(modifier = modifier, onClick = button.onClick) {
             Icon(
                 imageVector = Icons.Default.CameraAlt,
                 contentDescription = "Scan recipes from photos",
