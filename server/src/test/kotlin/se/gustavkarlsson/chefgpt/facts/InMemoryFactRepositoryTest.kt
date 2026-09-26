@@ -11,27 +11,27 @@ class InMemoryFactRepositoryTest {
     private val repository = InMemoryFactRepository()
 
     @Test
-    fun `getFacts returns unknown for a new user`() =
+    fun `getFacts returns empty for a new user`() =
         runTest {
             val facts = repository.getFacts(userId)
 
-            assertEquals(UserFacts.UNKNOWN, facts)
+            assertEquals(UserFacts.Empty, facts)
         }
 
     @Test
     fun `updateFacts returns the updated facts`() =
         runTest {
-            val updated = repository.updateFacts(userId, UserFactsUpdate(unitSystem = UnitSystem.Metric))
+            val updated = repository.updateFacts(userId, UserFactsUpdate(weightUnits = WeightUnits.Metric))
 
-            assertEquals(UnitSystem.Metric, updated.unitSystem)
+            assertEquals(WeightUnits.Metric, updated.weightUnits)
         }
 
     @Test
     fun `updateFacts persists facts`() =
         runTest {
-            repository.updateFacts(userId, UserFactsUpdate(unitSystem = UnitSystem.Metric))
+            repository.updateFacts(userId, UserFactsUpdate(weightUnits = WeightUnits.Metric))
 
-            assertEquals(UnitSystem.Metric, repository.getFacts(userId).unitSystem)
+            assertEquals(WeightUnits.Metric, repository.getFacts(userId).weightUnits)
         }
 
     @Test
@@ -46,8 +46,39 @@ class InMemoryFactRepositoryTest {
     @Test
     fun `facts are independent per user`() =
         runTest {
-            repository.updateFacts(userId, UserFactsUpdate(unitSystem = UnitSystem.Metric))
+            repository.updateFacts(userId, UserFactsUpdate(weightUnits = WeightUnits.Metric))
 
-            assertEquals(UserFacts.UNKNOWN, repository.getFacts(otherUserId))
+            assertEquals(UserFacts.Empty, repository.getFacts(otherUserId))
+        }
+
+    @Test
+    fun `replaceFacts overwrites all facts`() =
+        runTest {
+            repository.updateFacts(
+                userId,
+                UserFactsUpdate(weightUnits = WeightUnits.Metric, addDietary = setOf("vegetarian")),
+            )
+
+            val replacement =
+                UserFacts(
+                    "Gustav",
+                    TemperatureUnit.Fahrenheit,
+                    WeightUnits.UsImperial,
+                    VolumeUnits.UsCustomary,
+                    setOf("vegan"),
+                )
+            repository.replaceFacts(userId, replacement)
+
+            assertEquals(replacement, repository.getFacts(userId))
+        }
+
+    @Test
+    fun `replaceFacts sets dietary to none`() =
+        runTest {
+            val replacement =
+                UserFacts(null, TemperatureUnit.Celsius, WeightUnits.Metric, VolumeUnits.Metric, emptySet())
+            repository.replaceFacts(userId, replacement)
+
+            assertEquals(emptySet(), repository.getFacts(userId).dietary)
         }
 }

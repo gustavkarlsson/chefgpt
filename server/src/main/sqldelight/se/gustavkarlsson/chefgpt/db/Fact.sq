@@ -1,9 +1,14 @@
 selectByUserId:
-SELECT facts::text AS facts
+SELECT preferred_name, temperature_unit, weight_units, volume_units, dietary
 FROM user_fact
 WHERE user_id = ?;
 
 upsert:
-INSERT INTO user_fact (user_id, facts)
-VALUES (?, ?::jsonb)
-ON CONFLICT (user_id) DO UPDATE SET facts = EXCLUDED.facts;
+INSERT INTO user_fact (user_id, preferred_name, temperature_unit, weight_units, volume_units, dietary)
+VALUES (?, ?, ?, ?, ?, ?)
+ON CONFLICT (user_id) DO UPDATE SET
+    preferred_name = EXCLUDED.preferred_name,
+    temperature_unit = EXCLUDED.temperature_unit,
+    weight_units = EXCLUDED.weight_units,
+    volume_units = EXCLUDED.volume_units,
+    dietary = EXCLUDED.dietary;

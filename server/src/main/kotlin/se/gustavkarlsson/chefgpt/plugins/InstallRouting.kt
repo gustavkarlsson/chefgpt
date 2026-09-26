@@ -9,6 +9,7 @@ import se.gustavkarlsson.chefgpt.routes.createIngredientRoute
 import se.gustavkarlsson.chefgpt.routes.deleteChatRoute
 import se.gustavkarlsson.chefgpt.routes.deleteIngredientRoute
 import se.gustavkarlsson.chefgpt.routes.deleteRecipeRoute
+import se.gustavkarlsson.chefgpt.routes.factsRoute
 import se.gustavkarlsson.chefgpt.routes.filesRoute
 import se.gustavkarlsson.chefgpt.routes.getJobRoute
 import se.gustavkarlsson.chefgpt.routes.getRecipeRoute
@@ -54,6 +55,7 @@ fun Application.installRouting() {
             overwriteOriginalRecipeRoute()
             saveRecipeAsCopyRoute()
             deleteRecipeRoute()
+            factsRoute()
         }
     }
 }

@@ -1,4 +1,4 @@
-package se.gustavkarlsson.chefgpt.screens.start
+package se.gustavkarlsson.chefgpt.screens.home
 
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
@@ -30,25 +30,20 @@ import se.gustavkarlsson.chefgpt.screens.StateViewModel
 import se.gustavkarlsson.chefgpt.screens.chat.ChatScreen
 import se.gustavkarlsson.chefgpt.screens.debug.DebugScreen
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsScreen
+import se.gustavkarlsson.chefgpt.screens.login.LoginScreen
 import se.gustavkarlsson.chefgpt.screens.recipe.RecipeDetailScreen
 import se.gustavkarlsson.chefgpt.screens.recipescan.RecipeScanSheet
 import se.gustavkarlsson.chefgpt.screens.recipescrape.RecipeScrapeSheet
-import se.gustavkarlsson.chefgpt.sessions.RegisterError
 import se.gustavkarlsson.chefgpt.sessions.SessionCredentials
-import se.gustavkarlsson.chefgpt.sessions.UserCredentials
 import se.gustavkarlsson.chefgpt.sessions.usecases.GetCurrentSession
-import se.gustavkarlsson.chefgpt.sessions.usecases.LogIn
 import se.gustavkarlsson.chefgpt.sessions.usecases.LogOut
-import se.gustavkarlsson.chefgpt.sessions.usecases.Register
 import se.gustavkarlsson.chefgpt.snackbar.usecases.ShowSnackbar
 import kotlin.time.Duration.Companion.seconds
 
-private val log = Logger.withTag("${StartViewModel::class.simpleName}")
+private val log = Logger.withTag("${HomeViewModel::class.simpleName}")
 
-class StartViewModel(
+class HomeViewModel(
     private val getCurrentSession: GetCurrentSession,
-    private val register: Register,
-    private val logIn: LogIn,
     private val logOut: LogOut,
     private val createChat: CreateChat,
     private val deleteChat: DeleteChat,
@@ -71,9 +66,6 @@ class StartViewModel(
             sessionCredentials = null,
             chats = emptyList(),
             recipeSummaries = emptyList(),
-            inputUsername = "",
-            inputPassword = "",
-            authenticating = false,
             scanningRecipes = false,
             scrapingRecipe = false,
         )
@@ -91,18 +83,11 @@ class StartViewModel(
             }
 
             sessionCredentials == null -> {
-                UiState.Content.LoggedOut(
-                    username = inputUsername,
-                    password = inputPassword,
-                    onUsernameChange = ::updateUsername,
-                    onPasswordChange = ::updatePassword,
-                    onClickRegister = if (canAuthenticate) ::registerUser else null,
-                    onClickLogin = if (canAuthenticate) ::logInUser else null,
-                )
+                UiState.Content.Loading
             }
 
             else -> {
-                UiState.Content.LoggedIn(
+                UiState.Content.Loaded(
                     username = sessionCredentials.username.value,
                     chats = chats.toUiChats(),
                     scanRecipesButton =
@@ -119,9 +104,6 @@ class StartViewModel(
                 )
             }
         }
-
-    private val State.canAuthenticate: Boolean
-        get() = inputUsername.isNotBlank() && inputPassword.isNotBlank() && !authenticating
 
     private fun List<Chat>.toUiChats(): List<UiChat> =
         map { chat ->
@@ -149,14 +131,18 @@ class StartViewModel(
 
     init {
         viewModelScope.launch {
-            // Ignore errors, as we can just start with a fresh session
+            // The loading screen already validated the session, so a missing one is an anomaly.
             getCurrentSession()
                 .onOk { credentials ->
                     if (credentials != null) {
                         innerState.update { it.copy(sessionCredentials = credentials) }
                         restartChatStream(credentials)
                         restartRecipeStream(credentials)
+                    } else {
+                        navigator.replaceAll(LoginScreen())
                     }
+                }.onErr {
+                    navigator.replaceAll(LoginScreen())
                 }
             innerState.update { it.copy(initialized = true) }
         }
@@ -170,72 +156,6 @@ class StartViewModel(
                 innerState.update { it.copy(scrapingRecipe = scraping) }
             }
         }
-    }
-
-    private fun updateUsername(username: String) {
-        innerState.update { it.copy(inputUsername = username) }
-    }
-
-    private fun updatePassword(password: String) {
-        innerState.update { it.copy(inputPassword = password) }
-    }
-
-    private fun registerUser() {
-        val state = innerState.value
-        if (state.authenticating) return
-        val username = state.inputUsername
-        innerState.update { it.copy(authenticating = true) }
-        viewModelScope.launch {
-            try {
-                register(state.inputCredentials)
-                    .onOk { onAuthenticated(username, it, "Registered") }
-                    .onErr { error ->
-                        when (error) {
-                            is RegisterError.ServerError -> {
-                                log.i { "Registration failed for '$username': ${error.error}" }
-                                showSnackbar("Registration failed", isError = true)
-                            }
-
-                            RegisterError.StorageFailed -> {
-                                log.e { "Registration succeeded but failed to save session for '$username'" }
-                                showSnackbar("Couldn't save your session", isError = true)
-                            }
-                        }
-                    }
-            } finally {
-                innerState.update { it.copy(authenticating = false) }
-            }
-        }
-    }
-
-    private fun logInUser() {
-        val state = innerState.value
-        if (state.authenticating) return
-        val username = state.inputUsername
-        innerState.update { it.copy(authenticating = true) }
-        viewModelScope.launch {
-            try {
-                logIn(state.inputCredentials)
-                    .onOk { onAuthenticated(username, it, "Logged in") }
-                    .onErr {
-                        log.i { "Login failed for '$username': $it" }
-                        showSnackbar("Login failed", isError = true)
-                    }
-            } finally {
-                innerState.update { it.copy(authenticating = false) }
-            }
-        }
-    }
-
-    private fun onAuthenticated(
-        username: String,
-        credentials: SessionCredentials,
-        action: String,
-    ) {
-        log.i { "$action as '$username'" }
-        innerState.update { it.copy(sessionCredentials = credentials) }
-        restartChatStream(credentials)
-        restartRecipeStream(credentials)
     }
 
     private fun createNewChat() {
@@ -324,17 +244,8 @@ class StartViewModel(
         restartChatStream(credentials = null)
         restartRecipeStream(credentials = null)
         viewModelScope.launch {
-            // TODO Handle failure to log out?
             logOut()
-        }
-        innerState.update {
-            it.copy(
-                sessionCredentials = null,
-                chats = emptyList(),
-                recipeSummaries = emptyList(),
-                inputUsername = "",
-                inputPassword = "",
-            )
+            navigator.replaceAll(LoginScreen())
         }
     }
 
@@ -382,15 +293,9 @@ data class State(
     val sessionCredentials: SessionCredentials?,
     val chats: List<Chat>,
     val recipeSummaries: List<RecipeSummary>,
-    val inputUsername: String,
-    val inputPassword: String,
-    val authenticating: Boolean,
     val scanningRecipes: Boolean,
     val scrapingRecipe: Boolean,
-) {
-    val inputCredentials: UserCredentials
-        get() = UserCredentials(inputUsername, inputPassword)
-}
+)
 
 data class UiState(
     val content: Content,
@@ -399,16 +304,7 @@ data class UiState(
     sealed interface Content {
         data object Loading : Content
 
-        data class LoggedOut(
-            val username: String,
-            val password: String,
-            val onUsernameChange: (String) -> Unit,
-            val onPasswordChange: (String) -> Unit,
-            val onClickRegister: (() -> Unit)?,
-            val onClickLogin: (() -> Unit)?,
-        ) : Content
-
-        data class LoggedIn(
+        data class Loaded(
             val username: String,
             val chats: List<UiChat>,
             // Null on devices without a camera, where the button is hidden.

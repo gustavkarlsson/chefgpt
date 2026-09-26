@@ -13,7 +13,7 @@ fun Application.createFactRepositoryModule() =
         single {
             val db = getOrNull<DatabaseAccess>()
             if (db != null) {
-                PostgresFactRepository(db, get())
+                PostgresFactRepository(db)
             } else {
                 InMemoryFactRepository()
             }

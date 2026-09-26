@@ -21,11 +21,11 @@ import se.gustavkarlsson.chefgpt.agent.tools.DescribePhotosTool
 import se.gustavkarlsson.chefgpt.agent.tools.DestroyIngredientsTool
 import se.gustavkarlsson.chefgpt.agent.tools.GetDietaryRestrictionsTool
 import se.gustavkarlsson.chefgpt.agent.tools.GetIngredientsTool
-import se.gustavkarlsson.chefgpt.agent.tools.GetMeasurementTool
 import se.gustavkarlsson.chefgpt.agent.tools.GetPreferredNameTool
 import se.gustavkarlsson.chefgpt.agent.tools.GetRecipeTool
-import se.gustavkarlsson.chefgpt.agent.tools.GetTemperatureTool
-import se.gustavkarlsson.chefgpt.agent.tools.GetUnitSystemTool
+import se.gustavkarlsson.chefgpt.agent.tools.GetTemperatureUnitTool
+import se.gustavkarlsson.chefgpt.agent.tools.GetVolumeUnitsTool
+import se.gustavkarlsson.chefgpt.agent.tools.GetWeightUnitsTool
 import se.gustavkarlsson.chefgpt.agent.tools.ListRecipesTool
 import se.gustavkarlsson.chefgpt.agent.tools.ListSharedFilesTool
 import se.gustavkarlsson.chefgpt.agent.tools.ModifyRecipeTool
@@ -36,11 +36,11 @@ import se.gustavkarlsson.chefgpt.agent.tools.RenameChatTool
 import se.gustavkarlsson.chefgpt.agent.tools.SaveRecipeAsCopyTool
 import se.gustavkarlsson.chefgpt.agent.tools.SaveRecipeTool
 import se.gustavkarlsson.chefgpt.agent.tools.ScrapeRecipeTool
-import se.gustavkarlsson.chefgpt.agent.tools.SetMeasurementTool
 import se.gustavkarlsson.chefgpt.agent.tools.SetPreferredNameTool
 import se.gustavkarlsson.chefgpt.agent.tools.SetRecipeFavoriteTool
-import se.gustavkarlsson.chefgpt.agent.tools.SetTemperatureTool
-import se.gustavkarlsson.chefgpt.agent.tools.SetUnitSystemTool
+import se.gustavkarlsson.chefgpt.agent.tools.SetTemperatureUnitTool
+import se.gustavkarlsson.chefgpt.agent.tools.SetVolumeUnitsTool
+import se.gustavkarlsson.chefgpt.agent.tools.SetWeightUnitsTool
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.auth.UserId
@@ -158,8 +158,8 @@ private val SYSTEM_PROMPT =
     selecting that answer.
 
     The prompt also shows facts you have remembered about the user —
-    their preferred name, unit system, measurement preference,
-    temperature unit, and dietary restrictions. Use them when
+    their preferred name, temperature unit, weight units, volume units,
+    and dietary restrictions. Use them when
     answering, and treat any fact shown as "unknown" as something
     you may need to ask about.
 
@@ -168,8 +168,8 @@ private val SYSTEM_PROMPT =
     not ask first or wait. "I'm vegan" means call
     addDietaryRestrictions right away; "my name is Gustav" means
     call setPreferredName right away. The fact tools are
-    setPreferredName, setUnitSystem, setMeasurement,
-    setTemperature, addDietaryRestrictions and
+    setPreferredName, setTemperatureUnit, setWeightUnits, setVolumeUnits,
+    addDietaryRestrictions and
     removeDietaryRestrictions. Only remember things the user says
     about themselves in general — never a one-off request. "Make me
     a vegetarian meal" is a request, not a fact; "I'm vegetarian" is
@@ -291,14 +291,14 @@ class KoogChatAgent(
                 tools(OverwriteOriginalRecipeTool(recipeRepository, userId))
                 tools(SaveRecipeAsCopyTool(recipeRepository, userId))
                 tools(GetPreferredNameTool(factRepository, userId))
-                tools(GetUnitSystemTool(factRepository, userId))
-                tools(GetMeasurementTool(factRepository, userId))
-                tools(GetTemperatureTool(factRepository, userId))
+                tools(GetTemperatureUnitTool(factRepository, userId))
+                tools(GetWeightUnitsTool(factRepository, userId))
+                tools(GetVolumeUnitsTool(factRepository, userId))
                 tools(GetDietaryRestrictionsTool(factRepository, userId))
                 tools(SetPreferredNameTool(factRepository, userId))
-                tools(SetUnitSystemTool(factRepository, userId))
-                tools(SetMeasurementTool(factRepository, userId))
-                tools(SetTemperatureTool(factRepository, userId))
+                tools(SetTemperatureUnitTool(factRepository, userId))
+                tools(SetWeightUnitsTool(factRepository, userId))
+                tools(SetVolumeUnitsTool(factRepository, userId))
                 tools(AddDietaryRestrictionsTool(factRepository, userId))
                 tools(RemoveDietaryRestrictionsTool(factRepository, userId))
                 tools(RenameChatTool(chatRepository, eventRepository, userId, chatId))

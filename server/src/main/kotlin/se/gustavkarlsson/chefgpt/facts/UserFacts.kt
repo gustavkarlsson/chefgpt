@@ -1,49 +1,46 @@
 package se.gustavkarlsson.chefgpt.facts
 
-import kotlinx.serialization.Serializable
-
-@Serializable
-enum class UnitSystem {
-    Metric,
-    Imperial,
-}
-
-@Serializable
-enum class Measurement {
-    Weight,
-    Volume,
-}
-
-@Serializable
+/**
+ * The unit the user measures temperature in.
+ */
 enum class TemperatureUnit {
     Celsius,
     Fahrenheit,
 }
 
 /**
- * Everything the backend agents know about a user.
- *
- * A null scalar means the fact has not been established (unknown). [dietary] is null when unknown,
- * empty when the user has said they have no restrictions (none), and non-empty when restrictions
- * are known.
+ * The unit system the user measures weight in: metric (grams, kilograms) or US imperial
+ * (ounces, pounds).
  */
-@Serializable
+enum class WeightUnits {
+    Metric,
+    UsImperial,
+}
+
+/**
+ * The unit system the user measures volume in: metric (milliliters, liters) or US customary
+ * (cups, tablespoons, fluid ounces).
+ */
+enum class VolumeUnits {
+    Metric,
+    UsCustomary,
+}
+
+/**
+ * The facts the backend agents know about a user.
+ *
+ * A null field means the fact is unknown. [dietary] is null when unknown, empty when the user has
+ * no restrictions (none), and non-empty otherwise.
+ */
 data class UserFacts(
     val preferredName: String?,
-    val unitSystem: UnitSystem?,
-    val measurement: Measurement?,
-    val temperature: TemperatureUnit?,
+    val temperatureUnit: TemperatureUnit?,
+    val weightUnits: WeightUnits?,
+    val volumeUnits: VolumeUnits?,
     val dietary: Set<String>?,
 ) {
     companion object {
-        val UNKNOWN =
-            UserFacts(
-                preferredName = null,
-                unitSystem = null,
-                measurement = null,
-                temperature = null,
-                dietary = null,
-            )
+        val Empty: UserFacts = UserFacts(null, null, null, null, null)
     }
 }
 
@@ -53,9 +50,9 @@ data class UserFacts(
  */
 data class UserFactsUpdate(
     val preferredName: String? = null,
-    val unitSystem: UnitSystem? = null,
-    val measurement: Measurement? = null,
-    val temperature: TemperatureUnit? = null,
+    val temperatureUnit: TemperatureUnit? = null,
+    val weightUnits: WeightUnits? = null,
+    val volumeUnits: VolumeUnits? = null,
     val addDietary: Set<String> = emptySet(),
     val removeDietary: Set<String> = emptySet(),
 )
@@ -63,9 +60,9 @@ data class UserFactsUpdate(
 fun UserFacts.applyUpdate(update: UserFactsUpdate): UserFacts =
     UserFacts(
         preferredName = update.preferredName ?: preferredName,
-        unitSystem = update.unitSystem ?: unitSystem,
-        measurement = update.measurement ?: measurement,
-        temperature = update.temperature ?: temperature,
+        temperatureUnit = update.temperatureUnit ?: temperatureUnit,
+        weightUnits = update.weightUnits ?: weightUnits,
+        volumeUnits = update.volumeUnits ?: volumeUnits,
         dietary = applyDietary(update),
     )
 
@@ -77,24 +74,26 @@ private fun UserFacts.applyDietary(update: UserFactsUpdate): Set<String>? {
     return (current.orEmpty() - update.removeDietary) + update.addDietary
 }
 
+// TODO explain weight and volume units
 fun UserFacts.toPromptText(): String =
     buildString {
         appendLine("Facts about the user ('unknown' means you should ask before relying on it):")
         appendLine("- Preferred name: ${preferredName ?: "unknown"}")
-        appendLine("- Unit system: ${unitSystem?.name?.lowercase() ?: "unknown"}")
-        appendLine("- Measurement: ${measurement?.name?.lowercase() ?: "unknown"}")
-        appendLine("- Temperature: ${temperature?.name?.lowercase() ?: "unknown"}")
+        appendLine("- Temperature unit: ${temperatureUnit?.name?.lowercase() ?: "unknown"}")
+        appendLine("- Weight units: ${weightUnits?.name?.lowercase() ?: "unknown"}")
+        appendLine("- Volume Units: ${volumeUnits?.name?.lowercase() ?: "unknown"}")
         appendLine("- Dietary restrictions: ${dietaryText()}")
     }
 
+// TODO explain weight and volume units
 fun UserFacts.toMeasurementPromptText(): String =
     buildString {
         appendLine(
             "The user's measurement preferences. Apply these when writing amounts; where a value is unknown, keep the recipe's original measurement:",
         )
-        appendLine("- Unit system: ${unitSystem?.name?.lowercase() ?: "unknown"}")
-        appendLine("- Measurement: ${measurement?.name?.lowercase() ?: "unknown"}")
-        appendLine("- Temperature: ${temperature?.name?.lowercase() ?: "unknown"}")
+        appendLine("- Temperature unit: ${temperatureUnit?.name?.lowercase() ?: "unknown"}")
+        appendLine("- Weight units: ${weightUnits?.name?.lowercase() ?: "unknown"}")
+        appendLine("- Volume Units: ${volumeUnits?.name?.lowercase() ?: "unknown"}")
     }
 
 private fun UserFacts.dietaryText(): String =

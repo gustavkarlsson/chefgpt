@@ -26,6 +26,12 @@ import se.gustavkarlsson.chefgpt.chats.usecases.HttpStreamChats
 import se.gustavkarlsson.chefgpt.chats.usecases.StreamChats
 import se.gustavkarlsson.chefgpt.chefGptJson
 import se.gustavkarlsson.chefgpt.debug.Settings
+import se.gustavkarlsson.chefgpt.facts.FactsRepository
+import se.gustavkarlsson.chefgpt.facts.HttpFactsRepository
+import se.gustavkarlsson.chefgpt.facts.usecases.GetFacts
+import se.gustavkarlsson.chefgpt.facts.usecases.HttpGetFacts
+import se.gustavkarlsson.chefgpt.facts.usecases.HttpSetFacts
+import se.gustavkarlsson.chefgpt.facts.usecases.SetFacts
 import se.gustavkarlsson.chefgpt.files.usecases.DeleteFile
 import se.gustavkarlsson.chefgpt.files.usecases.HttpUploadFile
 import se.gustavkarlsson.chefgpt.files.usecases.RealDeleteFile
@@ -74,11 +80,14 @@ import se.gustavkarlsson.chefgpt.recipes.usecases.SetRecipeFavorite
 import se.gustavkarlsson.chefgpt.recipes.usecases.StreamRecipeSummaries
 import se.gustavkarlsson.chefgpt.screens.chat.ChatViewModel
 import se.gustavkarlsson.chefgpt.screens.debug.DebugViewModel
+import se.gustavkarlsson.chefgpt.screens.home.HomeViewModel
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsViewModel
+import se.gustavkarlsson.chefgpt.screens.loading.LoadingViewModel
+import se.gustavkarlsson.chefgpt.screens.login.LoginViewModel
+import se.gustavkarlsson.chefgpt.screens.onboarding.OnboardingViewModel
 import se.gustavkarlsson.chefgpt.screens.recipe.RecipeDetailViewModel
 import se.gustavkarlsson.chefgpt.screens.recipescan.RecipeScanSheetViewModel
 import se.gustavkarlsson.chefgpt.screens.recipescrape.RecipeScrapeSheetViewModel
-import se.gustavkarlsson.chefgpt.screens.start.StartViewModel
 import se.gustavkarlsson.chefgpt.sessions.HttpSessionRepository
 import se.gustavkarlsson.chefgpt.sessions.LastSessionFileStore
 import se.gustavkarlsson.chefgpt.sessions.SessionRepository
@@ -114,12 +123,17 @@ val singletonModule =
         single<HttpSessionRepository>() bind SessionRepository::class
         single<HttpChatRepository>() bind ChatRepository::class
         single<HttpRecipeRepository>() bind RecipeRepository::class
+        single<HttpFactsRepository>() bind FactsRepository::class
 
         // Use cases — sessions
         single<HttpGetCurrentSession>() bind GetCurrentSession::class
         single<HttpRegister>() bind Register::class
         single<HttpLogIn>() bind LogIn::class
         single<HttpLogOut>() bind LogOut::class
+
+        // Use cases — facts
+        single<HttpGetFacts>() bind GetFacts::class
+        single<HttpSetFacts>() bind SetFacts::class
 
         // Use cases — chats
         single<HttpCreateChat>() bind CreateChat::class
@@ -162,7 +176,10 @@ val singletonModule =
 // TODO Consider adding a viewModelScope and providing more VM-scoped dependencies
 val viewModelModule =
     module {
-        viewModel<StartViewModel>()
+        viewModel<LoadingViewModel>()
+        viewModel<OnboardingViewModel>()
+        viewModel<LoginViewModel>()
+        viewModel<HomeViewModel>()
         viewModel<ChatViewModel>()
         viewModel<IngredientsViewModel>()
         viewModel<DebugViewModel>()

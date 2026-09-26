@@ -12,15 +12,23 @@ import se.gustavkarlsson.chefgpt.api.ApiAgentMessageChunk
 import se.gustavkarlsson.chefgpt.api.ApiChat
 import se.gustavkarlsson.chefgpt.api.ApiEvent
 import se.gustavkarlsson.chefgpt.api.ApiRecipe
+import se.gustavkarlsson.chefgpt.api.ApiTemperatureUnit
 import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
+import se.gustavkarlsson.chefgpt.api.ApiUserFacts
 import se.gustavkarlsson.chefgpt.api.ApiUserJoined
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserMessage
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
+import se.gustavkarlsson.chefgpt.api.ApiVolumeUnits
+import se.gustavkarlsson.chefgpt.api.ApiWeightUnits
 import se.gustavkarlsson.chefgpt.api.EventId
 import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.chats.Chat
 import se.gustavkarlsson.chefgpt.chats.Event
+import se.gustavkarlsson.chefgpt.facts.TemperatureUnit
+import se.gustavkarlsson.chefgpt.facts.UserFacts
+import se.gustavkarlsson.chefgpt.facts.VolumeUnits
+import se.gustavkarlsson.chefgpt.facts.WeightUnits
 import se.gustavkarlsson.chefgpt.files.AttachmentTextLoader
 import se.gustavkarlsson.chefgpt.files.FileKind
 import se.gustavkarlsson.chefgpt.files.UploadedFile
@@ -82,6 +90,60 @@ fun NewRecipe.toApiRecipe(
         ingredients = ingredients,
         nutrients = nutrients,
     )
+
+fun UserFacts.toApi(): ApiUserFacts =
+    ApiUserFacts(
+        preferredName = preferredName,
+        temperatureUnit = temperatureUnit?.toApi(),
+        weightUnits = weightUnits?.toApi(),
+        volumeUnits = volumeUnits?.toApi(),
+        dietary = dietary,
+    )
+
+private fun TemperatureUnit.toApi(): ApiTemperatureUnit =
+    when (this) {
+        TemperatureUnit.Celsius -> ApiTemperatureUnit.Celsius
+        TemperatureUnit.Fahrenheit -> ApiTemperatureUnit.Fahrenheit
+    }
+
+private fun WeightUnits.toApi(): ApiWeightUnits =
+    when (this) {
+        WeightUnits.Metric -> ApiWeightUnits.Metric
+        WeightUnits.UsImperial -> ApiWeightUnits.UsImperial
+    }
+
+private fun VolumeUnits.toApi(): ApiVolumeUnits =
+    when (this) {
+        VolumeUnits.Metric -> ApiVolumeUnits.Metric
+        VolumeUnits.UsCustomary -> ApiVolumeUnits.UsCustomary
+    }
+
+fun ApiUserFacts.toFactsOrNull(): UserFacts =
+    UserFacts(
+        preferredName = preferredName,
+        temperatureUnit = temperatureUnit?.toDomain(),
+        weightUnits = weightUnits?.toDomain(),
+        volumeUnits = volumeUnits?.toDomain(),
+        dietary = dietary,
+    )
+
+private fun ApiTemperatureUnit.toDomain(): TemperatureUnit =
+    when (this) {
+        ApiTemperatureUnit.Celsius -> TemperatureUnit.Celsius
+        ApiTemperatureUnit.Fahrenheit -> TemperatureUnit.Fahrenheit
+    }
+
+private fun ApiWeightUnits.toDomain(): WeightUnits =
+    when (this) {
+        ApiWeightUnits.Metric -> WeightUnits.Metric
+        ApiWeightUnits.UsImperial -> WeightUnits.UsImperial
+    }
+
+private fun ApiVolumeUnits.toDomain(): VolumeUnits =
+    when (this) {
+        ApiVolumeUnits.Metric -> VolumeUnits.Metric
+        ApiVolumeUnits.UsCustomary -> VolumeUnits.UsCustomary
+    }
 
 // Api -> Domain
 

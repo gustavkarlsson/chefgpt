@@ -71,6 +71,17 @@ class NavigatorTest {
             assertEquals(request.id, requests.keys.single())
         }
     }
+
+    @Test
+    fun `replaceAll resets the back stack to the given screen`() {
+        val navigator = navigator()
+        navigator.push(TestRequesterScreen(Screen.Id.new("extra")))
+
+        val target = TestRequesterScreen(Screen.Id.new("target"))
+        navigator.replaceAll(target)
+
+        assertEquals(listOf(target), navigator.backStack.value)
+    }
 }
 
 private class TestRequesterScreen(
