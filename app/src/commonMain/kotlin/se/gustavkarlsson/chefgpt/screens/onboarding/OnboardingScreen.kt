@@ -42,6 +42,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
@@ -52,7 +55,6 @@ import se.gustavkarlsson.chefgpt.navigation.Screen
 import se.gustavkarlsson.chefgpt.navigation.Screen.Id
 import se.gustavkarlsson.chefgpt.theme.ChefGptTheme
 
-// FIXME make sure navigator can handle system back-button clicks while on this screen
 @Serializable
 @SerialName("onboarding")
 data class OnboardingScreen(
@@ -90,7 +92,12 @@ private fun Content(
             }
 
             is UiState.Loaded -> {
-                // FIXME Back handler
+                val backEventState = rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
+                NavigationBackHandler(
+                    state = backEventState,
+                    isBackEnabled = uiState.onClickBack != null,
+                    onBackCompleted = { uiState.onClickBack?.invoke() },
+                )
                 Box(modifier = Modifier.fillMaxSize()) {
                     when (val uiStep = uiState.steps[uiState.currentStepIndex]) {
                         is UiStep.NameStep -> NameStep(uiStep)
