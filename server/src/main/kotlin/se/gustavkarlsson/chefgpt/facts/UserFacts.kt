@@ -74,27 +74,43 @@ private fun UserFacts.applyDietary(update: UserFactsUpdate): Set<String>? {
     return (current.orEmpty() - update.removeDietary) + update.addDietary
 }
 
-// TODO explain weight and volume units
 fun UserFacts.toPromptText(): String =
     buildString {
         appendLine("Facts about the user ('unknown' means you should ask before relying on it):")
-        appendLine("- Preferred name: ${preferredName ?: "unknown"}")
-        appendLine("- Temperature unit: ${temperatureUnit?.name?.lowercase() ?: "unknown"}")
-        appendLine("- Weight units: ${weightUnits?.name?.lowercase() ?: "unknown"}")
-        appendLine("- Volume Units: ${volumeUnits?.name?.lowercase() ?: "unknown"}")
+        appendLine(toUnitText())
         appendLine("- Dietary restrictions: ${dietaryText()}")
     }
 
-// TODO explain weight and volume units
 fun UserFacts.toMeasurementPromptText(): String =
     buildString {
         appendLine(
             "The user's measurement preferences. Apply these when writing amounts; where a value is unknown, keep the recipe's original measurement:",
         )
-        appendLine("- Temperature unit: ${temperatureUnit?.name?.lowercase() ?: "unknown"}")
-        appendLine("- Weight units: ${weightUnits?.name?.lowercase() ?: "unknown"}")
-        appendLine("- Volume Units: ${volumeUnits?.name?.lowercase() ?: "unknown"}")
+        appendLine(toUnitText())
     }
+
+private fun UserFacts.toUnitText(): String = buildString {
+    appendLine("- Preferred name: ${preferredName ?: "unknown"}")
+    val temperatureUnitDescription = when (temperatureUnit) {
+        TemperatureUnit.Celsius -> "Celsius (C)"
+        TemperatureUnit.Fahrenheit -> "Fahrenheit (F)"
+        null -> "unknown"
+    }
+
+    appendLine("- Temperature unit: $temperatureUnitDescription")
+    val weightUnitsDescription = when (weightUnits) {
+        WeightUnits.Metric -> "Metric: grams (g) and kilograms (kg)"
+        WeightUnits.UsImperial -> "US / Imperial: ounces (oz) and pounds (lb)"
+        null -> "unknown"
+    }
+    appendLine("- Weight units: $weightUnitsDescription")
+    val volumeUnitsDescription = when (volumeUnits) {
+        VolumeUnits.Metric -> "Metric: teaspoon (tsp), tablespoon (tbsp), milliliters (ml), liters (l)"
+        VolumeUnits.UsCustomary -> "US Customary: teaspoon (tsp), tablespoon (tbsp), fluid ounce (fl oz), cup (C)"
+        null -> "unknown"
+    }
+    appendLine("- Volume Units: $volumeUnitsDescription")
+}
 
 private fun UserFacts.dietaryText(): String =
     when (val restrictions = dietary) {
