@@ -5,6 +5,7 @@ import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.getOr
 import com.github.michaelbull.result.onErr
 import com.github.michaelbull.result.onOk
+import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import se.gustavkarlsson.chefgpt.facts.TemperatureUnit
@@ -215,13 +216,9 @@ class OnboardingViewModel(
     }
 
     private fun addCustomDietary() {
-        val value = innerState.value.dietaryInput.trim()
-        if (value.isEmpty()) return
-        addDietary(value)
-    }
-
-    private fun addDietary(value: String) {
         innerState.update { state ->
+            val value = state.dietaryInput.trim()
+            if (value.isEmpty()) return
             val updatedDietary = state.collectedFacts.dietary.orEmpty() + value
             val updatedFacts = state.collectedFacts.copy(dietary = updatedDietary)
             state.copy(collectedFacts = updatedFacts, dietaryInput = "")
@@ -243,13 +240,17 @@ class OnboardingViewModel(
     }
 
     private fun finish() {
-        val state = innerState.value
-        if (state.saving) return
-        val credentials = state.credentials ?: return
-        innerState.update { it.copy(saving = true) }
+        val lastState =
+            innerState.getAndUpdate {
+                if (it.credentials == null) return
+                it.copy(saving = true)
+            }
+        if (lastState.saving) return // Already saving
+        val credentials = checkNotNull(lastState.credentials) // Should never happen as we check it in the update lambda
+        val facts = lastState.collectedFacts
         viewModelScope.launch {
             try {
-                setFacts(credentials.sessionId, state.collectedFacts)
+                setFacts(credentials.sessionId, facts)
                     .onOk {
                         navigator.replaceAll(HomeScreen())
                     }.onErr {

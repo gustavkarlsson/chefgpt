@@ -1,27 +1,38 @@
 package se.gustavkarlsson.chefgpt.screens.onboarding
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -34,10 +45,16 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -129,23 +146,36 @@ private fun BoxScope.NameStep(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier.align(Alignment.Center).padding(32.dp).safeDrawingPadding(),
+        modifier =
+            modifier
+                .matchParentSize()
+                .verticalScroll(rememberScrollState())
+                .padding(vertical = 16.dp, horizontal = 32.dp)
+                .safeDrawingPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        val focusRequester = remember { FocusRequester() }
+        LaunchedEffect(focusRequester) {
+            focusRequester.requestFocus()
+        }
+        Spacer(Modifier.weight(0.4f))
         StepHeader(title = "What should we call you?", description = "We'll use it when we talk to you.")
         Spacer(Modifier.height(16.dp))
         OutlinedTextField(
+            modifier = Modifier.focusRequester(focusRequester).widthIn(min = 240.dp),
             placeholder = { Text(uiStep.placeholder) },
             value = uiStep.input,
             onValueChange = uiStep.onChangeInput,
             singleLine = true,
-            modifier = Modifier.widthIn(min = 300.dp),
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Go),
+            keyboardActions = KeyboardActions { uiStep.onClickConfirm() },
         )
         Spacer(Modifier.height(16.dp))
         Button(onClick = uiStep.onClickConfirm) {
             val name = uiStep.input.trim().takeIf { it.isNotBlank() } ?: uiStep.placeholder
             Text("Call me $name")
         }
+        Spacer(Modifier.weight(0.6f))
     }
 }
 
@@ -221,12 +251,19 @@ private fun BoxScope.OptionsStep(
     options: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
-        modifier = modifier.align(Alignment.Center).padding(32.dp).safeDrawingPadding(),
+        modifier =
+            modifier
+                .matchParentSize()
+                .verticalScroll(rememberScrollState())
+                .padding(vertical = 16.dp, horizontal = 32.dp)
+                .safeDrawingPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Spacer(Modifier.weight(0.4f))
         StepHeader(title = title, description = description)
         Spacer(Modifier.height(16.dp))
         options()
+        Spacer(Modifier.weight(0.6f))
     }
 }
 
@@ -242,7 +279,7 @@ private fun ListOption(
                 .heightIn(min = 72.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .clickable(onClick = onClick),
-        tonalElevation = 4.dp,
+        tonalElevation = 8.dp,
         headlineContent = {
             Text(title)
         },
@@ -264,21 +301,53 @@ private fun BoxScope.DietaryStep(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier.align(Alignment.Center).padding(24.dp).safeDrawingPadding(),
+        modifier =
+            modifier
+                .matchParentSize()
+                .verticalScroll(rememberScrollState())
+                .padding(vertical = 16.dp, horizontal = 32.dp)
+                .safeDrawingPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Spacer(Modifier.weight(0.4f))
         StepHeader(
             title = "Dietary restrictions",
             description = "Select any that apply, or add your own.",
         )
         Spacer(Modifier.height(16.dp))
-        FlowRow {
+        FlowRow(
+            modifier = Modifier.fillMaxWidth().animateContentSize(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
             for (chip in uiStep.dietaryChips) {
-                DietaryChip(modifier = Modifier.padding(4.dp), chip = chip)
+                DietaryChip(chip = chip)
             }
         }
-        // FIXME animated content?
-        // FIXME Custom input
+        Spacer(Modifier.height(16.dp))
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                modifier = Modifier.weight(1f),
+                label = { Text("Your diet") },
+                value = uiStep.customInput,
+                onValueChange = uiStep.onChangeCustomInput,
+                singleLine = true,
+                keyboardOptions =
+                    KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Sentences,
+                        imeAction = ImeAction.Done,
+                    ),
+                keyboardActions = KeyboardActions { uiStep.onClickAddCustom() },
+            )
+            Spacer(Modifier.width(8.dp))
+            FilledIconButton(onClick = uiStep.onClickAddCustom) {
+                Icon(Icons.Filled.Add, contentDescription = "Add")
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        Button(onClick = uiStep.onClickConfirm) {
+            Text("That's it!")
+        }
+        Spacer(Modifier.weight(0.6f))
     }
 }
 
