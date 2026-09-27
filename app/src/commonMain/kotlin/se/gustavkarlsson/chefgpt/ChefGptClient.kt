@@ -24,6 +24,7 @@ import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import io.ktor.client.request.patch
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.request.url
 import io.ktor.client.statement.HttpResponse
@@ -54,6 +55,7 @@ import se.gustavkarlsson.chefgpt.api.ApiSaveSpoonacularRecipe
 import se.gustavkarlsson.chefgpt.api.ApiScanRecipe
 import se.gustavkarlsson.chefgpt.api.ApiScrapeRecipe
 import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
+import se.gustavkarlsson.chefgpt.api.ApiUserFacts
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.api.ChatId
@@ -419,6 +421,33 @@ class ChefGptClient(
                 }
             },
             readSafe = { body<ApiRecipe>() },
+        )
+
+    suspend fun getFacts(sessionId: SessionId): Result<ApiUserFacts, ClientError> =
+        request(
+            send = { baseUrl ->
+                get("$baseUrl/facts") {
+                    sessionIdHeader(sessionId)
+                    accept(ContentType.Application.Json)
+                }
+            },
+            readSafe = { body<ApiUserFacts>() },
+        )
+
+    suspend fun putFacts(
+        sessionId: SessionId,
+        facts: ApiUserFacts,
+    ): Result<ApiUserFacts, ClientError> =
+        request(
+            send = { baseUrl ->
+                put("$baseUrl/facts") {
+                    sessionIdHeader(sessionId)
+                    contentType(ContentType.Application.Json)
+                    accept(ContentType.Application.Json)
+                    setBody(facts)
+                }
+            },
+            readSafe = { body<ApiUserFacts>() },
         )
 
     // Sends a message that starts the chat agent, and returns the job to poll for completion.

@@ -6,10 +6,18 @@ import java.util.concurrent.ConcurrentHashMap
 class InMemoryFactRepository(
     private val storage: ConcurrentHashMap<UserId, UserFacts> = ConcurrentHashMap(),
 ) : FactRepository {
-    override suspend fun getFacts(userId: UserId): UserFacts = storage[userId] ?: UserFacts.UNKNOWN
+    override suspend fun getFacts(userId: UserId): UserFacts = storage[userId] ?: UserFacts.Empty
 
     override suspend fun updateFacts(
         userId: UserId,
         update: UserFactsUpdate,
-    ): UserFacts = storage.compute(userId) { _, current -> (current ?: UserFacts.UNKNOWN).applyUpdate(update) }!!
+    ): UserFacts = storage.compute(userId) { _, current -> (current ?: UserFacts.Empty).applyUpdate(update) }!!
+
+    override suspend fun replaceFacts(
+        userId: UserId,
+        facts: UserFacts,
+    ): UserFacts {
+        storage[userId] = facts
+        return facts
+    }
 }

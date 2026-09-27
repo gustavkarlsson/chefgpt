@@ -54,6 +54,9 @@ Respect this order; each step constrains the next.
 6. **Everything else** in the catalog.
 7. **CI actions**, **Docker images**, **stray inline versions**.
 
+The **latest stable JetBrains IDE is a ceiling** for all of Gradle, AGP and Kotlin — each must
+be within what the IDE's Gradle / Android / Kotlin plugins support.
+
 ## Version policy
 
 **Changelogs.** For anything beyond a patch bump (semver), find the official changelog and

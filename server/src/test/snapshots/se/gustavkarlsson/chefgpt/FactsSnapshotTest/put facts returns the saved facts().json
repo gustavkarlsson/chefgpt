@@ -1,0 +1,45 @@
+{
+    "request": {
+        "method": "PUT",
+        "url": "http://localhost/facts",
+        "headers": {
+            "Session-Id": "00000000000000000000000000000000",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Content-Length": "0"
+        },
+        "body": {
+            "type": "json",
+            "data": {
+                "preferredName": "Chef",
+                "temperatureUnit": "celsius",
+                "weightUnits": "metric",
+                "volumeUnits": "metric",
+                "dietary": [
+                    "vegetarian",
+                    "gluten-free"
+                ]
+            }
+        }
+    },
+    "response": {
+        "status": 200,
+        "headers": {
+            "Content-Length": "0",
+            "Content-Type": "application/json"
+        },
+        "body": {
+            "type": "json",
+            "data": {
+                "preferredName": "Chef",
+                "temperatureUnit": "celsius",
+                "weightUnits": "metric",
+                "volumeUnits": "metric",
+                "dietary": [
+                    "vegetarian",
+                    "gluten-free"
+                ]
+            }
+        }
+    }
+}

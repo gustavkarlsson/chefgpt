@@ -1,4 +1,9 @@
-CREATE TABLE user_fact (
-    user_id UUID PRIMARY KEY REFERENCES "user"(id) ON DELETE CASCADE,
-    facts JSONB NOT NULL
+CREATE TABLE user_fact
+(
+    user_id           UUID PRIMARY KEY REFERENCES "user" (id) ON DELETE CASCADE,
+    preferred_name    TEXT,
+    temperature_unit  TEXT,
+    weight_units      TEXT,
+    volume_units      TEXT,
+    dietary           TEXT
 );

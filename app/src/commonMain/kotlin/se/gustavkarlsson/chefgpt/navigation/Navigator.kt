@@ -8,14 +8,14 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.KSerializer
 import se.gustavkarlsson.chefgpt.chefGptJson
-import se.gustavkarlsson.chefgpt.screens.start.StartScreen
+import se.gustavkarlsson.chefgpt.screens.loading.LoadingScreen
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 
 // TODO Add logging
 
 class Navigator(
-    initialScreen: Screen = StartScreen(),
+    initialScreen: Screen = LoadingScreen(),
 ) {
     val backStack: StateFlow<List<Screen>>
         field = MutableStateFlow(listOf(initialScreen))
@@ -29,6 +29,11 @@ class Navigator(
 
     fun replaceTop(screen: Screen) {
         backStack.update { routes -> routes.dropLast(1) + screen }
+        pruneRequests()
+    }
+
+    fun replaceAll(screen: Screen) {
+        backStack.update { listOf(screen) }
         pruneRequests()
     }
 

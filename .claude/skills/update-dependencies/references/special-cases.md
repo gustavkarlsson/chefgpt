@@ -112,6 +112,12 @@ One `version.ref` moves `kotlinJvm`, `kotlinMultiplatform`, `kotlinSerialization
    below.
 5. Verify with `./gradlew buildSupported`, not just the verify skill; JS and Wasm are where
    Kotlin bumps usually break first.
+6. **Kotlin version skew.** A KMP library compiled with an older Kotlin than the project
+   still compiles (the compiler reads older metadata), but its declarations can stop
+   resolving under the newer toolchain. When bumping Kotlin, read `commonMain/default/manifest`
+   inside each KMP library's jar — `compiler_version` / `abi_version` name the Kotlin it was
+   built with — and bump any library that trails the project by a minor or more to a version
+   built with a matching Kotlin.
 
 ## Compose Multiplatform
 

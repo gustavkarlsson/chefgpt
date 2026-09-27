@@ -1,0 +1,29 @@
+{
+    "request": {
+        "method": "PUT",
+        "url": "http://localhost/facts",
+        "headers": {
+            "Session-Id": "00000000000000000000000000000000",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Content-Length": "0"
+        },
+        "body": {
+            "type": "json",
+            "data": {
+                "weightUnits": "bananas"
+            }
+        }
+    },
+    "response": {
+        "status": 400,
+        "headers": {
+            "Content-Length": "0",
+            "Content-Type": "text/plain; charset=UTF-8"
+        },
+        "body": {
+            "type": "text",
+            "data": "Failed to convert request body to class se.gustavkarlsson.chefgpt.api.ApiUserFacts"
+        }
+    }
+}

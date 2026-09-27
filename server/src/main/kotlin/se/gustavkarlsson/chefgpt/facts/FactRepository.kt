@@ -9,4 +9,9 @@ interface FactRepository {
         userId: UserId,
         update: UserFactsUpdate,
     ): UserFacts
+
+    suspend fun replaceFacts(
+        userId: UserId,
+        facts: UserFacts,
+    ): UserFacts
 }

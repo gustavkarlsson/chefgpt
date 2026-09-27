@@ -5,11 +5,11 @@ import ai.koog.agents.core.tools.annotations.Tool
 import ai.koog.agents.core.tools.reflect.ToolSet
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.facts.FactRepository
-import se.gustavkarlsson.chefgpt.facts.Measurement
 import se.gustavkarlsson.chefgpt.facts.TemperatureUnit
-import se.gustavkarlsson.chefgpt.facts.UnitSystem
 import se.gustavkarlsson.chefgpt.facts.UserFacts
 import se.gustavkarlsson.chefgpt.facts.UserFactsUpdate
+import se.gustavkarlsson.chefgpt.facts.VolumeUnits
+import se.gustavkarlsson.chefgpt.facts.WeightUnits
 
 class SetPreferredNameTool(
     private val repository: FactRepository,
@@ -25,33 +25,35 @@ class SetPreferredNameTool(
     ): UserFacts = repository.updateFacts(userId, UserFactsUpdate(preferredName = name))
 }
 
-class SetUnitSystemTool(
-    private val repository: FactRepository,
-    private val userId: UserId,
-) : ToolSet {
-    @Tool
-    @LLMDescription("Remember the user's unit system. Call this when they state whether they use metric or imperial.")
-    suspend fun setUnitSystem(
-        @LLMDescription("The unit system to use: Metric or Imperial.")
-        unitSystem: UnitSystem,
-    ): UserFacts = repository.updateFacts(userId, UserFactsUpdate(unitSystem = unitSystem))
-}
-
-class SetMeasurementTool(
+class SetWeightUnitsTool(
     private val repository: FactRepository,
     private val userId: UserId,
 ) : ToolSet {
     @Tool
     @LLMDescription(
-        "Remember how the user prefers ingredient amounts to be expressed. Call this when they state whether they prefer weight or volume.",
+        "Remember the user's weight units. Call this when they state whether they measure weight in metric or US imperial units.",
     )
-    suspend fun setMeasurement(
-        @LLMDescription("How to express ingredient amounts: Weight or Volume.")
-        measurement: Measurement,
-    ): UserFacts = repository.updateFacts(userId, UserFactsUpdate(measurement = measurement))
+    suspend fun setWeightUnits(
+        @LLMDescription("The weight units to use: Metric or UsImperial.")
+        weightUnits: WeightUnits,
+    ): UserFacts = repository.updateFacts(userId, UserFactsUpdate(weightUnits = weightUnits))
 }
 
-class SetTemperatureTool(
+class SetVolumeUnitsTool(
+    private val repository: FactRepository,
+    private val userId: UserId,
+) : ToolSet {
+    @Tool
+    @LLMDescription(
+        "Remember the user's volume units. Call this when they state whether they measure volume in metric or US customary units.",
+    )
+    suspend fun setVolumeUnits(
+        @LLMDescription("The volume units to use: Metric or UsCustomary.")
+        volumeUnits: VolumeUnits,
+    ): UserFacts = repository.updateFacts(userId, UserFactsUpdate(volumeUnits = volumeUnits))
+}
+
+class SetTemperatureUnitTool(
     private val repository: FactRepository,
     private val userId: UserId,
 ) : ToolSet {
@@ -59,10 +61,10 @@ class SetTemperatureTool(
     @LLMDescription(
         "Remember the user's temperature unit. Call this when they state whether they use Celsius or Fahrenheit.",
     )
-    suspend fun setTemperature(
+    suspend fun setTemperatureUnit(
         @LLMDescription("The temperature unit to use: Celsius or Fahrenheit.")
-        temperature: TemperatureUnit,
-    ): UserFacts = repository.updateFacts(userId, UserFactsUpdate(temperature = temperature))
+        temperatureUnit: TemperatureUnit,
+    ): UserFacts = repository.updateFacts(userId, UserFactsUpdate(temperatureUnit = temperatureUnit))
 }
 
 class AddDietaryRestrictionsTool(
@@ -106,33 +108,31 @@ class GetPreferredNameTool(
     suspend fun getPreferredName(): String? = repository.getFacts(userId).preferredName
 }
 
-class GetUnitSystemTool(
+class GetWeightUnitsTool(
     private val repository: FactRepository,
     private val userId: UserId,
 ) : ToolSet {
     @Tool
-    @LLMDescription("Get the user's unit system (Metric or Imperial), or null if it is unknown.")
-    suspend fun getUnitSystem(): UnitSystem? = repository.getFacts(userId).unitSystem
+    @LLMDescription("Get the user's weight units (Metric or UsImperial), or null if it is unknown.")
+    suspend fun getWeightUnits(): WeightUnits? = repository.getFacts(userId).weightUnits
 }
 
-class GetMeasurementTool(
+class GetVolumeUnitsTool(
     private val repository: FactRepository,
     private val userId: UserId,
 ) : ToolSet {
     @Tool
-    @LLMDescription(
-        "Get how the user prefers ingredient amounts to be expressed (Weight or Volume), or null if it is unknown.",
-    )
-    suspend fun getMeasurement(): Measurement? = repository.getFacts(userId).measurement
+    @LLMDescription("Get the user's volume units (Metric or UsCustomary), or null if it is unknown.")
+    suspend fun getVolumeUnits(): VolumeUnits? = repository.getFacts(userId).volumeUnits
 }
 
-class GetTemperatureTool(
+class GetTemperatureUnitTool(
     private val repository: FactRepository,
     private val userId: UserId,
 ) : ToolSet {
     @Tool
     @LLMDescription("Get the user's temperature unit (Celsius or Fahrenheit), or null if it is unknown.")
-    suspend fun getTemperature(): TemperatureUnit? = repository.getFacts(userId).temperature
+    suspend fun getTemperatureUnit(): TemperatureUnit? = repository.getFacts(userId).temperatureUnit
 }
 
 class GetDietaryRestrictionsTool(

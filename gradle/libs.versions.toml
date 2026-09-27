@@ -33,6 +33,7 @@ material3Adaptive = "1.2.0"
 materialIconsExtended = "1.7.3"
 multiplatformMarkdownRendererM3 = "0.45.0"
 navigation3 = "1.1.1"
+navigationEvent = "1.1.1"
 hikaricp = "7.1.0"
 postgresDriver = "42.7.13"
 postgresImage = "18.6"
@@ -61,11 +62,11 @@ composeMaterial3AdaptiveNavigation = { module = "org.jetbrains.compose.material3
 composeRuntime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
 composeUi = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
 composeUiBackhandler = { module = "org.jetbrains.compose.ui:ui-backhandler", version.ref = "composeMultiplatform" }
-composeUiTooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref = "composeMultiplatform" }
 composeUiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "composeMultiplatform" }
 materialIconsExtended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
 multiplatformMarkdownRendererM3 = { module = "com.mikepenz:multiplatform-markdown-renderer-m3", version.ref = "multiplatformMarkdownRendererM3" }
 navigation3Ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
+navigationEventCompose = { module = "androidx.navigationevent:navigationevent-compose", version.ref = "navigationEvent" }
 
 # Koin
 koinCore = { module = "io.insert-koin:koin-core", version.ref = "koin" }
