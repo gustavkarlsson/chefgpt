@@ -39,7 +39,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigationevent.NavigationEventInfo
@@ -54,6 +53,7 @@ import se.gustavkarlsson.chefgpt.facts.WeightUnits
 import se.gustavkarlsson.chefgpt.navigation.Screen
 import se.gustavkarlsson.chefgpt.navigation.Screen.Id
 import se.gustavkarlsson.chefgpt.theme.ChefGptTheme
+import se.gustavkarlsson.chefgpt.ui.MultiPreview
 
 @Serializable
 @SerialName("onboarding")
@@ -352,7 +352,7 @@ private fun StepHeader(
     }
 }
 
-@Preview
+@MultiPreview
 @Composable
 private fun PreviewStep1() {
     ChefGptTheme {
