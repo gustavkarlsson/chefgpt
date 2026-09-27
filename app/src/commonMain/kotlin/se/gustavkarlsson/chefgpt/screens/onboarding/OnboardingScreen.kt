@@ -90,6 +90,7 @@ private fun Content(
             }
 
             is UiState.Loaded -> {
+                // FIXME Back handler
                 Box(modifier = Modifier.fillMaxSize()) {
                     when (val uiStep = uiState.steps[uiState.currentStepIndex]) {
                         is UiStep.NameStep -> NameStep(uiStep)
