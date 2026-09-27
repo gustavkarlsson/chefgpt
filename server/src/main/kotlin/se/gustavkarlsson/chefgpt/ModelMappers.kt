@@ -118,7 +118,7 @@ private fun VolumeUnits.toApi(): ApiVolumeUnits =
         VolumeUnits.UsCustomary -> ApiVolumeUnits.UsCustomary
     }
 
-fun ApiUserFacts.toFactsOrNull(): UserFacts =
+fun ApiUserFacts.toDomain(): UserFacts =
     UserFacts(
         preferredName = preferredName,
         temperatureUnit = temperatureUnit?.toDomain(),

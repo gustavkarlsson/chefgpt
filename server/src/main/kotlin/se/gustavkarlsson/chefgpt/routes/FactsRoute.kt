@@ -7,12 +7,11 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.put
 import org.koin.ktor.ext.get
-import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiUserFacts
 import se.gustavkarlsson.chefgpt.facts.FactRepository
 import se.gustavkarlsson.chefgpt.requireSession
 import se.gustavkarlsson.chefgpt.toApi
-import se.gustavkarlsson.chefgpt.toFactsOrNull
+import se.gustavkarlsson.chefgpt.toDomain
 
 fun Route.factsRoute() {
     get("/facts") {
@@ -23,7 +22,7 @@ fun Route.factsRoute() {
     put("/facts") {
         val factRepository = get<FactRepository>()
         val userId = call.requireSession().user.id
-        val facts = call.receive<ApiUserFacts>().toFactsOrNull()
+        val facts = call.receive<ApiUserFacts>().toDomain()
         val newFacts = factRepository.replaceFacts(userId, facts)
         val newApiFacts = newFacts.toApi()
         call.respond(HttpStatusCode.OK, newApiFacts)

@@ -5,7 +5,7 @@ import se.gustavkarlsson.chefgpt.api.ApiUserFacts
 import se.gustavkarlsson.chefgpt.api.ApiVolumeUnits
 import se.gustavkarlsson.chefgpt.api.ApiWeightUnits
 import se.gustavkarlsson.chefgpt.toApi
-import se.gustavkarlsson.chefgpt.toFactsOrNull
+import se.gustavkarlsson.chefgpt.toDomain
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -51,7 +51,7 @@ class UserFactsApiTest {
                 weightUnits = ApiWeightUnits.Metric,
                 volumeUnits = ApiVolumeUnits.UsCustomary,
                 dietary = emptySet(),
-            ).toFactsOrNull()
+            ).toDomain()
 
         assertEquals(
             UserFacts("Chef", TemperatureUnit.Celsius, WeightUnits.Metric, VolumeUnits.UsCustomary, emptySet()),
@@ -61,7 +61,7 @@ class UserFactsApiTest {
 
     @Test
     fun `toFactsOrNull keeps null dietary unknown and empty dietary none`() {
-        val unknown = ApiUserFacts(null, null, null, null, null).toFactsOrNull()
+        val unknown = ApiUserFacts(null, null, null, null, null).toDomain()
         val none =
             ApiUserFacts(
                 null,
@@ -69,7 +69,7 @@ class UserFactsApiTest {
                 ApiWeightUnits.Metric,
                 ApiVolumeUnits.Metric,
                 emptySet(),
-            ).toFactsOrNull()
+            ).toDomain()
 
         assertEquals(null, unknown.dietary)
         assertEquals(emptySet(), none.dietary)
