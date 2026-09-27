@@ -90,9 +90,9 @@ class UserFactsTest {
             """
             Facts about the user ('unknown' means you should ask before relying on it):
             - Preferred name: Gustav
-            - Temperature unit: celsius
-            - Weight units: metric
-            - Volume Units: uscustomary
+            - Temperature unit: Celsius (C)
+            - Weight units: Metric: grams (g) and kilograms (kg)
+            - Volume Units: US Customary: teaspoon (tsp), tablespoon (tbsp), fluid ounce (fl oz), cup (C)
             - Dietary restrictions: gluten-free, vegan
             """.trimIndent(),
             text.trim(),
