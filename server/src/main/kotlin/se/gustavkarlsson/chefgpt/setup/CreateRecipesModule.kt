@@ -23,7 +23,7 @@ fun Application.createRecipesModule() =
         single {
             TieredScrapeRecipe(
                 listOf(
-                    get<SpoonacularScrapeRecipe>(),
+                    // get<SpoonacularScrapeRecipe>(),
                     get<JsonLdScrapeRecipe>(),
                     get<ScrapeRecipeAgent>(),
                 ),
