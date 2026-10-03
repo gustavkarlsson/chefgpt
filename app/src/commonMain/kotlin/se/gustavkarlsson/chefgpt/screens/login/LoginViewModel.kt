@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
+import se.gustavkarlsson.chefgpt.screens.debug.DebugScreen
 import se.gustavkarlsson.chefgpt.screens.loading.LoadingScreen
 import se.gustavkarlsson.chefgpt.sessions.RegisterError
 import se.gustavkarlsson.chefgpt.sessions.UserCredentials
@@ -38,6 +39,7 @@ class LoginViewModel(
             onPasswordChange = ::updatePassword,
             onClickRegister = if (canAuthenticate) ::registerUser else null,
             onClickLogin = if (canAuthenticate) ::logInUser else null,
+            onClickDebug = ::openDebug,
         )
 
     private val State.canAuthenticate: Boolean
@@ -49,6 +51,10 @@ class LoginViewModel(
 
     private fun updatePassword(password: String) {
         innerState.update { it.copy(password = password) }
+    }
+
+    private fun openDebug() {
+        navigator.push(DebugScreen())
     }
 
     private fun registerUser() {
@@ -119,4 +125,5 @@ data class UiState(
     val onPasswordChange: (String) -> Unit,
     val onClickRegister: (() -> Unit)?,
     val onClickLogin: (() -> Unit)?,
+    val onClickDebug: () -> Unit,
 )
