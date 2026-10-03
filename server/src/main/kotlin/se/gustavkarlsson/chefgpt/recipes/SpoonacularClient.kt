@@ -5,6 +5,7 @@ import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.forms.FormDataContent
 import io.ktor.client.request.get
 import io.ktor.client.request.header
@@ -23,6 +24,7 @@ class SpoonacularClient(
     private val client =
         HttpClient(CIO) {
             install(HttpTimeout) {
+                // Default for fast endpoints; slow endpoints override per request below.
                 requestTimeoutMillis = 5000
             }
             // TODO Install logging
@@ -81,6 +83,7 @@ class SpoonacularClient(
     ): String =
         client
             .get("https://api.spoonacular.com/recipes/findByIngredients") {
+                timeout { requestTimeoutMillis = 10_000 }
                 parameter("ingredients", ingredients)
                 parameter("number", resultCount)
                 parameter("ranking", 2)
@@ -106,6 +109,7 @@ class SpoonacularClient(
     ): String =
         client
             .get("https://api.spoonacular.com/recipes/informationBulk") {
+                timeout { requestTimeoutMillis = 15_000 }
                 parameter("ids", ids.joinToString(","))
                 parameter("includeNutrition", includeNutrition)
             }.body()
@@ -185,6 +189,7 @@ class SpoonacularClient(
     override suspend fun getAnalyzedRecipeInstructions(instructions: String): String =
         client
             .post("https://api.spoonacular.com/recipes/analyzeInstructions") {
+                timeout { requestTimeoutMillis = 15_000 }
                 contentType(ContentType.Application.FormUrlEncoded)
                 setBody(
                     FormDataContent(
@@ -204,6 +209,7 @@ class SpoonacularClient(
     ): String =
         client
             .get("https://api.spoonacular.com/recipes/extract") {
+                timeout { requestTimeoutMillis = 30_000 }
                 parameter("url", url)
                 parameter("forceExtraction", forceExtraction)
                 parameter("analyze", analyze)
@@ -217,6 +223,7 @@ class SpoonacularClient(
     ): String =
         client
             .post("https://api.spoonacular.com/recipes/cuisine") {
+                timeout { requestTimeoutMillis = 10_000 }
                 contentType(ContentType.Application.FormUrlEncoded)
                 setBody(
                     FormDataContent(
@@ -231,12 +238,14 @@ class SpoonacularClient(
     override suspend fun estimateNutritionByDishName(title: String): String =
         client
             .get("https://api.spoonacular.com/recipes/guessNutrition") {
+                timeout { requestTimeoutMillis = 10_000 }
                 parameter("title", title)
             }.body()
 
     override suspend fun estimateNutritionFromImage(imageUrl: String): String =
         client
             .post("https://api.spoonacular.com/food/images/analyze") {
+                timeout { requestTimeoutMillis = 20_000 }
                 contentType(ContentType.Application.FormUrlEncoded)
                 setBody(
                     FormDataContent(
