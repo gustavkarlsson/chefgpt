@@ -3,6 +3,7 @@ package se.gustavkarlsson.chefgpt.agent.tools
 import ai.koog.agents.core.tools.annotations.LLMDescription
 import ai.koog.agents.core.tools.annotations.Tool
 import ai.koog.agents.core.tools.reflect.ToolSet
+import se.gustavkarlsson.chefgpt.agent.convertrecipeunits.ConvertRecipeUnitsAgent
 import se.gustavkarlsson.chefgpt.api.ApiNutrient
 import se.gustavkarlsson.chefgpt.api.ApiRecipe
 import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
@@ -22,6 +23,7 @@ import kotlin.time.Duration.Companion.minutes
 class SaveRecipeTool(
     private val repository: RecipeRepository,
     private val lookup: RecipeLookup,
+    private val convertRecipeUnits: ConvertRecipeUnitsAgent,
     private val userId: UserId,
 ) : ToolSet {
     @Tool
@@ -33,7 +35,8 @@ class SaveRecipeTool(
         val recipe =
             lookup.lookUp(SpoonacularId(spoonacularId))
                 ?: error("No recipe found with Spoonacular ID $spoonacularId")
-        return repository.saveRecipe(userId, recipe).toSummary()
+        val convertedRecipe = convertRecipeUnits.convert(userId, recipe)
+        return repository.saveRecipe(userId, convertedRecipe).toSummary()
     }
 }
 
@@ -57,6 +60,7 @@ class ScrapeRecipeTool(
 
 class CreateRecipeTool(
     private val repository: RecipeRepository,
+    private val convertRecipeUnits: ConvertRecipeUnitsAgent,
     private val userId: UserId,
 ) : ToolSet {
     // The recipes this tool has created in this agent run, so the caller can report exactly what it saved.
@@ -121,7 +125,7 @@ class CreateRecipeTool(
                 ingredients = ingredients,
                 nutrients = nutrients,
             )
-        val saved = repository.saveRecipe(userId, recipe)
+        val saved = repository.saveRecipe(userId, convertRecipeUnits.convert(userId, recipe))
         createdIds += saved.id
         return saved.toSummary()
     }

@@ -1,12 +1,15 @@
 package se.gustavkarlsson.chefgpt.agent.tools
 
 import kotlinx.coroutines.test.runTest
+import se.gustavkarlsson.chefgpt.agent.convertrecipeunits.ConvertRecipeUnitsAgent
+import se.gustavkarlsson.chefgpt.agent.convertrecipeunits.FakeConvertRecipeUnitsAgent
 import se.gustavkarlsson.chefgpt.api.ApiRecipe
 import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.recipes.InMemoryRecipePersistence
+import se.gustavkarlsson.chefgpt.recipes.NewRecipe
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -44,7 +47,7 @@ private fun pannkakor(
 class CreateRecipeToolTest {
     private val userId = UserId.random()
     private val store = RecipeRepository(InMemoryRecipePersistence())
-    private val tools = CreateRecipeTool(store, userId)
+    private val tools = CreateRecipeTool(store, FakeConvertRecipeUnitsAgent(), userId)
 
     @Test
     fun `stores what was read out of the shared file`() =
@@ -178,10 +181,35 @@ class CreateRecipeToolTest {
         }
 
     @Test
+    fun `stores the recipe with the units the converter produced`() =
+        runTest {
+            val converted = listOf(ApiRecipeIngredient("flour", "1.2", "cups"))
+            val convertingTools = CreateRecipeTool(store, ConvertingAgent(converted), userId)
+
+            val summary =
+                convertingTools.createRecipe(
+                    title = "Pannkakor",
+                    steps = listOf("Whisk"),
+                    ingredients = listOf(ApiRecipeIngredient("flour", "3", "dl")),
+                )
+
+            assertEquals(converted, store.getRecipe(userId, summary.id)?.ingredients)
+        }
+
+    @Test
     fun `refuses a recipe without steps`() =
         runTest {
             assertFailsWith<IllegalArgumentException> {
                 tools.createRecipe(title = "Pannkakor", steps = emptyList())
             }
         }
+}
+
+private class ConvertingAgent(
+    private val ingredients: List<ApiRecipeIngredient>,
+) : ConvertRecipeUnitsAgent {
+    override suspend fun convert(
+        userId: UserId,
+        recipe: NewRecipe,
+    ): NewRecipe = recipe.copy(ingredients = ingredients)
 }

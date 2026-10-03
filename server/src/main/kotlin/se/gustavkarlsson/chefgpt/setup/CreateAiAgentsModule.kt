@@ -8,6 +8,9 @@ import org.koin.dsl.module
 import se.gustavkarlsson.chefgpt.agent.chat.ChatAgent
 import se.gustavkarlsson.chefgpt.agent.chat.FakeChatAgent
 import se.gustavkarlsson.chefgpt.agent.chat.KoogChatAgent
+import se.gustavkarlsson.chefgpt.agent.convertrecipeunits.ConvertRecipeUnitsAgent
+import se.gustavkarlsson.chefgpt.agent.convertrecipeunits.FakeConvertRecipeUnitsAgent
+import se.gustavkarlsson.chefgpt.agent.convertrecipeunits.KoogConvertRecipeUnitsAgent
 import se.gustavkarlsson.chefgpt.agent.describeimages.DescribeImagesAgent
 import se.gustavkarlsson.chefgpt.agent.describeimages.FakeDescribeImagesAgent
 import se.gustavkarlsson.chefgpt.agent.describeimages.KoogDescribeImagesAgent
@@ -33,6 +36,7 @@ private const val CHAT_AGENT = "chat"
 private const val INGREDIENT_SCAN_AGENT = "ingredientScan"
 private const val RECIPE_SCAN_AGENT = "recipeScan"
 private const val DESCRIBE_IMAGE_AGENT = "describeImage"
+private const val CONVERT_RECIPE_UNITS_AGENT = "convertRecipeUnits"
 
 fun Application.createAiAgentsModule() =
     module {
@@ -56,6 +60,7 @@ fun Application.createAiAgentsModule() =
                         saveRecipesAgent = get<SaveRecipesAgent>(),
                         scanIngredientsAgent = get<ScanIngredientsAgent>(),
                         describeImagesAgent = get<DescribeImagesAgent>(),
+                        convertRecipeUnits = get<ConvertRecipeUnitsAgent>(),
                     )
                 }
 
@@ -95,7 +100,7 @@ fun Application.createAiAgentsModule() =
                         aiConfig.agentModel(RECIPE_SCAN_AGENT),
                         get<RecipeRepository>(),
                         get<ImageCropper>(),
-                        get<FactRepository>(),
+                        get<ConvertRecipeUnitsAgent>(),
                     )
                 }
 
@@ -115,6 +120,25 @@ fun Application.createAiAgentsModule() =
                 else -> error("Unknown agent type: '$type'. Expected 'llm' or 'fake'.")
             }
         } bind DescribeImagesAgent::class
+        single {
+            when (val type = config.property("bindings.agent").getString()) {
+                "llm" -> {
+                    KoogConvertRecipeUnitsAgent(
+                        get<PromptExecutor>(),
+                        aiConfig.agentModel(CONVERT_RECIPE_UNITS_AGENT),
+                        get<FactRepository>(),
+                    )
+                }
+
+                "fake" -> {
+                    FakeConvertRecipeUnitsAgent()
+                }
+
+                else -> {
+                    error("Unknown agent type: '$type'. Expected 'llm' or 'fake'.")
+                }
+            }
+        } bind ConvertRecipeUnitsAgent::class
     }
 
 private fun AiConfig.agentModel(agentId: String): LLModel {

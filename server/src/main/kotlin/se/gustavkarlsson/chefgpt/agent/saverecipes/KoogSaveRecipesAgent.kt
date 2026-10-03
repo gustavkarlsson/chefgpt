@@ -9,13 +9,11 @@ import ai.koog.prompt.Prompt
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
+import se.gustavkarlsson.chefgpt.agent.convertrecipeunits.ConvertRecipeUnitsAgent
 import se.gustavkarlsson.chefgpt.agent.tools.CreateRecipeTool
 import se.gustavkarlsson.chefgpt.agent.tools.CropImageTool
 import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.auth.UserId
-import se.gustavkarlsson.chefgpt.facts.FactRepository
-import se.gustavkarlsson.chefgpt.facts.UserFacts
-import se.gustavkarlsson.chefgpt.facts.toMeasurementPromptText
 import se.gustavkarlsson.chefgpt.files.FileKind
 import se.gustavkarlsson.chefgpt.files.ImageCropper
 import se.gustavkarlsson.chefgpt.files.UploadedFile
@@ -54,14 +52,8 @@ private val SYSTEM_PROMPT =
 
     Extract as many values you can to match the createRecipe tool parameters.
     Don't invent data. Leave out anything that is is missing rather than filling
-    it in yourself.
-
-    Convert the recipe's measurements to the user's preferences (shown below):
-    apply their measurement preference to compressible dry goods, viscous or
-    sticky liquids, and irregular solids. Easy-to-pour liquids stay volume, and
-    amounts not given as weight or volume (cloves, pinches, dashes) stay as
-    written. Where a preference is unknown, keep the recipe's original
-    measurement.
+    it in yourself. Write the amounts and units exactly as written — do not
+    convert them; the app converts them to the user's units for you.
 
     *Note: From now on, the word "dish" means whatever the recipe makes,
     whether it's food, baked items, beverages, etc.*
@@ -83,15 +75,14 @@ class KoogSaveRecipesAgent(
     private val model: LLModel,
     private val recipeRepository: RecipeRepository,
     private val imageCropper: ImageCropper,
-    private val factRepository: FactRepository,
+    private val convertRecipeUnits: ConvertRecipeUnitsAgent,
 ) : SaveRecipesAgent {
     override suspend fun scan(
         userId: UserId,
         images: List<UploadedFile>,
     ): List<RecipeId> {
-        val createRecipeTool = CreateRecipeTool(recipeRepository, userId)
-        val facts = factRepository.getFacts(userId)
-        val agent = buildAgent(images, createRecipeTool, buildPrompt(images, facts))
+        val createRecipeTool = CreateRecipeTool(recipeRepository, convertRecipeUnits, userId)
+        val agent = buildAgent(images, createRecipeTool, buildPrompt(images))
         agent.run("Scan these photos for recipes and save the ones you find.")
         return createRecipeTool.createdIds.toList()
     }
@@ -123,20 +114,18 @@ class KoogSaveRecipesAgent(
     )
 }
 
-private fun buildPrompt(
-    images: List<UploadedFile>,
-    facts: UserFacts,
-) = prompt("save-recipes") {
-    system(SYSTEM_PROMPT + "\n\n" + facts.toMeasurementPromptText())
-    user {
-        for (image in images) {
-            image.toImageAttachmentOrNull()?.let { attachment ->
-                text("Photo url: ${image.url}")
-                image(attachment)
+private fun buildPrompt(images: List<UploadedFile>) =
+    prompt("save-recipes") {
+        system(SYSTEM_PROMPT)
+        user {
+            for (image in images) {
+                image.toImageAttachmentOrNull()?.let { attachment ->
+                    text("Photo url: ${image.url}")
+                    image(attachment)
+                }
             }
         }
     }
-}
 
 private fun saveRecipesStrategy() =
     functionalStrategy<String, Unit>("save-recipes") { input ->

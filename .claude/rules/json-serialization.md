@@ -26,9 +26,6 @@ Don't default a property on a `@Serializable` type.
 The exception is a **new required** property, where the default lets older serialized instances still
 be read. Comment it as such, and drop it once nothing needs it.
 
-Koog tool schemas ignore Kotlin defaults entirely — use a sentinel value to make a `@Tool` parameter
-optional.
-
 ## Schema changes
 
 A changed response body shows up as a diff in `server/src/test/snapshots/`. Treat it as a
