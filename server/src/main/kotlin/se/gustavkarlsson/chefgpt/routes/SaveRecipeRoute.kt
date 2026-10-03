@@ -8,19 +8,19 @@ import io.ktor.server.routing.post
 import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiSaveSpoonacularRecipe
-import se.gustavkarlsson.chefgpt.recipes.RecipeLookup
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
+import se.gustavkarlsson.chefgpt.recipes.Spoonacular
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.saveRecipeRoute() {
     post("/recipes") {
         val recipeRepository = get<RecipeRepository>()
-        val recipeLookup = get<RecipeLookup>()
+        val spoonacular = get<Spoonacular>()
         val userId = call.requireSession().user.id
         val spoonacularId = call.receive<ApiSaveSpoonacularRecipe>().spoonacularId
 
         val lookedUp =
-            recipeLookup.lookUp(spoonacularId)
+            spoonacular.lookUp(spoonacularId)
                 ?: return@post call.respond(
                     HttpStatusCode.NotFound,
                     ApiError("recipe-not-found", "Recipe not found", userMessage = null),

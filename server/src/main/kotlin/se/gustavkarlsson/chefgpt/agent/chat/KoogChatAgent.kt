@@ -56,9 +56,9 @@ import se.gustavkarlsson.chefgpt.files.kind
 import se.gustavkarlsson.chefgpt.files.sharedAttachments
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 import se.gustavkarlsson.chefgpt.recipes.RecipeClient
-import se.gustavkarlsson.chefgpt.recipes.RecipeLookup
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
-import se.gustavkarlsson.chefgpt.recipes.RecipeScraper
+import se.gustavkarlsson.chefgpt.recipes.SaveRecipeFromUrl
+import se.gustavkarlsson.chefgpt.recipes.Spoonacular
 
 private val SYSTEM_PROMPT =
     """
@@ -208,9 +208,9 @@ class KoogChatAgent(
     private val model: LLModel,
     private val ingredientStore: IngredientStore,
     private val recipeRepository: RecipeRepository,
-    private val recipeLookup: RecipeLookup,
+    private val spoonacular: Spoonacular,
     private val recipeClient: RecipeClient,
-    private val recipeScraper: RecipeScraper,
+    private val saveRecipeFromUrl: SaveRecipeFromUrl,
     private val factRepository: FactRepository,
     private val imageCropper: ImageCropper,
     private val chatRepository: ChatRepository,
@@ -279,7 +279,7 @@ class KoogChatAgent(
                 tools(AddIngredientsTool(ingredientStore, userId))
                 tools(RemoveIngredientsTool(ingredientStore, userId))
                 tools(DestroyIngredientsTool(ingredientStore, userId))
-                tools(SaveRecipeTool(recipeRepository, recipeLookup, convertRecipeUnits, userId))
+                tools(SaveRecipeTool(recipeRepository, spoonacular, convertRecipeUnits, userId))
                 tools(CreateRecipeTool(recipeRepository, convertRecipeUnits, userId))
                 tools(ListRecipesTool(recipeRepository, userId))
                 tools(SetRecipeFavoriteTool(recipeRepository, userId))
@@ -311,7 +311,7 @@ class KoogChatAgent(
                 tools(DescribePhotosTool(describeImagesAgent))
                 tools(AddIngredientsFromPhotosTool(scanIngredientsAgent, ingredientStore, userId))
                 tools(AddRecipesFromPhotosTool(saveRecipesAgent, userId))
-                tools(ScrapeRecipeTool(recipeScraper, userId))
+                tools(ScrapeRecipeTool(saveRecipeFromUrl, userId))
             },
     )
 }

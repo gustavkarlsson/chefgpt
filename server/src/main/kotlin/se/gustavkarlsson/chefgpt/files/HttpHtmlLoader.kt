@@ -7,13 +7,14 @@ import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.utils.io.readRemaining
 import kotlinx.io.readString
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
- * Anthropic only accepts a url as the source of a *pdf* document, so text attachments have to be
- * inlined. Reading them here means it happens once per message rather than on every prompt build.
+ * Loads the html of a page over HTTP. Text attachments have to be inlined into the prompt, and
+ * reading them here means it happens once per message rather than on every prompt build.
  */
-class HttpAttachmentTextLoader :
-    AttachmentTextLoader,
+class HttpHtmlLoader :
+    HtmlLoader,
     AutoCloseable {
     private val client =
         HttpClient(CIO) {
@@ -26,6 +27,8 @@ class HttpAttachmentTextLoader :
         try {
             val bytes = client.get(url).bodyAsChannel().readRemaining(MAX_BYTES)
             bytes.readString().takeIf { it.isNotBlank() }
+        } catch (e: CancellationException) {
+            throw e
         } catch (_: Exception) {
             // TODO log error
             null
@@ -36,5 +39,5 @@ class HttpAttachmentTextLoader :
     }
 }
 
-// Enough for any recipe, small enough that one file can't crowd out the conversation.
+// Enough for any recipe page, small enough that one page can't crowd out the conversation.
 private const val MAX_BYTES = 200L * 1024
