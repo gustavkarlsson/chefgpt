@@ -11,6 +11,7 @@ import ai.koog.prompt.Prompt
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
+import org.jetbrains.annotations.VisibleForTesting
 import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.facts.FactRepository
@@ -149,7 +150,8 @@ private fun stepsText(steps: List<String>): String =
  * Receives the parts of a recipe whose units the conversion agent's LLM has converted. Each part is
  * reported by its own tool call, so a failure in one part keeps the others.
  */
-private class ConvertRecipeMeasurementsTool : ToolSet {
+@VisibleForTesting
+class ConvertRecipeMeasurementsTool : ToolSet {
     var ingredients: List<ApiRecipeIngredient>? = null
         private set
     var description: String? = null
