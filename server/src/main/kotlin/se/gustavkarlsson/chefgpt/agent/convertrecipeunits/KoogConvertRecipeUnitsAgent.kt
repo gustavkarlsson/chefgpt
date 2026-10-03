@@ -17,6 +17,8 @@ import se.gustavkarlsson.chefgpt.facts.FactRepository
 import se.gustavkarlsson.chefgpt.facts.UserFacts
 import se.gustavkarlsson.chefgpt.facts.toMeasurementPromptText
 import se.gustavkarlsson.chefgpt.recipes.NewRecipe
+import se.gustavkarlsson.chefgpt.recipes.RecipeUpdate
+import se.gustavkarlsson.chefgpt.recipes.applyUpdate
 
 private val SYSTEM_PROMPT =
     """
@@ -57,17 +59,8 @@ class KoogConvertRecipeUnitsAgent(
         recipe: NewRecipe,
     ): NewRecipe {
         val facts = factRepository.getFacts(userId)
-        val converted = convertRecipeUnits(recipe, facts)
-        return recipe.copy(
-            ingredients = converted.ingredients ?: recipe.ingredients,
-            description =
-                if (recipe.description == null) {
-                    null
-                } else {
-                    converted.description?.takeIf { it.isNotBlank() } ?: recipe.description
-                },
-            steps = converted.steps ?: recipe.steps,
-        )
+        val update = convertRecipeUnits(recipe, facts)
+        return recipe.applyUpdate(update)
     }
 }
 
@@ -78,7 +71,7 @@ private class AgenticConvertRecipeUnits(
     override suspend fun invoke(
         recipe: NewRecipe,
         facts: UserFacts,
-    ): ConvertedMeasurements {
+    ): RecipeUpdate {
         val tool = ConvertRecipeMeasurementsTool()
         val agent =
             AIAgent(
@@ -93,9 +86,9 @@ private class AgenticConvertRecipeUnits(
                 toolRegistry = ToolRegistry { tools(tool) },
             )
         agent.run("Convert the recipe's units and report the results.")
-        return ConvertedMeasurements(
+        return RecipeUpdate(
             ingredients = tool.ingredients,
-            description = tool.description,
+            description = tool.description?.takeIf { it.isNotBlank() },
             steps = tool.steps,
         )
     }

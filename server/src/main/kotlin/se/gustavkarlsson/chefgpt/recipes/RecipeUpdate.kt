@@ -36,3 +36,17 @@ fun ApiRecipe.applyUpdate(update: RecipeUpdate): ApiRecipe =
         ingredients = update.ingredients ?: ingredients,
         nutrients = update.nutrients ?: nutrients,
     )
+
+fun NewRecipe.applyUpdate(update: RecipeUpdate): NewRecipe =
+    copy(
+        title = update.title ?: title,
+        imageUrl = update.imageUrl ?: imageUrl,
+        description = update.description ?: description,
+        preparationDuration = update.preparationDuration ?: preparationDuration,
+        cookingDuration = update.cookingDuration ?: cookingDuration,
+        duration = update.duration ?: duration,
+        servings = update.servings ?: servings,
+        steps = update.steps ?: steps,
+        ingredients = update.ingredients ?: ingredients,
+        nutrients = update.nutrients ?: nutrients,
+    )

@@ -9,6 +9,7 @@ import se.gustavkarlsson.chefgpt.facts.UserFacts
 import se.gustavkarlsson.chefgpt.facts.VolumeUnits
 import se.gustavkarlsson.chefgpt.facts.WeightUnits
 import se.gustavkarlsson.chefgpt.recipes.NewRecipe
+import se.gustavkarlsson.chefgpt.recipes.RecipeUpdate
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -36,7 +37,7 @@ private fun recipe(description: String? = "A recipe.") =
     )
 
 private class FakeConvertRecipeUnits(
-    private val result: ConvertedMeasurements,
+    private val result: RecipeUpdate,
 ) : ConvertRecipeUnits {
     var receivedRecipe: NewRecipe? = null
         private set
@@ -46,7 +47,7 @@ private class FakeConvertRecipeUnits(
     override suspend fun invoke(
         recipe: NewRecipe,
         facts: UserFacts,
-    ): ConvertedMeasurements {
+    ): RecipeUpdate {
         receivedRecipe = recipe
         receivedFacts = facts
         return result
@@ -70,7 +71,7 @@ class KoogConvertRecipeUnitsAgentTest {
         runTest {
             val seam =
                 FakeConvertRecipeUnits(
-                    ConvertedMeasurements(
+                    RecipeUpdate(
                         ingredients = CONVERTED_INGREDIENTS,
                         description = CONVERTED_DESCRIPTION,
                         steps = CONVERTED_STEPS,
@@ -90,9 +91,8 @@ class KoogConvertRecipeUnitsAgentTest {
         runTest {
             val seam =
                 FakeConvertRecipeUnits(
-                    ConvertedMeasurements(
+                    RecipeUpdate(
                         ingredients = CONVERTED_INGREDIENTS,
-                        description = null,
                         steps = CONVERTED_STEPS,
                     ),
                 )
@@ -110,8 +110,7 @@ class KoogConvertRecipeUnitsAgentTest {
         runTest {
             val seam =
                 FakeConvertRecipeUnits(
-                    ConvertedMeasurements(
-                        ingredients = null,
+                    RecipeUpdate(
                         description = CONVERTED_DESCRIPTION,
                         steps = CONVERTED_STEPS,
                     ),
@@ -124,13 +123,12 @@ class KoogConvertRecipeUnitsAgentTest {
         }
 
     @Test
-    fun `keeps a null description even when the converter returns one`() =
+    fun `keeps a null description when nothing is reported`() =
         runTest {
             val seam =
                 FakeConvertRecipeUnits(
-                    ConvertedMeasurements(
+                    RecipeUpdate(
                         ingredients = CONVERTED_INGREDIENTS,
-                        description = CONVERTED_DESCRIPTION,
                         steps = CONVERTED_STEPS,
                     ),
                 )
@@ -146,7 +144,7 @@ class KoogConvertRecipeUnitsAgentTest {
         runTest {
             val seam =
                 FakeConvertRecipeUnits(
-                    ConvertedMeasurements(
+                    RecipeUpdate(
                         ingredients = CONVERTED_INGREDIENTS,
                         description = CONVERTED_DESCRIPTION,
                         steps = CONVERTED_STEPS,
