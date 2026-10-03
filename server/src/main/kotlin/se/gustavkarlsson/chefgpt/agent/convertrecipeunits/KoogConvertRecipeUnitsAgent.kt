@@ -1,12 +1,16 @@
 package se.gustavkarlsson.chefgpt.agent.convertrecipeunits
 
+import ai.koog.agents.core.agent.AIAgent
+import ai.koog.agents.core.agent.config.AIAgentConfig
+import ai.koog.agents.core.agent.functionalStrategy
+import ai.koog.agents.core.tools.ToolRegistry
+import ai.koog.agents.core.tools.annotations.LLMDescription
+import ai.koog.agents.core.tools.annotations.Tool
+import ai.koog.agents.core.tools.reflect.ToolSet
 import ai.koog.prompt.Prompt
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.model.PromptExecutor
-import ai.koog.prompt.executor.model.executeStructured
 import ai.koog.prompt.llm.LLModel
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.facts.FactRepository
@@ -31,6 +35,11 @@ private val SYSTEM_PROMPT =
     Convert only the amounts, units, and temperatures — never change names,
     meaning, order, or any other wording. Preserve formatting exactly, changing
     only the amounts, units, and temperatures.
+
+    Report each converted part by calling its tool: reportIngredients with the
+    converted ingredients, reportSteps with the converted steps, and
+    reportDescription with the converted description when the recipe has one.
+    Never write the converted recipe as plain text — always use the tools.
     """.trimIndent()
 
 class KoogConvertRecipeUnitsAgent(
@@ -69,69 +78,65 @@ private class AgenticConvertRecipeUnits(
     override suspend fun invoke(
         recipe: NewRecipe,
         facts: UserFacts,
-    ): ConvertedMeasurements =
-        coroutineScope {
-            val ingredients = async { convertIngredients(recipe.ingredients, facts) }
-            val description =
-                recipe.description?.let { description -> async { convertDescription(description, facts) } }
-            val steps = async { convertSteps(recipe.steps, facts) }
-            ConvertedMeasurements(
-                ingredients = ingredients.await(),
-                description = description?.await(),
-                steps = steps.await(),
+    ): ConvertedMeasurements {
+        val tool = ConvertRecipeMeasurementsTool()
+        val agent =
+            AIAgent(
+                promptExecutor = promptExecutor,
+                agentConfig =
+                    AIAgentConfig(
+                        prompt = buildPrompt(recipe, facts),
+                        model = model,
+                        maxAgentIterations = 5,
+                    ),
+                strategy = convertRecipeUnitsStrategy(),
+                toolRegistry = ToolRegistry { tools(tool) },
             )
-        }
-
-    private suspend fun convertIngredients(
-        ingredients: List<ApiRecipeIngredient>,
-        facts: UserFacts,
-    ): List<ApiRecipeIngredient>? =
-        if (ingredients.isEmpty()) {
-            emptyList()
-        } else {
-            runStructured<ConvertedIngredients>("convert-ingredients", ingredientsText(ingredients), facts)
-                ?.ingredients
-        }
-
-    private suspend fun convertDescription(
-        description: String,
-        facts: UserFacts,
-    ): String? = runStructured<ConvertedDescription>("convert-description", description, facts)?.description
-
-    private suspend fun convertSteps(
-        steps: List<String>,
-        facts: UserFacts,
-    ): List<String>? =
-        if (steps.isEmpty()) {
-            emptyList()
-        } else {
-            runStructured<ConvertedSteps>("convert-steps", stepsText(steps), facts)?.steps
-        }
-
-    private suspend inline fun <reified T> runStructured(
-        name: String,
-        content: String,
-        facts: UserFacts,
-    ): T? =
-        promptExecutor
-            .executeStructured<T>(
-                prompt = buildPrompt(name, content, facts),
-                model = model,
-            ).fold(
-                onSuccess = { it.data },
-                onFailure = { null },
-            )
+        agent.run("Convert the recipe's units and report the results.")
+        return ConvertedMeasurements(
+            ingredients = tool.ingredients,
+            description = tool.description,
+            steps = tool.steps,
+        )
+    }
 }
 
 private fun buildPrompt(
-    name: String,
-    content: String,
+    recipe: NewRecipe,
     facts: UserFacts,
 ): Prompt =
-    prompt(name) {
+    prompt("convert-recipe-units") {
         system(SYSTEM_PROMPT)
         system(facts.toMeasurementPromptText())
-        user { text(content) }
+        user {
+            text(
+                buildString {
+                    appendLine("Ingredients:")
+                    appendLine(ingredientsText(recipe.ingredients))
+                    recipe.description?.let {
+                        appendLine()
+                        appendLine("Description:")
+                        appendLine(it)
+                    }
+                    appendLine()
+                    appendLine("Steps:")
+                    appendLine(stepsText(recipe.steps))
+                },
+            )
+        }
+    }
+
+private fun convertRecipeUnitsStrategy() =
+    functionalStrategy<String, Unit>("convert-recipe-units") { input ->
+        var message = requestLLM(input)
+        repeat(config.maxAgentIterations) {
+            val toolCalls = getToolCalls(message)
+            if (toolCalls.isEmpty()) {
+                return@repeat
+            }
+            val toolResults = executeTools(toolCalls)
+            message = sendToolResults(toolResults)
+        }
     }
 
 private fun ingredientsText(ingredients: List<ApiRecipeIngredient>): String =
@@ -143,3 +148,52 @@ private fun ingredientsText(ingredients: List<ApiRecipeIngredient>): String =
 
 private fun stepsText(steps: List<String>): String =
     steps.mapIndexed { index, step -> "${index + 1}. $step" }.joinToString("\n")
+
+/**
+ * Receives the parts of a recipe whose units the conversion agent's LLM has converted. Each part is
+ * reported by its own tool call, so a failure in one part keeps the others.
+ */
+private class ConvertRecipeMeasurementsTool : ToolSet {
+    var ingredients: List<ApiRecipeIngredient>? = null
+        private set
+    var description: String? = null
+        private set
+    var steps: List<String>? = null
+        private set
+
+    @Tool
+    @LLMDescription(
+        "Report the recipe's ingredients with their amounts and units converted to the user's preferences.",
+    )
+    suspend fun reportIngredients(
+        @LLMDescription("The ingredients with converted amounts and units.")
+        ingredients: List<ApiRecipeIngredient>,
+    ): String {
+        this.ingredients = ingredients
+        return "Saved the converted ingredients."
+    }
+
+    @Tool
+    @LLMDescription(
+        "Report the recipe's description with its units and temperatures converted to the user's preferences.",
+    )
+    suspend fun reportDescription(
+        @LLMDescription("The description with converted units and temperatures.")
+        description: String,
+    ): String {
+        this.description = description
+        return "Saved the converted description."
+    }
+
+    @Tool
+    @LLMDescription(
+        "Report the recipe's steps with their units and temperatures converted to the user's preferences.",
+    )
+    suspend fun reportSteps(
+        @LLMDescription("The steps with converted units and temperatures.")
+        steps: List<String>,
+    ): String {
+        this.steps = steps
+        return "Saved the converted steps."
+    }
+}
