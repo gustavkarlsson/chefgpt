@@ -89,13 +89,14 @@ private class AgenticConvertRecipeUnits(
         if (ingredients.isEmpty()) {
             emptyList()
         } else {
-            runStructured("convert-ingredients", ingredientsText(ingredients), facts)
+            runStructured<ConvertedIngredients>("convert-ingredients", ingredientsText(ingredients), facts)
+                ?.ingredients
         }
 
     private suspend fun convertDescription(
         description: String,
         facts: UserFacts,
-    ): String? = runStructured("convert-description", description, facts)
+    ): String? = runStructured<ConvertedDescription>("convert-description", description, facts)?.description
 
     private suspend fun convertSteps(
         steps: List<String>,
@@ -104,7 +105,7 @@ private class AgenticConvertRecipeUnits(
         if (steps.isEmpty()) {
             emptyList()
         } else {
-            runStructured("convert-steps", stepsText(steps), facts)
+            runStructured<ConvertedSteps>("convert-steps", stepsText(steps), facts)?.steps
         }
 
     private suspend inline fun <reified T> runStructured(

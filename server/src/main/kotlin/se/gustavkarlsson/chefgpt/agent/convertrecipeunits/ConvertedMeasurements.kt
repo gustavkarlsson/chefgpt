@@ -11,3 +11,20 @@ data class ConvertedMeasurements(
     val description: String?,
     val steps: List<String>?,
 )
+
+// Structured outputs must have an object at the root for native JSON-schema mode, so each part is
+// wrapped in its own object rather than requested as a bare list or string.
+@Serializable
+data class ConvertedIngredients(
+    val ingredients: List<ApiRecipeIngredient>,
+)
+
+@Serializable
+data class ConvertedDescription(
+    val description: String,
+)
+
+@Serializable
+data class ConvertedSteps(
+    val steps: List<String>,
+)
