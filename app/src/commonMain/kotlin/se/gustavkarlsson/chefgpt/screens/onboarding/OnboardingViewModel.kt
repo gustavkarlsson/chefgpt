@@ -226,6 +226,9 @@ class OnboardingViewModel(
     }
 
     private fun confirmDietary() {
+        innerState.update {
+            it.copy(collectedFacts = it.collectedFacts.copy(dietary = it.collectedFacts.dietary.orEmpty()))
+        }
         advance()
     }
 
