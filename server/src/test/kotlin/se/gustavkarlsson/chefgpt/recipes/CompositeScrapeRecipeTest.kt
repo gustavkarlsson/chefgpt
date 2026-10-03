@@ -13,14 +13,14 @@ import kotlin.test.assertNull
 
 private const val URL = "https://example.com/recipe"
 
-class TieredScrapeRecipeTest {
+class CompositeScrapeRecipeTest {
     @Test
     fun `returns the first complete recipe and stops`() =
         runTest {
             val first = FakeScraper(partialRecipe(), error = null)
             val second = FakeScraper(completeRecipe(), error = null)
             val third = FakeScraper(completeRecipe(), error = null)
-            val tiered = TieredScrapeRecipe(listOf(first, second, third))
+            val tiered = CompositeScrapeRecipe(listOf(first, second, third))
 
             val recipe = assertNotNull(tiered.scrape(URL, null))
 
@@ -35,7 +35,7 @@ class TieredScrapeRecipeTest {
         runTest {
             val first = FakeScraper(partialRecipe(), error = null)
             val second = FakeScraper(completeRecipe(), error = null)
-            val tiered = TieredScrapeRecipe(listOf(first, second))
+            val tiered = CompositeScrapeRecipe(listOf(first, second))
 
             tiered.scrape(URL, null)
 
@@ -47,7 +47,7 @@ class TieredScrapeRecipeTest {
         runTest {
             val first = FakeScraper(null, error = null)
             val second = FakeScraper(completeRecipe(), error = null)
-            val tiered = TieredScrapeRecipe(listOf(first, second))
+            val tiered = CompositeScrapeRecipe(listOf(first, second))
 
             val recipe = assertNotNull(tiered.scrape(URL, null))
 
@@ -58,7 +58,7 @@ class TieredScrapeRecipeTest {
     fun `returns null when no scraper finds a complete recipe`() =
         runTest {
             val tiered =
-                TieredScrapeRecipe(
+                CompositeScrapeRecipe(
                     listOf(
                         FakeScraper(partialRecipe(), error = null),
                         FakeScraper(null, error = null),
@@ -75,7 +75,7 @@ class TieredScrapeRecipeTest {
         runTest {
             val first = FakeScraper(null, error = IllegalStateException("extract failed"))
             val second = FakeScraper(completeRecipe(), error = null)
-            val tiered = TieredScrapeRecipe(listOf(first, second))
+            val tiered = CompositeScrapeRecipe(listOf(first, second))
 
             val recipe = assertNotNull(tiered.scrape(URL, null))
 
@@ -86,7 +86,7 @@ class TieredScrapeRecipeTest {
     fun `throws the first scraper's failure when nothing completes`() =
         runTest {
             val tiered =
-                TieredScrapeRecipe(
+                CompositeScrapeRecipe(
                     listOf(
                         FakeScraper(null, error = IllegalStateException("extract failed")),
                         FakeScraper(null, error = null),
@@ -102,7 +102,7 @@ class TieredScrapeRecipeTest {
     fun `returns a complete partial recipe without scraping`() =
         runTest {
             val first = FakeScraper(completeRecipe(), error = null)
-            val tiered = TieredScrapeRecipe(listOf(first))
+            val tiered = CompositeScrapeRecipe(listOf(first))
 
             val recipe = assertNotNull(tiered.scrape(URL, completeRecipe()))
 
@@ -114,7 +114,7 @@ class TieredScrapeRecipeTest {
     fun `scrapes through the real chain when the first scraper finds no recipe`() =
         runTest {
             val chain =
-                TieredScrapeRecipe(
+                CompositeScrapeRecipe(
                     listOf(
                         SpoonacularScrapeRecipe(Spoonacular(NoInstructionsClient(), chefGptJson(strict = false))),
                         JsonLdScrapeRecipe(FakeHtmlLoader(), RecipeJsonLdParser(chefGptJson(strict = false))),

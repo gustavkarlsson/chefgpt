@@ -7,7 +7,7 @@ import kotlin.coroutines.cancellation.CancellationException
  * Runs a chain of scrapers in sequence, handing each the best result the previous one managed.
  * Stops at the first complete recipe, and rethrows the first scraper's failure when none completes.
  */
-class TieredScrapeRecipe(
+class CompositeScrapeRecipe(
     private val scrapers: List<RecipeScraper>,
 ) : RecipeScraper {
     override suspend fun scrape(
