@@ -34,6 +34,9 @@ private val SYSTEM_PROMPT =
     temperatures, and any other temperature mentioned in the steps or description
     — to the user's temperature unit.
 
+    Where a value is given in several units at once (for example "200 C (392 F)"),
+    keep only the user's unit and drop the rest.
+
     Convert only the amounts, units, and temperatures — never change names,
     meaning, order, or any other wording. Preserve formatting exactly, changing
     only the amounts, units, and temperatures.
