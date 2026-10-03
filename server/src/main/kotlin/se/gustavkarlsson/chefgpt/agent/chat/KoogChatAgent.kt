@@ -8,6 +8,7 @@ import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
 import ai.koog.prompt.message.Message
+import se.gustavkarlsson.chefgpt.agent.convertrecipeunits.ConvertRecipeUnitsAgent
 import se.gustavkarlsson.chefgpt.agent.describeimages.DescribeImagesAgent
 import se.gustavkarlsson.chefgpt.agent.saverecipes.SaveRecipesAgent
 import se.gustavkarlsson.chefgpt.agent.scaningredients.ScanIngredientsAgent
@@ -94,7 +95,9 @@ private val SYSTEM_PROMPT =
     printout, a card, a document — write it into their recipes with
     the createRecipe tool. Read out the title, ingredients, steps,
     times and any description you can actually see, and leave out
-    whatever is missing rather than filling it in yourself. If
+    whatever is missing rather than filling it in yourself. Write the
+    amounts and units exactly as written in the source — do not convert
+    them; the app converts them to the user's units for you. If
     something is unreadable, say so and ask instead of guessing.
     Confirm with the user before saving, unless they already asked
     you to save it.
@@ -184,13 +187,6 @@ private val SYSTEM_PROMPT =
      Ask with a multiple-choice question, save the user's answer with the
     matching fact tool, then continue.
 
-    When writing ingredient amounts, follow the user's measurement
-    preference: use it for compressible dry goods, viscous or sticky
-    liquids, and irregular solids. Easy-to-pour liquids are always
-    volume, and amounts not given as weight or volume (cloves,
-    pinches, dashes) stay as written. If the measurement preference
-    is unknown, keep the recipe's original measurement.
-
     When the user states a dietary restriction that makes an earlier
     one redundant (vegan makes vegetarian redundant), add the new
     one and remove the redundant one.
@@ -222,6 +218,7 @@ class KoogChatAgent(
     private val saveRecipesAgent: SaveRecipesAgent,
     private val scanIngredientsAgent: ScanIngredientsAgent,
     private val describeImagesAgent: DescribeImagesAgent,
+    private val convertRecipeUnits: ConvertRecipeUnitsAgent,
 ) : ChatAgent {
     override suspend fun run(
         userId: UserId,
@@ -282,8 +279,8 @@ class KoogChatAgent(
                 tools(AddIngredientsTool(ingredientStore, userId))
                 tools(RemoveIngredientsTool(ingredientStore, userId))
                 tools(DestroyIngredientsTool(ingredientStore, userId))
-                tools(SaveRecipeTool(recipeRepository, recipeLookup, userId))
-                tools(CreateRecipeTool(recipeRepository, userId))
+                tools(SaveRecipeTool(recipeRepository, recipeLookup, convertRecipeUnits, userId))
+                tools(CreateRecipeTool(recipeRepository, convertRecipeUnits, userId))
                 tools(ListRecipesTool(recipeRepository, userId))
                 tools(SetRecipeFavoriteTool(recipeRepository, userId))
                 tools(GetRecipeTool(recipeRepository, userId))

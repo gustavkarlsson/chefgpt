@@ -60,6 +60,7 @@ fun Application.createAiAgentsModule() =
                         saveRecipesAgent = get<SaveRecipesAgent>(),
                         scanIngredientsAgent = get<ScanIngredientsAgent>(),
                         describeImagesAgent = get<DescribeImagesAgent>(),
+                        convertRecipeUnits = get<ConvertRecipeUnitsAgent>(),
                     )
                 }
 
@@ -99,7 +100,7 @@ fun Application.createAiAgentsModule() =
                         aiConfig.agentModel(RECIPE_SCAN_AGENT),
                         get<RecipeRepository>(),
                         get<ImageCropper>(),
-                        get<FactRepository>(),
+                        get<ConvertRecipeUnitsAgent>(),
                     )
                 }
 

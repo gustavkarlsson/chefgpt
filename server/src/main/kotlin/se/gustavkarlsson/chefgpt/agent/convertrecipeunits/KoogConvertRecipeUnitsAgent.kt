@@ -18,10 +18,19 @@ private val SYSTEM_PROMPT =
     """
     You convert the units in a recipe to the user's preferred units.
 
-    Convert only the amounts and units — never change names, meaning, order, or
-    any other wording. Where the user's preference is unknown, keep the original
-    amount and unit. Preserve formatting exactly, changing only the amounts and
-    units.
+    Apply the user's measurement preference to compressible dry goods, viscous or
+    sticky liquids, and irregular solids. Easy-to-pour liquids stay volume, and
+    amounts not given as weight or volume (cloves, pinches, dashes) stay as
+    written. Where a preference is unknown, keep the recipe's original amount and
+    unit.
+
+    Convert temperatures too — oven temperatures, cooking and baking
+    temperatures, and any other temperature mentioned in the steps or description
+    — to the user's temperature unit.
+
+    Convert only the amounts, units, and temperatures — never change names,
+    meaning, order, or any other wording. Preserve formatting exactly, changing
+    only the amounts, units, and temperatures.
     """.trimIndent()
 
 class KoogConvertRecipeUnitsAgent(
