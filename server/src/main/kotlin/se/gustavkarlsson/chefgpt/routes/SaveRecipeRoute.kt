@@ -10,6 +10,7 @@ import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiSaveSpoonacularRecipe
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 import se.gustavkarlsson.chefgpt.recipes.Spoonacular
+import se.gustavkarlsson.chefgpt.recipes.toApi
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.saveRecipeRoute() {
@@ -27,6 +28,6 @@ fun Route.saveRecipeRoute() {
                 )
 
         val saved = recipeRepository.saveRecipe(userId, lookedUp)
-        call.respond(HttpStatusCode.Created, saved)
+        call.respond(HttpStatusCode.Created, saved.toApi())
     }
 }

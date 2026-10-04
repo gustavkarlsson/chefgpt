@@ -4,16 +4,18 @@ import kotlinx.coroutines.test.runTest
 import se.gustavkarlsson.chefgpt.agent.describeimages.FakeDescribeImagesAgent
 import se.gustavkarlsson.chefgpt.agent.saverecipes.FakeSaveRecipesAgent
 import se.gustavkarlsson.chefgpt.agent.scaningredients.FakeScanIngredientsAgent
+import se.gustavkarlsson.chefgpt.agent.tools.models.ToolUploadedFile
 import se.gustavkarlsson.chefgpt.auth.UserId
-import se.gustavkarlsson.chefgpt.files.UploadedFile
 import se.gustavkarlsson.chefgpt.ingredients.InMemoryIngredientStore
 import se.gustavkarlsson.chefgpt.recipes.InMemoryRecipePersistence
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-private val PAGE = UploadedFile("https://res.cloudinary.com/demo/image/upload/v123/page.jpg", "image/jpeg", "page.jpg")
-private val DISH = UploadedFile("https://res.cloudinary.com/demo/image/upload/v123/dish.jpg", "image/jpeg", "dish.jpg")
+private val PAGE =
+    ToolUploadedFile("https://res.cloudinary.com/demo/image/upload/v123/page.jpg", "image/jpeg", "page.jpg")
+private val DISH =
+    ToolUploadedFile("https://res.cloudinary.com/demo/image/upload/v123/dish.jpg", "image/jpeg", "dish.jpg")
 
 class ImageScanToolsTest {
     private val userId = UserId.random()

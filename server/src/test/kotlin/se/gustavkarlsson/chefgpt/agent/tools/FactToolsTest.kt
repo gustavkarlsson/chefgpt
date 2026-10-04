@@ -1,6 +1,9 @@
 package se.gustavkarlsson.chefgpt.agent.tools
 
 import kotlinx.coroutines.test.runTest
+import se.gustavkarlsson.chefgpt.agent.tools.models.ToolTemperatureUnit
+import se.gustavkarlsson.chefgpt.agent.tools.models.ToolVolumeUnits
+import se.gustavkarlsson.chefgpt.agent.tools.models.ToolWeightUnits
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.facts.InMemoryFactRepository
 import se.gustavkarlsson.chefgpt.facts.TemperatureUnit
@@ -25,7 +28,7 @@ class FactToolsTest {
     @Test
     fun `setWeightUnits remembers the weight units`() =
         runTest {
-            SetWeightUnitsTool(repository, userId).setWeightUnits(WeightUnits.UsImperial)
+            SetWeightUnitsTool(repository, userId).setWeightUnits(ToolWeightUnits.UsImperial)
 
             assertEquals(WeightUnits.UsImperial, repository.getFacts(userId).weightUnits)
         }
@@ -33,7 +36,7 @@ class FactToolsTest {
     @Test
     fun `setVolumeUnits remembers the volume units`() =
         runTest {
-            SetVolumeUnitsTool(repository, userId).setVolumeUnits(VolumeUnits.UsCustomary)
+            SetVolumeUnitsTool(repository, userId).setVolumeUnits(ToolVolumeUnits.UsCustomary)
 
             assertEquals(VolumeUnits.UsCustomary, repository.getFacts(userId).volumeUnits)
         }
@@ -41,7 +44,7 @@ class FactToolsTest {
     @Test
     fun `setTemperatureUnit remembers the temperature unit`() =
         runTest {
-            SetTemperatureUnitTool(repository, userId).setTemperatureUnit(TemperatureUnit.Fahrenheit)
+            SetTemperatureUnitTool(repository, userId).setTemperatureUnit(ToolTemperatureUnit.Fahrenheit)
 
             assertEquals(TemperatureUnit.Fahrenheit, repository.getFacts(userId).temperatureUnit)
         }
@@ -87,25 +90,28 @@ class FactToolsTest {
     @Test
     fun `getWeightUnits returns the weight units once set`() =
         runTest {
-            SetWeightUnitsTool(repository, userId).setWeightUnits(WeightUnits.UsImperial)
+            SetWeightUnitsTool(repository, userId).setWeightUnits(ToolWeightUnits.UsImperial)
 
-            assertEquals(WeightUnits.UsImperial, GetWeightUnitsTool(repository, userId).getWeightUnits())
+            assertEquals(ToolWeightUnits.UsImperial, GetWeightUnitsTool(repository, userId).getWeightUnits())
         }
 
     @Test
     fun `getVolumeUnits returns the volume units once set`() =
         runTest {
-            SetVolumeUnitsTool(repository, userId).setVolumeUnits(VolumeUnits.UsCustomary)
+            SetVolumeUnitsTool(repository, userId).setVolumeUnits(ToolVolumeUnits.UsCustomary)
 
-            assertEquals(VolumeUnits.UsCustomary, GetVolumeUnitsTool(repository, userId).getVolumeUnits())
+            assertEquals(ToolVolumeUnits.UsCustomary, GetVolumeUnitsTool(repository, userId).getVolumeUnits())
         }
 
     @Test
     fun `getTemperatureUnit returns the temperature unit once set`() =
         runTest {
-            SetTemperatureUnitTool(repository, userId).setTemperatureUnit(TemperatureUnit.Fahrenheit)
+            SetTemperatureUnitTool(repository, userId).setTemperatureUnit(ToolTemperatureUnit.Fahrenheit)
 
-            assertEquals(TemperatureUnit.Fahrenheit, GetTemperatureUnitTool(repository, userId).getTemperatureUnit())
+            assertEquals(
+                ToolTemperatureUnit.Fahrenheit,
+                GetTemperatureUnitTool(repository, userId).getTemperatureUnit(),
+            )
         }
 
     @Test

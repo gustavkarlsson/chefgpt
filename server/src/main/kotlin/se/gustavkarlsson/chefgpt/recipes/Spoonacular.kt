@@ -11,8 +11,6 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import se.gustavkarlsson.chefgpt.api.ApiNutrient
-import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.api.SpoonacularId
 import kotlin.math.floor
@@ -96,22 +94,22 @@ private fun JsonObject.toAmountOrNull(): Amount? {
     return Amount(name, formatValue(amount), unit)
 }
 
-private fun JsonObject.toIngredients(): List<ApiRecipeIngredient> =
+private fun JsonObject.toIngredients(): List<RecipeIngredient> =
     get("extendedIngredients")
         ?.jsonArray
         ?.mapNotNull { ingredient ->
             val amount = ingredient.jsonObject.toAmountOrNull() ?: return@mapNotNull null
-            ApiRecipeIngredient(amount.name, amount.value, amount.unit)
+            RecipeIngredient(amount.name, amount.value, amount.unit)
         }.orEmpty()
 
-private fun JsonObject.toNutrients(): List<ApiNutrient> =
+private fun JsonObject.toNutrients(): List<Nutrient> =
     get("nutrition")
         ?.jsonObject
         ?.get("nutrients")
         ?.jsonArray
         ?.mapNotNull { nutrient ->
             val amount = nutrient.jsonObject.toAmountOrNull() ?: return@mapNotNull null
-            ApiNutrient(amount.name, amount.value, amount.unit)
+            Nutrient(amount.name, amount.value, amount.unit)
         }.orEmpty()
 
 private fun JsonObject.minutesOrNull(key: String) =

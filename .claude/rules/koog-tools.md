@@ -31,3 +31,5 @@ collected by reflection. The LLM sees each method's `@LLMDescription` and each p
 - Kotlin default values are ignored when Koog builds the tool's schema, so a parameter cannot be
   truly optional. To make one optional, give it a sentinel default (`0`, `""`, `emptyList()`) and
   treat that sentinel as "absent" in the method body.
+- Parameter and return types are primitives, `String`, `List<String>`, or tool models from
+  `agent/tools/models/` — never domain or `Api` models (`domain-classes` rule).

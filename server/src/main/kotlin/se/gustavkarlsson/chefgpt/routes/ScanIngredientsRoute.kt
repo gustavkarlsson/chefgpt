@@ -17,7 +17,6 @@ import se.gustavkarlsson.chefgpt.files.fileKindOrNull
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 import se.gustavkarlsson.chefgpt.jobs.JobRunner
 import se.gustavkarlsson.chefgpt.requireSession
-import se.gustavkarlsson.chefgpt.toDomain
 
 fun Route.scanIngredientsRoute() {
     post("/ingredients/scan") {
@@ -46,7 +45,7 @@ fun Route.scanIngredientsRoute() {
 
         val job =
             get<JobRunner>().run("Ingredient scan", ListSerializer(String.serializer())) {
-                val scanned = scanAgent.scan(userId, listOf(file.toDomain()))
+                val scanned = scanAgent.scan(userId, listOf(file))
                 val added = ingredientStore.createIngredients(userId, scanned)
                 added.map { it.name }
             }

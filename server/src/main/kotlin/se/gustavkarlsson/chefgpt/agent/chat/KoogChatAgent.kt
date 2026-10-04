@@ -8,6 +8,9 @@ import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
 import ai.koog.prompt.message.Message
+import kotlinx.serialization.json.Json
+import se.gustavkarlsson.chefgpt.agent.chat.toDomain
+import se.gustavkarlsson.chefgpt.agent.chat.toKoog
 import se.gustavkarlsson.chefgpt.agent.convertrecipeunits.ConvertRecipeUnitsAgent
 import se.gustavkarlsson.chefgpt.agent.describeimages.DescribeImagesAgent
 import se.gustavkarlsson.chefgpt.agent.saverecipes.SaveRecipesAgent
@@ -215,6 +218,7 @@ class KoogChatAgent(
     private val imageCropper: ImageCropper,
     private val chatRepository: ChatRepository,
     private val eventRepository: EventRepository,
+    private val json: Json,
     private val saveRecipesAgent: SaveRecipesAgent,
     private val scanIngredientsAgent: ScanIngredientsAgent,
     private val describeImagesAgent: DescribeImagesAgent,
@@ -236,7 +240,10 @@ class KoogChatAgent(
                 .llm.prompt.messages
                 .takeLastWhile { it != lastHistoryMessage }
         for (message in newMessages) {
-            eventRepository.append(chatId, Event.Message(EventId.random(), message, attachments = emptyList()))
+            eventRepository.append(
+                chatId,
+                Event.Message(EventId.random(), message.toDomain(json), attachments = emptyList()),
+            )
         }
     }
 
@@ -244,7 +251,7 @@ class KoogChatAgent(
         eventRepository
             .getAll(chatId)
             .filterIsInstance<Event.Message>()
-            .map { it.message }
+            .map { it.message.toKoog(json) }
 
     private suspend fun buildPrompt(
         userId: UserId,

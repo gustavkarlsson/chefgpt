@@ -2,7 +2,6 @@ package se.gustavkarlsson.chefgpt.ingredients
 
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
-import se.gustavkarlsson.chefgpt.api.ApiIngredient
 import se.gustavkarlsson.chefgpt.api.IngredientId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import kotlin.test.Test
@@ -14,7 +13,7 @@ class InMemoryIngredientStoreTest {
     private val otherUserId = UserId.random()
     private val store = InMemoryIngredientStore()
 
-    private val List<ApiIngredient>.names get() = map { it.name }
+    private val List<Ingredient>.names get() = map { it.name }
 
     private suspend fun ids(vararg names: String): List<IngredientId> {
         val wanted = names.toSet()

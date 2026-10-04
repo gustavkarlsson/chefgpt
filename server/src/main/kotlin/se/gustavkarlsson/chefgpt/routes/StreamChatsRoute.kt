@@ -5,8 +5,8 @@ import io.ktor.server.sse.send
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
+import se.gustavkarlsson.chefgpt.chats.toApi
 import se.gustavkarlsson.chefgpt.requireSession
-import se.gustavkarlsson.chefgpt.toApi
 import se.gustavkarlsson.chefgpt.util.sse
 
 // TODO Add tests (Not snapshot test, as they are not possible)

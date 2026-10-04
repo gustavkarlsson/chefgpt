@@ -20,7 +20,7 @@ class PostgresEventRepository(
         chatId: ChatId,
         event: Event,
     ) {
-        val serialized = json.encodeToString<Event>(event)
+        val serialized = json.encodeToString(event.toStored(json))
         db.use {
             eventQueries.insert(chatId.value.toJavaUuid(), serialized)
         }
@@ -65,4 +65,4 @@ class PostgresEventRepository(
         }
 }
 
-private fun Json.parseEvent(row: SelectByChatIdAfter): Event = decodeFromString(row.json)
+private fun Json.parseEvent(row: SelectByChatIdAfter): Event = decodeFromString<StoredEvent>(row.json).toDomain(this)

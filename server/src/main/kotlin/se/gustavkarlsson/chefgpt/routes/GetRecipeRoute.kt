@@ -9,6 +9,7 @@ import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
+import se.gustavkarlsson.chefgpt.recipes.toApi
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.getRecipeRoute() {
@@ -29,6 +30,6 @@ fun Route.getRecipeRoute() {
                     ApiError("recipe-not-found", "Recipe not found", userMessage = null),
                 )
 
-        call.respond(HttpStatusCode.OK, recipe)
+        call.respond(HttpStatusCode.OK, recipe.toApi())
     }
 }

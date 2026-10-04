@@ -9,9 +9,9 @@ import io.ktor.server.routing.put
 import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.api.ApiUserFacts
 import se.gustavkarlsson.chefgpt.facts.FactRepository
+import se.gustavkarlsson.chefgpt.facts.toApi
+import se.gustavkarlsson.chefgpt.facts.toDomain
 import se.gustavkarlsson.chefgpt.requireSession
-import se.gustavkarlsson.chefgpt.toApi
-import se.gustavkarlsson.chefgpt.toDomain
 
 fun Route.factsRoute() {
     get("/facts") {

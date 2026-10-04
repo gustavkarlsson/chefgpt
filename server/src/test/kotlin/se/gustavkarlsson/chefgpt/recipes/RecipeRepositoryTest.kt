@@ -1,14 +1,11 @@
 package se.gustavkarlsson.chefgpt.recipes
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
-import se.gustavkarlsson.chefgpt.api.ApiNutrient
-import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.api.SpoonacularId
 import se.gustavkarlsson.chefgpt.api.toSummary
 import se.gustavkarlsson.chefgpt.auth.UserId
-import se.gustavkarlsson.chefgpt.toApiRecipe
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -34,7 +31,7 @@ class RecipeRepositoryTest {
 
             val saved = store.saveRecipe(userId, recipe)
 
-            assertEquals(recipe.toApiRecipe(saved.id, favorite = false), saved)
+            assertEquals(recipe.toRecipe(saved.id, favorite = false, modifiedFrom = null), saved)
         }
 
     @Test
@@ -354,8 +351,8 @@ private fun carbonara(spoonacularId: SpoonacularId? = SpoonacularId(1L)) =
         servings = 4..4,
         ingredients =
             listOf(
-                ApiRecipeIngredient("spaghetti", "400", "g"),
-                ApiRecipeIngredient("eggs", "4", null),
+                RecipeIngredient("spaghetti", "400", "g"),
+                RecipeIngredient("eggs", "4", null),
             ),
-        nutrients = listOf(ApiNutrient("Calories", "450", "kcal")),
+        nutrients = listOf(Nutrient("Calories", "450", "kcal")),
     )

@@ -11,6 +11,7 @@ import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.FILE_NAME_HEADER
 import se.gustavkarlsson.chefgpt.files.FileUploader
 import se.gustavkarlsson.chefgpt.files.fileKindOrNull
+import se.gustavkarlsson.chefgpt.files.toApi
 
 fun Route.filesRoute() {
     post("/files") {
@@ -30,7 +31,7 @@ fun Route.filesRoute() {
         val fileName = call.request.headers[FILE_NAME_HEADER]
         val attachment = fileUploader.uploadFile(call.receive(), contentType, fileName)
         if (attachment != null) {
-            call.respond(HttpStatusCode.Created, attachment)
+            call.respond(HttpStatusCode.Created, attachment.toApi())
         } else {
             call.respond(HttpStatusCode.InternalServerError)
         }

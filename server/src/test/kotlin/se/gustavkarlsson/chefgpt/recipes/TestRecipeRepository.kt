@@ -3,7 +3,6 @@ package se.gustavkarlsson.chefgpt.recipes
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.koin.core.module.Module
 import org.koin.dsl.module
-import se.gustavkarlsson.chefgpt.api.ApiRecipe
 import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import java.util.concurrent.ConcurrentHashMap
@@ -17,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap
  * hands out an opaque session id.
  */
 class TestRecipeRepository {
-    private val storage = ConcurrentHashMap<UserId, MutableStateFlow<Map<RecipeId, ApiRecipe>>>()
+    private val storage = ConcurrentHashMap<UserId, MutableStateFlow<Map<RecipeId, Recipe>>>()
     private val repository = RecipeRepository(InMemoryRecipePersistence(storage))
 
     val koinModule: Module = module { single<RecipeRepository> { repository } }
@@ -25,7 +24,7 @@ class TestRecipeRepository {
     suspend fun modifyRecipe(
         id: RecipeId,
         update: RecipeUpdate,
-    ): ApiRecipe {
+    ): Recipe {
         val userId = storage.keys.single()
         return checkNotNull(repository.modifyRecipe(userId, id, update)) { "No recipe found with id $id" }
     }

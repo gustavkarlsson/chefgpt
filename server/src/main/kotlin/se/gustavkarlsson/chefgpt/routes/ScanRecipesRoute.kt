@@ -11,9 +11,9 @@ import se.gustavkarlsson.chefgpt.agent.saverecipes.SaveRecipesAgent
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiScanRecipe
 import se.gustavkarlsson.chefgpt.api.RecipeId
+import se.gustavkarlsson.chefgpt.files.toDomain
 import se.gustavkarlsson.chefgpt.jobs.JobRunner
 import se.gustavkarlsson.chefgpt.requireSession
-import se.gustavkarlsson.chefgpt.toDomain
 
 fun Route.scanRecipesRoute() {
     post("/recipes/scan") {

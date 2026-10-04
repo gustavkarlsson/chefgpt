@@ -18,7 +18,6 @@ import io.ktor.server.util.url
 import io.ktor.utils.io.ByteReadChannel
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
 import se.gustavkarlsson.chefgpt.chefGptJson
 
 class CloudinaryFileUploader(
@@ -43,7 +42,7 @@ class CloudinaryFileUploader(
         readChannel: ByteReadChannel,
         contentType: ContentType?,
         fileName: String?,
-    ): ApiUploadedFile? =
+    ): UploadedFile? =
         try {
             val mimeType = contentType?.let { "${it.contentType}/${it.contentSubtype}" } ?: "application/octet-stream"
             val jsonObject =
@@ -75,7 +74,7 @@ class CloudinaryFileUploader(
                 jsonObject
                     .getValue("secure_url")
                     .jsonPrimitive.content
-            ApiUploadedFile(url = url, mimeType = mimeType, fileName = fileName)
+            UploadedFile(url = url, mimeType = mimeType, fileName = fileName)
         } catch (_: Exception) {
             // TODO log error
             null

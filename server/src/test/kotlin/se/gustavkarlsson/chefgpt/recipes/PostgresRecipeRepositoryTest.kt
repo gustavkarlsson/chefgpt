@@ -9,8 +9,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
-import se.gustavkarlsson.chefgpt.api.ApiNutrient
-import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.db.ChefGptDatabase
 import se.gustavkarlsson.chefgpt.postgres.DatabaseAccess
@@ -173,6 +171,6 @@ private fun carbonara() =
         cookingDuration = 20.minutes,
         duration = 30.minutes,
         servings = 4..4,
-        ingredients = listOf(ApiRecipeIngredient("spaghetti", "400", "g")),
-        nutrients = listOf(ApiNutrient("Calories", "450", "kcal")),
+        ingredients = listOf(RecipeIngredient("spaghetti", "400", "g")),
+        nutrients = listOf(Nutrient("Calories", "450", "kcal")),
     )

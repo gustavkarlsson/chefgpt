@@ -1,7 +1,6 @@
 package se.gustavkarlsson.chefgpt.agent.convertrecipeunits
 
 import kotlinx.coroutines.test.runTest
-import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.facts.InMemoryFactRepository
 import se.gustavkarlsson.chefgpt.facts.TemperatureUnit
@@ -9,15 +8,16 @@ import se.gustavkarlsson.chefgpt.facts.UserFacts
 import se.gustavkarlsson.chefgpt.facts.VolumeUnits
 import se.gustavkarlsson.chefgpt.facts.WeightUnits
 import se.gustavkarlsson.chefgpt.recipes.NewRecipe
+import se.gustavkarlsson.chefgpt.recipes.RecipeIngredient
 import se.gustavkarlsson.chefgpt.recipes.RecipeUpdate
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
-private val INGREDIENTS = listOf(ApiRecipeIngredient("chicken breast", "500", "g"))
+private val INGREDIENTS = listOf(RecipeIngredient("chicken breast", "500", "g"))
 private val STEPS = listOf("Bake at 350F for 20 minutes.")
-private val CONVERTED_INGREDIENTS = listOf(ApiRecipeIngredient("chicken breast", "1.1", "lb"))
+private val CONVERTED_INGREDIENTS = listOf(RecipeIngredient("chicken breast", "1.1", "lb"))
 private val CONVERTED_STEPS = listOf("Bake at 175C for 20 minutes.")
 private const val CONVERTED_DESCRIPTION = "Bake at 175C."
 

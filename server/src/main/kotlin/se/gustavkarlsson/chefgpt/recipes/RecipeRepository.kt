@@ -2,11 +2,8 @@ package se.gustavkarlsson.chefgpt.recipes
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import se.gustavkarlsson.chefgpt.api.ApiRecipe
-import se.gustavkarlsson.chefgpt.api.ApiRecipeSummary
 import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.auth.UserId
-import se.gustavkarlsson.chefgpt.toNewRecipe
 import se.gustavkarlsson.chefgpt.util.RepoSyncer
 
 /**
@@ -22,11 +19,11 @@ class RecipeRepository(
     suspend fun getRecipe(
         userId: UserId,
         id: RecipeId,
-    ): ApiRecipe? = persistence.get(userId, id)
+    ): Recipe? = persistence.get(userId, id)
 
-    suspend fun getRecipeSummaries(userId: UserId): List<ApiRecipeSummary> = persistence.listSummaries(userId)
+    suspend fun getRecipeSummaries(userId: UserId): List<RecipeSummary> = persistence.listSummaries(userId)
 
-    fun streamRecipeSummaries(userId: UserId): Flow<List<ApiRecipeSummary>> =
+    fun streamRecipeSummaries(userId: UserId): Flow<List<RecipeSummary>> =
         syncer
             .notifications(userId)
             .map { getRecipeSummaries(userId) }
@@ -35,7 +32,7 @@ class RecipeRepository(
     suspend fun saveRecipe(
         userId: UserId,
         recipe: NewRecipe,
-    ): ApiRecipe {
+    ): Recipe {
         val saved = persistence.insert(userId, recipe, favorite = false, modifiedFrom = null)
         syncer.notifyChange(userId)
         return saved
@@ -49,7 +46,7 @@ class RecipeRepository(
         userId: UserId,
         id: RecipeId,
         update: RecipeUpdate,
-    ): ApiRecipe? {
+    ): Recipe? {
         val base = persistence.get(userId, id) ?: return null
         val modified =
             if (base.modifiedFrom != null) {
@@ -80,7 +77,7 @@ class RecipeRepository(
     suspend fun overwriteOriginal(
         userId: UserId,
         id: RecipeId,
-    ): ApiRecipe? {
+    ): Recipe? {
         val modification = persistence.get(userId, id) ?: return null
         val originalId = modification.modifiedFrom ?: return null
         persistence.delete(userId, originalId) // Detaches the modification
@@ -94,7 +91,7 @@ class RecipeRepository(
     suspend fun saveAsCopy(
         userId: UserId,
         id: RecipeId,
-    ): ApiRecipe? {
+    ): Recipe? {
         val modification = persistence.get(userId, id) ?: return null
         if (modification.modifiedFrom == null) return null
         val copy = persistence.replace(userId, modification.copy(modifiedFrom = null))
@@ -107,7 +104,7 @@ class RecipeRepository(
         userId: UserId,
         id: RecipeId,
         favorite: Boolean,
-    ): ApiRecipe? {
+    ): Recipe? {
         val recipe = persistence.get(userId, id) ?: return null
         val updated = persistence.replace(userId, recipe.copy(favorite = favorite))
         if (updated != null) syncer.notifyChange(userId)

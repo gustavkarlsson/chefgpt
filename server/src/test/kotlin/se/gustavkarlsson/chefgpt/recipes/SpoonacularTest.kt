@@ -1,7 +1,6 @@
 package se.gustavkarlsson.chefgpt.recipes
 
 import kotlinx.coroutines.test.runTest
-import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.chefGptJson
 import kotlin.test.Test
@@ -26,8 +25,8 @@ class SpoonacularTest {
             )
             assertEquals(
                 listOf(
-                    ApiRecipeIngredient("chicken breast", "500", "g"),
-                    ApiRecipeIngredient("olive oil", "2", "tbsp"),
+                    RecipeIngredient("chicken breast", "500", "g"),
+                    RecipeIngredient("olive oil", "2", "tbsp"),
                 ),
                 recipe.ingredients,
             )

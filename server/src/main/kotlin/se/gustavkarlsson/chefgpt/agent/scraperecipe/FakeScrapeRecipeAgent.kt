@@ -1,7 +1,7 @@
 package se.gustavkarlsson.chefgpt.agent.scraperecipe
 
-import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
 import se.gustavkarlsson.chefgpt.recipes.NewRecipe
+import se.gustavkarlsson.chefgpt.recipes.RecipeIngredient
 
 class FakeScrapeRecipeAgent : ScrapeRecipeAgent {
     override suspend fun scrape(
@@ -17,7 +17,7 @@ class FakeScrapeRecipeAgent : ScrapeRecipeAgent {
             cookingDuration = null,
             duration = null,
             servings = null,
-            ingredients = listOf(ApiRecipeIngredient("flour", "2", "cups")),
+            ingredients = listOf(RecipeIngredient("flour", "2", "cups")),
             nutrients = emptyList(),
             spoonacularId = null,
         )

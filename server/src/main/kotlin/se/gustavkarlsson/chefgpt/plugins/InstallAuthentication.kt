@@ -6,13 +6,13 @@ import io.ktor.server.auth.authentication
 import io.ktor.server.auth.session
 import io.ktor.server.response.respond
 import org.koin.ktor.ext.get
-import se.gustavkarlsson.chefgpt.auth.Session
+import se.gustavkarlsson.chefgpt.auth.SessionCookie
 import se.gustavkarlsson.chefgpt.auth.UserRepository
 
 fun Application.installAuthentication() {
     val userRepository = get<UserRepository>()
     authentication {
-        session<Session> {
+        session<SessionCookie> {
             validate { session ->
                 session.takeIf { it.user.name in userRepository }
             }

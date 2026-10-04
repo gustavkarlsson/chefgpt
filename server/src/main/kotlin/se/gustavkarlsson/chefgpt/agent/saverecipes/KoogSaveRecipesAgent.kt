@@ -9,6 +9,7 @@ import ai.koog.prompt.Prompt
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
+import se.gustavkarlsson.chefgpt.agent.chat.toImageAttachmentOrNull
 import se.gustavkarlsson.chefgpt.agent.convertrecipeunits.ConvertRecipeUnitsAgent
 import se.gustavkarlsson.chefgpt.agent.tools.CreateRecipeTool
 import se.gustavkarlsson.chefgpt.agent.tools.CropImageTool
@@ -19,7 +20,6 @@ import se.gustavkarlsson.chefgpt.files.ImageCropper
 import se.gustavkarlsson.chefgpt.files.UploadedFile
 import se.gustavkarlsson.chefgpt.files.fileKindOrNull
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
-import se.gustavkarlsson.chefgpt.toImageAttachmentOrNull
 
 private val SYSTEM_PROMPT =
     """

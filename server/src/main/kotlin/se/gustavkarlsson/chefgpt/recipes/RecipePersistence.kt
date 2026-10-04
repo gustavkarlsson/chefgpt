@@ -1,7 +1,5 @@
 package se.gustavkarlsson.chefgpt.recipes
 
-import se.gustavkarlsson.chefgpt.api.ApiRecipe
-import se.gustavkarlsson.chefgpt.api.ApiRecipeSummary
 import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.auth.UserId
 
@@ -14,7 +12,7 @@ interface RecipePersistence {
     suspend fun get(
         userId: UserId,
         id: RecipeId,
-    ): ApiRecipe?
+    ): Recipe?
 
     // A first save has neither a favorite nor a modification, so both are passed explicitly.
     suspend fun insert(
@@ -22,14 +20,14 @@ interface RecipePersistence {
         recipe: NewRecipe,
         favorite: Boolean,
         modifiedFrom: RecipeId?,
-    ): ApiRecipe
+    ): Recipe
 
     // Rewrites the recipe in place, including its steps, ingredients and nutrients.
     // Returns null if no recipe matched.
     suspend fun replace(
         userId: UserId,
-        recipe: ApiRecipe,
-    ): ApiRecipe?
+        recipe: Recipe,
+    ): Recipe?
 
     // Deletes the recipe and detaches any modification of it, which then stands alone.
     suspend fun delete(
@@ -38,5 +36,5 @@ interface RecipePersistence {
     ): Boolean
 
     // Summaries where a modification stands in for the recipe it was modified from.
-    suspend fun listSummaries(userId: UserId): List<ApiRecipeSummary>
+    suspend fun listSummaries(userId: UserId): List<RecipeSummary>
 }

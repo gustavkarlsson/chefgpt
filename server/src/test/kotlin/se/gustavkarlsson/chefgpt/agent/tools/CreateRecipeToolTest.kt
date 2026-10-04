@@ -3,13 +3,14 @@ package se.gustavkarlsson.chefgpt.agent.tools
 import kotlinx.coroutines.test.runTest
 import se.gustavkarlsson.chefgpt.agent.convertrecipeunits.ConvertRecipeUnitsAgent
 import se.gustavkarlsson.chefgpt.agent.convertrecipeunits.FakeConvertRecipeUnitsAgent
-import se.gustavkarlsson.chefgpt.api.ApiRecipe
-import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
+import se.gustavkarlsson.chefgpt.agent.tools.models.ToolRecipeIngredient
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.recipes.InMemoryRecipePersistence
 import se.gustavkarlsson.chefgpt.recipes.NewRecipe
+import se.gustavkarlsson.chefgpt.recipes.Recipe
+import se.gustavkarlsson.chefgpt.recipes.RecipeIngredient
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -26,8 +27,8 @@ private fun pannkakor(
     steps: List<String>,
     description: String,
     preparationDuration: Duration,
-    ingredients: List<ApiRecipeIngredient>,
-) = ApiRecipe(
+    ingredients: List<RecipeIngredient>,
+) = Recipe(
     id = id,
     spoonacularId = null,
     title = "Pannkakor",
@@ -56,20 +57,20 @@ class CreateRecipeToolTest {
                 tools.createRecipe(
                     title = "Pannkakor",
                     steps = listOf("Whisk", "Fry"),
-                    ingredients = listOf(ApiRecipeIngredient("flour", "3", "dl")),
+                    ingredients = listOf(ToolRecipeIngredient("flour", "3", "dl")),
                     description = "Grandma's pancakes",
                     preparationMinutes = 10,
                 )
 
             assertEquals(
                 pannkakor(
-                    id = summary.id,
+                    id = RecipeId.parseOrNull(summary.id)!!,
                     steps = listOf("Whisk", "Fry"),
                     description = "Grandma's pancakes",
                     preparationDuration = 10.minutes,
-                    ingredients = listOf(ApiRecipeIngredient("flour", "3", "dl")),
+                    ingredients = listOf(RecipeIngredient("flour", "3", "dl")),
                 ),
-                store.getRecipe(userId, summary.id),
+                store.getRecipe(userId, RecipeId.parseOrNull(summary.id)!!),
             )
         }
 
@@ -78,7 +79,7 @@ class CreateRecipeToolTest {
         runTest {
             val summary = tools.createRecipe(title = "Pannkakor", steps = listOf("Whisk"))
 
-            assertNull(store.getRecipe(userId, summary.id)?.spoonacularId)
+            assertNull(store.getRecipe(userId, RecipeId.parseOrNull(summary.id)!!)?.spoonacularId)
         }
 
     @Test
@@ -86,7 +87,10 @@ class CreateRecipeToolTest {
         runTest {
             val summary = tools.createRecipe(title = "Pannkakor", steps = listOf("Whisk"), imageUrl = UPLOADED_PHOTO)
 
-            assertEquals(ImageUrl(UPLOADED_PHOTO), store.getRecipe(userId, summary.id)?.imageUrl)
+            assertEquals(
+                ImageUrl(UPLOADED_PHOTO),
+                store.getRecipe(userId, RecipeId.parseOrNull(summary.id)!!)?.imageUrl,
+            )
         }
 
     @Test
@@ -98,7 +102,7 @@ class CreateRecipeToolTest {
 
             val summary = tools.createRecipe(title = "Pannkakor", steps = listOf("Whisk"), imageUrl = cropped)
 
-            assertEquals(ImageUrl(cropped), store.getRecipe(userId, summary.id)?.imageUrl)
+            assertEquals(ImageUrl(cropped), store.getRecipe(userId, RecipeId.parseOrNull(summary.id)!!)?.imageUrl)
         }
 
     @Test
@@ -111,7 +115,7 @@ class CreateRecipeToolTest {
                     imageUrl = "https://example.com/page.jpg",
                 )
 
-            assertNull(store.getRecipe(userId, summary.id)?.imageUrl)
+            assertNull(store.getRecipe(userId, RecipeId.parseOrNull(summary.id)!!)?.imageUrl)
         }
 
     @Test
@@ -119,7 +123,7 @@ class CreateRecipeToolTest {
         runTest {
             val summary = tools.createRecipe(title = "Pannkakor", steps = listOf("Whisk"))
 
-            assertNull(store.getRecipe(userId, summary.id)?.servings)
+            assertNull(store.getRecipe(userId, RecipeId.parseOrNull(summary.id)!!)?.servings)
         }
 
     @Test
@@ -127,7 +131,7 @@ class CreateRecipeToolTest {
         runTest {
             val summary = tools.createRecipe(title = "Pannkakor", steps = listOf("Whisk"), minServings = 4)
 
-            assertNull(store.getRecipe(userId, summary.id)?.servings)
+            assertNull(store.getRecipe(userId, RecipeId.parseOrNull(summary.id)!!)?.servings)
         }
 
     @Test
@@ -135,7 +139,7 @@ class CreateRecipeToolTest {
         runTest {
             val summary = tools.createRecipe(title = "Pannkakor", steps = listOf("Whisk"), maxServings = 6)
 
-            assertNull(store.getRecipe(userId, summary.id)?.servings)
+            assertNull(store.getRecipe(userId, RecipeId.parseOrNull(summary.id)!!)?.servings)
         }
 
     @Test
@@ -149,7 +153,7 @@ class CreateRecipeToolTest {
                     maxServings = 4,
                 )
 
-            assertEquals(4..4, store.getRecipe(userId, summary.id)?.servings)
+            assertEquals(4..4, store.getRecipe(userId, RecipeId.parseOrNull(summary.id)!!)?.servings)
         }
 
     @Test
@@ -163,7 +167,7 @@ class CreateRecipeToolTest {
                     maxServings = 6,
                 )
 
-            assertEquals(4..6, store.getRecipe(userId, summary.id)?.servings)
+            assertEquals(4..6, store.getRecipe(userId, RecipeId.parseOrNull(summary.id)!!)?.servings)
         }
 
     @Test
@@ -177,23 +181,23 @@ class CreateRecipeToolTest {
                     maxServings = 4,
                 )
 
-            assertEquals(4..6, store.getRecipe(userId, summary.id)?.servings)
+            assertEquals(4..6, store.getRecipe(userId, RecipeId.parseOrNull(summary.id)!!)?.servings)
         }
 
     @Test
     fun `stores the recipe with the units the converter produced`() =
         runTest {
-            val converted = listOf(ApiRecipeIngredient("flour", "1.2", "cups"))
+            val converted = listOf(RecipeIngredient("flour", "1.2", "cups"))
             val convertingTools = CreateRecipeTool(store, ConvertingAgent(converted), userId)
 
             val summary =
                 convertingTools.createRecipe(
                     title = "Pannkakor",
                     steps = listOf("Whisk"),
-                    ingredients = listOf(ApiRecipeIngredient("flour", "3", "dl")),
+                    ingredients = listOf(ToolRecipeIngredient("flour", "3", "dl")),
                 )
 
-            assertEquals(converted, store.getRecipe(userId, summary.id)?.ingredients)
+            assertEquals(converted, store.getRecipe(userId, RecipeId.parseOrNull(summary.id)!!)?.ingredients)
         }
 
     @Test
@@ -206,7 +210,7 @@ class CreateRecipeToolTest {
 }
 
 private class ConvertingAgent(
-    private val ingredients: List<ApiRecipeIngredient>,
+    private val ingredients: List<RecipeIngredient>,
 ) : ConvertRecipeUnitsAgent {
     override suspend fun convert(
         userId: UserId,

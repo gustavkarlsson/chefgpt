@@ -1,7 +1,5 @@
 package se.gustavkarlsson.chefgpt.recipes
 
-import se.gustavkarlsson.chefgpt.api.ApiNutrient
-import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.api.SpoonacularId
 import kotlin.time.Duration
@@ -16,8 +14,8 @@ data class NewRecipe(
     val cookingDuration: Duration?,
     val duration: Duration?,
     val servings: IntRange?,
-    val ingredients: List<ApiRecipeIngredient>,
-    val nutrients: List<ApiNutrient>,
+    val ingredients: List<RecipeIngredient>,
+    val nutrients: List<Nutrient>,
     // Only a recipe looked up from Spoonacular has one; the agent writes recipes without.
     val spoonacularId: SpoonacularId?,
 )

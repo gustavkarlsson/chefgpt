@@ -1,7 +1,6 @@
 package se.gustavkarlsson.chefgpt.recipes
 
 import se.gustavkarlsson.chefgpt.agent.convertrecipeunits.ConvertRecipeUnitsAgent
-import se.gustavkarlsson.chefgpt.api.ApiRecipe
 import se.gustavkarlsson.chefgpt.auth.UserId
 
 /**
@@ -17,7 +16,7 @@ class SaveRecipeFromUrl(
     suspend fun save(
         userId: UserId,
         url: String,
-    ): ApiRecipe? {
+    ): Recipe? {
         val recipe = scraper.scrape(url, partialRecipe = null) ?: return null
         val hostedImageUrl = recipe.imageUrl?.let { imageUrl -> imageRehoster.rehost(imageUrl) }
         val withHostedImage = recipe.copy(imageUrl = hostedImageUrl)

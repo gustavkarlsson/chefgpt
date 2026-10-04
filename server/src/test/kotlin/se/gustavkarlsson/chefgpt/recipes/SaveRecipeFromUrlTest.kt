@@ -2,7 +2,6 @@ package se.gustavkarlsson.chefgpt.recipes
 
 import kotlinx.coroutines.test.runTest
 import se.gustavkarlsson.chefgpt.agent.convertrecipeunits.ConvertRecipeUnitsAgent
-import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.files.FakeFileUploader
@@ -14,7 +13,7 @@ import kotlin.test.assertNull
 
 class SaveRecipeFromUrlTest {
     private val userId = UserId.random()
-    private val convertedIngredients = listOf(ApiRecipeIngredient("chicken breast", "1.1", "lb"))
+    private val convertedIngredients = listOf(RecipeIngredient("chicken breast", "1.1", "lb"))
 
     @Test
     fun `saves the scraped recipe with converted units`() =
@@ -80,7 +79,7 @@ private class FixedScraper(
 }
 
 private class ConvertingAgent(
-    private val ingredients: List<ApiRecipeIngredient>,
+    private val ingredients: List<RecipeIngredient>,
 ) : ConvertRecipeUnitsAgent {
     override suspend fun convert(
         userId: UserId,
@@ -98,7 +97,7 @@ private fun scrapedRecipe() =
         cookingDuration = null,
         duration = null,
         servings = null,
-        ingredients = listOf(ApiRecipeIngredient("flour", "2", "cups")),
+        ingredients = listOf(RecipeIngredient("flour", "2", "cups")),
         nutrients = emptyList(),
         spoonacularId = null,
     )

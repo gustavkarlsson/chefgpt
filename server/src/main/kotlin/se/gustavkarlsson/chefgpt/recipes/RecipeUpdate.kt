@@ -1,8 +1,5 @@
 package se.gustavkarlsson.chefgpt.recipes
 
-import se.gustavkarlsson.chefgpt.api.ApiNutrient
-import se.gustavkarlsson.chefgpt.api.ApiRecipe
-import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import kotlin.time.Duration
 
@@ -19,11 +16,11 @@ data class RecipeUpdate(
     val duration: Duration? = null,
     val servings: IntRange? = null,
     val steps: List<String>? = null,
-    val ingredients: List<ApiRecipeIngredient>? = null,
-    val nutrients: List<ApiNutrient>? = null,
+    val ingredients: List<RecipeIngredient>? = null,
+    val nutrients: List<Nutrient>? = null,
 )
 
-fun ApiRecipe.applyUpdate(update: RecipeUpdate): ApiRecipe =
+fun Recipe.applyUpdate(update: RecipeUpdate): Recipe =
     copy(
         title = update.title ?: title,
         imageUrl = update.imageUrl ?: imageUrl,

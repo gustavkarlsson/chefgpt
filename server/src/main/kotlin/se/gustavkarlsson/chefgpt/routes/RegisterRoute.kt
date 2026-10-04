@@ -15,6 +15,7 @@ import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.auth.RegistrationError
 import se.gustavkarlsson.chefgpt.auth.Session
 import se.gustavkarlsson.chefgpt.auth.UserRepository
+import se.gustavkarlsson.chefgpt.auth.toCookie
 import se.gustavkarlsson.chefgpt.getCredentials
 import se.gustavkarlsson.chefgpt.respond
 
@@ -46,7 +47,7 @@ fun Routing.registerRoute() {
                     }
                 }
             }.map { user ->
-                Session(user)
+                Session(user).toCookie()
             }.onOk { session ->
                 call.sessions.set(session)
             }.map {
