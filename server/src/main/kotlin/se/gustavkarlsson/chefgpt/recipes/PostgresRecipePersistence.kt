@@ -1,9 +1,5 @@
 package se.gustavkarlsson.chefgpt.recipes
 
-import se.gustavkarlsson.chefgpt.api.ApiNutrient
-import se.gustavkarlsson.chefgpt.api.ApiRecipe
-import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
-import se.gustavkarlsson.chefgpt.api.ApiRecipeSummary
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.api.SpoonacularId
@@ -22,7 +18,7 @@ class PostgresRecipePersistence(
     override suspend fun get(
         userId: UserId,
         id: RecipeId,
-    ): ApiRecipe? =
+    ): Recipe? =
         db.use {
             selectRecipe(userId.value.toJavaUuid(), id.value.toJavaUuid())
         }
@@ -32,7 +28,7 @@ class PostgresRecipePersistence(
         recipe: NewRecipe,
         favorite: Boolean,
         modifiedFrom: RecipeId?,
-    ): ApiRecipe {
+    ): Recipe {
         val userUuid = userId.value.toJavaUuid()
         return db.use {
             transactionWithResult {
@@ -44,8 +40,8 @@ class PostgresRecipePersistence(
 
     override suspend fun replace(
         userId: UserId,
-        recipe: ApiRecipe,
-    ): ApiRecipe? {
+        recipe: Recipe,
+    ): Recipe? {
         val userUuid = userId.value.toJavaUuid()
         val id = recipe.id.value.toJavaUuid()
         return db.use {
@@ -89,13 +85,13 @@ class PostgresRecipePersistence(
                 .isNotEmpty()
         }
 
-    override suspend fun listSummaries(userId: UserId): List<ApiRecipeSummary> =
+    override suspend fun listSummaries(userId: UserId): List<RecipeSummary> =
         db.use {
             recipeQueries
                 .selectSummariesByUserId(userId.value.toJavaUuid())
                 .executeAsList()
                 .map {
-                    ApiRecipeSummary(
+                    RecipeSummary(
                         id = RecipeId(it.id.toKotlinUuid()),
                         title = it.title,
                         spoonacularId = it.spoonacular_id?.let(::SpoonacularId),
@@ -110,9 +106,9 @@ class PostgresRecipePersistence(
 private fun ChefGptDatabase.selectRecipe(
     userId: UUID,
     id: UUID,
-): ApiRecipe? {
+): Recipe? {
     val recipe = recipeQueries.selectByUserIdAndId(userId, id).executeAsOneOrNull() ?: return null
-    return ApiRecipe(
+    return Recipe(
         id = RecipeId(recipe.id.toKotlinUuid()),
         spoonacularId = recipe.spoonacular_id?.let(::SpoonacularId),
         title = recipe.title,
@@ -129,12 +125,12 @@ private fun ChefGptDatabase.selectRecipe(
             recipeQueries
                 .selectIngredientsByRecipeId(id)
                 .executeAsList()
-                .map { ApiRecipeIngredient(it.name, it.amount, it.unit) },
+                .map { RecipeIngredient(it.name, it.amount, it.unit) },
         nutrients =
             recipeQueries
                 .selectNutrientsByRecipeId(id)
                 .executeAsList()
-                .map { ApiNutrient(it.name, it.amount, it.unit) },
+                .map { Nutrient(it.name, it.amount, it.unit) },
     )
 }
 
@@ -173,14 +169,14 @@ private fun ChefGptDatabase.insertSteps(
 
 private fun ChefGptDatabase.insertIngredients(
     recipeId: UUID,
-    ingredients: List<ApiRecipeIngredient>,
+    ingredients: List<RecipeIngredient>,
 ) = ingredients.forEachIndexed { index, ingredient ->
     recipeQueries.insertIngredient(recipeId, index, ingredient.name, ingredient.value, ingredient.unit)
 }
 
 private fun ChefGptDatabase.insertNutrients(
     recipeId: UUID,
-    nutrients: List<ApiNutrient>,
+    nutrients: List<Nutrient>,
 ) = nutrients.forEachIndexed { index, nutrient ->
     recipeQueries.insertNutrient(recipeId, index, nutrient.name, nutrient.value, nutrient.unit)
 }

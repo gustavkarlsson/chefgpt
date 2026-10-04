@@ -3,7 +3,6 @@ package se.gustavkarlsson.chefgpt.ingredients
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import se.gustavkarlsson.chefgpt.api.ApiIngredient
 import se.gustavkarlsson.chefgpt.api.IngredientId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.postgres.DatabaseAccess
@@ -20,15 +19,15 @@ class PostgresIngredientStore(
 ) : IngredientStore {
     private val syncer = RepoSyncer<UserId>()
 
-    override suspend fun getIngredients(userId: UserId): List<ApiIngredient> =
+    override suspend fun getIngredients(userId: UserId): List<Ingredient> =
         db.use {
             ingredientQueries
                 .selectByUserId(userId.value.toJavaUuid())
                 .executeAsList()
-                .map { toApiIngredient(it.id, it.name, it.last_modified, it.in_inventory) }
+                .map { toIngredient(it.id, it.name, it.last_modified, it.in_inventory) }
         }
 
-    override fun streamIngredients(userId: UserId): Flow<List<ApiIngredient>> =
+    override fun streamIngredients(userId: UserId): Flow<List<Ingredient>> =
         syncer
             .notifications(userId)
             .map {
@@ -36,14 +35,14 @@ class PostgresIngredientStore(
                     ingredientQueries
                         .selectByUserId(userId.value.toJavaUuid())
                         .executeAsList()
-                        .map { toApiIngredient(it.id, it.name, it.last_modified, it.in_inventory) }
+                        .map { toIngredient(it.id, it.name, it.last_modified, it.in_inventory) }
                 }
             }.distinctUntilChanged()
 
     override suspend fun createIngredients(
         userId: UserId,
         ingredients: List<String>,
-    ): List<ApiIngredient> {
+    ): List<Ingredient> {
         val names = ingredients.map { it.trim().lowercase() }.distinct()
         if (names.isEmpty()) return emptyList()
         val added =
@@ -51,7 +50,7 @@ class PostgresIngredientStore(
                 ingredientQueries
                     .create(userId.value.toJavaUuid(), names.toTypedArray())
                     .executeAsList()
-                    .map { toApiIngredient(it.id, it.name, it.last_modified, it.in_inventory) }
+                    .map { toIngredient(it.id, it.name, it.last_modified, it.in_inventory) }
             }
         if (added.isNotEmpty()) {
             syncer.notifyChange(userId)
@@ -63,14 +62,14 @@ class PostgresIngredientStore(
         userId: UserId,
         ids: List<IngredientId>,
         inInventory: Boolean,
-    ): List<ApiIngredient> {
+    ): List<Ingredient> {
         if (ids.isEmpty()) return emptyList()
         val updated =
             db.use {
                 ingredientQueries
                     .setInventoryByUserIdAndIds(inInventory, userId.value.toJavaUuid(), ids.toTextArray())
                     .executeAsList()
-                    .map { toApiIngredient(it.id, it.name, it.last_modified, it.in_inventory) }
+                    .map { toIngredient(it.id, it.name, it.last_modified, it.in_inventory) }
             }
         if (updated.isNotEmpty()) {
             syncer.notifyChange(userId)
@@ -81,14 +80,14 @@ class PostgresIngredientStore(
     override suspend fun destroyIngredients(
         userId: UserId,
         ids: List<IngredientId>,
-    ): List<ApiIngredient> {
+    ): List<Ingredient> {
         if (ids.isEmpty()) return emptyList()
         val destroyed =
             db.use {
                 ingredientQueries
                     .destroyByUserIdAndIds(userId.value.toJavaUuid(), ids.toTextArray())
                     .executeAsList()
-                    .map { toApiIngredient(it.id, it.name, it.last_modified, it.in_inventory) }
+                    .map { toIngredient(it.id, it.name, it.last_modified, it.in_inventory) }
             }
         if (destroyed.isNotEmpty()) {
             syncer.notifyChange(userId)
@@ -97,12 +96,12 @@ class PostgresIngredientStore(
     }
 }
 
-private fun toApiIngredient(
+private fun toIngredient(
     id: UUID,
     name: String,
     lastModified: OffsetDateTime,
     inInventory: Boolean,
-): ApiIngredient = ApiIngredient(IngredientId(id.toKotlinUuid()), name, lastModified.toKotlinInstant(), inInventory)
+): Ingredient = Ingredient(IngredientId(id.toKotlinUuid()), name, lastModified.toKotlinInstant(), inInventory)
 
 private fun OffsetDateTime.toKotlinInstant(): Instant = toInstant().toKotlinInstant()
 

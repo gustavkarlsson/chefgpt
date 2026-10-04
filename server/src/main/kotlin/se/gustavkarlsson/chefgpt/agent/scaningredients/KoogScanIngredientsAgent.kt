@@ -7,10 +7,10 @@ import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
 import ai.koog.prompt.message.AttachmentSource
+import se.gustavkarlsson.chefgpt.agent.chat.toImageAttachmentOrNull
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.files.UploadedFile
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
-import se.gustavkarlsson.chefgpt.toImageAttachmentOrNull
 
 private val SYSTEM_PROMPT =
     """

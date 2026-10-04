@@ -11,6 +11,7 @@ import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiIngredientUpdate
 import se.gustavkarlsson.chefgpt.api.IngredientId
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
+import se.gustavkarlsson.chefgpt.ingredients.toApi
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.patchIngredientRoute() {
@@ -26,7 +27,7 @@ fun Route.patchIngredientRoute() {
         val body = call.receive<ApiIngredientUpdate>()
         val updated = ingredientStore.setInventory(userId, listOf(id), body.inInventory).singleOrNull()
         if (updated != null) {
-            call.respond(HttpStatusCode.OK, updated)
+            call.respond(HttpStatusCode.OK, updated.toApi())
         } else {
             call.respond(
                 HttpStatusCode.NotFound,

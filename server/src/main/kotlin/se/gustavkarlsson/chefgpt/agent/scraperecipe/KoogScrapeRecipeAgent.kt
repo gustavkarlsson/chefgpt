@@ -12,10 +12,12 @@ import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
 import org.jetbrains.annotations.VisibleForTesting
-import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
+import se.gustavkarlsson.chefgpt.agent.tools.models.ToolRecipeIngredient
+import se.gustavkarlsson.chefgpt.agent.tools.models.toDomain
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.files.HtmlLoader
 import se.gustavkarlsson.chefgpt.recipes.NewRecipe
+import se.gustavkarlsson.chefgpt.recipes.RecipeIngredient
 import kotlin.time.Duration.Companion.minutes
 
 private val SYSTEM_PROMPT =
@@ -129,7 +131,7 @@ private fun partialText(recipe: NewRecipe): String =
         )
     }
 
-private fun ingredientsText(ingredients: List<ApiRecipeIngredient>): String =
+private fun ingredientsText(ingredients: List<RecipeIngredient>): String =
     ingredients.joinToString("\n") { ingredient ->
         listOf(ingredient.name, ingredient.value, ingredient.unit.orEmpty())
             .filter { it.isNotBlank() }
@@ -174,7 +176,7 @@ class FetchPageTool(
 class ReportRecipeTool : ToolSet {
     var title: String? = null
         private set
-    var ingredients: List<ApiRecipeIngredient>? = null
+    var ingredients: List<ToolRecipeIngredient>? = null
         private set
     var steps: List<String>? = null
         private set
@@ -197,7 +199,7 @@ class ReportRecipeTool : ToolSet {
         @LLMDescription("The recipe's title.")
         title: String,
         @LLMDescription("The ingredients with their amounts and units, exactly as written on the page.")
-        ingredients: List<ApiRecipeIngredient>,
+        ingredients: List<ToolRecipeIngredient>,
         @LLMDescription("The cooking steps in order, exactly as written on the page.")
         steps: List<String>,
         @LLMDescription("A direct URL to a photo of the dish on the page, or an empty string when there is none.")
@@ -235,7 +237,7 @@ class ReportRecipeTool : ToolSet {
             cookingDuration = cookingMinutes?.takeIf { it > 0 }?.minutes,
             duration = totalMinutes?.takeIf { it > 0 }?.minutes,
             servings = servings?.takeIf { it > 0 }?.let { it..it },
-            ingredients = ingredients.orEmpty(),
+            ingredients = ingredients.orEmpty().map { it.toDomain() },
             nutrients = emptyList(),
             spoonacularId = null,
         )

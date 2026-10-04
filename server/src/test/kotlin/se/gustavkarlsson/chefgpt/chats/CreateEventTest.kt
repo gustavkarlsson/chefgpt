@@ -1,13 +1,9 @@
 package se.gustavkarlsson.chefgpt.chats
-import ai.koog.prompt.message.AttachmentContent
-import ai.koog.prompt.message.AttachmentSource
-import ai.koog.prompt.message.Message
-import ai.koog.prompt.message.MessagePart
 import kotlinx.coroutines.test.runTest
 import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
-import se.gustavkarlsson.chefgpt.createEvent
 import se.gustavkarlsson.chefgpt.files.HtmlLoader
+import se.gustavkarlsson.chefgpt.files.UploadedFile
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -29,61 +25,59 @@ class CreateEventTest {
     @Test
     fun `sends an image by url`() =
         runTest {
-            val event = ApiUserSendsMessage("Look", listOf(image)).createEvent(htmlLoader)
+            val event = ApiUserSendsMessage("Look", listOf(image)).toEvent(htmlLoader)
 
             assertEquals(
                 listOf(
-                    MessagePart.Text("Look"),
-                    MessagePart.Attachment(
-                        AttachmentSource.Image(
-                            AttachmentContent.URL(image.url),
-                            "jpg",
-                            "image/jpeg",
-                            "page.jpg",
-                        ),
+                    TextPart("Look", cacheControl = null),
+                    AttachmentPart(
+                        AttachmentSource.Image(AttachmentContent.Url(image.url), "jpg", "image/jpeg", "page.jpg"),
+                        cacheControl = null,
                     ),
                 ),
-                (event as Event.Message).message.let { (it as Message.User).parts },
+                (event as Event.Message).message.let { (it as ChatMessage.User).parts },
             )
         }
 
     @Test
     fun `sends a pdf by url`() =
         runTest {
-            val event = ApiUserSendsMessage(null, listOf(pdf)).createEvent(htmlLoader)
+            val event = ApiUserSendsMessage(null, listOf(pdf)).toEvent(htmlLoader)
 
             assertEquals(
                 listOf(
-                    MessagePart.Attachment(
+                    AttachmentPart(
                         AttachmentSource.File(
-                            AttachmentContent.URL(pdf.url),
+                            AttachmentContent.Url(pdf.url),
                             "pdf",
                             "application/pdf",
                             "recipe.pdf",
                         ),
+                        cacheControl = null,
                     ),
                 ),
-                (event as Event.Message).message.let { (it as Message.User).parts },
+                (event as Event.Message).message.let { (it as ChatMessage.User).parts },
             )
         }
 
     @Test
     fun `inlines the content of a text file`() =
         runTest {
-            val event = ApiUserSendsMessage(null, listOf(text)).createEvent(htmlLoader)
+            val event = ApiUserSendsMessage(null, listOf(text)).toEvent(htmlLoader)
 
             assertEquals(
                 listOf(
-                    MessagePart.Attachment(
+                    AttachmentPart(
                         AttachmentSource.File(
                             AttachmentContent.PlainText("Boil water"),
                             "txt",
                             "text/plain",
                             "recipe.txt",
                         ),
+                        cacheControl = null,
                     ),
                 ),
-                (event as Event.Message).message.let { (it as Message.User).parts },
+                (event as Event.Message).message.let { (it as ChatMessage.User).parts },
             )
         }
 
@@ -92,11 +86,11 @@ class CreateEventTest {
         runTest {
             htmlLoader.result = null
 
-            val event = ApiUserSendsMessage("Look", listOf(text)).createEvent(htmlLoader)
+            val event = ApiUserSendsMessage("Look", listOf(text)).toEvent(htmlLoader)
 
             assertEquals(
-                listOf(MessagePart.Text("Look")),
-                (event as Event.Message).message.let { (it as Message.User).parts },
+                listOf(TextPart("Look", cacheControl = null)),
+                (event as Event.Message).message.let { (it as ChatMessage.User).parts },
             )
         }
 
@@ -105,8 +99,17 @@ class CreateEventTest {
         runTest {
             htmlLoader.result = null
 
-            val event = ApiUserSendsMessage("Look", listOf(text)).createEvent(htmlLoader)
+            val event = ApiUserSendsMessage("Look", listOf(text)).toEvent(htmlLoader)
 
-            assertEquals(listOf(text), (event as Event.Message).attachments)
+            assertEquals(
+                listOf(
+                    UploadedFile(
+                        "https://res.cloudinary.com/demo/raw/upload/v1/recipe.txt",
+                        "text/plain",
+                        "recipe.txt",
+                    ),
+                ),
+                (event as Event.Message).attachments,
+            )
         }
 }

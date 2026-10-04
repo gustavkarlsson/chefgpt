@@ -18,6 +18,8 @@ import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.auth.Session
+import se.gustavkarlsson.chefgpt.auth.SessionCookie
+import se.gustavkarlsson.chefgpt.auth.toSession
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 
 fun ApplicationCall.getCredentials(): Result<UserPasswordCredential, ResponseData<ApiError?>> =
@@ -47,7 +49,7 @@ fun ApplicationCall.requireSession(): Session =
         "User principal missing. Are we calling this in a non-authenticated endpoint?"
     }
 
-fun ApplicationCall.sessionOrNull(): Session? = principal<Session>()
+fun ApplicationCall.sessionOrNull(): Session? = principal<SessionCookie>()?.toSession()
 
 suspend fun ApplicationCall.getChatId(): Result<ChatId, ResponseData<ApiError>> {
     val chatRepository = get<ChatRepository>()

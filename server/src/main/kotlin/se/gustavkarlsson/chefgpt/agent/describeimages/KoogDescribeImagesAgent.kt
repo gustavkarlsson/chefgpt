@@ -8,8 +8,8 @@ import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
 import ai.koog.prompt.message.AttachmentSource
 import org.slf4j.LoggerFactory
+import se.gustavkarlsson.chefgpt.agent.chat.toImageAttachmentOrNull
 import se.gustavkarlsson.chefgpt.files.UploadedFile
-import se.gustavkarlsson.chefgpt.toImageAttachmentOrNull
 
 private val logger = LoggerFactory.getLogger("KoogDescribeImagesAgent")
 

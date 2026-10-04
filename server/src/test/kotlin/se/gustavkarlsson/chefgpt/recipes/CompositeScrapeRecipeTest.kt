@@ -2,7 +2,6 @@ package se.gustavkarlsson.chefgpt.recipes
 
 import kotlinx.coroutines.test.runTest
 import se.gustavkarlsson.chefgpt.agent.scraperecipe.FakeScrapeRecipeAgent
-import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
 import se.gustavkarlsson.chefgpt.chefGptJson
 import se.gustavkarlsson.chefgpt.files.FakeHtmlLoader
 import kotlin.test.Test
@@ -158,7 +157,7 @@ private fun completeRecipe() =
         cookingDuration = null,
         duration = null,
         servings = null,
-        ingredients = listOf(ApiRecipeIngredient("flour", "2", "cups")),
+        ingredients = listOf(RecipeIngredient("flour", "2", "cups")),
         nutrients = emptyList(),
         spoonacularId = null,
     )
@@ -173,7 +172,7 @@ private fun partialRecipe() =
         cookingDuration = null,
         duration = null,
         servings = null,
-        ingredients = listOf(ApiRecipeIngredient("flour", "2", "cups")),
+        ingredients = listOf(RecipeIngredient("flour", "2", "cups")),
         nutrients = emptyList(),
         spoonacularId = null,
     )

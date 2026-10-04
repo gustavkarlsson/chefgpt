@@ -5,6 +5,7 @@ import io.ktor.server.sse.send
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
+import se.gustavkarlsson.chefgpt.ingredients.toApi
 import se.gustavkarlsson.chefgpt.requireSession
 import se.gustavkarlsson.chefgpt.util.sse
 
@@ -17,7 +18,8 @@ fun Route.streamIngredientsRoute() {
         ingredientStore
             .streamIngredients(userId)
             .collectLatest { ingredients ->
-                send(ingredients, "ingredients")
+                val apiIngredients = ingredients.map { it.toApi() }
+                send(apiIngredients, "ingredients")
             }
     }
 }

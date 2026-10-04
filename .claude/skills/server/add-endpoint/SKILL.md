@@ -35,7 +35,7 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.requireSession
-import se.gustavkarlsson.chefgpt.toApi
+import se.gustavkarlsson.chefgpt.things.toApi
 
 fun Route.myThingRoute() {
     get("/my-things") {
@@ -59,6 +59,8 @@ Add a snapshot test — see the `server-snapshot-tests` rule for conventions.
 
 ## Key conventions
 
-- Domain-to-API conversions belong in extension functions (e.g., `fun MyThing.toApi(): ApiMyThing`)
+- Domain-to-API conversions belong in extension functions (e.g., `fun MyThing.toApi(): ApiMyThing`),
+  collected in a per-domain mapper file (`MyThingMappers.kt`) next to the domain model — see the
+  `domain-classes` rule
 - DI is Koin — use `get<MyService>()` inside route handlers (imports `org.koin.ktor.ext.get`)
 - Routes inside `authenticate { }` are protected; routes outside are public

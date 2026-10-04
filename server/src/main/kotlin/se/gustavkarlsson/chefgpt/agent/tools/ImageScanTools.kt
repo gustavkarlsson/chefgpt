@@ -6,9 +6,10 @@ import ai.koog.agents.core.tools.reflect.ToolSet
 import se.gustavkarlsson.chefgpt.agent.describeimages.DescribeImagesAgent
 import se.gustavkarlsson.chefgpt.agent.saverecipes.SaveRecipesAgent
 import se.gustavkarlsson.chefgpt.agent.scaningredients.ScanIngredientsAgent
+import se.gustavkarlsson.chefgpt.agent.tools.models.ToolUploadedFile
+import se.gustavkarlsson.chefgpt.agent.tools.models.toDomain
 import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.auth.UserId
-import se.gustavkarlsson.chefgpt.files.UploadedFile
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 
 class DescribePhotosTool(
@@ -22,8 +23,8 @@ class DescribePhotosTool(
     )
     suspend fun describePhotos(
         @LLMDescription("The photo files to describe.")
-        files: List<UploadedFile>,
-    ): List<String> = describeImagesAgent.run(files)
+        files: List<ToolUploadedFile>,
+    ): List<String> = describeImagesAgent.run(files.map { it.toDomain() })
 }
 
 class AddIngredientsFromPhotosTool(
@@ -38,9 +39,9 @@ class AddIngredientsFromPhotosTool(
     )
     suspend fun addIngredientsFromPhotos(
         @LLMDescription("The photo files to scan.")
-        files: List<UploadedFile>,
+        files: List<ToolUploadedFile>,
     ): List<String> {
-        val scanned = scanIngredientsAgent.scan(userId, files)
+        val scanned = scanIngredientsAgent.scan(userId, files.map { it.toDomain() })
         val added = ingredientStore.createIngredients(userId, scanned)
         return added.map { it.name }
     }
@@ -57,6 +58,6 @@ class AddRecipesFromPhotosTool(
     )
     suspend fun addRecipesFromPhotos(
         @LLMDescription("The photo files to scan.")
-        files: List<UploadedFile>,
-    ): List<RecipeId> = saveRecipesAgent.scan(userId, files)
+        files: List<ToolUploadedFile>,
+    ): List<RecipeId> = saveRecipesAgent.scan(userId, files.map { it.toDomain() })
 }

@@ -4,8 +4,8 @@ import se.gustavkarlsson.chefgpt.api.ApiTemperatureUnit
 import se.gustavkarlsson.chefgpt.api.ApiUserFacts
 import se.gustavkarlsson.chefgpt.api.ApiVolumeUnits
 import se.gustavkarlsson.chefgpt.api.ApiWeightUnits
-import se.gustavkarlsson.chefgpt.toApi
-import se.gustavkarlsson.chefgpt.toDomain
+import se.gustavkarlsson.chefgpt.facts.toApi
+import se.gustavkarlsson.chefgpt.facts.toDomain
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

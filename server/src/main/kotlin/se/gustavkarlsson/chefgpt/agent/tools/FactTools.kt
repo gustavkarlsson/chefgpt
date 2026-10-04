@@ -3,13 +3,15 @@ package se.gustavkarlsson.chefgpt.agent.tools
 import ai.koog.agents.core.tools.annotations.LLMDescription
 import ai.koog.agents.core.tools.annotations.Tool
 import ai.koog.agents.core.tools.reflect.ToolSet
+import se.gustavkarlsson.chefgpt.agent.tools.models.ToolTemperatureUnit
+import se.gustavkarlsson.chefgpt.agent.tools.models.ToolUserFacts
+import se.gustavkarlsson.chefgpt.agent.tools.models.ToolVolumeUnits
+import se.gustavkarlsson.chefgpt.agent.tools.models.ToolWeightUnits
+import se.gustavkarlsson.chefgpt.agent.tools.models.toDomain
+import se.gustavkarlsson.chefgpt.agent.tools.models.toTool
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.facts.FactRepository
-import se.gustavkarlsson.chefgpt.facts.TemperatureUnit
-import se.gustavkarlsson.chefgpt.facts.UserFacts
 import se.gustavkarlsson.chefgpt.facts.UserFactsUpdate
-import se.gustavkarlsson.chefgpt.facts.VolumeUnits
-import se.gustavkarlsson.chefgpt.facts.WeightUnits
 
 class SetPreferredNameTool(
     private val repository: FactRepository,
@@ -22,7 +24,7 @@ class SetPreferredNameTool(
     suspend fun setPreferredName(
         @LLMDescription("What to call the user, e.g. 'Gustav'.")
         name: String,
-    ): UserFacts = repository.updateFacts(userId, UserFactsUpdate(preferredName = name))
+    ): ToolUserFacts = repository.updateFacts(userId, UserFactsUpdate(preferredName = name)).toTool()
 }
 
 class SetWeightUnitsTool(
@@ -35,8 +37,8 @@ class SetWeightUnitsTool(
     )
     suspend fun setWeightUnits(
         @LLMDescription("The weight units to use: Metric or UsImperial.")
-        weightUnits: WeightUnits,
-    ): UserFacts = repository.updateFacts(userId, UserFactsUpdate(weightUnits = weightUnits))
+        weightUnits: ToolWeightUnits,
+    ): ToolUserFacts = repository.updateFacts(userId, UserFactsUpdate(weightUnits = weightUnits.toDomain())).toTool()
 }
 
 class SetVolumeUnitsTool(
@@ -49,8 +51,8 @@ class SetVolumeUnitsTool(
     )
     suspend fun setVolumeUnits(
         @LLMDescription("The volume units to use: Metric or UsCustomary.")
-        volumeUnits: VolumeUnits,
-    ): UserFacts = repository.updateFacts(userId, UserFactsUpdate(volumeUnits = volumeUnits))
+        volumeUnits: ToolVolumeUnits,
+    ): ToolUserFacts = repository.updateFacts(userId, UserFactsUpdate(volumeUnits = volumeUnits.toDomain())).toTool()
 }
 
 class SetTemperatureUnitTool(
@@ -63,8 +65,9 @@ class SetTemperatureUnitTool(
     )
     suspend fun setTemperatureUnit(
         @LLMDescription("The temperature unit to use: Celsius or Fahrenheit.")
-        temperatureUnit: TemperatureUnit,
-    ): UserFacts = repository.updateFacts(userId, UserFactsUpdate(temperatureUnit = temperatureUnit))
+        temperatureUnit: ToolTemperatureUnit,
+    ): ToolUserFacts =
+        repository.updateFacts(userId, UserFactsUpdate(temperatureUnit = temperatureUnit.toDomain())).toTool()
 }
 
 class AddDietaryRestrictionsTool(
@@ -81,7 +84,7 @@ class AddDietaryRestrictionsTool(
     suspend fun addDietaryRestrictions(
         @LLMDescription("The restrictions to remember, as short lowercase phrases, e.g. ['vegetarian', 'gluten-free'].")
         restrictions: List<String>,
-    ): UserFacts = repository.updateFacts(userId, UserFactsUpdate(addDietary = restrictions.toSet()))
+    ): ToolUserFacts = repository.updateFacts(userId, UserFactsUpdate(addDietary = restrictions.toSet())).toTool()
 }
 
 class RemoveDietaryRestrictionsTool(
@@ -96,7 +99,7 @@ class RemoveDietaryRestrictionsTool(
     suspend fun removeDietaryRestrictions(
         @LLMDescription("The restrictions to forget, as short lowercase phrases, e.g. ['vegetarian'].")
         restrictions: List<String>,
-    ): UserFacts = repository.updateFacts(userId, UserFactsUpdate(removeDietary = restrictions.toSet()))
+    ): ToolUserFacts = repository.updateFacts(userId, UserFactsUpdate(removeDietary = restrictions.toSet())).toTool()
 }
 
 class GetPreferredNameTool(
@@ -114,7 +117,7 @@ class GetWeightUnitsTool(
 ) : ToolSet {
     @Tool
     @LLMDescription("Get the user's weight units (Metric or UsImperial), or null if it is unknown.")
-    suspend fun getWeightUnits(): WeightUnits? = repository.getFacts(userId).weightUnits
+    suspend fun getWeightUnits(): ToolWeightUnits? = repository.getFacts(userId).weightUnits?.toTool()
 }
 
 class GetVolumeUnitsTool(
@@ -123,7 +126,7 @@ class GetVolumeUnitsTool(
 ) : ToolSet {
     @Tool
     @LLMDescription("Get the user's volume units (Metric or UsCustomary), or null if it is unknown.")
-    suspend fun getVolumeUnits(): VolumeUnits? = repository.getFacts(userId).volumeUnits
+    suspend fun getVolumeUnits(): ToolVolumeUnits? = repository.getFacts(userId).volumeUnits?.toTool()
 }
 
 class GetTemperatureUnitTool(
@@ -132,7 +135,7 @@ class GetTemperatureUnitTool(
 ) : ToolSet {
     @Tool
     @LLMDescription("Get the user's temperature unit (Celsius or Fahrenheit), or null if it is unknown.")
-    suspend fun getTemperatureUnit(): TemperatureUnit? = repository.getFacts(userId).temperatureUnit
+    suspend fun getTemperatureUnit(): ToolTemperatureUnit? = repository.getFacts(userId).temperatureUnit?.toTool()
 }
 
 class GetDietaryRestrictionsTool(

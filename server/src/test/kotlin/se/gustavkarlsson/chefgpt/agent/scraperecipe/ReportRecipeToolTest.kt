@@ -1,14 +1,15 @@
 package se.gustavkarlsson.chefgpt.agent.scraperecipe
 
 import kotlinx.coroutines.test.runTest
-import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
+import se.gustavkarlsson.chefgpt.agent.tools.models.toTool
 import se.gustavkarlsson.chefgpt.api.ImageUrl
+import se.gustavkarlsson.chefgpt.recipes.RecipeIngredient
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.time.Duration.Companion.minutes
 
-private val INGREDIENTS = listOf(ApiRecipeIngredient("spaghetti", "200", "g"))
+private val INGREDIENTS = listOf(RecipeIngredient("spaghetti", "200", "g"))
 private val STEPS = listOf("Cook the spaghetti.")
 
 class ReportRecipeToolTest {
@@ -18,7 +19,7 @@ class ReportRecipeToolTest {
             val tool = ReportRecipeTool()
             tool.reportRecipe(
                 title = "Carbonara",
-                ingredients = INGREDIENTS,
+                ingredients = INGREDIENTS.map { it.toTool() },
                 steps = STEPS,
                 imageUrl = "https://example.com/carbonara.jpg",
                 description = "A classic pasta dish.",
@@ -47,7 +48,7 @@ class ReportRecipeToolTest {
             val tool = ReportRecipeTool()
             tool.reportRecipe(
                 title = "Carbonara",
-                ingredients = INGREDIENTS,
+                ingredients = INGREDIENTS.map { it.toTool() },
                 steps = STEPS,
             )
 

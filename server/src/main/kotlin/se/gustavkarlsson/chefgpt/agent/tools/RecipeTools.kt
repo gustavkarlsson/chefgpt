@@ -4,13 +4,14 @@ import ai.koog.agents.core.tools.annotations.LLMDescription
 import ai.koog.agents.core.tools.annotations.Tool
 import ai.koog.agents.core.tools.reflect.ToolSet
 import se.gustavkarlsson.chefgpt.agent.convertrecipeunits.ConvertRecipeUnitsAgent
-import se.gustavkarlsson.chefgpt.api.ApiNutrient
-import se.gustavkarlsson.chefgpt.api.ApiRecipe
-import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
-import se.gustavkarlsson.chefgpt.api.ApiRecipeSummary
+import se.gustavkarlsson.chefgpt.agent.tools.models.ToolNutrient
+import se.gustavkarlsson.chefgpt.agent.tools.models.ToolRecipe
+import se.gustavkarlsson.chefgpt.agent.tools.models.ToolRecipeIngredient
+import se.gustavkarlsson.chefgpt.agent.tools.models.ToolRecipeSummary
+import se.gustavkarlsson.chefgpt.agent.tools.models.toDomain
+import se.gustavkarlsson.chefgpt.agent.tools.models.toTool
 import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.api.SpoonacularId
-import se.gustavkarlsson.chefgpt.api.toSummary
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.recipes.NewRecipe
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
@@ -18,6 +19,7 @@ import se.gustavkarlsson.chefgpt.recipes.RecipeUpdate
 import se.gustavkarlsson.chefgpt.recipes.SaveRecipeFromUrl
 import se.gustavkarlsson.chefgpt.recipes.Spoonacular
 import se.gustavkarlsson.chefgpt.recipes.recipePhotoUrlOrNull
+import se.gustavkarlsson.chefgpt.recipes.toSummary
 import kotlin.time.Duration.Companion.minutes
 
 class SaveRecipeTool(
@@ -31,12 +33,12 @@ class SaveRecipeTool(
     suspend fun saveRecipe(
         @LLMDescription("The Spoonacular ID of the recipe.")
         spoonacularId: Long,
-    ): ApiRecipeSummary {
+    ): ToolRecipeSummary {
         val recipe =
             spoonacular.lookUp(SpoonacularId(spoonacularId))
                 ?: error("No recipe found with Spoonacular ID $spoonacularId")
         val convertedRecipe = convertRecipeUnits.convert(userId, recipe)
-        return repository.saveRecipe(userId, convertedRecipe).toSummary()
+        return repository.saveRecipe(userId, convertedRecipe).toSummary().toTool()
     }
 }
 
@@ -52,9 +54,9 @@ class ScrapeRecipeTool(
     suspend fun scrapeRecipe(
         @LLMDescription("The URL of the page that contains the recipe.")
         url: String,
-    ): ApiRecipeSummary {
+    ): ToolRecipeSummary {
         val recipe = saveRecipeFromUrl.save(userId, url) ?: error("No recipe found at $url")
-        return recipe.toSummary()
+        return recipe.toSummary().toTool()
     }
 }
 
@@ -79,9 +81,9 @@ class CreateRecipeTool(
         @LLMDescription("The instructions, one per step.")
         steps: List<String>,
         @LLMDescription("The ingredients, or an empty list if they are unknown.")
-        ingredients: List<ApiRecipeIngredient> = emptyList(),
+        ingredients: List<ToolRecipeIngredient> = emptyList(),
         @LLMDescription("The nutrients, or an empty list if they are unknown.")
-        nutrients: List<ApiNutrient> = emptyList(),
+        nutrients: List<ToolNutrient> = emptyList(),
         @LLMDescription("A short summary of the dish, or an empty string to leave it out.")
         description: String = "",
         @LLMDescription(
@@ -108,7 +110,7 @@ class CreateRecipeTool(
                 "minServings, or the servings are left out.",
         )
         maxServings: Int = 0,
-    ): ApiRecipeSummary {
+    ): ToolRecipeSummary {
         require(title.isNotBlank()) { "A recipe needs a title" }
         require(steps.isNotEmpty()) { "A recipe needs at least one step" }
         val recipe =
@@ -122,12 +124,12 @@ class CreateRecipeTool(
                 cookingDuration = cookingMinutes.minutesOrNull(),
                 duration = totalMinutes.minutesOrNull(),
                 servings = servingsOrNull(minServings, maxServings),
-                ingredients = ingredients,
-                nutrients = nutrients,
+                ingredients = ingredients.map { it.toDomain() },
+                nutrients = nutrients.map { it.toDomain() },
             )
         val saved = repository.saveRecipe(userId, convertRecipeUnits.convert(userId, recipe))
         createdIds += saved.id
-        return saved.toSummary()
+        return saved.toSummary().toTool()
     }
 }
 
@@ -137,7 +139,7 @@ class ListRecipesTool(
 ) : ToolSet {
     @Tool
     @LLMDescription("Get all the user's recipes, without their instructions and ingredients.")
-    suspend fun listRecipes(): List<ApiRecipeSummary> = repository.getRecipeSummaries(userId)
+    suspend fun listRecipes(): List<ToolRecipeSummary> = repository.getRecipeSummaries(userId).map { it.toTool() }
 }
 
 class SetRecipeFavoriteTool(
@@ -154,8 +156,8 @@ class SetRecipeFavoriteTool(
         recipeId: String,
         @LLMDescription("True to make the recipe a favorite, false to make it an ordinary saved recipe.")
         favorite: Boolean,
-    ): ApiRecipe =
-        repository.setFavorite(userId, recipeId.toRecipeId(), favorite)
+    ): ToolRecipe =
+        repository.setFavorite(userId, recipeId.toRecipeId(), favorite)?.toTool()
             ?: error("No recipe found with ID $recipeId")
 }
 
@@ -168,7 +170,8 @@ class GetRecipeTool(
     suspend fun getRecipe(
         @LLMDescription("The ID of the recipe.")
         recipeId: String,
-    ): ApiRecipe = repository.getRecipe(userId, recipeId.toRecipeId()) ?: error("No recipe found with ID $recipeId")
+    ): ToolRecipe =
+        repository.getRecipe(userId, recipeId.toRecipeId())?.toTool() ?: error("No recipe found with ID $recipeId")
 }
 
 class ModifyRecipeTool(
@@ -211,10 +214,10 @@ class ModifyRecipeTool(
         @LLMDescription("The new instructions, one per step, or an empty list to keep the current ones.")
         steps: List<String> = emptyList(),
         @LLMDescription("The new ingredients, or an empty list to keep the current ones.")
-        ingredients: List<ApiRecipeIngredient> = emptyList(),
+        ingredients: List<ToolRecipeIngredient> = emptyList(),
         @LLMDescription("The new nutrients, or an empty list to keep the current ones.")
-        nutrients: List<ApiNutrient> = emptyList(),
-    ): ApiRecipe {
+        nutrients: List<ToolNutrient> = emptyList(),
+    ): ToolRecipe {
         val update =
             RecipeUpdate(
                 title = title.ifEmpty { null },
@@ -224,10 +227,10 @@ class ModifyRecipeTool(
                 duration = totalMinutes.minutesOrNull(),
                 servings = servingsOrNull(minServings, maxServings),
                 steps = steps.ifEmpty { null },
-                ingredients = ingredients.ifEmpty { null },
-                nutrients = nutrients.ifEmpty { null },
+                ingredients = ingredients.ifEmpty { null }?.map { it.toDomain() },
+                nutrients = nutrients.ifEmpty { null }?.map { it.toDomain() },
             )
-        return repository.modifyRecipe(userId, recipeId.toRecipeId(), update)
+        return repository.modifyRecipe(userId, recipeId.toRecipeId(), update)?.toTool()
             ?: error("No recipe found with ID $recipeId")
     }
 }
@@ -243,8 +246,8 @@ class OverwriteOriginalRecipeTool(
     suspend fun overwriteOriginalRecipe(
         @LLMDescription("The ID of the modified recipe.")
         recipeId: String,
-    ): ApiRecipe =
-        repository.overwriteOriginal(userId, recipeId.toRecipeId())
+    ): ToolRecipe =
+        repository.overwriteOriginal(userId, recipeId.toRecipeId())?.toTool()
             ?: error("No modified recipe found with ID $recipeId")
 }
 
@@ -259,8 +262,8 @@ class SaveRecipeAsCopyTool(
     suspend fun saveRecipeAsCopy(
         @LLMDescription("The ID of the modified recipe.")
         recipeId: String,
-    ): ApiRecipe =
-        repository.saveAsCopy(userId, recipeId.toRecipeId())
+    ): ToolRecipe =
+        repository.saveAsCopy(userId, recipeId.toRecipeId())?.toTool()
             ?: error("No modified recipe found with ID $recipeId")
 }
 

@@ -14,7 +14,7 @@ import se.gustavkarlsson.chefgpt.api.ApiAction
 import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
 import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
 import se.gustavkarlsson.chefgpt.chats.EventRepository
-import se.gustavkarlsson.chefgpt.createEvent
+import se.gustavkarlsson.chefgpt.chats.toEvent
 import se.gustavkarlsson.chefgpt.files.HtmlLoader
 import se.gustavkarlsson.chefgpt.getChatId
 import se.gustavkarlsson.chefgpt.jobs.JobRunner
@@ -28,7 +28,7 @@ fun Route.chatActionsRoute() {
             .onOk { chatId ->
                 val eventRepository = get<EventRepository>()
                 val action = call.receive<ApiAction>()
-                eventRepository.append(chatId, action.createEvent(get<HtmlLoader>()))
+                eventRepository.append(chatId, action.toEvent(get<HtmlLoader>()))
                 when (action) {
                     is ApiUserJoinedChat -> {
                         call.respond(HttpStatusCode.NoContent)

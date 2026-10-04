@@ -3,6 +3,7 @@ package se.gustavkarlsson.chefgpt.setup
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
 import io.ktor.server.application.Application
+import kotlinx.serialization.json.Json
 import org.koin.dsl.bind
 import org.koin.dsl.module
 import se.gustavkarlsson.chefgpt.agent.chat.ChatAgent
@@ -62,6 +63,7 @@ fun Application.createAiAgentsModule() =
                         imageCropper = get<ImageCropper>(),
                         chatRepository = get<ChatRepository>(),
                         eventRepository = get<EventRepository>(),
+                        json = get(),
                         saveRecipesAgent = get<SaveRecipesAgent>(),
                         scanIngredientsAgent = get<ScanIngredientsAgent>(),
                         describeImagesAgent = get<DescribeImagesAgent>(),

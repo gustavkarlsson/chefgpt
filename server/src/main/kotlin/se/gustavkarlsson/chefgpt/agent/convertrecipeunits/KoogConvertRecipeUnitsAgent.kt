@@ -12,12 +12,14 @@ import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
 import org.jetbrains.annotations.VisibleForTesting
-import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
+import se.gustavkarlsson.chefgpt.agent.tools.models.ToolRecipeIngredient
+import se.gustavkarlsson.chefgpt.agent.tools.models.toDomain
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.facts.FactRepository
 import se.gustavkarlsson.chefgpt.facts.UserFacts
 import se.gustavkarlsson.chefgpt.facts.toMeasurementPromptText
 import se.gustavkarlsson.chefgpt.recipes.NewRecipe
+import se.gustavkarlsson.chefgpt.recipes.RecipeIngredient
 import se.gustavkarlsson.chefgpt.recipes.RecipeUpdate
 import se.gustavkarlsson.chefgpt.recipes.applyUpdate
 
@@ -91,7 +93,7 @@ private class AgenticConvertRecipeUnits(
             )
         agent.run("Convert the recipe's units and report the results.")
         return RecipeUpdate(
-            ingredients = tool.ingredients,
+            ingredients = tool.ingredients?.map { it.toDomain() },
             description = tool.description?.takeIf { it.isNotBlank() },
             steps = tool.steps,
         )
@@ -136,7 +138,7 @@ private fun convertRecipeUnitsStrategy() =
         }
     }
 
-private fun ingredientsText(ingredients: List<ApiRecipeIngredient>): String =
+private fun ingredientsText(ingredients: List<RecipeIngredient>): String =
     ingredients.joinToString("\n") { ingredient ->
         listOf(ingredient.name, ingredient.value, ingredient.unit.orEmpty())
             .filter { it.isNotBlank() }
@@ -152,7 +154,7 @@ private fun stepsText(steps: List<String>): String =
  */
 @VisibleForTesting
 class ConvertRecipeMeasurementsTool : ToolSet {
-    var ingredients: List<ApiRecipeIngredient>? = null
+    var ingredients: List<ToolRecipeIngredient>? = null
         private set
     var description: String? = null
         private set
@@ -165,7 +167,7 @@ class ConvertRecipeMeasurementsTool : ToolSet {
     )
     suspend fun reportIngredients(
         @LLMDescription("The ingredients with converted amounts and units.")
-        ingredients: List<ApiRecipeIngredient>,
+        ingredients: List<ToolRecipeIngredient>,
     ): String {
         this.ingredients = ingredients
         return "Saved the converted ingredients."

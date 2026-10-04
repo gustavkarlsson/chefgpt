@@ -11,6 +11,7 @@ import se.gustavkarlsson.chefgpt.api.ApiError
 import se.gustavkarlsson.chefgpt.api.ApiRecipeUpdate
 import se.gustavkarlsson.chefgpt.api.RecipeId
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
+import se.gustavkarlsson.chefgpt.recipes.toApi
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.patchRecipeRoute() {
@@ -26,7 +27,7 @@ fun Route.patchRecipeRoute() {
         val body = call.receive<ApiRecipeUpdate>()
         val updated = recipeRepository.setFavorite(userId, id, body.favorite)
         if (updated != null) {
-            call.respond(HttpStatusCode.OK, updated)
+            call.respond(HttpStatusCode.OK, updated.toApi())
         } else {
             call.respond(
                 HttpStatusCode.NotFound,

@@ -1,7 +1,6 @@
 package se.gustavkarlsson.chefgpt.files
 
 import io.ktor.http.ContentType
-import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
 
 /**
  * The kinds of files the agent can actually read. Anything else is rejected on upload,
@@ -23,17 +22,3 @@ fun fileKindOrNull(mimeType: String): FileKind? =
 
 fun fileKindOrNull(contentType: ContentType?): FileKind? =
     contentType?.let { fileKindOrNull("${it.contentType}/${it.contentSubtype}") }
-
-val ApiUploadedFile.kind: FileKind? get() = fileKindOrNull(mimeType)
-
-/**
- * The file extension the LLM clients use to label an attachment, taken from the file name when
- * there is one and falling back to the MIME subtype.
- */
-val ApiUploadedFile.format: String
-    get() =
-        fileName
-            ?.substringAfterLast('.', "")
-            ?.lowercase()
-            ?.takeIf { it.isNotEmpty() }
-            ?: mimeType.substringAfter('/').substringBefore(';').trim()

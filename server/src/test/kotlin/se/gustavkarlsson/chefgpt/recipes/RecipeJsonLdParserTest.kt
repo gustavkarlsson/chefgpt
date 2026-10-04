@@ -1,6 +1,5 @@
 package se.gustavkarlsson.chefgpt.recipes
 
-import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import se.gustavkarlsson.chefgpt.chefGptJson
 import kotlin.test.Test
@@ -41,7 +40,7 @@ class RecipeJsonLdParserTest {
         assertEquals("Carbonara", recipe.title)
         assertEquals("A classic pasta dish.", recipe.description)
         assertEquals(
-            listOf(ApiRecipeIngredient("200 g spaghetti", "", null), ApiRecipeIngredient("2 eggs", "", null)),
+            listOf(RecipeIngredient("200 g spaghetti", "", null), RecipeIngredient("2 eggs", "", null)),
             recipe.ingredients,
         )
         assertEquals(listOf("Cook the spaghetti.", "Mix the eggs."), recipe.steps)

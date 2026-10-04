@@ -1,15 +1,15 @@
 package se.gustavkarlsson.chefgpt.agent.tools
 
-import ai.koog.prompt.message.Message
-import ai.koog.prompt.message.MessagePart
-import ai.koog.prompt.message.RequestMetaInfo
 import kotlinx.coroutines.test.runTest
+import se.gustavkarlsson.chefgpt.agent.tools.models.ToolUploadedFile
 import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
 import se.gustavkarlsson.chefgpt.api.ChatId
 import se.gustavkarlsson.chefgpt.api.EventId
+import se.gustavkarlsson.chefgpt.chats.ChatMessage
 import se.gustavkarlsson.chefgpt.chats.Event
 import se.gustavkarlsson.chefgpt.chats.InMemoryEventRepository
-import se.gustavkarlsson.chefgpt.files.UploadedFile
+import se.gustavkarlsson.chefgpt.chats.TextPart
+import se.gustavkarlsson.chefgpt.files.toDomain
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Clock
@@ -24,12 +24,19 @@ class UploadedFileToolsTest {
     private val tools = ListSharedFilesTool(eventRepository, chatId)
 
     private suspend fun share(vararg attachments: ApiUploadedFile) {
+        val now = Clock.System.now()
         eventRepository.append(
             chatId,
             Event.Message(
                 id = EventId.random(),
-                message = Message.User(listOf(MessagePart.Text("Look")), RequestMetaInfo(Clock.System.now())),
-                attachments = attachments.toList(),
+                message =
+                    ChatMessage.User(
+                        id = null,
+                        timestamp = now,
+                        metadata = null,
+                        parts = listOf(TextPart("Look", cacheControl = null)),
+                    ),
+                attachments = attachments.map { it.toDomain() },
             ),
         )
     }
@@ -42,9 +49,9 @@ class UploadedFileToolsTest {
 
             assertEquals(
                 listOf(
-                    UploadedFile(PAGE, "image/jpeg", "page.jpg"),
-                    UploadedFile(NOTES, "text/plain", "notes.txt"),
-                    UploadedFile(DISH, "image/jpeg", "dish.jpg"),
+                    ToolUploadedFile(PAGE, "image/jpeg", "page.jpg"),
+                    ToolUploadedFile(NOTES, "text/plain", "notes.txt"),
+                    ToolUploadedFile(DISH, "image/jpeg", "dish.jpg"),
                 ),
                 tools.listSharedFiles(),
             )

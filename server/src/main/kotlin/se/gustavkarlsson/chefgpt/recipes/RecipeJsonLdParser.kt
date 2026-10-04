@@ -8,7 +8,6 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
-import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
 import se.gustavkarlsson.chefgpt.api.ImageUrl
 import kotlin.time.Duration
 
@@ -102,10 +101,10 @@ private fun JsonElement.toStepText(): String? =
         else -> null
     }
 
-private fun JsonElement.toIngredients(): List<ApiRecipeIngredient> =
+private fun JsonElement.toIngredients(): List<RecipeIngredient> =
     toIngredientTexts()
         .filter { it.isNotBlank() }
-        .map { ingredient -> ApiRecipeIngredient(name = ingredient, value = "", unit = null) }
+        .map { ingredient -> RecipeIngredient(name = ingredient, value = "", unit = null) }
 
 private fun JsonElement.toIngredientTexts(): List<String> =
     when (this) {
