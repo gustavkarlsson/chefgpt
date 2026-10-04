@@ -208,11 +208,7 @@ interface RecipeClient : ToolSet {
         instructions: String,
     ): String
 
-    @Tool
-    @LLMDescription(
-        "Extract a recipe from an external website URL. " +
-            "Parses title, ingredients, instructions, and optionally nutrition data.",
-    )
+    /** Not a chat tool: scraping must go through ScrapeRecipeTool, which converts and saves. */
     suspend fun extractRecipeFromWebsite(
         @LLMDescription("The URL of the page that contains the recipe.")
         url: String,

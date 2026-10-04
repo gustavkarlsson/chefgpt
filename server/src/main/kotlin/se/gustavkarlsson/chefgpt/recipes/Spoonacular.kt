@@ -18,8 +18,8 @@ import se.gustavkarlsson.chefgpt.api.SpoonacularId
 import kotlin.math.floor
 import kotlin.time.Duration.Companion.minutes
 
-// Turns the recipe client's raw JSON into a NewRecipe, whether by Spoonacular id or by scraping a URL.
-class RecipeLookup(
+/** Turns the recipe client's raw JSON into a NewRecipe, whether by recipe id or by scraping a URL. */
+class Spoonacular(
     private val recipeClient: RecipeClient,
     private val json: Json,
 ) {
@@ -47,6 +47,11 @@ class RecipeLookup(
         )
     }
 
+    /**
+     * Scrapes the recipe at url, returning whatever the client managed to extract — the complete
+     * recipe, or a partial one when its steps could not be parsed. Returns null when the page has
+     * no recipe, and lets the client's failures propagate.
+     */
     suspend fun scrape(url: String): NewRecipe? {
         val extract =
             json
@@ -54,25 +59,27 @@ class RecipeLookup(
                 .jsonObject
         val title = extract["title"]?.jsonPrimitive?.contentOrNull ?: return null
         val instructions = extract["instructions"]?.jsonPrimitive?.contentOrNull ?: return null
+        val partial =
+            NewRecipe(
+                title = title,
+                steps = emptyList(),
+                spoonacularId = null,
+                imageUrl = extract["image"]?.jsonPrimitive?.contentOrNull?.let(::recipePhotoUrlOrNull),
+                description = extract["summary"]?.jsonPrimitive?.contentOrNull,
+                preparationDuration = extract.minutesOrNull("preparationMinutes"),
+                cookingDuration = extract.minutesOrNull("cookingMinutes"),
+                duration = extract.minutesOrNull("readyInMinutes"),
+                servings = extract.servingsOrNull(),
+                ingredients = extract.toIngredients(),
+                nutrients = extract.toNutrients(),
+            )
         val parsedInstructions =
             json
                 .parseToJsonElement(recipeClient.getAnalyzedRecipeInstructions(instructions))
-                .jsonObject["parsedInstructions"] ?: return null
+                .jsonObject["parsedInstructions"] ?: return partial
         val steps = parsedInstructions.toSteps()
-        if (steps.isEmpty()) return null
-        return NewRecipe(
-            title = title,
-            steps = steps,
-            spoonacularId = null,
-            imageUrl = extract["image"]?.jsonPrimitive?.contentOrNull?.let(::recipePhotoUrlOrNull),
-            description = extract["summary"]?.jsonPrimitive?.contentOrNull,
-            preparationDuration = extract.minutesOrNull("preparationMinutes"),
-            cookingDuration = extract.minutesOrNull("cookingMinutes"),
-            duration = extract.minutesOrNull("readyInMinutes"),
-            servings = extract.servingsOrNull(),
-            ingredients = extract.toIngredients(),
-            nutrients = extract.toNutrients(),
-        )
+        if (steps.isEmpty()) return partial
+        return partial.copy(steps = steps)
     }
 }
 
@@ -114,7 +121,7 @@ private fun JsonObject.minutesOrNull(key: String) =
         ?.takeIf { it > 0 }
         ?.minutes
 
-// Spoonacular states an exact yield, which becomes a range with the same bounds.
+/** The client states an exact yield, which becomes a range with the same bounds. */
 private fun JsonObject.servingsOrNull(): IntRange? =
     get("servings")
         ?.jsonPrimitive

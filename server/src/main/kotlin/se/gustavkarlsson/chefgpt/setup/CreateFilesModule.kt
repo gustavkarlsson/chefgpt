@@ -3,14 +3,14 @@ package se.gustavkarlsson.chefgpt.setup
 import io.ktor.server.application.Application
 import org.koin.dsl.bind
 import org.koin.dsl.module
-import se.gustavkarlsson.chefgpt.files.AttachmentTextLoader
 import se.gustavkarlsson.chefgpt.files.CloudinaryFileUploader
 import se.gustavkarlsson.chefgpt.files.CloudinaryImageCropper
-import se.gustavkarlsson.chefgpt.files.FakeAttachmentTextLoader
 import se.gustavkarlsson.chefgpt.files.FakeFileUploader
+import se.gustavkarlsson.chefgpt.files.FakeHtmlLoader
 import se.gustavkarlsson.chefgpt.files.FakeImageCropper
 import se.gustavkarlsson.chefgpt.files.FileUploader
-import se.gustavkarlsson.chefgpt.files.HttpAttachmentTextLoader
+import se.gustavkarlsson.chefgpt.files.HtmlLoader
+import se.gustavkarlsson.chefgpt.files.HttpHtmlLoader
 import se.gustavkarlsson.chefgpt.files.ImageCropper
 
 fun Application.createFilesModule() =
@@ -42,6 +42,6 @@ fun Application.createFilesModule() =
         } bind ImageCropper::class
 
         single {
-            if (cloud != null) HttpAttachmentTextLoader() else FakeAttachmentTextLoader()
-        } bind AttachmentTextLoader::class
+            if (cloud != null) HttpHtmlLoader() else FakeHtmlLoader()
+        } bind HtmlLoader::class
     }

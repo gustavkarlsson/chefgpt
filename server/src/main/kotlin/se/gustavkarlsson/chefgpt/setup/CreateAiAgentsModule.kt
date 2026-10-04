@@ -20,23 +20,28 @@ import se.gustavkarlsson.chefgpt.agent.saverecipes.SaveRecipesAgent
 import se.gustavkarlsson.chefgpt.agent.scaningredients.FakeScanIngredientsAgent
 import se.gustavkarlsson.chefgpt.agent.scaningredients.KoogScanIngredientsAgent
 import se.gustavkarlsson.chefgpt.agent.scaningredients.ScanIngredientsAgent
+import se.gustavkarlsson.chefgpt.agent.scraperecipe.FakeScrapeRecipeAgent
+import se.gustavkarlsson.chefgpt.agent.scraperecipe.KoogScrapeRecipeAgent
+import se.gustavkarlsson.chefgpt.agent.scraperecipe.ScrapeRecipeAgent
 import se.gustavkarlsson.chefgpt.ai.AiConfig
 import se.gustavkarlsson.chefgpt.ai.loadAiConfig
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventRepository
 import se.gustavkarlsson.chefgpt.facts.FactRepository
+import se.gustavkarlsson.chefgpt.files.HtmlLoader
 import se.gustavkarlsson.chefgpt.files.ImageCropper
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 import se.gustavkarlsson.chefgpt.recipes.RecipeClient
-import se.gustavkarlsson.chefgpt.recipes.RecipeLookup
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
-import se.gustavkarlsson.chefgpt.recipes.RecipeScraper
+import se.gustavkarlsson.chefgpt.recipes.SaveRecipeFromUrl
+import se.gustavkarlsson.chefgpt.recipes.Spoonacular
 
 private const val CHAT_AGENT = "chat"
 private const val INGREDIENT_SCAN_AGENT = "ingredientScan"
 private const val RECIPE_SCAN_AGENT = "recipeScan"
 private const val DESCRIBE_IMAGE_AGENT = "describeImage"
 private const val CONVERT_RECIPE_UNITS_AGENT = "convertRecipeUnits"
+private const val SCRAPE_AGENT = "scrape"
 
 fun Application.createAiAgentsModule() =
     module {
@@ -50,9 +55,9 @@ fun Application.createAiAgentsModule() =
                         model = aiConfig.agentModel(CHAT_AGENT),
                         ingredientStore = get<IngredientStore>(),
                         recipeRepository = get<RecipeRepository>(),
-                        recipeLookup = get<RecipeLookup>(),
+                        spoonacular = get<Spoonacular>(),
                         recipeClient = get<RecipeClient>(),
-                        recipeScraper = get<RecipeScraper>(),
+                        saveRecipeFromUrl = get<SaveRecipeFromUrl>(),
                         factRepository = get<FactRepository>(),
                         imageCropper = get<ImageCropper>(),
                         chatRepository = get<ChatRepository>(),
@@ -139,6 +144,25 @@ fun Application.createAiAgentsModule() =
                 }
             }
         } bind ConvertRecipeUnitsAgent::class
+        single {
+            when (val type = config.property("bindings.agent").getString()) {
+                "llm" -> {
+                    KoogScrapeRecipeAgent(
+                        get<PromptExecutor>(),
+                        aiConfig.agentModel(SCRAPE_AGENT),
+                        get<HtmlLoader>(),
+                    )
+                }
+
+                "fake" -> {
+                    FakeScrapeRecipeAgent()
+                }
+
+                else -> {
+                    error("Unknown agent type: '$type'. Expected 'llm' or 'fake'.")
+                }
+            }
+        } bind ScrapeRecipeAgent::class
     }
 
 private fun AiConfig.agentModel(agentId: String): LLModel {

@@ -29,8 +29,8 @@ import se.gustavkarlsson.chefgpt.facts.TemperatureUnit
 import se.gustavkarlsson.chefgpt.facts.UserFacts
 import se.gustavkarlsson.chefgpt.facts.VolumeUnits
 import se.gustavkarlsson.chefgpt.facts.WeightUnits
-import se.gustavkarlsson.chefgpt.files.AttachmentTextLoader
 import se.gustavkarlsson.chefgpt.files.FileKind
+import se.gustavkarlsson.chefgpt.files.HtmlLoader
 import se.gustavkarlsson.chefgpt.files.UploadedFile
 import se.gustavkarlsson.chefgpt.files.fileKindOrNull
 import se.gustavkarlsson.chefgpt.files.format
@@ -147,7 +147,7 @@ private fun ApiVolumeUnits.toDomain(): VolumeUnits =
 
 // Api -> Domain
 
-suspend fun ApiAction.createEvent(textLoader: AttachmentTextLoader): Event =
+suspend fun ApiAction.createEvent(htmlLoader: HtmlLoader): Event =
     when (this) {
         is ApiUserJoinedChat -> {
             Event.UserJoined(EventId.random(), Clock.System.now(), joinId)
@@ -158,7 +158,7 @@ suspend fun ApiAction.createEvent(textLoader: AttachmentTextLoader): Event =
                 buildList {
                     text?.let { add(MessagePart.Text(it)) }
                     attachments.forEach { attachment ->
-                        attachment.toMessagePartOrNull(textLoader)?.let(::add)
+                        attachment.toMessagePartOrNull(htmlLoader)?.let(::add)
                     }
                 }
             val koogMessage = KoogMessage.User(parts, RequestMetaInfo(Clock.System.now()))
@@ -202,7 +202,7 @@ fun UploadedFile.toImageAttachmentOrNull(): AttachmentSource.Image? {
 
 // Api -> Koog
 
-private suspend fun ApiUploadedFile.toMessagePartOrNull(textLoader: AttachmentTextLoader): MessagePart.Attachment? {
+private suspend fun ApiUploadedFile.toMessagePartOrNull(htmlLoader: HtmlLoader): MessagePart.Attachment? {
     val source =
         when (kind) {
             FileKind.Image -> {
@@ -215,7 +215,7 @@ private suspend fun ApiUploadedFile.toMessagePartOrNull(textLoader: AttachmentTe
 
             // Anthropic only accepts a url as the source of a pdf, so text has to be inlined.
             FileKind.Text -> {
-                val text = textLoader.loadText(url) ?: return null
+                val text = htmlLoader.loadText(url) ?: return null
                 AttachmentSource.File(AttachmentContent.PlainText(text), format, mimeType, fileName)
             }
 
