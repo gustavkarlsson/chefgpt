@@ -16,6 +16,8 @@ import se.gustavkarlsson.chefgpt.recipes.SaveRecipeFromUrl
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.scrapeRecipesRoute() {
+    val saveRecipeFromUrl = get<SaveRecipeFromUrl>()
+    val jobRunner = get<JobRunner>()
     post("$RECIPES_V1_PATH/scrape") {
         val userId = call.requireSession().user.id
         val url = call.receive<ApiScrapeRecipe>().url
@@ -31,9 +33,8 @@ fun Route.scrapeRecipesRoute() {
             return@post
         }
 
-        val saveRecipeFromUrl = get<SaveRecipeFromUrl>()
         val job =
-            get<JobRunner>().run("Recipe scrape", ListSerializer(RecipeId.serializer())) {
+            jobRunner.run("Recipe scrape", ListSerializer(RecipeId.serializer())) {
                 saveRecipeFromUrl.save(userId, url)?.let { listOf(it.id) } ?: emptyList()
             }
         call.respond(HttpStatusCode.Accepted, job)

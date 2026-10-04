@@ -15,6 +15,7 @@ import se.gustavkarlsson.chefgpt.files.fileKindOrNull
 import se.gustavkarlsson.chefgpt.files.toApi
 
 fun Route.filesRoute() {
+    val fileUploader = get<FileUploader>()
     post(FILES_V1_PATH) {
         val contentType = call.request.contentType()
         if (fileKindOrNull(contentType) == null) {
@@ -28,7 +29,6 @@ fun Route.filesRoute() {
             )
             return@post
         }
-        val fileUploader = get<FileUploader>()
         val fileName = call.request.headers[FILE_NAME_HEADER]
         val attachment = fileUploader.uploadFile(call.receive(), contentType, fileName)
         if (attachment != null) {

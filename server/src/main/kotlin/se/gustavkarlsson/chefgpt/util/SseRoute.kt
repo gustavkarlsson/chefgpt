@@ -13,10 +13,10 @@ fun Route.sse(
     path: String,
     handler: suspend ServerSSESessionWithSerialization.() -> Unit,
 ) {
+    val json = get<Json>()
     sse(
         path,
         serialize = { typeInfo, value ->
-            val json = get<Json>()
             val serializer = json.serializersModule.serializer(typeInfo.kotlinType!!)
             json.encodeToString(serializer, value)
         },

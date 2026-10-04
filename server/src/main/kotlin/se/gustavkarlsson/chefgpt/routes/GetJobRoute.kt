@@ -12,6 +12,7 @@ import se.gustavkarlsson.chefgpt.api.jobs.v1.JOBS_V1_PATH
 import se.gustavkarlsson.chefgpt.jobs.JobRepository
 
 fun Route.getJobRoute() {
+    val jobRepository = get<JobRepository>()
     get("$JOBS_V1_PATH/{jobId}") {
         val jobId =
             JobId.parseOrNull(call.parameters.getOrFail("jobId"))
@@ -21,7 +22,7 @@ fun Route.getJobRoute() {
                 )
 
         val job =
-            get<JobRepository>()[jobId]
+            jobRepository[jobId]
                 ?: return@get call.respond(
                     HttpStatusCode.NotFound,
                     ApiError("job-not-found", "Job not found", userMessage = null),

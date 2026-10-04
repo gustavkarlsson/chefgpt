@@ -16,8 +16,8 @@ import se.gustavkarlsson.chefgpt.recipes.toApi
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.patchRecipeRoute() {
+    val recipeRepository = get<RecipeRepository>()
     patch("$RECIPES_V1_PATH/{id}") {
-        val recipeRepository = get<RecipeRepository>()
         val userId = call.requireSession().user.id
         val id =
             RecipeId.parseOrNull(call.parameters.getOrFail("id"))

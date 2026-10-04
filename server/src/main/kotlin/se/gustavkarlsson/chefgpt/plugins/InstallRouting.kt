@@ -29,6 +29,9 @@ import se.gustavkarlsson.chefgpt.routes.streamIngredientsRoute
 import se.gustavkarlsson.chefgpt.routes.streamRecipesRoute
 
 // TODO set timeouts
+// Routes resolve their dependencies when they are defined, not per request. Ktor auto-reload
+// closes the Koin of the old application while its in-flight requests are still draining;
+// per-request resolution from the closed Koin would throw ClosedScopeException.
 fun Application.installRouting() {
     routing {
         registerRoute()

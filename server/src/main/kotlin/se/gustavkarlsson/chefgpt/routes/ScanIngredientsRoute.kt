@@ -20,6 +20,10 @@ import se.gustavkarlsson.chefgpt.jobs.JobRunner
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.scanIngredientsRoute() {
+    val fileUploader = get<FileUploader>()
+    val scanAgent = get<ScanIngredientsAgent>()
+    val ingredientStore = get<IngredientStore>()
+    val jobRunner = get<JobRunner>()
     post("$INGREDIENTS_V1_PATH/scan") {
         val userId = call.requireSession().user.id
         val contentType = call.request.contentType()
@@ -34,9 +38,6 @@ fun Route.scanIngredientsRoute() {
             )
             return@post
         }
-        val fileUploader = get<FileUploader>()
-        val scanAgent = get<ScanIngredientsAgent>()
-        val ingredientStore = get<IngredientStore>()
 
         val file = fileUploader.uploadFile(call.receive(), contentType)
         if (file == null) {
@@ -45,7 +46,7 @@ fun Route.scanIngredientsRoute() {
         }
 
         val job =
-            get<JobRunner>().run("Ingredient scan", ListSerializer(String.serializer())) {
+            jobRunner.run("Ingredient scan", ListSerializer(String.serializer())) {
                 val scanned = scanAgent.scan(userId, listOf(file))
                 val added = ingredientStore.createIngredients(userId, scanned)
                 added.map { it.name }

@@ -11,8 +11,8 @@ import se.gustavkarlsson.chefgpt.chats.toApi
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.createChatRoute() {
+    val chatRepository = get<ChatRepository>()
     post(CHATS_V1_PATH) {
-        val chatRepository = get<ChatRepository>()
         val userId = call.requireSession().user.id
         val chat = chatRepository.create(userId)
         call.respond(HttpStatusCode.Created, chat.toApi())

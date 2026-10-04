@@ -17,6 +17,8 @@ import se.gustavkarlsson.chefgpt.jobs.JobRunner
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.scanRecipesRoute() {
+    val scanAgent = get<SaveRecipesAgent>()
+    val jobRunner = get<JobRunner>()
     post("$RECIPES_V1_PATH/scan") {
         val userId = call.requireSession().user.id
         val request = call.receive<ApiScanRecipe>()
@@ -50,9 +52,8 @@ fun Route.scanRecipesRoute() {
             return@post
         }
 
-        val scanAgent = get<SaveRecipesAgent>()
         val job =
-            get<JobRunner>().run("Recipe scan", ListSerializer(RecipeId.serializer())) {
+            jobRunner.run("Recipe scan", ListSerializer(RecipeId.serializer())) {
                 scanAgent.scan(userId, sharedFiles)
             }
         call.respond(HttpStatusCode.Accepted, job)

@@ -15,13 +15,12 @@ import se.gustavkarlsson.chefgpt.facts.toDomain
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.factsRoute() {
+    val factRepository = get<FactRepository>()
     get(FACTS_V1_PATH) {
-        val factRepository = get<FactRepository>()
         val userId = call.requireSession().user.id
         call.respond(HttpStatusCode.OK, factRepository.getFacts(userId).toApi())
     }
     put(FACTS_V1_PATH) {
-        val factRepository = get<FactRepository>()
         val userId = call.requireSession().user.id
         val facts = call.receive<ApiUserFacts>().toDomain()
         val newFacts = factRepository.replaceFacts(userId, facts)

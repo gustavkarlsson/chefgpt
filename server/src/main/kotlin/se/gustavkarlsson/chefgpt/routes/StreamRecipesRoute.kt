@@ -11,8 +11,8 @@ import se.gustavkarlsson.chefgpt.requireSession
 import se.gustavkarlsson.chefgpt.util.sse
 
 fun Route.streamRecipesRoute() {
+    val recipeRepository = get<RecipeRepository>()
     sse(RECIPES_V1_PATH) {
-        val recipeRepository = get<RecipeRepository>()
         val userId = call.requireSession().user.id
 
         recipeRepository

@@ -15,9 +15,9 @@ import se.gustavkarlsson.chefgpt.recipes.toApi
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.saveRecipeRoute() {
+    val recipeRepository = get<RecipeRepository>()
+    val spoonacular = get<Spoonacular>()
     post(RECIPES_V1_PATH) {
-        val recipeRepository = get<RecipeRepository>()
-        val spoonacular = get<Spoonacular>()
         val userId = call.requireSession().user.id
         val spoonacularId = call.receive<ApiSaveSpoonacularRecipe>().spoonacularId
 

@@ -15,6 +15,7 @@ import se.gustavkarlsson.chefgpt.api.chats.v1.ApiEvent
 import se.gustavkarlsson.chefgpt.api.chats.v1.CHATS_V1_PATH
 import se.gustavkarlsson.chefgpt.api.common.EventId
 import se.gustavkarlsson.chefgpt.api.errors.v1.ApiError
+import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.EventRepository
 import se.gustavkarlsson.chefgpt.chats.toApiOrNull
 import se.gustavkarlsson.chefgpt.getChatId
@@ -22,10 +23,11 @@ import se.gustavkarlsson.chefgpt.util.sse
 
 // TODO Add tests (Not snapshot test, as they are not possible)
 fun Route.streamChatEventsRoute() {
+    val eventRepository = get<EventRepository>()
+    val chatRepository = get<ChatRepository>()
     sse("$CHATS_V1_PATH/{chatId}/events") {
-        val eventRepository = get<EventRepository>()
         call
-            .getChatId()
+            .getChatId(chatRepository)
             .flatMap { chatId ->
                 val lastEventId = call.request.queryParameters["lastEventId"]
                 if (lastEventId != null) {

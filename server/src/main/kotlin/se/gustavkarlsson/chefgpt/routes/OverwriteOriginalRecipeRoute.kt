@@ -14,8 +14,8 @@ import se.gustavkarlsson.chefgpt.recipes.toApi
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.overwriteOriginalRecipeRoute() {
+    val recipeRepository = get<RecipeRepository>()
     post("$RECIPES_V1_PATH/{id}/overwrite-original") {
-        val recipeRepository = get<RecipeRepository>()
         val userId = call.requireSession().user.id
         val id =
             RecipeId.parseOrNull(call.parameters.getOrFail("id"))
