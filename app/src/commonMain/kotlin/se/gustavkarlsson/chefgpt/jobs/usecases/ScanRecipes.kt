@@ -45,7 +45,7 @@ class HttpScanRecipes(
         sessionId: SessionId,
         photos: List<Path>,
     ) {
-        // The picker offers documents too, but the scanner only reads photos.
+        // Only image files can be scanned.
         val images = photos.filter { isImageFile(it.name) }
         if (images.isEmpty()) {
             showSnackbar("That's not a photo I can scan", isError = true)

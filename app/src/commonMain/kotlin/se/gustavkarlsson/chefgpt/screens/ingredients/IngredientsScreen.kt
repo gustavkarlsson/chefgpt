@@ -66,7 +66,10 @@ import se.gustavkarlsson.chefgpt.camera.CapturePhoto
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatar
 import se.gustavkarlsson.chefgpt.navigation.Screen
 import se.gustavkarlsson.chefgpt.navigation.Screen.Id
+import se.gustavkarlsson.chefgpt.photos.PickPhotos
 import se.gustavkarlsson.chefgpt.plus
+import se.gustavkarlsson.chefgpt.screens.photos.CameraAction
+import se.gustavkarlsson.chefgpt.screens.photos.PickerAction
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 
 @Serializable
@@ -308,7 +311,7 @@ private fun IngredientInput(
                         ),
                     keyboardActions = KeyboardActions(onDone = { input.onClickAdd?.invoke() }),
                 )
-                input.cameraButton?.let { button ->
+                input.photoButton?.let { button ->
                     PhotoButton(button)
                 }
                 IconButton(
@@ -326,37 +329,105 @@ private fun IngredientInput(
 }
 
 @Composable
-private fun PhotoButton(button: UiCameraButton) {
+private fun PhotoButton(button: UiPhotoButton) {
     if (button.scanningImage) {
-        // Scanning can take a while; show progress in place of the camera button.
+        // Scanning can take a while; show progress in place of the photo button.
         Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(modifier = Modifier.size(24.dp))
         }
-    } else {
-        var takingPhoto by rememberSaveable { mutableStateOf(false) }
-        IconButton(
-            onClick = { takingPhoto = true },
-            enabled = !takingPhoto,
-        ) {
-            Icon(
-                imageVector = Icons.Default.CameraAlt,
-                contentDescription = "Scan ingredients from a photo",
-            )
+        return
+    }
+    when (button) {
+        is UiPhotoButton.Camera -> {
+            CameraPhotoButton(button.camera)
         }
-        if (takingPhoto) {
-            CapturePhoto(
-                onPhoto = { photo ->
-                    button.onPhotoTaken(photo)
-                    takingPhoto = false
-                },
-                onCancelled = {
-                    takingPhoto = false
-                },
-                onError = {
-                    button.onError()
-                    takingPhoto = false
-                },
-            )
+
+        is UiPhotoButton.Picker -> {
+            PickerPhotoButton(button.picker)
         }
     }
+}
+
+// The photo icon button shared by every source variant.
+@Composable
+private fun PhotoIconButton(
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier,
+) {
+    IconButton(
+        modifier = modifier,
+        onClick = onClick,
+        enabled = enabled,
+    ) {
+        Icon(
+            imageVector = Icons.Default.CameraAlt,
+            contentDescription = "Scan ingredients from a photo",
+        )
+    }
+}
+
+// Camera only: capture on tap.
+@Composable
+private fun CameraPhotoButton(
+    camera: CameraAction,
+    modifier: Modifier = Modifier,
+) {
+    var takingPhoto by rememberSaveable { mutableStateOf(false) }
+    PhotoIconButton(onClick = { takingPhoto = true }, enabled = !takingPhoto, modifier = modifier)
+    CapturingPhoto(camera = camera, active = takingPhoto) { takingPhoto = false }
+}
+
+// Picker only: pick a single photo on tap.
+@Composable
+private fun PickerPhotoButton(
+    picker: PickerAction,
+    modifier: Modifier = Modifier,
+) {
+    var picking by rememberSaveable { mutableStateOf(false) }
+    PhotoIconButton(onClick = { picking = true }, enabled = !picking, modifier = modifier)
+    PickingPhotos(picker = picker, active = picking) { picking = false }
+}
+
+// Renders [CapturePhoto] while [active] and routes its callbacks.
+@Composable
+private fun CapturingPhoto(
+    camera: CameraAction,
+    active: Boolean,
+    onDone: () -> Unit,
+) {
+    if (!active) return
+    CapturePhoto(
+        onPhoto = { photo ->
+            camera.onPhotoTaken(photo)
+            onDone()
+        },
+        onCancelled = onDone,
+        onError = {
+            camera.onError()
+            onDone()
+        },
+    )
+}
+
+// Renders [PickPhotos] while [active] and routes its callbacks.
+@Composable
+private fun PickingPhotos(
+    picker: PickerAction,
+    active: Boolean,
+    onDone: () -> Unit,
+) {
+    if (!active) return
+    PickPhotos(
+        multiple = false,
+        onPhotos = { photos ->
+            picker.onPhotosPicked(photos)
+            onDone()
+        },
+        onCancelled = onDone,
+        onError = {
+            picker.onError()
+            onDone()
+        },
+    )
 }

@@ -7,11 +7,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.io.files.Path
 import org.koin.core.annotation.InjectedParam
+import se.gustavkarlsson.chefgpt.DeviceConfig
 import se.gustavkarlsson.chefgpt.IoOrDefault
 import se.gustavkarlsson.chefgpt.files.usecases.DeleteFile
 import se.gustavkarlsson.chefgpt.jobs.usecases.ScanRecipes
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
+import se.gustavkarlsson.chefgpt.screens.photos.CameraAction
+import se.gustavkarlsson.chefgpt.screens.photos.PickerAction
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 import se.gustavkarlsson.chefgpt.snackbar.usecases.ShowSnackbar
 
@@ -20,13 +23,10 @@ class RecipeScanSheetViewModel(
     private val scanRecipes: ScanRecipes,
     private val showSnackbar: ShowSnackbar,
     private val deleteFile: DeleteFile,
+    private val deviceConfig: DeviceConfig,
     @InjectedParam screen: RecipeScanSheet,
 ) : StateViewModel<RecipeScanSheetState, RecipeScanSheetUiState>() {
     private val sessionId: SessionId = screen.sessionId
-
-    // Whether the current capture is the auto-opened first one. A cancelled first
-    // capture dismisses the sheet; later cancels just stay.
-    private var initialCapture = true
 
     // Whether a scan has been handed to [scanRecipes]; if so, the files are the job's
     // to read, so onCleared must not delete them.
@@ -35,23 +35,38 @@ class RecipeScanSheetViewModel(
     override fun createInitialState() =
         RecipeScanSheetState(
             photos = emptyList(),
-            capturing = true,
             discardTarget = null,
         )
 
     override fun RecipeScanSheetState.toUiState(): RecipeScanSheetUiState =
         RecipeScanSheetUiState(
             photos = photos,
-            capturing = capturing,
             discardTarget = discardTarget,
-            onClickAddPhoto = ::addPhoto,
+            camera =
+                if (deviceConfig.supportsCamera) {
+                    CameraAction(
+                        onPhotoTaken = ::onPhotoCaptured,
+                        onError = ::onCaptureError,
+                    )
+                } else {
+                    null
+                },
+            picker =
+                if (deviceConfig.supportsFilePicker) {
+                    PickerAction(
+                        onPhotosPicked = ::onPhotosPicked,
+                        onError = ::onPickerError,
+                    )
+                } else {
+                    null
+                },
             onClickPhoto = ::requestDiscard,
             onClickConfirm = if (photos.isEmpty()) null else ::confirm,
-            onPhotoCaptured = ::onPhotoCaptured,
-            onCaptureCancelled = ::onCaptureCancelled,
-            onCaptureError = ::onCaptureError,
             onDiscardConfirmed = ::discard,
             onDiscardDismissed = ::dismissDiscard,
+            autoOpenCamera = deviceConfig.supportsCamera && !deviceConfig.supportsFilePicker,
+            autoOpenPicker = !deviceConfig.supportsCamera && deviceConfig.supportsFilePicker,
+            onAutoOpenCancelled = navigator::pop,
         )
 
     override fun onCleared() {
@@ -61,26 +76,20 @@ class RecipeScanSheetViewModel(
         }
     }
 
-    private fun addPhoto() {
-        innerState.update { it.copy(capturing = true) }
-    }
-
     private fun onPhotoCaptured(photo: Path) {
-        initialCapture = false
-        innerState.update { it.copy(capturing = false, photos = it.photos + photo) }
+        innerState.update { it.copy(photos = it.photos + photo) }
     }
 
-    private fun onCaptureCancelled() {
-        val wasInitial = initialCapture
-        initialCapture = false
-        innerState.update { it.copy(capturing = false) }
-        if (wasInitial) navigator.pop()
+    private fun onPhotosPicked(photos: List<Path>) {
+        innerState.update { it.copy(photos = (it.photos + photos).distinct()) }
     }
 
     private fun onCaptureError() {
-        initialCapture = false
-        innerState.update { it.copy(capturing = false) }
         showSnackbar("Could not take a photo", isError = true)
+    }
+
+    private fun onPickerError() {
+        showSnackbar("Could not pick photos", isError = true)
     }
 
     private fun requestDiscard(photo: Path) {
@@ -108,20 +117,19 @@ class RecipeScanSheetViewModel(
 
 data class RecipeScanSheetState(
     val photos: List<Path>,
-    val capturing: Boolean,
     val discardTarget: Path?,
 )
 
 data class RecipeScanSheetUiState(
     val photos: List<Path>,
-    val capturing: Boolean,
     val discardTarget: Path?,
-    val onClickAddPhoto: () -> Unit,
+    val camera: CameraAction?,
+    val picker: PickerAction?,
     val onClickPhoto: (Path) -> Unit,
     val onClickConfirm: (() -> Unit)?,
-    val onPhotoCaptured: (Path) -> Unit,
-    val onCaptureCancelled: () -> Unit,
-    val onCaptureError: () -> Unit,
     val onDiscardConfirmed: () -> Unit,
     val onDiscardDismissed: () -> Unit,
+    val autoOpenCamera: Boolean,
+    val autoOpenPicker: Boolean,
+    val onAutoOpenCancelled: () -> Unit,
 )

@@ -91,7 +91,7 @@ class HomeViewModel(
                     username = sessionCredentials.username.value,
                     chats = chats.toUiChats(),
                     scanRecipesButton =
-                        if (deviceConfig.supportsCamera) {
+                        if (deviceConfig.supportsAnyPhotoSource) {
                             UiScanRecipesButton(scanning = scanningRecipes, onClick = ::openScanSheet)
                         } else {
                             null

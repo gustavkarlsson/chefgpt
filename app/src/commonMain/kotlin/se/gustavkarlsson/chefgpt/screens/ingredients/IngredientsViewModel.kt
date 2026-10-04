@@ -35,6 +35,8 @@ import se.gustavkarlsson.chefgpt.ingredients.usecases.StreamIngredients
 import se.gustavkarlsson.chefgpt.jobs.usecases.AwaitJob
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
+import se.gustavkarlsson.chefgpt.screens.photos.CameraAction
+import se.gustavkarlsson.chefgpt.screens.photos.PickerAction
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 import se.gustavkarlsson.chefgpt.snackbar.usecases.ShowSnackbar
 import kotlin.time.Duration.Companion.seconds
@@ -69,6 +71,7 @@ class IngredientsViewModel(
     override fun createInitialState() =
         State(
             supportsCamera = deviceConfig.supportsCamera,
+            supportsFilePicker = deviceConfig.supportsFilePicker,
             ingredients = null,
             inputText = "",
             scanningImage = false,
@@ -83,15 +86,33 @@ class IngredientsViewModel(
                 UiInput(
                     text = inputText,
                     onTextChange = ::updateInputText,
-                    cameraButton =
-                        if (supportsCamera) {
-                            UiCameraButton(
-                                scanningImage = scanningImage,
-                                onPhotoTaken = ::scanImage,
-                                onError = ::showPhotoError,
-                            )
-                        } else {
-                            null
+                    photoButton =
+                        when {
+                            supportsCamera -> {
+                                UiPhotoButton.Camera(
+                                    scanningImage = scanningImage,
+                                    camera =
+                                        CameraAction(
+                                            onPhotoTaken = ::scanImage,
+                                            onError = ::showPhotoError,
+                                        ),
+                                )
+                            }
+
+                            supportsFilePicker -> {
+                                UiPhotoButton.Picker(
+                                    scanningImage = scanningImage,
+                                    picker =
+                                        PickerAction(
+                                            onPhotosPicked = ::scanPickedImages,
+                                            onError = ::showPickerError,
+                                        ),
+                                )
+                            }
+
+                            else -> {
+                                null
+                            }
                         },
                     onClickAdd = if (inputText.isNotBlank()) ::addIngredientFromInput else null,
                 ),
@@ -288,6 +309,11 @@ class IngredientsViewModel(
         resolveEmojisFor(IngredientWords.match(text))
     }
 
+    // The picker offers multiple photos, but a scan handles a single image at a time.
+    private fun scanPickedImages(images: List<Path>) {
+        images.firstOrNull()?.let(::scanImage)
+    }
+
     private fun scanImage(image: Path) {
         innerState.update {
             if (it.scanningImage) return // Already scanning
@@ -314,6 +340,10 @@ class IngredientsViewModel(
         showSnackbar("Could not take a photo", isError = true)
     }
 
+    private fun showPickerError() {
+        showSnackbar("Could not pick photos", isError = true)
+    }
+
     private fun resolveEmojisFor(names: List<String>) {
         val missing = names.filter { it !in innerState.value.emojiByIngredient }
         if (missing.isEmpty()) return
@@ -329,6 +359,7 @@ class IngredientsViewModel(
 
 data class State(
     val supportsCamera: Boolean,
+    val supportsFilePicker: Boolean,
     val ingredients: List<ApiIngredient>?, // null until the first ingredient emission arrives.
     val inputText: String,
     val scanningImage: Boolean,
@@ -367,15 +398,25 @@ data class IngredientSection(
 data class UiInput(
     val text: String,
     val onTextChange: (String) -> Unit,
-    val cameraButton: UiCameraButton?,
+    val photoButton: UiPhotoButton?,
     val onClickAdd: (() -> Unit)?,
 )
 
-data class UiCameraButton(
-    val scanningImage: Boolean,
-    val onPhotoTaken: (photo: Path) -> Unit,
-    val onError: () -> Unit,
-)
+// The photo scan button. The camera is preferred; the picker is the fallback
+// when the platform has no camera. Null when no source exists.
+sealed interface UiPhotoButton {
+    val scanningImage: Boolean
+
+    data class Camera(
+        override val scanningImage: Boolean,
+        val camera: CameraAction,
+    ) : UiPhotoButton
+
+    data class Picker(
+        override val scanningImage: Boolean,
+        val picker: PickerAction,
+    ) : UiPhotoButton
+}
 
 data class UiIngredient(
     // Stable identity and click argument: the ingredient id for stored items, the word itself for suggestions.

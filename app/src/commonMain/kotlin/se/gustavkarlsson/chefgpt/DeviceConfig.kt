@@ -13,15 +13,23 @@ expect val BASE_URL_HINT: String?
 data class DeviceConfig(
     val platform: Platform,
     val supportsCamera: Boolean,
-)
+    val supportsFilePicker: Boolean,
+) {
+    // Whether at least one photo source (camera or file picker) is available.
+    val supportsAnyPhotoSource: Boolean
+        get() = supportsCamera || supportsFilePicker
+}
 
 fun readDeviceConfig(): DeviceConfig =
     DeviceConfig(
         platform = devicePlatform,
         supportsCamera = deviceSupportsCamera(),
+        supportsFilePicker = deviceSupportsFilePicker(),
     )
 
 expect fun deviceSupportsCamera(): Boolean
+
+expect fun deviceSupportsFilePicker(): Boolean
 
 expect val devicePlatform: Platform
 
