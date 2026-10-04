@@ -1,7 +1,7 @@
 package se.gustavkarlsson.chefgpt.recipes
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.updateAndGet
-import se.gustavkarlsson.chefgpt.api.RecipeId
+import se.gustavkarlsson.chefgpt.api.common.RecipeId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import java.util.concurrent.ConcurrentHashMap
 

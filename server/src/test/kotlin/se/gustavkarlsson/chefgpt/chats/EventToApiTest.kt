@@ -1,8 +1,8 @@
 package se.gustavkarlsson.chefgpt.chats
 
-import se.gustavkarlsson.chefgpt.api.ApiAgentMessage
-import se.gustavkarlsson.chefgpt.api.ApiAgentMessageChunk.MultipleChoiceQuestion
-import se.gustavkarlsson.chefgpt.api.EventId
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiAgentMessage
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiAgentMessageChunk.MultipleChoiceQuestion
+import se.gustavkarlsson.chefgpt.api.common.EventId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Clock

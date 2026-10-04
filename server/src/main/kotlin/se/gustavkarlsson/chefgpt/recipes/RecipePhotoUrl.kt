@@ -1,7 +1,7 @@
 package se.gustavkarlsson.chefgpt.recipes
 
 import io.ktor.http.Url
-import se.gustavkarlsson.chefgpt.api.ImageUrl
+import se.gustavkarlsson.chefgpt.api.common.ImageUrl
 
 // The hosts we upload to and look recipes up from. Photo urls reach us from the agent, so anything
 // else is dropped rather than stored and later loaded by every client showing the recipe.

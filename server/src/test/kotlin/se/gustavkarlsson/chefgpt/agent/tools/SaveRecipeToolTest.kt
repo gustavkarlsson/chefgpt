@@ -2,7 +2,7 @@ package se.gustavkarlsson.chefgpt.agent.tools
 
 import kotlinx.coroutines.test.runTest
 import se.gustavkarlsson.chefgpt.agent.convertrecipeunits.ConvertRecipeUnitsAgent
-import se.gustavkarlsson.chefgpt.api.RecipeId
+import se.gustavkarlsson.chefgpt.api.common.RecipeId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.chefGptJson
 import se.gustavkarlsson.chefgpt.recipes.FakeRecipeClient

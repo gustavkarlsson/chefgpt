@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,15 +22,17 @@ import coil3.key.Keyer
 import coil3.map.Mapper
 import kotlinx.io.files.Path
 import org.koin.compose.koinInject
-import se.gustavkarlsson.chefgpt.api.ImageUrl
+import se.gustavkarlsson.chefgpt.api.common.ImageUrl
 import se.gustavkarlsson.chefgpt.navigation.BottomSheetSceneStrategy
 import se.gustavkarlsson.chefgpt.navigation.NavigationTransitions
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.navigation.Screen
+import se.gustavkarlsson.chefgpt.screens.updaterequired.UpdateRequiredScreen
 import se.gustavkarlsson.chefgpt.snackbar.SnackbarManager
 import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessageHost
 import se.gustavkarlsson.chefgpt.snackbar.rememberSnackbarHostState
 import se.gustavkarlsson.chefgpt.theme.ChefGptTheme
+import se.gustavkarlsson.chefgpt.updates.UpdateRequiredNotifier
 
 @Composable
 fun App() {
@@ -51,6 +54,14 @@ fun App() {
     val navigator = koinInject<Navigator>()
     val snackbarManager = koinInject<SnackbarManager>()
     val snackbarHostState = rememberSnackbarHostState(snackbarManager.messages)
+    val updateRequiredNotifier = koinInject<UpdateRequiredNotifier>()
+    LaunchedEffect(updateRequiredNotifier) {
+        updateRequiredNotifier.updateRequired.collect { updateRequired ->
+            if (updateRequired) {
+                navigator.replaceAll(UpdateRequiredScreen())
+            }
+        }
+    }
     ChefGptTheme {
         Box(modifier = Modifier.fillMaxSize()) {
             NavDisplay(

@@ -4,8 +4,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.dropWhile
-import se.gustavkarlsson.chefgpt.api.ChatId
-import se.gustavkarlsson.chefgpt.api.EventId
+import se.gustavkarlsson.chefgpt.api.common.ChatId
+import se.gustavkarlsson.chefgpt.api.common.EventId
 import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryEventRepository(

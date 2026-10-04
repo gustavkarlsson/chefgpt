@@ -1,6 +1,6 @@
 package se.gustavkarlsson.chefgpt.recipes
 
-import se.gustavkarlsson.chefgpt.api.ImageUrl
+import se.gustavkarlsson.chefgpt.api.common.ImageUrl
 import se.gustavkarlsson.chefgpt.chefGptJson
 import kotlin.test.Test
 import kotlin.test.assertEquals

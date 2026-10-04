@@ -1,6 +1,6 @@
 package se.gustavkarlsson.chefgpt.files
 
-import se.gustavkarlsson.chefgpt.api.ChatId
+import se.gustavkarlsson.chefgpt.api.common.ChatId
 import se.gustavkarlsson.chefgpt.chats.Event
 import se.gustavkarlsson.chefgpt.chats.EventRepository
 

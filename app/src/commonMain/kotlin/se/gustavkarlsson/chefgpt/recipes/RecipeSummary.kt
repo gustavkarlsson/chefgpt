@@ -1,7 +1,7 @@
 package se.gustavkarlsson.chefgpt.recipes
 
-import se.gustavkarlsson.chefgpt.api.ImageUrl
-import se.gustavkarlsson.chefgpt.api.RecipeId
+import se.gustavkarlsson.chefgpt.api.common.ImageUrl
+import se.gustavkarlsson.chefgpt.api.common.RecipeId
 
 data class RecipeSummary(
     val id: RecipeId,

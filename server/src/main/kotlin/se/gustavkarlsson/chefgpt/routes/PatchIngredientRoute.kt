@@ -7,15 +7,16 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.patch
 import io.ktor.server.util.getOrFail
 import org.koin.ktor.ext.get
-import se.gustavkarlsson.chefgpt.api.ApiError
-import se.gustavkarlsson.chefgpt.api.ApiIngredientUpdate
-import se.gustavkarlsson.chefgpt.api.IngredientId
+import se.gustavkarlsson.chefgpt.api.common.IngredientId
+import se.gustavkarlsson.chefgpt.api.errors.v1.ApiError
+import se.gustavkarlsson.chefgpt.api.ingredients.v1.ApiIngredientUpdate
+import se.gustavkarlsson.chefgpt.api.ingredients.v1.INGREDIENTS_V1_PATH
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 import se.gustavkarlsson.chefgpt.ingredients.toApi
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.patchIngredientRoute() {
-    patch("/ingredients/{id}") {
+    patch("$INGREDIENTS_V1_PATH/{id}") {
         val ingredientStore = get<IngredientStore>()
         val userId = call.requireSession().user.id
         val id =

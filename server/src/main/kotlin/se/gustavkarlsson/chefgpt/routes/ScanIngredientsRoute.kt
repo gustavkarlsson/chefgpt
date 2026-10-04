@@ -10,7 +10,8 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
 import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.agent.scaningredients.ScanIngredientsAgent
-import se.gustavkarlsson.chefgpt.api.ApiError
+import se.gustavkarlsson.chefgpt.api.errors.v1.ApiError
+import se.gustavkarlsson.chefgpt.api.ingredients.v1.INGREDIENTS_V1_PATH
 import se.gustavkarlsson.chefgpt.files.FileKind
 import se.gustavkarlsson.chefgpt.files.FileUploader
 import se.gustavkarlsson.chefgpt.files.fileKindOrNull
@@ -19,7 +20,7 @@ import se.gustavkarlsson.chefgpt.jobs.JobRunner
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.scanIngredientsRoute() {
-    post("/ingredients/scan") {
+    post("$INGREDIENTS_V1_PATH/scan") {
         val userId = call.requireSession().user.id
         val contentType = call.request.contentType()
         if (fileKindOrNull(contentType) != FileKind.Image) {

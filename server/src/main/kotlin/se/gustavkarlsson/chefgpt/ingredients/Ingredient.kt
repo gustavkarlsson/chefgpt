@@ -1,6 +1,6 @@
 package se.gustavkarlsson.chefgpt.ingredients
 
-import se.gustavkarlsson.chefgpt.api.IngredientId
+import se.gustavkarlsson.chefgpt.api.common.IngredientId
 import kotlin.time.Instant
 
 /** An ingredient in the user's pantry, whether or not it is currently in inventory. */

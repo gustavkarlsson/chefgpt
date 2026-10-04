@@ -2,7 +2,7 @@ package se.gustavkarlsson.chefgpt.recipes.usecases
 
 import com.github.michaelbull.result.Result
 import se.gustavkarlsson.chefgpt.ClientError
-import se.gustavkarlsson.chefgpt.api.RecipeId
+import se.gustavkarlsson.chefgpt.api.common.RecipeId
 import se.gustavkarlsson.chefgpt.recipes.Recipe
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 import se.gustavkarlsson.chefgpt.sessions.SessionId

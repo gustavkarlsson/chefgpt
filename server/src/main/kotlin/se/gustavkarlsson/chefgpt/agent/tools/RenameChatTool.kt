@@ -3,8 +3,8 @@ package se.gustavkarlsson.chefgpt.agent.tools
 import ai.koog.agents.core.tools.annotations.LLMDescription
 import ai.koog.agents.core.tools.annotations.Tool
 import ai.koog.agents.core.tools.reflect.ToolSet
-import se.gustavkarlsson.chefgpt.api.ChatId
-import se.gustavkarlsson.chefgpt.api.EventId
+import se.gustavkarlsson.chefgpt.api.common.ChatId
+import se.gustavkarlsson.chefgpt.api.common.EventId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.Event

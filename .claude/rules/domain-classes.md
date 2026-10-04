@@ -40,11 +40,16 @@ The schema Koog's reflection reads when an agent calls a tool. They live in
 
 ## API models
 
-The wire format, in the shared module with an `Api` prefix. Routes are the only consumers;
-they map to and from domain models via `toApi()`/`toDomain()` extension functions collected in a
-per-domain mapper file (e.g. `recipes/RecipeMappers.kt`). Domain, tool, and DB layers never
-reference `Api*` models or API enums. The API model and its `@SerialName`s are the client-facing
-contract — changing one is a snapshot diff, not test upkeep (`json-serialization` rule).
+The wire format, in a per-resource versioned package of the shared module
+(`api/<resource>/v<k>/`, `Api` prefix; see ADR 0003 and the glossary). A model lives in the
+package of the resource that owns it (`ApiUploadedFile` in `files`, `ApiJob` in `jobs`,
+`ApiError` in `api/errors/v1`), and packages may import models from each other. Routes are the
+only consumers; they map to and from domain models via `toApi()`/`toDomain()` extension
+functions collected in a per-domain mapper file (e.g. `recipes/RecipeMappers.kt`). Domain, tool,
+and DB layers never reference `Api*` models or API enums. The API model and its `@SerialName`s
+are the client-facing contract — changing one is a snapshot diff, not test upkeep
+(`json-serialization` rule). A version's models are fossils: never edit them after the version's
+successor ships.
 
 ## Database models
 

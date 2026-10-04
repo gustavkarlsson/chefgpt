@@ -2,7 +2,7 @@ package se.gustavkarlsson.chefgpt.agent.scraperecipe
 
 import kotlinx.coroutines.test.runTest
 import se.gustavkarlsson.chefgpt.agent.tools.models.toTool
-import se.gustavkarlsson.chefgpt.api.ImageUrl
+import se.gustavkarlsson.chefgpt.api.common.ImageUrl
 import se.gustavkarlsson.chefgpt.recipes.RecipeIngredient
 import kotlin.test.Test
 import kotlin.test.assertEquals

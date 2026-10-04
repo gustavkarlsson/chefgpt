@@ -3,7 +3,7 @@ package se.gustavkarlsson.chefgpt.ingredients.usecases
 import com.github.michaelbull.result.Result
 import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.ClientError
-import se.gustavkarlsson.chefgpt.api.IngredientId
+import se.gustavkarlsson.chefgpt.api.common.IngredientId
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 
 fun interface SetIngredientInventory {

@@ -3,9 +3,9 @@ package se.gustavkarlsson.chefgpt.jobs
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
-import se.gustavkarlsson.chefgpt.api.ApiError
-import se.gustavkarlsson.chefgpt.api.ApiJobState
-import se.gustavkarlsson.chefgpt.api.JobId
+import se.gustavkarlsson.chefgpt.api.common.JobId
+import se.gustavkarlsson.chefgpt.api.errors.v1.ApiError
+import se.gustavkarlsson.chefgpt.api.jobs.v1.ApiJobState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals

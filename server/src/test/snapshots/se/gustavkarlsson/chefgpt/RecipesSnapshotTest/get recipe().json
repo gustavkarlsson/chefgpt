@@ -1,7 +1,7 @@
 {
     "request": {
         "method": "GET",
-        "url": "http://localhost/recipes/00000000-0000-0000-0000-000000000000",
+        "url": "http://localhost/api/recipes/v1/00000000-0000-0000-0000-000000000000",
         "headers": {
             "Session-Id": "00000000000000000000000000000000",
             "Accept": "application/json",

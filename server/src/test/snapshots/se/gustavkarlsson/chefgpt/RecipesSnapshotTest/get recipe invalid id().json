@@ -1,7 +1,7 @@
 {
     "request": {
         "method": "GET",
-        "url": "http://localhost/recipes/not-a-uuid",
+        "url": "http://localhost/api/recipes/v1/not-a-uuid",
         "headers": {
             "Session-Id": "00000000000000000000000000000000",
             "Accept": "application/json",

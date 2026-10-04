@@ -5,6 +5,7 @@ import io.ktor.client.request.post
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import se.gustavkarlsson.chefgpt.api.auth.v1.AUTH_V1_PATH
 import se.gustavkarlsson.slapshot.junit5.JUnit5SnapshotContext
 import se.gustavkarlsson.slapshot.junit5.SnapshotExtension
 
@@ -20,7 +21,7 @@ class LoginSnapshotTest {
     @Test
     fun `credentials missing`() =
         snapshotTestApplication(snapshotContext) { client ->
-            client.post("/login")
+            client.post("$AUTH_V1_PATH/login")
         }
 
     @Test
@@ -28,7 +29,7 @@ class LoginSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             registerUser()
 
-            client.post("/login") {
+            client.post("$AUTH_V1_PATH/login") {
                 basicAuth("wronguser", VALID_PASSWORD)
             }
         }
@@ -38,7 +39,7 @@ class LoginSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             registerUser()
 
-            client.post("/login") {
+            client.post("$AUTH_V1_PATH/login") {
                 basicAuth(VALID_USERNAME, "WrongPass1!")
             }
         }
@@ -48,7 +49,7 @@ class LoginSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             registerUser()
 
-            client.post("/login") {
+            client.post("$AUTH_V1_PATH/login") {
                 basicAuth(VALID_USERNAME, VALID_PASSWORD)
             }
         }

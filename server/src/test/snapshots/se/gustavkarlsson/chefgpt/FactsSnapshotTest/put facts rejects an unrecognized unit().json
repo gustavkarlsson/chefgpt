@@ -1,7 +1,7 @@
 {
     "request": {
         "method": "PUT",
-        "url": "http://localhost/facts",
+        "url": "http://localhost/api/facts/v1",
         "headers": {
             "Session-Id": "00000000000000000000000000000000",
             "Accept": "application/json",
@@ -23,7 +23,7 @@
         },
         "body": {
             "type": "text",
-            "data": "Failed to convert request body to class se.gustavkarlsson.chefgpt.api.ApiUserFacts"
+            "data": "Failed to convert request body to class se.gustavkarlsson.chefgpt.api.facts.v1.ApiUserFacts"
         }
     }
 }

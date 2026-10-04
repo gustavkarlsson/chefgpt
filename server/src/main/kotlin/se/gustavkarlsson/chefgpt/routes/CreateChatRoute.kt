@@ -5,12 +5,13 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 import org.koin.ktor.ext.get
+import se.gustavkarlsson.chefgpt.api.chats.v1.CHATS_V1_PATH
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.toApi
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.createChatRoute() {
-    post("/chats") {
+    post(CHATS_V1_PATH) {
         val chatRepository = get<ChatRepository>()
         val userId = call.requireSession().user.id
         val chat = chatRepository.create(userId)

@@ -1,6 +1,6 @@
 package se.gustavkarlsson.chefgpt.recipes
 
-import se.gustavkarlsson.chefgpt.api.RecipeId
+import se.gustavkarlsson.chefgpt.api.common.RecipeId
 import se.gustavkarlsson.chefgpt.auth.UserId
 
 /**

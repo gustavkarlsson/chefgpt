@@ -15,8 +15,10 @@ import io.ktor.server.auth.principal
 import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.util.getOrFail
 import org.koin.ktor.ext.get
-import se.gustavkarlsson.chefgpt.api.ApiError
-import se.gustavkarlsson.chefgpt.api.ChatId
+import se.gustavkarlsson.chefgpt.api.common.CLIENT_PLATFORM_HEADER
+import se.gustavkarlsson.chefgpt.api.common.CLIENT_VERSION_HEADER
+import se.gustavkarlsson.chefgpt.api.common.ChatId
+import se.gustavkarlsson.chefgpt.api.errors.v1.ApiError
 import se.gustavkarlsson.chefgpt.auth.Session
 import se.gustavkarlsson.chefgpt.auth.SessionCookie
 import se.gustavkarlsson.chefgpt.auth.toSession
@@ -73,3 +75,8 @@ suspend fun ApplicationCall.getChatId(): Result<ChatId, ResponseData<ApiError>> 
             chat.id
         }
 }
+
+// Sent by every client on every request; useful for client-specific workarounds.
+fun ApplicationCall.clientPlatform(): String? = request.headers[CLIENT_PLATFORM_HEADER]
+
+fun ApplicationCall.clientVersion(): String? = request.headers[CLIENT_VERSION_HEADER]

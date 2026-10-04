@@ -11,8 +11,8 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
-import se.gustavkarlsson.chefgpt.api.EventId
-import se.gustavkarlsson.chefgpt.api.JoinId
+import se.gustavkarlsson.chefgpt.api.common.EventId
+import se.gustavkarlsson.chefgpt.api.common.JoinId
 import se.gustavkarlsson.chefgpt.files.UploadedFile
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi

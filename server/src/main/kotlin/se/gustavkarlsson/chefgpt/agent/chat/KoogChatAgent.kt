@@ -45,8 +45,8 @@ import se.gustavkarlsson.chefgpt.agent.tools.SetRecipeFavoriteTool
 import se.gustavkarlsson.chefgpt.agent.tools.SetTemperatureUnitTool
 import se.gustavkarlsson.chefgpt.agent.tools.SetVolumeUnitsTool
 import se.gustavkarlsson.chefgpt.agent.tools.SetWeightUnitsTool
-import se.gustavkarlsson.chefgpt.api.ChatId
-import se.gustavkarlsson.chefgpt.api.EventId
+import se.gustavkarlsson.chefgpt.api.common.ChatId
+import se.gustavkarlsson.chefgpt.api.common.EventId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.chats.Event

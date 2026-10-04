@@ -44,7 +44,7 @@ A pure Kotlin data class holding a business concept (`Recipe`, `Ingredient`, `Ev
 _Avoid_: Model (too generic), DTO (names the wire, not the concept).
 
 **API model**:
-The wire format of an endpoint, in the shared module with an `Api` prefix. Strictly separated from the rest because it will be versioned. Both sides map it to their own domain models at their boundaries — the server in its routes, the app in its repositories — so each side has its own `Recipe` class, shaped for its own needs.
+The wire format of an endpoint, in a per-resource versioned package of the shared module (`api/<resource>/v<k>/`, `Api` prefix). A model lives in the package of the resource that owns it, and packages may import models from each other; `ApiError` has no single owning resource and lives in `api/errors/v1`. Both sides map the models to their own domain models at their boundaries — the server in its routes, the app in its repositories — so each side has its own `Recipe` class, shaped for its own needs.
 _Avoid_: Response (only names one direction), DTO (used loosely elsewhere).
 
 **Tool model**:
@@ -54,3 +54,33 @@ _Avoid_: Tool parameter (only names one direction).
 **Database model**:
 A persistence-layer internal: a SQLDelight-generated query row type, or a hand-written `Stored*` DTO for a column holding a whole-JSON blob. Never crosses the repository boundary.
 _Avoid_: Entity (implies an ORM mapping that does not exist).
+
+## API versioning
+
+**Breaking change**:
+A change to an endpoint that a released client would not survive: removing or renaming a response field it requires, adding a required request field, or changing semantics or validation. The trigger for bumping a resource's version.
+_Avoid_: Incompatible change.
+
+**Compatibility contract**:
+The rules that let a resource keep its version while the server evolves: response models add-only, request models remove-only (added request fields must be optional), and JSON parsing lenient in both directions. A version bump happens only when a change violates the contract.
+_Avoid_: Backward compatibility (the contract is what provides it).
+
+**Resource**:
+A group of endpoints under one top-level path root that share one version counter. Versions are independent across resources.
+_Avoid_: Module (names the code layout, not the contract), endpoint group.
+
+**Resource version**:
+A resource's version counter, identified by the path segment in its URLs: `/api/<resource>/v<k>/...`. Bumped only by a breaking change. Every resource starts at v1; the retrofit to versioned paths happens before first release, so no implicit-v1 era exists.
+_Avoid_: API version (no single version covers the whole API).
+
+**Cascade bump**:
+When a shared wire model changes shape, every resource that exposes it bumps its version in the same release. Chosen over frozen snapshots: once one bump is unavoidable, bumping all affected resources keeps the model set each client sees consistent.
+_Avoid_: Global version bump (cascades are per-change, not a whole-API counter).
+
+**Retirement**:
+The removal of a resource version from the server. Retired routes answer with a bare 410 Gone — no error body — and the client turns any 410 into a full-screen update-required state. There is no sunset policy or schedule: versions live indefinitely, and a retirement is an ad hoc event that may never occur.
+_Avoid_: Sunset, deprecation (both imply a planned schedule this project does not have).
+
+**Wire primitive**:
+A structural piece of the wire format shared by every version of every resource: the ID value classes, the shared serializers, the file-name header. Lives unversioned in `api/common/`; changing one is a storage migration, never a versioning event.
+_Avoid_: Shared model (wire primitives are infra, not contract).

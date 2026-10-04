@@ -1,7 +1,7 @@
 {
     "request": {
         "method": "GET",
-        "url": "http://localhost/jobs/00000000-0000-0000-0000-000000000000",
+        "url": "http://localhost/api/jobs/v1/00000000-0000-0000-0000-000000000000",
         "headers": {
             "Accept": "application/json",
             "Content-Length": "0"

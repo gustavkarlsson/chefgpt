@@ -1,7 +1,7 @@
 package se.gustavkarlsson.chefgpt.chats
 
 import kotlinx.coroutines.flow.Flow
-import se.gustavkarlsson.chefgpt.api.ChatId
+import se.gustavkarlsson.chefgpt.api.common.ChatId
 import se.gustavkarlsson.chefgpt.auth.UserId
 
 interface ChatRepository {

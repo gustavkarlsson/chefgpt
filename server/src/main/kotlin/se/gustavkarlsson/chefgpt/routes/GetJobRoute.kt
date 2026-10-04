@@ -6,12 +6,13 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.util.getOrFail
 import org.koin.ktor.ext.get
-import se.gustavkarlsson.chefgpt.api.ApiError
-import se.gustavkarlsson.chefgpt.api.JobId
+import se.gustavkarlsson.chefgpt.api.common.JobId
+import se.gustavkarlsson.chefgpt.api.errors.v1.ApiError
+import se.gustavkarlsson.chefgpt.api.jobs.v1.JOBS_V1_PATH
 import se.gustavkarlsson.chefgpt.jobs.JobRepository
 
 fun Route.getJobRoute() {
-    get("/jobs/{jobId}") {
+    get("$JOBS_V1_PATH/{jobId}") {
         val jobId =
             JobId.parseOrNull(call.parameters.getOrFail("jobId"))
                 ?: return@get call.respond(

@@ -1,7 +1,7 @@
 package se.gustavkarlsson.chefgpt.chats
 
-import se.gustavkarlsson.chefgpt.api.EventId
-import se.gustavkarlsson.chefgpt.api.JoinId
+import se.gustavkarlsson.chefgpt.api.common.EventId
+import se.gustavkarlsson.chefgpt.api.common.JoinId
 import se.gustavkarlsson.chefgpt.files.UploadedFile
 import kotlin.time.Instant
 

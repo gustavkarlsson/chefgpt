@@ -3,6 +3,7 @@ package se.gustavkarlsson.chefgpt.jobs.usecases
 import co.touchlab.kermit.Logger
 import com.github.michaelbull.result.combine
 import com.github.michaelbull.result.flatMap
+import com.github.michaelbull.result.map
 import com.github.michaelbull.result.onErr
 import com.github.michaelbull.result.onOk
 import io.ktor.http.ContentType
@@ -13,7 +14,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.io.files.Path
 import kotlinx.serialization.builtins.ListSerializer
 import se.gustavkarlsson.chefgpt.ChefGptClient
-import se.gustavkarlsson.chefgpt.api.RecipeId
+import se.gustavkarlsson.chefgpt.api.common.RecipeId
 import se.gustavkarlsson.chefgpt.isImageFile
 import se.gustavkarlsson.chefgpt.jobs.JobManager
 import se.gustavkarlsson.chefgpt.jobs.JobType

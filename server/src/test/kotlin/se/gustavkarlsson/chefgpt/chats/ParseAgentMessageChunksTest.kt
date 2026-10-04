@@ -1,7 +1,7 @@
 package se.gustavkarlsson.chefgpt.chats
-import se.gustavkarlsson.chefgpt.api.ApiAgentMessageChunk
-import se.gustavkarlsson.chefgpt.api.ApiAgentMessageChunk.MultipleChoiceQuestion
-import se.gustavkarlsson.chefgpt.api.ApiAgentMessageChunk.Text
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiAgentMessageChunk
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiAgentMessageChunk.MultipleChoiceQuestion
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiAgentMessageChunk.Text
 import se.gustavkarlsson.chefgpt.chats.parseAgentMessageChunks
 import kotlin.test.Test
 import kotlin.test.assertEquals

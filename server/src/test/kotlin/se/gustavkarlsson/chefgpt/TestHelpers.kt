@@ -11,16 +11,20 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.testing.ApplicationTestBuilder
-import se.gustavkarlsson.chefgpt.api.ApiChat
-import se.gustavkarlsson.chefgpt.api.ApiIngredient
-import se.gustavkarlsson.chefgpt.api.ApiIngredientUpdate
-import se.gustavkarlsson.chefgpt.api.ApiNewIngredient
-import se.gustavkarlsson.chefgpt.api.ApiRecipe
-import se.gustavkarlsson.chefgpt.api.ApiRecipeUpdate
-import se.gustavkarlsson.chefgpt.api.ApiSaveSpoonacularRecipe
-import se.gustavkarlsson.chefgpt.api.IngredientId
-import se.gustavkarlsson.chefgpt.api.RecipeId
-import se.gustavkarlsson.chefgpt.api.SpoonacularId
+import se.gustavkarlsson.chefgpt.api.auth.v1.AUTH_V1_PATH
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiChat
+import se.gustavkarlsson.chefgpt.api.chats.v1.CHATS_V1_PATH
+import se.gustavkarlsson.chefgpt.api.common.IngredientId
+import se.gustavkarlsson.chefgpt.api.common.RecipeId
+import se.gustavkarlsson.chefgpt.api.common.SpoonacularId
+import se.gustavkarlsson.chefgpt.api.ingredients.v1.ApiIngredient
+import se.gustavkarlsson.chefgpt.api.ingredients.v1.ApiIngredientUpdate
+import se.gustavkarlsson.chefgpt.api.ingredients.v1.ApiNewIngredient
+import se.gustavkarlsson.chefgpt.api.ingredients.v1.INGREDIENTS_V1_PATH
+import se.gustavkarlsson.chefgpt.api.recipes.v1.ApiRecipe
+import se.gustavkarlsson.chefgpt.api.recipes.v1.ApiRecipeUpdate
+import se.gustavkarlsson.chefgpt.api.recipes.v1.ApiSaveSpoonacularRecipe
+import se.gustavkarlsson.chefgpt.api.recipes.v1.RECIPES_V1_PATH
 
 const val VALID_USERNAME = "testuser"
 const val VALID_PASSWORD = "Test123!"
@@ -34,7 +38,7 @@ suspend fun ApplicationTestBuilder.registerUser(
             expectSuccess = true
         }
     val response =
-        client.post("/register") {
+        client.post("$AUTH_V1_PATH/register") {
             basicAuth(username, password)
         }
     return checkNotNull(response.headers["Session-Id"]) {
@@ -49,7 +53,7 @@ suspend fun ApplicationTestBuilder.createChat(sessionId: String): ApiChat {
             install(ContentNegotiation) { json(chefGptJson(strict = true)) }
         }
     val response =
-        setupClient.post("/chats") {
+        setupClient.post(CHATS_V1_PATH) {
             header("Session-Id", sessionId)
         }
     return response.body<ApiChat>()
@@ -66,7 +70,7 @@ suspend fun ApplicationTestBuilder.createIngredients(
         }
     return ingredients.map { ingredient ->
         client
-            .post("/ingredients") {
+            .post(INGREDIENTS_V1_PATH) {
                 header("Session-Id", sessionId)
                 contentType(ContentType.Application.Json)
                 setBody(ApiNewIngredient(ingredient))
@@ -84,7 +88,7 @@ suspend fun ApplicationTestBuilder.saveRecipe(
             install(ContentNegotiation) { json(chefGptJson(strict = true)) }
         }
     return client
-        .post("/recipes") {
+        .post(RECIPES_V1_PATH) {
             header("Session-Id", sessionId)
             contentType(ContentType.Application.Json)
             setBody(ApiSaveSpoonacularRecipe(spoonacularId))
@@ -102,7 +106,7 @@ suspend fun ApplicationTestBuilder.setRecipeFavorite(
             install(ContentNegotiation) { json(chefGptJson(strict = true)) }
         }
     return client
-        .patch("/recipes/$id") {
+        .patch("$RECIPES_V1_PATH/$id") {
             header("Session-Id", sessionId)
             contentType(ContentType.Application.Json)
             setBody(ApiRecipeUpdate(favorite))
@@ -120,7 +124,7 @@ suspend fun ApplicationTestBuilder.setIngredientInventory(
             install(ContentNegotiation) { json(chefGptJson(strict = true)) }
         }
     return client
-        .patch("/ingredients/$id") {
+        .patch("$INGREDIENTS_V1_PATH/$id") {
             header("Session-Id", sessionId)
             contentType(ContentType.Application.Json)
             setBody(ApiIngredientUpdate(inInventory))

@@ -11,8 +11,8 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import se.gustavkarlsson.chefgpt.api.ImageUrl
-import se.gustavkarlsson.chefgpt.api.SpoonacularId
+import se.gustavkarlsson.chefgpt.api.common.ImageUrl
+import se.gustavkarlsson.chefgpt.api.common.SpoonacularId
 import kotlin.math.floor
 import kotlin.time.Duration.Companion.minutes
 

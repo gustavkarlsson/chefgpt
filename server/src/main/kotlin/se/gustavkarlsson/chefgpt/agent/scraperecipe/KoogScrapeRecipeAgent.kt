@@ -14,7 +14,7 @@ import ai.koog.prompt.llm.LLModel
 import org.jetbrains.annotations.VisibleForTesting
 import se.gustavkarlsson.chefgpt.agent.tools.models.ToolRecipeIngredient
 import se.gustavkarlsson.chefgpt.agent.tools.models.toDomain
-import se.gustavkarlsson.chefgpt.api.ImageUrl
+import se.gustavkarlsson.chefgpt.api.common.ImageUrl
 import se.gustavkarlsson.chefgpt.files.HtmlLoader
 import se.gustavkarlsson.chefgpt.recipes.NewRecipe
 import se.gustavkarlsson.chefgpt.recipes.RecipeIngredient

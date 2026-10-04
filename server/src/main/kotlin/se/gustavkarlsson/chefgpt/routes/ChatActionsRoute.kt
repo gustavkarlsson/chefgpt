@@ -8,11 +8,12 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 import org.koin.ktor.ext.get
-import se.gustavkarlsson.chefgpt.UnitSerializer
 import se.gustavkarlsson.chefgpt.agent.chat.ChatAgent
-import se.gustavkarlsson.chefgpt.api.ApiAction
-import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
-import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiAction
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiUserJoinedChat
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiUserSendsMessage
+import se.gustavkarlsson.chefgpt.api.chats.v1.CHATS_V1_PATH
+import se.gustavkarlsson.chefgpt.api.common.UnitSerializer
 import se.gustavkarlsson.chefgpt.chats.EventRepository
 import se.gustavkarlsson.chefgpt.chats.toEvent
 import se.gustavkarlsson.chefgpt.files.HtmlLoader
@@ -21,7 +22,7 @@ import se.gustavkarlsson.chefgpt.jobs.JobRunner
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.chatActionsRoute() {
-    post("/chats/{chatId}/actions") {
+    post("$CHATS_V1_PATH/{chatId}/actions") {
         val userId = call.requireSession().user.id
         call
             .getChatId()

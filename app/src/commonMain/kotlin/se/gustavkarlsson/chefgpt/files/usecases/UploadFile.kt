@@ -5,7 +5,7 @@ import io.ktor.http.ContentType
 import kotlinx.io.files.Path
 import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.ClientError
-import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
+import se.gustavkarlsson.chefgpt.api.files.v1.ApiUploadedFile
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 
 fun interface UploadFile {

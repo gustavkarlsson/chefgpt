@@ -14,8 +14,8 @@ import kotlinx.io.readLine
 import kotlinx.io.writeString
 import se.gustavkarlsson.chefgpt.APP_STORAGE_DIR
 import se.gustavkarlsson.chefgpt.IoOrDefault
-import se.gustavkarlsson.chefgpt.api.ApiEvent
-import se.gustavkarlsson.chefgpt.api.ChatId
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiEvent
+import se.gustavkarlsson.chefgpt.api.common.ChatId
 import se.gustavkarlsson.chefgpt.chefGptJson
 
 private val log = Logger.withTag("${EventHistoryStore::class.simpleName}")

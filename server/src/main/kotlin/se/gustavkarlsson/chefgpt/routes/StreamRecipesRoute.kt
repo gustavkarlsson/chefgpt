@@ -4,13 +4,14 @@ import io.ktor.server.routing.Route
 import io.ktor.server.sse.send
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.ktor.ext.get
+import se.gustavkarlsson.chefgpt.api.recipes.v1.RECIPES_V1_PATH
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 import se.gustavkarlsson.chefgpt.recipes.toApi
 import se.gustavkarlsson.chefgpt.requireSession
 import se.gustavkarlsson.chefgpt.util.sse
 
 fun Route.streamRecipesRoute() {
-    sse("/recipes") {
+    sse(RECIPES_V1_PATH) {
         val recipeRepository = get<RecipeRepository>()
         val userId = call.requireSession().user.id
 

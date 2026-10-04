@@ -2,7 +2,7 @@ package se.gustavkarlsson.chefgpt.ingredients
 
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
-import se.gustavkarlsson.chefgpt.api.IngredientId
+import se.gustavkarlsson.chefgpt.api.common.IngredientId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import kotlin.test.Test
 import kotlin.test.assertEquals

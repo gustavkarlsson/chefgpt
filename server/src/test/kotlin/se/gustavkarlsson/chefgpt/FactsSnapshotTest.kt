@@ -10,10 +10,11 @@ import io.ktor.http.contentType
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import se.gustavkarlsson.chefgpt.api.ApiTemperatureUnit
-import se.gustavkarlsson.chefgpt.api.ApiUserFacts
-import se.gustavkarlsson.chefgpt.api.ApiVolumeUnits
-import se.gustavkarlsson.chefgpt.api.ApiWeightUnits
+import se.gustavkarlsson.chefgpt.api.facts.v1.ApiTemperatureUnit
+import se.gustavkarlsson.chefgpt.api.facts.v1.ApiUserFacts
+import se.gustavkarlsson.chefgpt.api.facts.v1.ApiVolumeUnits
+import se.gustavkarlsson.chefgpt.api.facts.v1.ApiWeightUnits
+import se.gustavkarlsson.chefgpt.api.facts.v1.FACTS_V1_PATH
 import se.gustavkarlsson.slapshot.junit5.JUnit5SnapshotContext
 import se.gustavkarlsson.slapshot.junit5.SnapshotExtension
 
@@ -31,7 +32,7 @@ class FactsSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.get("/facts") {
+            client.get(FACTS_V1_PATH) {
                 header("Session-Id", sessionId)
             }
         }
@@ -41,7 +42,7 @@ class FactsSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.put("/facts") {
+            client.put(FACTS_V1_PATH) {
                 header("Session-Id", sessionId)
                 contentType(ContentType.Application.Json)
                 setBody(
@@ -61,7 +62,7 @@ class FactsSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.put("/facts") {
+            client.put(FACTS_V1_PATH) {
                 header("Session-Id", sessionId)
                 contentType(ContentType.Application.Json)
                 setBody(
@@ -82,7 +83,7 @@ class FactsSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.put("/facts") {
+            client.put(FACTS_V1_PATH) {
                 header("Session-Id", sessionId)
                 contentType(ContentType.Application.Json)
                 setBody(TextContent("""{"weightUnits": "bananas"}""", ContentType.Application.Json))
@@ -92,6 +93,6 @@ class FactsSnapshotTest {
     @Test
     fun `get facts requires authentication`() =
         snapshotTestApplication(snapshotContext) { client ->
-            client.get("/facts")
+            client.get(FACTS_V1_PATH)
         }
 }

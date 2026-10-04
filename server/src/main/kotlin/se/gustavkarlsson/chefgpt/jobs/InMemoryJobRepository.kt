@@ -1,10 +1,10 @@
 package se.gustavkarlsson.chefgpt.jobs
 
 import kotlinx.serialization.json.JsonElement
-import se.gustavkarlsson.chefgpt.api.ApiError
-import se.gustavkarlsson.chefgpt.api.ApiJob
-import se.gustavkarlsson.chefgpt.api.ApiJobState
-import se.gustavkarlsson.chefgpt.api.JobId
+import se.gustavkarlsson.chefgpt.api.common.JobId
+import se.gustavkarlsson.chefgpt.api.errors.v1.ApiError
+import se.gustavkarlsson.chefgpt.api.jobs.v1.ApiJob
+import se.gustavkarlsson.chefgpt.api.jobs.v1.ApiJobState
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes

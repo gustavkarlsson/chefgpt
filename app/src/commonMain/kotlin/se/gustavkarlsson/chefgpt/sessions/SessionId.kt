@@ -1,7 +1,7 @@
 package se.gustavkarlsson.chefgpt.sessions
 
 import kotlinx.serialization.Serializable
-import se.gustavkarlsson.chefgpt.StringValueSerializer
+import se.gustavkarlsson.chefgpt.api.common.StringValueSerializer
 import kotlin.jvm.JvmInline
 
 @Serializable(with = SessionIdSerializer::class)

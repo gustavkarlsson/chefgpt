@@ -1,7 +1,7 @@
 {
     "request": {
         "method": "POST",
-        "url": "http://localhost/ingredients",
+        "url": "http://localhost/api/ingredients/v1",
         "headers": {
             "Accept": "application/json",
             "Content-Type": "application/json",

@@ -1,10 +1,10 @@
 {
     "request": {
         "method": "POST",
-        "url": "http://localhost/files",
+        "url": "http://localhost/api/files/v1",
         "headers": {
             "Session-Id": "00000000000000000000000000000000",
-            "X-File-Name": "recipe.zip",
+            "File-Name": "recipe.zip",
             "Accept": "application/json",
             "Content-Type": "application/zip",
             "Content-Length": "0"

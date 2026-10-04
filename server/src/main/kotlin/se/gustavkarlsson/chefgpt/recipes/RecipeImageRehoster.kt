@@ -10,7 +10,7 @@ import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.readRemaining
 import kotlinx.io.readByteArray
 import org.slf4j.LoggerFactory
-import se.gustavkarlsson.chefgpt.api.ImageUrl
+import se.gustavkarlsson.chefgpt.api.common.ImageUrl
 import se.gustavkarlsson.chefgpt.files.FileUploader
 import kotlin.coroutines.cancellation.CancellationException
 

@@ -1,6 +1,6 @@
 package se.gustavkarlsson.chefgpt.agent.chat
 
-import se.gustavkarlsson.chefgpt.api.ChatId
+import se.gustavkarlsson.chefgpt.api.common.ChatId
 import se.gustavkarlsson.chefgpt.auth.UserId
 
 interface ChatAgent {

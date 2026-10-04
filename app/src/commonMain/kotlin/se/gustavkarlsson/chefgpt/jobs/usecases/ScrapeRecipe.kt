@@ -1,11 +1,12 @@
 package se.gustavkarlsson.chefgpt.jobs.usecases
 
 import co.touchlab.kermit.Logger
+import com.github.michaelbull.result.map
 import com.github.michaelbull.result.onErr
 import com.github.michaelbull.result.onOk
 import kotlinx.serialization.builtins.ListSerializer
 import se.gustavkarlsson.chefgpt.ChefGptClient
-import se.gustavkarlsson.chefgpt.api.RecipeId
+import se.gustavkarlsson.chefgpt.api.common.RecipeId
 import se.gustavkarlsson.chefgpt.jobs.JobManager
 import se.gustavkarlsson.chefgpt.jobs.JobType
 import se.gustavkarlsson.chefgpt.sessions.SessionId

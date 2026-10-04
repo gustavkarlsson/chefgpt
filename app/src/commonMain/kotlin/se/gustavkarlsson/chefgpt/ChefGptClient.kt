@@ -12,6 +12,7 @@ import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.sse.SSE
@@ -40,35 +41,45 @@ import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.serialization.json.JsonElement
-import se.gustavkarlsson.chefgpt.api.ApiAction
-import se.gustavkarlsson.chefgpt.api.ApiChat
-import se.gustavkarlsson.chefgpt.api.ApiError
-import se.gustavkarlsson.chefgpt.api.ApiEvent
-import se.gustavkarlsson.chefgpt.api.ApiIngredient
-import se.gustavkarlsson.chefgpt.api.ApiIngredientUpdate
-import se.gustavkarlsson.chefgpt.api.ApiJob
-import se.gustavkarlsson.chefgpt.api.ApiNewIngredient
-import se.gustavkarlsson.chefgpt.api.ApiRecipe
-import se.gustavkarlsson.chefgpt.api.ApiRecipeSummary
-import se.gustavkarlsson.chefgpt.api.ApiRecipeUpdate
-import se.gustavkarlsson.chefgpt.api.ApiSaveSpoonacularRecipe
-import se.gustavkarlsson.chefgpt.api.ApiScanRecipe
-import se.gustavkarlsson.chefgpt.api.ApiScrapeRecipe
-import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
-import se.gustavkarlsson.chefgpt.api.ApiUserFacts
-import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
-import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
-import se.gustavkarlsson.chefgpt.api.ChatId
-import se.gustavkarlsson.chefgpt.api.EventId
-import se.gustavkarlsson.chefgpt.api.FILE_NAME_HEADER
-import se.gustavkarlsson.chefgpt.api.IngredientId
-import se.gustavkarlsson.chefgpt.api.JobId
-import se.gustavkarlsson.chefgpt.api.JoinId
-import se.gustavkarlsson.chefgpt.api.RecipeId
-import se.gustavkarlsson.chefgpt.api.SpoonacularId
+import se.gustavkarlsson.chefgpt.api.auth.v1.AUTH_V1_PATH
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiAction
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiChat
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiEvent
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiUserJoinedChat
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiUserSendsMessage
+import se.gustavkarlsson.chefgpt.api.chats.v1.CHATS_V1_PATH
+import se.gustavkarlsson.chefgpt.api.common.CLIENT_PLATFORM_HEADER
+import se.gustavkarlsson.chefgpt.api.common.CLIENT_VERSION_HEADER
+import se.gustavkarlsson.chefgpt.api.common.ChatId
+import se.gustavkarlsson.chefgpt.api.common.EventId
+import se.gustavkarlsson.chefgpt.api.common.FILE_NAME_HEADER
+import se.gustavkarlsson.chefgpt.api.common.IngredientId
+import se.gustavkarlsson.chefgpt.api.common.JobId
+import se.gustavkarlsson.chefgpt.api.common.JoinId
+import se.gustavkarlsson.chefgpt.api.common.RecipeId
+import se.gustavkarlsson.chefgpt.api.common.SpoonacularId
+import se.gustavkarlsson.chefgpt.api.errors.v1.ApiError
+import se.gustavkarlsson.chefgpt.api.facts.v1.ApiUserFacts
+import se.gustavkarlsson.chefgpt.api.facts.v1.FACTS_V1_PATH
+import se.gustavkarlsson.chefgpt.api.files.v1.ApiUploadedFile
+import se.gustavkarlsson.chefgpt.api.files.v1.FILES_V1_PATH
+import se.gustavkarlsson.chefgpt.api.ingredients.v1.ApiIngredient
+import se.gustavkarlsson.chefgpt.api.ingredients.v1.ApiIngredientUpdate
+import se.gustavkarlsson.chefgpt.api.ingredients.v1.ApiNewIngredient
+import se.gustavkarlsson.chefgpt.api.ingredients.v1.INGREDIENTS_V1_PATH
+import se.gustavkarlsson.chefgpt.api.jobs.v1.ApiJob
+import se.gustavkarlsson.chefgpt.api.jobs.v1.JOBS_V1_PATH
+import se.gustavkarlsson.chefgpt.api.recipes.v1.ApiRecipe
+import se.gustavkarlsson.chefgpt.api.recipes.v1.ApiRecipeSummary
+import se.gustavkarlsson.chefgpt.api.recipes.v1.ApiRecipeUpdate
+import se.gustavkarlsson.chefgpt.api.recipes.v1.ApiSaveSpoonacularRecipe
+import se.gustavkarlsson.chefgpt.api.recipes.v1.ApiScanRecipe
+import se.gustavkarlsson.chefgpt.api.recipes.v1.ApiScrapeRecipe
+import se.gustavkarlsson.chefgpt.api.recipes.v1.RECIPES_V1_PATH
 import se.gustavkarlsson.chefgpt.debug.Settings
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 import se.gustavkarlsson.chefgpt.sessions.UserCredentials
+import se.gustavkarlsson.chefgpt.updates.UpdateRequiredNotifier
 import se.gustavkarlsson.chefgpt.util.sseTyped
 import io.ktor.client.plugins.logging.Logger as KtorLogger
 
@@ -76,6 +87,7 @@ private val log = Logger.withTag("${ChefGptClient::class.simpleName}")
 
 class ChefGptClient(
     private val settings: Settings,
+    private val updateRequiredNotifier: UpdateRequiredNotifier,
     developmentMode: Boolean = false,
 ) : AutoCloseable {
     private val json = chefGptJson(strict = developmentMode, prettyPrint = developmentMode)
@@ -87,6 +99,11 @@ class ChefGptClient(
             }
             install(SSE)
             install(HttpTimeout)
+            defaultRequest {
+                // Lets the server apply client-specific workarounds.
+                header(CLIENT_PLATFORM_HEADER, devicePlatform.clientHeaderValue)
+                header(CLIENT_VERSION_HEADER, CLIENT_VERSION)
+            }
 
             install(Logging) {
                 logger =
@@ -106,7 +123,7 @@ class ChefGptClient(
     suspend fun register(credentials: UserCredentials): Result<SessionId, ClientError> =
         request(
             send = { baseUrl ->
-                post("$baseUrl/register") {
+                post("$baseUrl$AUTH_V1_PATH/register") {
                     basicAuth(credentials.userName.value, credentials.password.value)
                 }
             },
@@ -116,7 +133,7 @@ class ChefGptClient(
     suspend fun login(credentials: UserCredentials): Result<SessionId, ClientError> =
         request(
             send = { baseUrl ->
-                post("$baseUrl/login") {
+                post("$baseUrl$AUTH_V1_PATH/login") {
                     basicAuth(credentials.userName.value, credentials.password.value)
                 }
             },
@@ -130,7 +147,7 @@ class ChefGptClient(
     ): Result<ApiUploadedFile, ClientError> =
         request(
             send = { baseUrl ->
-                post("$baseUrl/files") {
+                post("$baseUrl$FILES_V1_PATH") {
                     sessionIdHeader(sessionId)
                     contentType(contentType)
                     header(FILE_NAME_HEADER, data.name)
@@ -149,7 +166,7 @@ class ChefGptClient(
     ): Result<ApiJob<List<String>>, ClientError> =
         request(
             send = { baseUrl ->
-                post("$baseUrl/ingredients/scan") {
+                post("$baseUrl$INGREDIENTS_V1_PATH/scan") {
                     sessionIdHeader(sessionId)
                     contentType(contentType)
                     accept(ContentType.Application.Json)
@@ -166,7 +183,7 @@ class ChefGptClient(
     ): Result<ApiJob<List<RecipeId>>, ClientError> =
         request(
             send = { baseUrl ->
-                post("$baseUrl/recipes/scan") {
+                post("$baseUrl$RECIPES_V1_PATH/scan") {
                     sessionIdHeader(sessionId)
                     contentType(ContentType.Application.Json)
                     accept(ContentType.Application.Json)
@@ -183,7 +200,7 @@ class ChefGptClient(
     ): Result<ApiJob<List<RecipeId>>, ClientError> =
         request(
             send = { baseUrl ->
-                post("$baseUrl/recipes/scrape") {
+                post("$baseUrl$RECIPES_V1_PATH/scrape") {
                     sessionIdHeader(sessionId)
                     contentType(ContentType.Application.Json)
                     accept(ContentType.Application.Json)
@@ -196,7 +213,7 @@ class ChefGptClient(
     suspend fun createChat(sessionId: SessionId): Result<ApiChat, ClientError> =
         request(
             send = { baseUrl ->
-                post("$baseUrl/chats") {
+                post("$baseUrl$CHATS_V1_PATH") {
                     sessionIdHeader(sessionId)
                     accept(ContentType.Application.Json)
                 }
@@ -210,7 +227,7 @@ class ChefGptClient(
     ): Result<Unit, ClientError> =
         request(
             send = { baseUrl ->
-                delete("$baseUrl/chats/$chatId") {
+                delete("$baseUrl$CHATS_V1_PATH/$chatId") {
                     sessionIdHeader(sessionId)
                     accept(ContentType.Application.Json)
                 }
@@ -225,7 +242,7 @@ class ChefGptClient(
                 json = json,
                 eventType = "chats",
                 request = {
-                    url("$baseUrl/chats")
+                    url("$baseUrl$CHATS_V1_PATH")
                     sessionIdHeader(sessionId)
                 },
             ) { _, incoming ->
@@ -245,7 +262,7 @@ class ChefGptClient(
                 json = json,
                 eventType = "event",
                 request = {
-                    url("$baseUrl/chats/$chatId/events")
+                    url("$baseUrl$CHATS_V1_PATH/$chatId/events")
                     if (lastEventId != null) {
                         parameter("lastEventId", lastEventId)
                     }
@@ -264,7 +281,7 @@ class ChefGptClient(
                 json = json,
                 eventType = "ingredients",
                 request = {
-                    url("$baseUrl/ingredients")
+                    url("$baseUrl$INGREDIENTS_V1_PATH")
                     sessionIdHeader(sessionId)
                 },
             ) { _, incoming ->
@@ -278,7 +295,7 @@ class ChefGptClient(
     ): Result<Unit, ClientError> =
         request(
             send = { baseUrl ->
-                post("$baseUrl/ingredients") {
+                post("$baseUrl$INGREDIENTS_V1_PATH") {
                     sessionIdHeader(sessionId)
                     contentType(ContentType.Application.Json)
                     setBody(ApiNewIngredient(name))
@@ -293,7 +310,7 @@ class ChefGptClient(
     ): Result<Unit, ClientError> =
         request(
             send = { baseUrl ->
-                delete("$baseUrl/ingredients/$ingredientId") {
+                delete("$baseUrl$INGREDIENTS_V1_PATH/$ingredientId") {
                     sessionIdHeader(sessionId)
                 }
             },
@@ -307,7 +324,7 @@ class ChefGptClient(
     ): Result<Unit, ClientError> =
         request(
             send = { baseUrl ->
-                patch("$baseUrl/ingredients/$ingredientId") {
+                patch("$baseUrl$INGREDIENTS_V1_PATH/$ingredientId") {
                     sessionIdHeader(sessionId)
                     contentType(ContentType.Application.Json)
                     setBody(ApiIngredientUpdate(inInventory))
@@ -324,7 +341,7 @@ class ChefGptClient(
                 json = json,
                 eventType = "recipes",
                 request = {
-                    url("$baseUrl/recipes")
+                    url("$baseUrl$RECIPES_V1_PATH")
                     sessionIdHeader(sessionId)
                 },
             ) { _, incoming ->
@@ -340,7 +357,7 @@ class ChefGptClient(
     ): Result<ApiRecipe, ClientError> =
         request(
             send = { baseUrl ->
-                post("$baseUrl/recipes") {
+                post("$baseUrl$RECIPES_V1_PATH") {
                     sessionIdHeader(sessionId)
                     contentType(ContentType.Application.Json)
                     accept(ContentType.Application.Json)
@@ -357,7 +374,7 @@ class ChefGptClient(
     ): Result<Unit, ClientError> =
         request(
             send = { baseUrl ->
-                patch("$baseUrl/recipes/$recipeId") {
+                patch("$baseUrl$RECIPES_V1_PATH/$recipeId") {
                     sessionIdHeader(sessionId)
                     contentType(ContentType.Application.Json)
                     setBody(ApiRecipeUpdate(favorite))
@@ -373,7 +390,7 @@ class ChefGptClient(
     ): Result<ApiRecipe, ClientError> =
         request(
             send = { baseUrl ->
-                post("$baseUrl/recipes/$recipeId/overwrite-original") {
+                post("$baseUrl$RECIPES_V1_PATH/$recipeId/overwrite-original") {
                     sessionIdHeader(sessionId)
                     accept(ContentType.Application.Json)
                 }
@@ -388,7 +405,7 @@ class ChefGptClient(
     ): Result<ApiRecipe, ClientError> =
         request(
             send = { baseUrl ->
-                post("$baseUrl/recipes/$recipeId/save-as-copy") {
+                post("$baseUrl$RECIPES_V1_PATH/$recipeId/save-as-copy") {
                     sessionIdHeader(sessionId)
                     accept(ContentType.Application.Json)
                 }
@@ -402,7 +419,7 @@ class ChefGptClient(
     ): Result<Unit, ClientError> =
         request(
             send = { baseUrl ->
-                delete("$baseUrl/recipes/$recipeId") {
+                delete("$baseUrl$RECIPES_V1_PATH/$recipeId") {
                     sessionIdHeader(sessionId)
                 }
             },
@@ -415,7 +432,7 @@ class ChefGptClient(
     ): Result<ApiRecipe, ClientError> =
         request(
             send = { baseUrl ->
-                get("$baseUrl/recipes/$recipeId") {
+                get("$baseUrl$RECIPES_V1_PATH/$recipeId") {
                     sessionIdHeader(sessionId)
                     accept(ContentType.Application.Json)
                 }
@@ -426,7 +443,7 @@ class ChefGptClient(
     suspend fun getFacts(sessionId: SessionId): Result<ApiUserFacts, ClientError> =
         request(
             send = { baseUrl ->
-                get("$baseUrl/facts") {
+                get("$baseUrl$FACTS_V1_PATH") {
                     sessionIdHeader(sessionId)
                     accept(ContentType.Application.Json)
                 }
@@ -440,7 +457,7 @@ class ChefGptClient(
     ): Result<ApiUserFacts, ClientError> =
         request(
             send = { baseUrl ->
-                put("$baseUrl/facts") {
+                put("$baseUrl$FACTS_V1_PATH") {
                     sessionIdHeader(sessionId)
                     contentType(ContentType.Application.Json)
                     accept(ContentType.Application.Json)
@@ -458,7 +475,7 @@ class ChefGptClient(
     ): Result<ApiJob<Unit>, ClientError> =
         request(
             send = { baseUrl ->
-                post("$baseUrl/chats/$chatId/actions") {
+                post("$baseUrl$CHATS_V1_PATH/$chatId/actions") {
                     sessionIdHeader(sessionId)
                     contentType(ContentType.Application.Json)
                     accept(ContentType.Application.Json)
@@ -476,7 +493,7 @@ class ChefGptClient(
     ): Result<Unit, ClientError> =
         request(
             send = { baseUrl ->
-                post("$baseUrl/chats/$chatId/actions") {
+                post("$baseUrl$CHATS_V1_PATH/$chatId/actions") {
                     sessionIdHeader(sessionId)
                     contentType(ContentType.Application.Json)
                     setBody<ApiAction>(ApiUserJoinedChat(joinId))
@@ -491,7 +508,7 @@ class ChefGptClient(
     ): Result<ApiJob<JsonElement>, ClientError> =
         request(
             send = { baseUrl ->
-                get("$baseUrl/jobs/$jobId") {
+                get("$baseUrl$JOBS_V1_PATH/$jobId") {
                     sessionIdHeader(sessionId)
                     accept(ContentType.Application.Json)
                 }
@@ -510,7 +527,12 @@ class ChefGptClient(
             .mapError { error ->
                 log.e(error) { "Request failed" }
                 ClientError.Other
-            }.flatMap { response -> response.toResultSafe(readSafe) }
+            }.flatMap { response ->
+                if (response.status == HttpStatusCode.Gone) {
+                    updateRequiredNotifier.notifyUpdateRequired()
+                }
+                response.toResultSafe(readSafe)
+            }
     }
 
     override fun close() {

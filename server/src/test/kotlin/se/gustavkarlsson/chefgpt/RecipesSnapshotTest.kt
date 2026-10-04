@@ -11,9 +11,10 @@ import io.ktor.http.contentType
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import se.gustavkarlsson.chefgpt.api.ApiRecipeUpdate
-import se.gustavkarlsson.chefgpt.api.ApiSaveSpoonacularRecipe
-import se.gustavkarlsson.chefgpt.api.SpoonacularId
+import se.gustavkarlsson.chefgpt.api.common.SpoonacularId
+import se.gustavkarlsson.chefgpt.api.recipes.v1.ApiRecipeUpdate
+import se.gustavkarlsson.chefgpt.api.recipes.v1.ApiSaveSpoonacularRecipe
+import se.gustavkarlsson.chefgpt.api.recipes.v1.RECIPES_V1_PATH
 import se.gustavkarlsson.chefgpt.recipes.RecipeUpdate
 import se.gustavkarlsson.chefgpt.recipes.TestRecipeRepository
 import se.gustavkarlsson.slapshot.junit5.JUnit5SnapshotContext
@@ -34,7 +35,7 @@ class RecipesSnapshotTest {
     @Test
     fun `save recipe unauthenticated`() =
         snapshotTestApplication(snapshotContext) { client ->
-            client.post("/recipes") {
+            client.post(RECIPES_V1_PATH) {
                 contentType(ContentType.Application.Json)
                 setBody(ApiSaveSpoonacularRecipe(SpoonacularId(716429L)))
             }
@@ -45,7 +46,7 @@ class RecipesSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.post("/recipes") {
+            client.post(RECIPES_V1_PATH) {
                 header("Session-Id", sessionId)
                 contentType(ContentType.Application.Json)
                 setBody(ApiSaveSpoonacularRecipe(SpoonacularId(716429L)))
@@ -58,7 +59,7 @@ class RecipesSnapshotTest {
             val sessionId = registerUser()
             saveRecipe(sessionId, SpoonacularId(716429L))
 
-            client.post("/recipes") {
+            client.post(RECIPES_V1_PATH) {
                 header("Session-Id", sessionId)
                 contentType(ContentType.Application.Json)
                 setBody(ApiSaveSpoonacularRecipe(SpoonacularId(716429L)))
@@ -71,7 +72,7 @@ class RecipesSnapshotTest {
             val sessionId = registerUser()
             val recipe = saveRecipe(sessionId, SpoonacularId(716429L))
 
-            client.get("/recipes/${recipe.id}") {
+            client.get("$RECIPES_V1_PATH/${recipe.id}") {
                 header("Session-Id", sessionId)
             }
         }
@@ -81,7 +82,7 @@ class RecipesSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.get("/recipes/$MISSING_ID") {
+            client.get("$RECIPES_V1_PATH/$MISSING_ID") {
                 header("Session-Id", sessionId)
             }
         }
@@ -91,7 +92,7 @@ class RecipesSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.get("/recipes/not-a-uuid") {
+            client.get("$RECIPES_V1_PATH/not-a-uuid") {
                 header("Session-Id", sessionId)
             }
         }
@@ -99,7 +100,7 @@ class RecipesSnapshotTest {
     @Test
     fun `get recipe unauthenticated`() =
         snapshotTestApplication(snapshotContext) { client ->
-            client.get("/recipes/$MISSING_ID")
+            client.get("$RECIPES_V1_PATH/$MISSING_ID")
         }
 
     @Test
@@ -108,7 +109,7 @@ class RecipesSnapshotTest {
             val sessionId = registerUser()
             val recipe = saveRecipe(sessionId, SpoonacularId(716429L))
 
-            client.patch("/recipes/${recipe.id}") {
+            client.patch("$RECIPES_V1_PATH/${recipe.id}") {
                 header("Session-Id", sessionId)
                 contentType(ContentType.Application.Json)
                 setBody(ApiRecipeUpdate(favorite = true))
@@ -122,7 +123,7 @@ class RecipesSnapshotTest {
             val recipe = saveRecipe(sessionId, SpoonacularId(716429L))
             setRecipeFavorite(sessionId, recipe.id, favorite = true)
 
-            client.patch("/recipes/${recipe.id}") {
+            client.patch("$RECIPES_V1_PATH/${recipe.id}") {
                 header("Session-Id", sessionId)
                 contentType(ContentType.Application.Json)
                 setBody(ApiRecipeUpdate(favorite = false))
@@ -134,7 +135,7 @@ class RecipesSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.patch("/recipes/$MISSING_ID") {
+            client.patch("$RECIPES_V1_PATH/$MISSING_ID") {
                 header("Session-Id", sessionId)
                 contentType(ContentType.Application.Json)
                 setBody(ApiRecipeUpdate(favorite = true))
@@ -148,7 +149,7 @@ class RecipesSnapshotTest {
             val recipe = saveRecipe(sessionId, SpoonacularId(716429L))
             val modified = recipeRepository.modifyRecipe(recipe.id, RecipeUpdate(title = "Vegetarian carbonara"))
 
-            client.post("/recipes/${modified.id}/overwrite-original") {
+            client.post("$RECIPES_V1_PATH/${modified.id}/overwrite-original") {
                 header("Session-Id", sessionId)
             }
         }
@@ -159,7 +160,7 @@ class RecipesSnapshotTest {
             val sessionId = registerUser()
             val recipe = saveRecipe(sessionId, SpoonacularId(716429L))
 
-            client.post("/recipes/${recipe.id}/overwrite-original") {
+            client.post("$RECIPES_V1_PATH/${recipe.id}/overwrite-original") {
                 header("Session-Id", sessionId)
             }
         }
@@ -169,7 +170,7 @@ class RecipesSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.post("/recipes/$MISSING_ID/overwrite-original") {
+            client.post("$RECIPES_V1_PATH/$MISSING_ID/overwrite-original") {
                 header("Session-Id", sessionId)
             }
         }
@@ -181,7 +182,7 @@ class RecipesSnapshotTest {
             val recipe = saveRecipe(sessionId, SpoonacularId(716429L))
             val modified = recipeRepository.modifyRecipe(recipe.id, RecipeUpdate(title = "Vegetarian carbonara"))
 
-            client.post("/recipes/${modified.id}/save-as-copy") {
+            client.post("$RECIPES_V1_PATH/${modified.id}/save-as-copy") {
                 header("Session-Id", sessionId)
             }
         }
@@ -192,7 +193,7 @@ class RecipesSnapshotTest {
             val sessionId = registerUser()
             val recipe = saveRecipe(sessionId, SpoonacularId(716429L))
 
-            client.post("/recipes/${recipe.id}/save-as-copy") {
+            client.post("$RECIPES_V1_PATH/${recipe.id}/save-as-copy") {
                 header("Session-Id", sessionId)
             }
         }
@@ -202,7 +203,7 @@ class RecipesSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.post("/recipes/not-a-uuid/save-as-copy") {
+            client.post("$RECIPES_V1_PATH/not-a-uuid/save-as-copy") {
                 header("Session-Id", sessionId)
             }
         }
@@ -210,7 +211,7 @@ class RecipesSnapshotTest {
     @Test
     fun `save recipe as copy unauthenticated`() =
         snapshotTestApplication(snapshotContext) { client ->
-            client.post("/recipes/$MISSING_ID/save-as-copy")
+            client.post("$RECIPES_V1_PATH/$MISSING_ID/save-as-copy")
         }
 
     @Test
@@ -219,7 +220,7 @@ class RecipesSnapshotTest {
             val sessionId = registerUser()
             val recipe = saveRecipe(sessionId, SpoonacularId(716429L))
 
-            client.delete("/recipes/${recipe.id}") {
+            client.delete("$RECIPES_V1_PATH/${recipe.id}") {
                 header("Session-Id", sessionId)
             }
         }
@@ -229,7 +230,7 @@ class RecipesSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.delete("/recipes/$MISSING_ID") {
+            client.delete("$RECIPES_V1_PATH/$MISSING_ID") {
                 header("Session-Id", sessionId)
             }
         }
@@ -239,7 +240,7 @@ class RecipesSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.delete("/recipes/not-a-uuid") {
+            client.delete("$RECIPES_V1_PATH/not-a-uuid") {
                 header("Session-Id", sessionId)
             }
         }
@@ -247,6 +248,6 @@ class RecipesSnapshotTest {
     @Test
     fun `delete recipe unauthenticated`() =
         snapshotTestApplication(snapshotContext) { client ->
-            client.delete("/recipes/$MISSING_ID")
+            client.delete("$RECIPES_V1_PATH/$MISSING_ID")
         }
 }

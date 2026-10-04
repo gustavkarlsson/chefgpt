@@ -2,9 +2,9 @@ package se.gustavkarlsson.chefgpt.agent.tools
 
 import kotlinx.coroutines.test.runTest
 import se.gustavkarlsson.chefgpt.agent.tools.models.ToolUploadedFile
-import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
-import se.gustavkarlsson.chefgpt.api.ChatId
-import se.gustavkarlsson.chefgpt.api.EventId
+import se.gustavkarlsson.chefgpt.api.common.ChatId
+import se.gustavkarlsson.chefgpt.api.common.EventId
+import se.gustavkarlsson.chefgpt.api.files.v1.ApiUploadedFile
 import se.gustavkarlsson.chefgpt.chats.ChatMessage
 import se.gustavkarlsson.chefgpt.chats.Event
 import se.gustavkarlsson.chefgpt.chats.InMemoryEventRepository

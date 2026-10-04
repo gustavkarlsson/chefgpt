@@ -3,7 +3,7 @@ package se.gustavkarlsson.chefgpt.agent.tools
 import ai.koog.agents.core.tools.annotations.LLMDescription
 import ai.koog.agents.core.tools.annotations.Tool
 import ai.koog.agents.core.tools.reflect.ToolSet
-import se.gustavkarlsson.chefgpt.api.ImageUrl
+import se.gustavkarlsson.chefgpt.api.common.ImageUrl
 import se.gustavkarlsson.chefgpt.files.CropRegion
 import se.gustavkarlsson.chefgpt.files.ImageCropper
 
