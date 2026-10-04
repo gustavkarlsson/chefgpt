@@ -37,15 +37,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.AttachFile
-import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Kitchen
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -55,8 +56,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -83,20 +82,18 @@ import com.mikepenz.markdown.m3.Markdown
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.launch
 import kotlinx.io.files.Path
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import se.gustavkarlsson.chefgpt.api.common.ChatId
-import se.gustavkarlsson.chefgpt.camera.CapturePhoto
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatar
 import se.gustavkarlsson.chefgpt.isImageFile
 import se.gustavkarlsson.chefgpt.navigation.Screen
 import se.gustavkarlsson.chefgpt.navigation.Screen.Id
-import se.gustavkarlsson.chefgpt.pickFiles
 import se.gustavkarlsson.chefgpt.plus
+import se.gustavkarlsson.chefgpt.screens.photos.PhotoCollectionSheetContent
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 import se.gustavkarlsson.chefgpt.theme.LocalMarkdownTypography
 import kotlin.time.Duration.Companion.milliseconds
@@ -526,10 +523,14 @@ private fun MessageInput(
                         ),
                 )
 
-                input.cameraButton?.let { button ->
-                    TakePhotoButton(button)
+                input.addPhotosButton?.let { button ->
+                    IconButton(onClick = button.onClick) {
+                        Icon(
+                            imageVector = Icons.Default.AddPhotoAlternate,
+                            contentDescription = "Add photos",
+                        )
+                    }
                 }
-                AttachFilesButton(onFilesAttached = input.onFilesAttached)
 
                 IconButton(
                     onClick = { input.onClickSend?.invoke() },
@@ -543,58 +544,29 @@ private fun MessageInput(
             }
         }
     }
-}
-
-@Composable
-private fun AttachFilesButton(
-    onFilesAttached: (List<Path>) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val scope = rememberCoroutineScope()
-    IconButton(
-        modifier = modifier,
-        onClick = {
-            scope.launch {
-                onFilesAttached(pickFiles(multiple = true))
-            }
-        },
-    ) {
-        Icon(
-            imageVector = Icons.Default.AttachFile,
-            contentDescription = "Attach files",
-        )
+    input.addPhotosSheet?.let { sheet ->
+        AddPhotosSheet(sheet)
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TakePhotoButton(
-    button: UiCameraButton,
+private fun AddPhotosSheet(
+    sheet: UiAddPhotosSheet,
     modifier: Modifier = Modifier,
 ) {
-    var takingPhoto by rememberSaveable { mutableStateOf(false) }
-    IconButton(
+    ModalBottomSheet(
         modifier = modifier,
-        onClick = { takingPhoto = true },
-        enabled = !takingPhoto,
+        onDismissRequest = sheet.onDismiss,
     ) {
-        Icon(
-            imageVector = Icons.Default.CameraAlt,
-            contentDescription = "Scan ingredients from a photo",
-        )
-    }
-    if (takingPhoto) {
-        CapturePhoto(
-            onPhoto = { photo ->
-                button.onPhotoTaken(photo)
-                takingPhoto = false
-            },
-            onCancelled = {
-                takingPhoto = false
-            },
-            onError = {
-                button.onError()
-                takingPhoto = false
-            },
+        PhotoCollectionSheetContent(
+            photos = sheet.photos,
+            camera = sheet.camera,
+            picker = sheet.picker,
+            onClickPhoto = sheet.onClickRemovePhoto,
+            onClickConfirm = sheet.onClickConfirm,
+            confirmLabel = "Attach",
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
     }
 }

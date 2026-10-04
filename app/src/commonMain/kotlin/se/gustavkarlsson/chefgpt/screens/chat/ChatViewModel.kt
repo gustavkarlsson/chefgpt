@@ -49,6 +49,8 @@ import se.gustavkarlsson.chefgpt.ingredients.usecases.StreamIngredients
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsScreen
+import se.gustavkarlsson.chefgpt.screens.photos.CameraAction
+import se.gustavkarlsson.chefgpt.screens.photos.PickerAction
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 import se.gustavkarlsson.chefgpt.snackbar.usecases.ShowSnackbar
 import kotlin.random.Random
@@ -102,6 +104,7 @@ class ChatViewModel(
             events = emptyList(),
             userText = "",
             attachments = emptyList(),
+            addPhotosVisible = false,
         )
 
     // Discrete add/remove events that the UI animates one at a time; transient, so they live
@@ -119,11 +122,39 @@ class ChatViewModel(
                     text = userText,
                     attachments = attachments,
                     onTextChanged = ::updateUserText,
-                    onFilesAttached = ::attachFiles,
                     onClickRemoveAttachment = ::removeAttachment,
-                    cameraButton =
-                        if (deviceConfig.supportsCamera) {
-                            UiCameraButton(onPhotoTaken = ::addPhotoAttachment, onError = ::showPhotoError)
+                    addPhotosButton =
+                        if (deviceConfig.supportsAnyPhotoSource) {
+                            UiAddPhotosButton(onClick = ::openAddPhotos)
+                        } else {
+                            null
+                        },
+                    addPhotosSheet =
+                        if (addPhotosVisible) {
+                            UiAddPhotosSheet(
+                                photos = attachments,
+                                camera =
+                                    if (deviceConfig.supportsCamera) {
+                                        CameraAction(
+                                            onPhotoTaken = { attachFiles(listOf(it)) },
+                                            onError = ::showPhotoError,
+                                        )
+                                    } else {
+                                        null
+                                    },
+                                picker =
+                                    if (deviceConfig.supportsFilePicker) {
+                                        PickerAction(
+                                            onPhotosPicked = ::attachFiles,
+                                            onError = ::showPickerError,
+                                        )
+                                    } else {
+                                        null
+                                    },
+                                onClickRemovePhoto = ::removeAttachment,
+                                onClickConfirm = if (attachments.isEmpty()) null else ::closeAddPhotos,
+                                onDismiss = ::closeAddPhotos,
+                            )
                         } else {
                             null
                         },
@@ -268,12 +299,20 @@ class ChatViewModel(
         innerState.update { it.copy(attachments = (it.attachments + files).distinct()) }
     }
 
-    private fun addPhotoAttachment(photo: Path) {
-        innerState.update { it.copy(attachments = it.attachments + photo) }
+    private fun openAddPhotos() {
+        innerState.update { it.copy(addPhotosVisible = true) }
+    }
+
+    private fun closeAddPhotos() {
+        innerState.update { it.copy(addPhotosVisible = false) }
     }
 
     private fun showPhotoError() {
         showSnackbar("Could not take a photo", isError = true)
+    }
+
+    private fun showPickerError() {
+        showSnackbar("Could not pick photos", isError = true)
     }
 
     private fun removeAttachment(file: Path) {
@@ -368,6 +407,7 @@ data class State(
     val events: List<ApiEvent>,
     val userText: String,
     val attachments: List<Path>,
+    val addPhotosVisible: Boolean,
 )
 
 data class UiState(
@@ -397,21 +437,23 @@ data class UiInput(
     val text: String,
     val attachments: List<Path>,
     val onTextChanged: (String) -> Unit,
-    val onFilesAttached: (List<Path>) -> Unit,
     val onClickRemoveAttachment: (Path) -> Unit,
-    val cameraButton: UiCameraButton?,
+    val addPhotosButton: UiAddPhotosButton?,
+    val addPhotosSheet: UiAddPhotosSheet?,
     val onClickSend: (() -> Unit)?,
 )
 
-data class UiSendFileButton(
-    val onFilesAttached: (List<Path>) -> Unit,
-    val onPhotoTaken: (photoPath: String) -> Unit,
-    val onError: () -> Unit,
+data class UiAddPhotosButton(
+    val onClick: () -> Unit,
 )
 
-data class UiCameraButton(
-    val onPhotoTaken: (photo: Path) -> Unit,
-    val onError: () -> Unit,
+data class UiAddPhotosSheet(
+    val photos: List<Path>,
+    val camera: CameraAction?,
+    val picker: PickerAction?,
+    val onClickRemovePhoto: (Path) -> Unit,
+    val onClickConfirm: (() -> Unit)?,
+    val onDismiss: () -> Unit,
 )
 
 data class UiAttachment(

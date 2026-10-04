@@ -6,4 +6,6 @@ import platform.UIKit.UIImagePickerControllerSourceType.UIImagePickerControllerS
 actual fun deviceSupportsCamera(): Boolean =
     UIImagePickerController.isSourceTypeAvailable(UIImagePickerControllerSourceTypeCamera)
 
+actual fun deviceSupportsFilePicker(): Boolean = false
+
 actual val devicePlatform: Platform = Platform.Ios
