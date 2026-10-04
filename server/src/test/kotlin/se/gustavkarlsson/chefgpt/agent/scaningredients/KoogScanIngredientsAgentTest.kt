@@ -14,7 +14,7 @@ private fun imageFile(name: String) = UploadedFile("https://example.com/$name", 
 private fun pdfFile(name: String) = UploadedFile("https://example.com/$name", "application/pdf", name)
 
 private class FakeScanIngredients(
-    private val text: String,
+    private val ingredients: List<String>,
 ) : ScanIngredients {
     var receivedImages: List<AttachmentSource.Image> = emptyList()
         private set
@@ -24,10 +24,10 @@ private class FakeScanIngredients(
     override suspend fun invoke(
         images: List<AttachmentSource.Image>,
         existingIngredients: List<String>,
-    ): String {
+    ): List<String> {
         receivedImages = images
         receivedExisting = existingIngredients
-        return text
+        return ingredients
     }
 }
 
@@ -35,9 +35,9 @@ class KoogScanIngredientsAgentTest {
     private val userId = UserId.random()
 
     @Test
-    fun `parses one ingredient per line`() =
+    fun `returns the scanned ingredients`() =
         runTest {
-            val fake = FakeScanIngredients("tomatoes\neggs\nmilk")
+            val fake = FakeScanIngredients(listOf("tomatoes", "eggs", "milk"))
             val agent = KoogScanIngredientsAgent(fake, InMemoryIngredientStore())
 
             val result = agent.scan(userId, listOf(imageFile("a.jpg")))
@@ -46,14 +46,14 @@ class KoogScanIngredientsAgentTest {
         }
 
     @Test
-    fun `strips list markers and blank lines`() =
+    fun `filters blank ingredient names`() =
         runTest {
-            val fake = FakeScanIngredients("- tomatoes\n\n1. eggs\n\n* milk")
+            val fake = FakeScanIngredients(listOf("tomatoes", "", "  ", "eggs"))
             val agent = KoogScanIngredientsAgent(fake, InMemoryIngredientStore())
 
             val result = agent.scan(userId, listOf(imageFile("a.jpg")))
 
-            assertEquals(listOf("tomatoes", "eggs", "milk"), result)
+            assertEquals(listOf("tomatoes", "eggs"), result)
         }
 
     @Test
@@ -61,7 +61,7 @@ class KoogScanIngredientsAgentTest {
         runTest {
             val store = InMemoryIngredientStore()
             store.createIngredients(userId, listOf("tomato", "black pepper"))
-            val fake = FakeScanIngredients("Tomato\nBlack Pepper\nbasil")
+            val fake = FakeScanIngredients(listOf("Tomato", "Black Pepper", "basil"))
             val agent = KoogScanIngredientsAgent(fake, store)
 
             val result = agent.scan(userId, listOf(imageFile("a.jpg")))
@@ -74,7 +74,7 @@ class KoogScanIngredientsAgentTest {
         runTest {
             val store = InMemoryIngredientStore()
             store.createIngredients(userId, listOf("tomato"))
-            val fake = FakeScanIngredients("Basil\nmilk")
+            val fake = FakeScanIngredients(listOf("Basil", "milk"))
             val agent = KoogScanIngredientsAgent(fake, store)
 
             val result = agent.scan(userId, listOf(imageFile("a.jpg")))
@@ -85,7 +85,7 @@ class KoogScanIngredientsAgentTest {
     @Test
     fun `removes duplicates`() =
         runTest {
-            val fake = FakeScanIngredients("basil\nbasil\nbasil")
+            val fake = FakeScanIngredients(listOf("basil", "basil", "basil"))
             val agent = KoogScanIngredientsAgent(fake, InMemoryIngredientStore())
 
             val result = agent.scan(userId, listOf(imageFile("a.jpg")))
@@ -96,7 +96,7 @@ class KoogScanIngredientsAgentTest {
     @Test
     fun `passes only image files to the scanner in order`() =
         runTest {
-            val fake = FakeScanIngredients("")
+            val fake = FakeScanIngredients(emptyList())
             val agent = KoogScanIngredientsAgent(fake, InMemoryIngredientStore())
 
             agent.scan(userId, listOf(imageFile("a.jpg"), pdfFile("b.pdf"), imageFile("c.jpg")))
@@ -109,7 +109,7 @@ class KoogScanIngredientsAgentTest {
         runTest {
             val store = InMemoryIngredientStore()
             store.createIngredients(userId, listOf("Black Pepper"))
-            val fake = FakeScanIngredients("")
+            val fake = FakeScanIngredients(emptyList())
             val agent = KoogScanIngredientsAgent(fake, store)
 
             agent.scan(userId, listOf(imageFile("a.jpg")))
@@ -120,7 +120,7 @@ class KoogScanIngredientsAgentTest {
     @Test
     fun `returns empty list when there are no images`() =
         runTest {
-            val fake = FakeScanIngredients("tomatoes")
+            val fake = FakeScanIngredients(listOf("tomatoes"))
             val agent = KoogScanIngredientsAgent(fake, InMemoryIngredientStore())
 
             val result = agent.scan(userId, emptyList())
@@ -130,9 +130,9 @@ class KoogScanIngredientsAgentTest {
         }
 
     @Test
-    fun `returns empty list when the scanner returns blank text`() =
+    fun `returns empty list when the scanner returns nothing`() =
         runTest {
-            val fake = FakeScanIngredients("  \n\n  ")
+            val fake = FakeScanIngredients(emptyList())
             val agent = KoogScanIngredientsAgent(fake, InMemoryIngredientStore())
 
             val result = agent.scan(userId, listOf(imageFile("a.jpg")))
