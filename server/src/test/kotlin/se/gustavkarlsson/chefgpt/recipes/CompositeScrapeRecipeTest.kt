@@ -116,8 +116,8 @@ class CompositeScrapeRecipeTest {
             val chain =
                 CompositeScrapeRecipe(
                     listOf(
-                        SpoonacularScrapeRecipe(Spoonacular(NoInstructionsClient(), chefGptJson(strict = false))),
-                        JsonLdScrapeRecipe(FakeHtmlLoader(), RecipeJsonLdParser(chefGptJson(strict = false))),
+                        SpoonacularRecipeScraper(Spoonacular(NoInstructionsClient(), chefGptJson(strict = false))),
+                        JsonLdRecipeScraper(FakeHtmlLoader(), RecipeJsonLdParser(chefGptJson(strict = false))),
                         FakeScrapeRecipeAgent(),
                     ),
                 )

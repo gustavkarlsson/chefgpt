@@ -52,4 +52,4 @@ class CompositeScrapeRecipe(
 
 private fun NewRecipe.isComplete(): Boolean = title.isNotBlank() && steps.isNotEmpty() && ingredients.isNotEmpty()
 
-private val logger = LoggerFactory.getLogger("TieredScrapeRecipe")
+private val logger = LoggerFactory.getLogger("CompositeScrapeRecipe")

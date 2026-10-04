@@ -6,7 +6,7 @@ import se.gustavkarlsson.chefgpt.files.HtmlLoader
  * Scrapes the recipe from the page's embedded JSON-LD. Returns whatever it found, complete or
  * not, so a later scraper can reuse it as hints.
  */
-class JsonLdScrapeRecipe(
+class JsonLdRecipeScraper(
     private val htmlLoader: HtmlLoader,
     private val jsonLdParser: RecipeJsonLdParser,
 ) : RecipeScraper {

@@ -32,5 +32,5 @@ A screen presented as a modal bottom sheet over the previous screen, leaving it 
 _Avoid_: Dialog (a separate floating window), modal (too generic).
 
 **Scrape**:
-A method of adding a recipe from a website URL: the user pastes a URL and the backend saves the single recipe it finds, via a chain of scrapers — the recipe client's website extraction first, then the page's embedded JSON-LD, then an LLM agent that reads the page itself. Contrast with adding recipes by scanning photos.
+A method of adding a recipe from a website URL: the user pastes a URL and the backend saves the single recipe it finds, via a chain of scrapers. Contrast with adding recipes by scanning photos.
 _Avoid_: Extract (the underlying Spoonacular call `RecipeClient.extractRecipeFromWebsite`, not the feature), import.

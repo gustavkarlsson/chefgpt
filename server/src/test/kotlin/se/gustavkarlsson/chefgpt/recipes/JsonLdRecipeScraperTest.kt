@@ -20,12 +20,12 @@ private val JSON_LD_PAGE =
     </script></head><body>Content</body></html>
     """.trimIndent()
 
-class JsonLdScrapeRecipeTest {
+class JsonLdRecipeScraperTest {
     @Test
     fun `returns the recipe parsed from the fetched page`() =
         runTest {
             val scraper =
-                JsonLdScrapeRecipe(
+                JsonLdRecipeScraper(
                     FixedTextLoader(JSON_LD_PAGE),
                     RecipeJsonLdParser(chefGptJson(strict = false)),
                 )
@@ -39,7 +39,7 @@ class JsonLdScrapeRecipeTest {
     fun `returns null when the page could not be fetched`() =
         runTest {
             val scraper =
-                JsonLdScrapeRecipe(
+                JsonLdRecipeScraper(
                     FixedTextLoader(null),
                     RecipeJsonLdParser(chefGptJson(strict = false)),
                 )
@@ -53,7 +53,7 @@ class JsonLdScrapeRecipeTest {
     fun `returns null when the page has no JSON-LD`() =
         runTest {
             val scraper =
-                JsonLdScrapeRecipe(
+                JsonLdRecipeScraper(
                     FixedTextLoader("no json-ld here"),
                     RecipeJsonLdParser(chefGptJson(strict = false)),
                 )

@@ -27,8 +27,7 @@ private val SYSTEM_PROMPT =
     step — never skip, merge, summarize, or invent steps. Keep amounts and units exactly as
     written; a later step converts them to the user's units.
 
-    Prefer the page's structured recipe data (JSON-LD) when it is present. Ignore ads,
-    navigation, comments, and everything that is not the recipe.
+    Ignore ads, navigation, comments, and everything that is not the recipe.
 
     When the provided HTML is clearly incomplete, or the page points to the full recipe on
     another page, fetch the right page with the fetchPage tool. When you have the complete
@@ -37,66 +36,42 @@ private val SYSTEM_PROMPT =
     """.trimIndent()
 
 class KoogScrapeRecipeAgent(
-    private val scrapeRecipe: ScrapeRecipe,
-) : ScrapeRecipeAgent {
-    constructor(
-        promptExecutor: PromptExecutor,
-        model: LLModel,
-        htmlLoader: HtmlLoader,
-    ) : this(AgenticScrapeRecipe(promptExecutor, model, htmlLoader))
-
-    override suspend fun scrape(
-        url: String,
-        partialRecipe: NewRecipe?,
-    ): NewRecipe {
-        val scraped = scrapeRecipe(url, partialRecipe)
-        // The fallback cannot compute nutrients, so reuse the partial result's.
-        return scraped.copy(nutrients = partialRecipe?.nutrients.orEmpty())
-    }
-}
-
-private class AgenticScrapeRecipe(
     private val promptExecutor: PromptExecutor,
     private val model: LLModel,
     private val htmlLoader: HtmlLoader,
-) : ScrapeRecipe {
-    override suspend fun invoke(
+) : ScrapeRecipeAgent {
+    override suspend fun scrape(
         url: String,
         partialRecipe: NewRecipe?,
     ): NewRecipe {
         val html = htmlLoader.loadText(url)
         val reportTool = ReportRecipeTool()
-        val agent =
-            AIAgent(
-                promptExecutor = promptExecutor,
-                agentConfig =
-                    AIAgentConfig(
-                        prompt = buildPrompt(url, html, partialRecipe),
-                        model = model,
-                        maxAgentIterations = 5,
-                    ),
-                strategy = scrapeRecipeStrategy(),
-                toolRegistry =
-                    ToolRegistry {
-                        tools(reportTool)
-                        tools(FetchPageTool(htmlLoader))
-                    },
-            )
+        val agent = buildAgent(url, html, partialRecipe, reportTool)
         agent.run("Scrape the recipe from the page and report it.")
-        return NewRecipe(
-            title = reportTool.title.orEmpty(),
-            steps = reportTool.steps.orEmpty(),
-            imageUrl = reportTool.imageUrl?.takeIf { it.isNotBlank() }?.let(::ImageUrl),
-            description = reportTool.description?.takeIf { it.isNotBlank() },
-            preparationDuration = reportTool.preparationMinutes?.takeIf { it > 0 }?.minutes,
-            cookingDuration = reportTool.cookingMinutes?.takeIf { it > 0 }?.minutes,
-            duration = reportTool.totalMinutes?.takeIf { it > 0 }?.minutes,
-            servings = reportTool.servings?.takeIf { it > 0 }?.let { it..it },
-            ingredients = reportTool.ingredients.orEmpty(),
-            nutrients = emptyList(),
-            spoonacularId = null,
-        )
+        // The fallback cannot compute nutrients, so reuse the partial result's.
+        return reportTool.toNewRecipe().copy(nutrients = partialRecipe?.nutrients.orEmpty())
     }
+
+    private fun buildAgent(
+        url: String,
+        html: String?,
+        partialRecipe: NewRecipe?,
+        reportTool: ReportRecipeTool,
+    ) = AIAgent(
+        promptExecutor = promptExecutor,
+        agentConfig =
+            AIAgentConfig(
+                prompt = buildPrompt(url, html, partialRecipe),
+                model = model,
+                maxAgentIterations = 5,
+            ),
+        strategy = scrapeRecipeStrategy(),
+        toolRegistry =
+            ToolRegistry {
+                tools(reportTool)
+                tools(FetchPageTool(htmlLoader))
+            },
+    )
 }
 
 private fun buildPrompt(
@@ -249,4 +224,19 @@ class ReportRecipeTool : ToolSet {
         this.servings = servings
         return "Saved the reported recipe."
     }
+
+    fun toNewRecipe(): NewRecipe =
+        NewRecipe(
+            title = title.orEmpty(),
+            steps = steps.orEmpty(),
+            imageUrl = imageUrl?.takeIf { it.isNotBlank() }?.let(::ImageUrl),
+            description = description?.takeIf { it.isNotBlank() },
+            preparationDuration = preparationMinutes?.takeIf { it > 0 }?.minutes,
+            cookingDuration = cookingMinutes?.takeIf { it > 0 }?.minutes,
+            duration = totalMinutes?.takeIf { it > 0 }?.minutes,
+            servings = servings?.takeIf { it > 0 }?.let { it..it },
+            ingredients = ingredients.orEmpty(),
+            nutrients = emptyList(),
+            spoonacularId = null,
+        )
 }
