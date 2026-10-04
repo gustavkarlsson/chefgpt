@@ -2,12 +2,25 @@ package se.gustavkarlsson.chefgpt.navigation
 
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetState
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.scene.OverlayScene
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SceneStrategyScope
+
+/**
+ * The [SheetState] of the bottom sheet a screen's content is rendered in, provided by
+ * [BottomSheetScene]. Lets content wait for the sheet to settle before e.g. requesting
+ * focus. Null when not rendered inside a bottom sheet.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+val LocalBottomSheetState = staticCompositionLocalOf<SheetState?> { null }
 
 /** An [OverlayScene] that renders its [entry] in a Material 3 [ModalBottomSheet]. */
 internal class BottomSheetScene<T : Any>(
@@ -21,8 +34,18 @@ internal class BottomSheetScene<T : Any>(
 
     @OptIn(ExperimentalMaterial3Api::class)
     override val content: @Composable () -> Unit = {
-        ModalBottomSheet(onDismissRequest = onBack) {
-            entry.Content()
+        val sheetState =
+            rememberBottomSheetState(
+                initialValue = SheetValue.Hidden,
+                enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+            )
+        ModalBottomSheet(
+            onDismissRequest = onBack,
+            sheetState = sheetState,
+        ) {
+            CompositionLocalProvider(LocalBottomSheetState provides sheetState) {
+                entry.Content()
+            }
         }
     }
 

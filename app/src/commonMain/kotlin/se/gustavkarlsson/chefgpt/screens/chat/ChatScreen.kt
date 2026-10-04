@@ -48,9 +48,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -558,6 +560,11 @@ private fun AddPhotosSheet(
     ModalBottomSheet(
         modifier = modifier,
         onDismissRequest = sheet.onDismiss,
+        sheetState =
+            rememberBottomSheetState(
+                initialValue = SheetValue.Hidden,
+                enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
+            ),
     ) {
         PhotoCollectionSheetContent(
             photos = sheet.photos,
@@ -566,6 +573,9 @@ private fun AddPhotosSheet(
             onClickPhoto = sheet.onClickRemovePhoto,
             onClickConfirm = sheet.onClickConfirm,
             confirmLabel = "Attach",
+            autoOpenCamera = sheet.autoOpenCamera,
+            autoOpenPicker = sheet.autoOpenPicker,
+            onAutoOpenCancelled = sheet.onAutoOpenCancelled,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
     }

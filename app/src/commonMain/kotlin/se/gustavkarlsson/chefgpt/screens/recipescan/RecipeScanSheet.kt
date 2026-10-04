@@ -59,6 +59,9 @@ private fun Content(
             onClickPhoto = uiState.onClickPhoto,
             onClickConfirm = uiState.onClickConfirm,
             confirmLabel = "Confirm",
+            autoOpenCamera = uiState.autoOpenCamera,
+            autoOpenPicker = uiState.autoOpenPicker,
+            onAutoOpenCancelled = uiState.onAutoOpenCancelled,
         )
     }
 

@@ -64,6 +64,9 @@ class RecipeScanSheetViewModel(
             onClickConfirm = if (photos.isEmpty()) null else ::confirm,
             onDiscardConfirmed = ::discard,
             onDiscardDismissed = ::dismissDiscard,
+            autoOpenCamera = deviceConfig.supportsCamera && !deviceConfig.supportsFilePicker,
+            autoOpenPicker = !deviceConfig.supportsCamera && deviceConfig.supportsFilePicker,
+            onAutoOpenCancelled = navigator::pop,
         )
 
     override fun onCleared() {
@@ -126,4 +129,7 @@ data class RecipeScanSheetUiState(
     val onClickConfirm: (() -> Unit)?,
     val onDiscardConfirmed: () -> Unit,
     val onDiscardDismissed: () -> Unit,
+    val autoOpenCamera: Boolean,
+    val autoOpenPicker: Boolean,
+    val onAutoOpenCancelled: () -> Unit,
 )

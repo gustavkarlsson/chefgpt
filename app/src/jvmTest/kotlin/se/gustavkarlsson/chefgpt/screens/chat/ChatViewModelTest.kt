@@ -33,8 +33,10 @@ import se.gustavkarlsson.chefgpt.sessions.SessionId
 import se.gustavkarlsson.chefgpt.snackbar.usecases.ShowSnackbar
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ChatViewModelTest {
@@ -180,6 +182,74 @@ class ChatViewModelTest {
                 val uiState = currentUiState(setup)
                 assertNull(uiState.input.addPhotosSheet)
                 assertEquals(listOf(Path("/photos/a.jpg")), uiState.input.attachments)
+            } finally {
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test
+    fun `auto-opens the camera when only the camera is supported`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            try {
+                val setup = startChat(supportsCamera = true, supportsFilePicker = false)
+                assertNotNull(currentUiState(setup).input.addPhotosButton).onClick()
+
+                val sheet = assertNotNull(currentUiState(setup).input.addPhotosSheet)
+
+                assertTrue(sheet.autoOpenCamera)
+                assertFalse(sheet.autoOpenPicker)
+            } finally {
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test
+    fun `auto-opens the picker when only the picker is supported`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            try {
+                val setup = startChat(supportsCamera = false, supportsFilePicker = true)
+                assertNotNull(currentUiState(setup).input.addPhotosButton).onClick()
+
+                val sheet = assertNotNull(currentUiState(setup).input.addPhotosSheet)
+
+                assertTrue(sheet.autoOpenPicker)
+                assertFalse(sheet.autoOpenCamera)
+            } finally {
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test
+    fun `auto-opens nothing when both sources are supported`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            try {
+                val setup = startChat(supportsCamera = true, supportsFilePicker = true)
+                assertNotNull(currentUiState(setup).input.addPhotosButton).onClick()
+
+                val sheet = assertNotNull(currentUiState(setup).input.addPhotosSheet)
+
+                assertFalse(sheet.autoOpenCamera)
+                assertFalse(sheet.autoOpenPicker)
+            } finally {
+                Dispatchers.resetMain()
+            }
+        }
+
+    @Test
+    fun `closes the sheet when the auto-opened source is cancelled`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            try {
+                val setup = startChat(supportsCamera = false, supportsFilePicker = true)
+                assertNotNull(currentUiState(setup).input.addPhotosButton).onClick()
+                val sheet = assertNotNull(currentUiState(setup).input.addPhotosSheet)
+
+                sheet.onAutoOpenCancelled()
+
+                assertNull(currentUiState(setup).input.addPhotosSheet)
             } finally {
                 Dispatchers.resetMain()
             }

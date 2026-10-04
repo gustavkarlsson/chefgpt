@@ -30,13 +30,10 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Kitchen
-import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -53,7 +50,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -349,10 +345,6 @@ private fun PhotoButton(button: UiPhotoButton) {
         is UiPhotoButton.Picker -> {
             PickerPhotoButton(button.picker)
         }
-
-        is UiPhotoButton.Chooser -> {
-            ChooserPhotoButton(button.camera, button.picker)
-        }
     }
 }
 
@@ -397,51 +389,6 @@ private fun PickerPhotoButton(
     PickingPhotos(picker = picker, active = picking) { picking = false }
 }
 
-// Both: tapping opens a chooser sheet with one option per source.
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ChooserPhotoButton(
-    camera: CameraAction,
-    picker: PickerAction,
-    modifier: Modifier = Modifier,
-) {
-    var choosing by rememberSaveable { mutableStateOf(false) }
-    var takingPhoto by rememberSaveable { mutableStateOf(false) }
-    var picking by rememberSaveable { mutableStateOf(false) }
-    PhotoIconButton(onClick = { choosing = true }, enabled = !takingPhoto && !picking, modifier = modifier)
-    if (choosing) {
-        ModalBottomSheet(onDismissRequest = { choosing = false }) {
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .padding(bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                PhotoSourceOption(
-                    icon = Icons.Default.CameraAlt,
-                    label = "Take photo",
-                    onClick = {
-                        choosing = false
-                        takingPhoto = true
-                    },
-                )
-                PhotoSourceOption(
-                    icon = Icons.Default.PhotoLibrary,
-                    label = "Choose from files",
-                    onClick = {
-                        choosing = false
-                        picking = true
-                    },
-                )
-            }
-        }
-    }
-    CapturingPhoto(camera = camera, active = takingPhoto) { takingPhoto = false }
-    PickingPhotos(picker = picker, active = picking) { picking = false }
-}
-
 // Renders [CapturePhoto] while [active] and routes its callbacks.
 @Composable
 private fun CapturingPhoto(
@@ -483,30 +430,4 @@ private fun PickingPhotos(
             onDone()
         },
     )
-}
-
-@Composable
-private fun PhotoSourceOption(
-    icon: ImageVector,
-    label: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Icon(imageVector = icon, contentDescription = null)
-            Text(text = label, style = MaterialTheme.typography.bodyMedium)
-        }
-    }
 }

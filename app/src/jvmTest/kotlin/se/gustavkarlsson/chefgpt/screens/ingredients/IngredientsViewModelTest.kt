@@ -81,7 +81,7 @@ class IngredientsViewModelTest {
         }
 
     @Test
-    fun `shows a chooser photo button when both sources are supported`() =
+    fun `prefers the camera when both sources are supported`() =
         runTest {
             Dispatchers.setMain(StandardTestDispatcher(testScheduler))
             try {
@@ -89,7 +89,7 @@ class IngredientsViewModelTest {
 
                 val photoButton = currentUiState(setup).input.photoButton
 
-                assertIs<UiPhotoButton.Chooser>(photoButton)
+                assertIs<UiPhotoButton.Camera>(photoButton)
             } finally {
                 Dispatchers.resetMain()
             }

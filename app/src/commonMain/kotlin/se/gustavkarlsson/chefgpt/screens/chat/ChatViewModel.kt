@@ -154,6 +154,9 @@ class ChatViewModel(
                                 onClickRemovePhoto = ::removeAttachment,
                                 onClickConfirm = if (attachments.isEmpty()) null else ::closeAddPhotos,
                                 onDismiss = ::closeAddPhotos,
+                                autoOpenCamera = deviceConfig.supportsCamera && !deviceConfig.supportsFilePicker,
+                                autoOpenPicker = !deviceConfig.supportsCamera && deviceConfig.supportsFilePicker,
+                                onAutoOpenCancelled = ::closeAddPhotos,
                             )
                         } else {
                             null
@@ -454,6 +457,9 @@ data class UiAddPhotosSheet(
     val onClickRemovePhoto: (Path) -> Unit,
     val onClickConfirm: (() -> Unit)?,
     val onDismiss: () -> Unit,
+    val autoOpenCamera: Boolean,
+    val autoOpenPicker: Boolean,
+    val onAutoOpenCancelled: () -> Unit,
 )
 
 data class UiAttachment(

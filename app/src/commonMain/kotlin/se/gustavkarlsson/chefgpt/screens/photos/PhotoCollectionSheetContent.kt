@@ -67,6 +67,11 @@ private fun computeTileSize(availableWidth: Dp): Dp {
  * The shared "collect photos" UI: thumbnails of the collected photos, one add-tile per
  * supported source (camera and/or file picker), and a confirm button. Used by the chat
  * add-photos sheet and the recipe scan sheet.
+ *
+ * When exactly one source exists, [autoOpenCamera] or [autoOpenPicker] launches it as
+ * soon as the sheet appears, and cancelling that auto-opened launch calls
+ * [onAutoOpenCancelled] (dismissing the sheet). With two sources the grid is shown and
+ * the user invokes a source by tapping its tile.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -77,6 +82,9 @@ fun PhotoCollectionSheetContent(
     onClickPhoto: (Path) -> Unit,
     onClickConfirm: (() -> Unit)?,
     confirmLabel: String,
+    autoOpenCamera: Boolean,
+    autoOpenPicker: Boolean,
+    onAutoOpenCancelled: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
@@ -94,10 +102,20 @@ fun PhotoCollectionSheetContent(
                     )
                 }
                 if (camera != null) {
-                    CameraAddTile(action = camera, modifier = Modifier.size(tileSize))
+                    CameraAddTile(
+                        action = camera,
+                        autoOpen = autoOpenCamera,
+                        onAutoOpenCancelled = onAutoOpenCancelled,
+                        modifier = Modifier.size(tileSize),
+                    )
                 }
                 if (picker != null) {
-                    PickerAddTile(action = picker, modifier = Modifier.size(tileSize))
+                    PickerAddTile(
+                        action = picker,
+                        autoOpen = autoOpenPicker,
+                        onAutoOpenCancelled = onAutoOpenCancelled,
+                        modifier = Modifier.size(tileSize),
+                    )
                 }
             }
         }
@@ -132,9 +150,14 @@ private fun PhotoTile(
 @Composable
 private fun CameraAddTile(
     action: CameraAction,
+    autoOpen: Boolean,
+    onAutoOpenCancelled: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var capturing by rememberSaveable { mutableStateOf(false) }
+    // Whether the auto-opened capture is still the one in flight; consumed by its first
+    // result, so later user-invoked captures that get cancelled just stay in the grid.
+    var autoOpenPending by rememberSaveable { mutableStateOf(autoOpen) }
+    var capturing by rememberSaveable { mutableStateOf(autoOpen) }
     AddTile(
         icon = Icons.Default.CameraAlt,
         contentDescription = "Take photo",
@@ -147,13 +170,17 @@ private fun CameraAddTile(
             onPhoto = { photo ->
                 action.onPhotoTaken(photo)
                 capturing = false
+                autoOpenPending = false
             },
             onCancelled = {
                 capturing = false
+                if (autoOpenPending) onAutoOpenCancelled()
+                autoOpenPending = false
             },
             onError = {
                 action.onError()
                 capturing = false
+                autoOpenPending = false
             },
         )
     }
@@ -162,9 +189,14 @@ private fun CameraAddTile(
 @Composable
 private fun PickerAddTile(
     action: PickerAction,
+    autoOpen: Boolean,
+    onAutoOpenCancelled: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var picking by rememberSaveable { mutableStateOf(false) }
+    // Whether the auto-opened picker is still the one in flight; consumed by its first
+    // result, so later user-invoked picks that get cancelled just stay in the grid.
+    var autoOpenPending by rememberSaveable { mutableStateOf(autoOpen) }
+    var picking by rememberSaveable { mutableStateOf(autoOpen) }
     AddTile(
         icon = Icons.Default.PhotoLibrary,
         contentDescription = "Choose photos",
@@ -178,13 +210,17 @@ private fun PickerAddTile(
             onPhotos = { photos ->
                 action.onPhotosPicked(photos)
                 picking = false
+                autoOpenPending = false
             },
             onCancelled = {
                 picking = false
+                if (autoOpenPending) onAutoOpenCancelled()
+                autoOpenPending = false
             },
             onError = {
                 action.onError()
                 picking = false
+                autoOpenPending = false
             },
         )
     }

@@ -88,22 +88,6 @@ class IngredientsViewModel(
                     onTextChange = ::updateInputText,
                     photoButton =
                         when {
-                            supportsCamera && supportsFilePicker -> {
-                                UiPhotoButton.Chooser(
-                                    scanningImage = scanningImage,
-                                    camera =
-                                        CameraAction(
-                                            onPhotoTaken = ::scanImage,
-                                            onError = ::showPhotoError,
-                                        ),
-                                    picker =
-                                        PickerAction(
-                                            onPhotosPicked = ::scanPickedImages,
-                                            onError = ::showPickerError,
-                                        ),
-                                )
-                            }
-
                             supportsCamera -> {
                                 UiPhotoButton.Camera(
                                     scanningImage = scanningImage,
@@ -418,8 +402,8 @@ data class UiInput(
     val onClickAdd: (() -> Unit)?,
 )
 
-// The photo scan button, shaped by which sources the platform offers: tapping either
-// goes straight to the single available source, or opens a chooser sheet when both exist.
+// The photo scan button. The camera is preferred; the picker is the fallback
+// when the platform has no camera. Null when no source exists.
 sealed interface UiPhotoButton {
     val scanningImage: Boolean
 
@@ -430,12 +414,6 @@ sealed interface UiPhotoButton {
 
     data class Picker(
         override val scanningImage: Boolean,
-        val picker: PickerAction,
-    ) : UiPhotoButton
-
-    data class Chooser(
-        override val scanningImage: Boolean,
-        val camera: CameraAction,
         val picker: PickerAction,
     ) : UiPhotoButton
 }
