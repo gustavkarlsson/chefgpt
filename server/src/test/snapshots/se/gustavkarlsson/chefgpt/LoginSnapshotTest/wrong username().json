@@ -1,7 +1,7 @@
 {
     "request": {
         "method": "POST",
-        "url": "http://localhost/login",
+        "url": "http://localhost/api/auth/v1/login",
         "headers": {
             "Authorization": "Basic d3Jvbmd1c2VyOlRlc3QxMjMh",
             "Accept": "application/json",

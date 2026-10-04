@@ -5,6 +5,7 @@ import io.ktor.client.request.post
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import se.gustavkarlsson.chefgpt.api.auth.v1.AUTH_V1_PATH
 import se.gustavkarlsson.slapshot.junit5.JUnit5SnapshotContext
 import se.gustavkarlsson.slapshot.junit5.SnapshotExtension
 
@@ -20,13 +21,13 @@ class RegisterSnapshotTest {
     @Test
     fun `credentials missing`() =
         snapshotTestApplication(snapshotContext) { client ->
-            client.post("/register")
+            client.post("$AUTH_V1_PATH/register")
         }
 
     @Test
     fun `username too short`() =
         snapshotTestApplication(snapshotContext) { client ->
-            client.post("/register") {
+            client.post("$AUTH_V1_PATH/register") {
                 basicAuth("ab", VALID_PASSWORD)
             }
         }
@@ -34,7 +35,7 @@ class RegisterSnapshotTest {
     @Test
     fun `username starts with digit`() =
         snapshotTestApplication(snapshotContext) { client ->
-            client.post("/register") {
+            client.post("$AUTH_V1_PATH/register") {
                 basicAuth("1user", VALID_PASSWORD)
             }
         }
@@ -42,7 +43,7 @@ class RegisterSnapshotTest {
     @Test
     fun `password too short`() =
         snapshotTestApplication(snapshotContext) { client ->
-            client.post("/register") {
+            client.post("$AUTH_V1_PATH/register") {
                 basicAuth(VALID_USERNAME, "Ab1!")
             }
         }
@@ -50,7 +51,7 @@ class RegisterSnapshotTest {
     @Test
     fun `password not complex enough`() =
         snapshotTestApplication(snapshotContext) { client ->
-            client.post("/register") {
+            client.post("$AUTH_V1_PATH/register") {
                 basicAuth(VALID_USERNAME, "alllowercase")
             }
         }
@@ -58,7 +59,7 @@ class RegisterSnapshotTest {
     @Test
     fun `successful registration`() =
         snapshotTestApplication(snapshotContext) { client ->
-            client.post("/register") {
+            client.post("$AUTH_V1_PATH/register") {
                 basicAuth(VALID_USERNAME, VALID_PASSWORD)
             }
         }
@@ -68,7 +69,7 @@ class RegisterSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             registerUser()
 
-            client.post("/register") {
+            client.post("$AUTH_V1_PATH/register") {
                 basicAuth(VALID_USERNAME, VALID_PASSWORD)
             }
         }

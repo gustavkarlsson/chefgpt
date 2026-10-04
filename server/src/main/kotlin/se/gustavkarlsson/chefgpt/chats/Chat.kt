@@ -1,6 +1,6 @@
 package se.gustavkarlsson.chefgpt.chats
 
-import se.gustavkarlsson.chefgpt.api.ChatId
+import se.gustavkarlsson.chefgpt.api.common.ChatId
 import kotlin.time.Instant
 
 data class Chat(

@@ -13,7 +13,7 @@ import se.gustavkarlsson.chefgpt.agent.chat.toImageAttachmentOrNull
 import se.gustavkarlsson.chefgpt.agent.convertrecipeunits.ConvertRecipeUnitsAgent
 import se.gustavkarlsson.chefgpt.agent.tools.CreateRecipeTool
 import se.gustavkarlsson.chefgpt.agent.tools.CropImageTool
-import se.gustavkarlsson.chefgpt.api.RecipeId
+import se.gustavkarlsson.chefgpt.api.common.RecipeId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.files.FileKind
 import se.gustavkarlsson.chefgpt.files.ImageCropper

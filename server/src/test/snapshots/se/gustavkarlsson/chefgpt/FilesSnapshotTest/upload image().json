@@ -1,10 +1,10 @@
 {
     "request": {
         "method": "POST",
-        "url": "http://localhost/files",
+        "url": "http://localhost/api/files/v1",
         "headers": {
             "Session-Id": "00000000000000000000000000000000",
-            "X-File-Name": "dish.jpg",
+            "File-Name": "dish.jpg",
             "Accept": "application/json",
             "Content-Type": "image/jpeg",
             "Content-Length": "0"

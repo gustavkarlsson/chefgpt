@@ -9,9 +9,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import se.gustavkarlsson.chefgpt.ChefGptClient
 import se.gustavkarlsson.chefgpt.ClientError
-import se.gustavkarlsson.chefgpt.api.ApiRecipe
-import se.gustavkarlsson.chefgpt.api.ApiRecipeSummary
-import se.gustavkarlsson.chefgpt.api.RecipeId
+import se.gustavkarlsson.chefgpt.api.common.RecipeId
+import se.gustavkarlsson.chefgpt.api.recipes.v1.ApiRecipe
+import se.gustavkarlsson.chefgpt.api.recipes.v1.ApiRecipeSummary
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 
 private val log = Logger.withTag("${HttpRecipeRepository::class.simpleName}")

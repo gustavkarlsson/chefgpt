@@ -1,7 +1,7 @@
 {
     "request": {
         "method": "POST",
-        "url": "http://localhost/recipes/scrape",
+        "url": "http://localhost/api/recipes/v1/scrape",
         "headers": {
             "Accept": "application/json",
             "Content-Type": "application/json",

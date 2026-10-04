@@ -1,6 +1,6 @@
 package se.gustavkarlsson.chefgpt.files
 
-import se.gustavkarlsson.chefgpt.api.ImageUrl
+import se.gustavkarlsson.chefgpt.api.common.ImageUrl
 
 // TODO Consider if using pixels might be easier
 

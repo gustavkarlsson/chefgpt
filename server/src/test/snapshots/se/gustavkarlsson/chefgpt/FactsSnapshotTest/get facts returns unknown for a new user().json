@@ -1,7 +1,7 @@
 {
     "request": {
         "method": "GET",
-        "url": "http://localhost/facts",
+        "url": "http://localhost/api/facts/v1",
         "headers": {
             "Session-Id": "00000000000000000000000000000000",
             "Accept": "application/json",

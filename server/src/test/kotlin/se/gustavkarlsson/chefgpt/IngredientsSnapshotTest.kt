@@ -11,8 +11,9 @@ import io.ktor.http.contentType
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import se.gustavkarlsson.chefgpt.api.ApiIngredientUpdate
-import se.gustavkarlsson.chefgpt.api.ApiNewIngredient
+import se.gustavkarlsson.chefgpt.api.ingredients.v1.ApiIngredientUpdate
+import se.gustavkarlsson.chefgpt.api.ingredients.v1.ApiNewIngredient
+import se.gustavkarlsson.chefgpt.api.ingredients.v1.INGREDIENTS_V1_PATH
 import se.gustavkarlsson.slapshot.junit5.JUnit5SnapshotContext
 import se.gustavkarlsson.slapshot.junit5.SnapshotExtension
 
@@ -28,7 +29,7 @@ class IngredientsSnapshotTest {
     @Test
     fun unauthenticated() =
         snapshotTestApplication(snapshotContext) { client ->
-            client.get("/ingredients")
+            client.get(INGREDIENTS_V1_PATH)
         }
 
     @Test
@@ -39,7 +40,7 @@ class IngredientsSnapshotTest {
             val ingredients = createIngredients(sessionId, "tomato", "basil")
             val tomatoId = ingredients.first { it.name == "tomato" }.id
 
-            client.delete("/ingredients/$tomatoId") {
+            client.delete("$INGREDIENTS_V1_PATH/$tomatoId") {
                 header("Session-Id", sessionId)
             }
         }
@@ -49,7 +50,7 @@ class IngredientsSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.delete("/ingredients/11111111-1111-1111-1111-111111111111") {
+            client.delete("$INGREDIENTS_V1_PATH/11111111-1111-1111-1111-111111111111") {
                 header("Session-Id", sessionId)
             }
         }
@@ -57,7 +58,7 @@ class IngredientsSnapshotTest {
     @Test
     fun `delete ingredient unauthenticated`() =
         snapshotTestApplication(snapshotContext) { client ->
-            client.delete("/ingredients/tomato")
+            client.delete("$INGREDIENTS_V1_PATH/tomato")
         }
 
     @Test
@@ -65,7 +66,7 @@ class IngredientsSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.post("/ingredients") {
+            client.post(INGREDIENTS_V1_PATH) {
                 header("Session-Id", sessionId)
                 contentType(ContentType.Application.Json)
                 setBody(ApiNewIngredient("tomato"))
@@ -79,7 +80,7 @@ class IngredientsSnapshotTest {
 
             createIngredients(sessionId, "tomato")
 
-            client.post("/ingredients") {
+            client.post(INGREDIENTS_V1_PATH) {
                 header("Session-Id", sessionId)
                 contentType(ContentType.Application.Json)
                 setBody(ApiNewIngredient("tomato"))
@@ -89,7 +90,7 @@ class IngredientsSnapshotTest {
     @Test
     fun `create ingredient unauthenticated`() =
         snapshotTestApplication(snapshotContext) { client ->
-            client.post("/ingredients") {
+            client.post(INGREDIENTS_V1_PATH) {
                 contentType(ContentType.Application.Json)
                 setBody(ApiNewIngredient("tomato"))
             }
@@ -102,7 +103,7 @@ class IngredientsSnapshotTest {
 
             val tomatoId = createIngredients(sessionId, "tomato").single().id
 
-            client.patch("/ingredients/$tomatoId") {
+            client.patch("$INGREDIENTS_V1_PATH/$tomatoId") {
                 header("Session-Id", sessionId)
                 contentType(ContentType.Application.Json)
                 setBody(ApiIngredientUpdate(inInventory = false))
@@ -117,7 +118,7 @@ class IngredientsSnapshotTest {
             val tomatoId = createIngredients(sessionId, "tomato").single().id
             setIngredientInventory(sessionId, tomatoId, inInventory = false)
 
-            client.patch("/ingredients/$tomatoId") {
+            client.patch("$INGREDIENTS_V1_PATH/$tomatoId") {
                 header("Session-Id", sessionId)
                 contentType(ContentType.Application.Json)
                 setBody(ApiIngredientUpdate(inInventory = true))
@@ -129,7 +130,7 @@ class IngredientsSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.patch("/ingredients/11111111-1111-1111-1111-111111111111") {
+            client.patch("$INGREDIENTS_V1_PATH/11111111-1111-1111-1111-111111111111") {
                 header("Session-Id", sessionId)
                 contentType(ContentType.Application.Json)
                 setBody(ApiIngredientUpdate(inInventory = true))
@@ -139,7 +140,7 @@ class IngredientsSnapshotTest {
     @Test
     fun `patch ingredient unauthenticated`() =
         snapshotTestApplication(snapshotContext) { client ->
-            client.patch("/ingredients/11111111-1111-1111-1111-111111111111") {
+            client.patch("$INGREDIENTS_V1_PATH/11111111-1111-1111-1111-111111111111") {
                 contentType(ContentType.Application.Json)
                 setBody(ApiIngredientUpdate(inInventory = true))
             }

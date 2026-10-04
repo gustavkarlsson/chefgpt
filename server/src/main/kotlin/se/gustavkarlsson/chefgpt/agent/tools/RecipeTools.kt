@@ -10,8 +10,8 @@ import se.gustavkarlsson.chefgpt.agent.tools.models.ToolRecipeIngredient
 import se.gustavkarlsson.chefgpt.agent.tools.models.ToolRecipeSummary
 import se.gustavkarlsson.chefgpt.agent.tools.models.toDomain
 import se.gustavkarlsson.chefgpt.agent.tools.models.toTool
-import se.gustavkarlsson.chefgpt.api.RecipeId
-import se.gustavkarlsson.chefgpt.api.SpoonacularId
+import se.gustavkarlsson.chefgpt.api.common.RecipeId
+import se.gustavkarlsson.chefgpt.api.common.SpoonacularId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.recipes.NewRecipe
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository

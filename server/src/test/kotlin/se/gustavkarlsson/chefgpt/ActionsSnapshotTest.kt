@@ -8,11 +8,12 @@ import io.ktor.http.contentType
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import se.gustavkarlsson.chefgpt.api.ApiAction
-import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
-import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
-import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
-import se.gustavkarlsson.chefgpt.api.JoinId
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiAction
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiUserJoinedChat
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiUserSendsMessage
+import se.gustavkarlsson.chefgpt.api.chats.v1.CHATS_V1_PATH
+import se.gustavkarlsson.chefgpt.api.common.JoinId
+import se.gustavkarlsson.chefgpt.api.files.v1.ApiUploadedFile
 import se.gustavkarlsson.slapshot.junit5.JUnit5SnapshotContext
 import se.gustavkarlsson.slapshot.junit5.SnapshotExtension
 
@@ -31,7 +32,7 @@ class ActionsSnapshotTest {
     @Test
     fun unauthenticated() =
         snapshotTestApplication(snapshotContext) { client ->
-            client.post("/chats/$FAKE_CHAT_ID/actions")
+            client.post("$CHATS_V1_PATH/$FAKE_CHAT_ID/actions")
         }
 
     @Test
@@ -39,7 +40,7 @@ class ActionsSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.post("/chats/not-a-uuid/actions") {
+            client.post("$CHATS_V1_PATH/not-a-uuid/actions") {
                 header("Session-Id", sessionId)
                 contentType(ContentType.Application.Json)
                 setBody<ApiAction>(ApiUserJoinedChat(FAKE_JOIN_ID))
@@ -51,7 +52,7 @@ class ActionsSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.post("/chats/$FAKE_CHAT_ID/actions") {
+            client.post("$CHATS_V1_PATH/$FAKE_CHAT_ID/actions") {
                 header("Session-Id", sessionId)
                 contentType(ContentType.Application.Json)
                 setBody<ApiAction>(ApiUserJoinedChat(FAKE_JOIN_ID))
@@ -64,7 +65,7 @@ class ActionsSnapshotTest {
             val sessionId = registerUser()
             val chat = createChat(sessionId)
 
-            client.post("/chats/${chat.id}/actions") {
+            client.post("$CHATS_V1_PATH/${chat.id}/actions") {
                 header("Session-Id", sessionId)
                 contentType(ContentType.Application.Json)
                 setBody<ApiAction>(ApiUserJoinedChat(FAKE_JOIN_ID))
@@ -77,7 +78,7 @@ class ActionsSnapshotTest {
             val sessionId = registerUser()
             val chat = createChat(sessionId)
 
-            client.post("/chats/${chat.id}/actions") {
+            client.post("$CHATS_V1_PATH/${chat.id}/actions") {
                 header("Session-Id", sessionId)
                 contentType(ContentType.Application.Json)
                 setBody<ApiAction>(

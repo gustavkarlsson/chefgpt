@@ -1,7 +1,7 @@
 {
     "request": {
         "method": "POST",
-        "url": "http://localhost/chats/00000000-0000-0000-0000-000000000000/actions",
+        "url": "http://localhost/api/chats/v1/00000000-0000-0000-0000-000000000000/actions",
         "headers": {
             "Accept": "application/json",
             "Content-Length": "0"

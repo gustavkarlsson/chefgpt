@@ -5,7 +5,7 @@ import ai.koog.agents.core.tools.annotations.Tool
 import ai.koog.agents.core.tools.reflect.ToolSet
 import se.gustavkarlsson.chefgpt.agent.tools.models.ToolIngredient
 import se.gustavkarlsson.chefgpt.agent.tools.models.toTool
-import se.gustavkarlsson.chefgpt.api.IngredientId
+import se.gustavkarlsson.chefgpt.api.common.IngredientId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 

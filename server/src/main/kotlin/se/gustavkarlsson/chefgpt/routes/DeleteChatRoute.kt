@@ -6,13 +6,14 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
 import io.ktor.server.util.getOrFail
 import org.koin.ktor.ext.get
-import se.gustavkarlsson.chefgpt.api.ApiError
-import se.gustavkarlsson.chefgpt.api.ChatId
+import se.gustavkarlsson.chefgpt.api.chats.v1.CHATS_V1_PATH
+import se.gustavkarlsson.chefgpt.api.common.ChatId
+import se.gustavkarlsson.chefgpt.api.errors.v1.ApiError
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.deleteChatRoute() {
-    delete("/chats/{chatId}") {
+    delete("$CHATS_V1_PATH/{chatId}") {
         val chatRepository = get<ChatRepository>()
         val userId = call.requireSession().user.id
         val rawChatId = call.parameters.getOrFail("chatId")

@@ -11,9 +11,10 @@ import io.ktor.server.sse.send
 import kotlinx.coroutines.flow.mapNotNull
 import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.ResponseData
-import se.gustavkarlsson.chefgpt.api.ApiError
-import se.gustavkarlsson.chefgpt.api.ApiEvent
-import se.gustavkarlsson.chefgpt.api.EventId
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiEvent
+import se.gustavkarlsson.chefgpt.api.chats.v1.CHATS_V1_PATH
+import se.gustavkarlsson.chefgpt.api.common.EventId
+import se.gustavkarlsson.chefgpt.api.errors.v1.ApiError
 import se.gustavkarlsson.chefgpt.chats.EventRepository
 import se.gustavkarlsson.chefgpt.chats.toApiOrNull
 import se.gustavkarlsson.chefgpt.getChatId
@@ -21,7 +22,7 @@ import se.gustavkarlsson.chefgpt.util.sse
 
 // TODO Add tests (Not snapshot test, as they are not possible)
 fun Route.streamChatEventsRoute() {
-    sse("/chats/{chatId}/events") {
+    sse("$CHATS_V1_PATH/{chatId}/events") {
         val eventRepository = get<EventRepository>()
         call
             .getChatId()

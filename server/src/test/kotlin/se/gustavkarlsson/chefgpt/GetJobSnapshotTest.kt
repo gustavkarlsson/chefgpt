@@ -5,7 +5,8 @@ import io.ktor.client.request.header
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import se.gustavkarlsson.chefgpt.api.JobId
+import se.gustavkarlsson.chefgpt.api.common.JobId
+import se.gustavkarlsson.chefgpt.api.jobs.v1.JOBS_V1_PATH
 import se.gustavkarlsson.slapshot.junit5.JUnit5SnapshotContext
 import se.gustavkarlsson.slapshot.junit5.SnapshotExtension
 
@@ -23,7 +24,7 @@ class GetJobSnapshotTest {
     @Test
     fun unauthenticated() =
         snapshotTestApplication(snapshotContext) { client ->
-            client.get("/jobs/$FAKE_JOB_ID")
+            client.get("$JOBS_V1_PATH/$FAKE_JOB_ID")
         }
 
     @Test
@@ -31,7 +32,7 @@ class GetJobSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.get("/jobs/not-a-uuid") {
+            client.get("$JOBS_V1_PATH/not-a-uuid") {
                 header("Session-Id", sessionId)
             }
         }
@@ -41,7 +42,7 @@ class GetJobSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.get("/jobs/$FAKE_JOB_ID") {
+            client.get("$JOBS_V1_PATH/$FAKE_JOB_ID") {
                 header("Session-Id", sessionId)
             }
         }

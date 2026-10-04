@@ -1,7 +1,7 @@
 package se.gustavkarlsson.chefgpt.chats
 import kotlinx.coroutines.test.runTest
-import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
-import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiUserSendsMessage
+import se.gustavkarlsson.chefgpt.api.files.v1.ApiUploadedFile
 import se.gustavkarlsson.chefgpt.files.HtmlLoader
 import se.gustavkarlsson.chefgpt.files.UploadedFile
 import kotlin.test.Test

@@ -1,7 +1,7 @@
 package se.gustavkarlsson.chefgpt.jobs
 
 import se.gustavkarlsson.chefgpt.ClientError
-import se.gustavkarlsson.chefgpt.api.ApiError
+import se.gustavkarlsson.chefgpt.api.errors.v1.ApiError
 
 sealed interface AwaitJobError {
     data class RequestFailed(

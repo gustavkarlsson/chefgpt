@@ -4,8 +4,8 @@ import kotlinx.coroutines.test.runTest
 import se.gustavkarlsson.chefgpt.agent.convertrecipeunits.ConvertRecipeUnitsAgent
 import se.gustavkarlsson.chefgpt.agent.convertrecipeunits.FakeConvertRecipeUnitsAgent
 import se.gustavkarlsson.chefgpt.agent.tools.models.ToolRecipeIngredient
-import se.gustavkarlsson.chefgpt.api.ImageUrl
-import se.gustavkarlsson.chefgpt.api.RecipeId
+import se.gustavkarlsson.chefgpt.api.common.ImageUrl
+import se.gustavkarlsson.chefgpt.api.common.RecipeId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.recipes.InMemoryRecipePersistence
 import se.gustavkarlsson.chefgpt.recipes.NewRecipe

@@ -6,6 +6,7 @@ import io.ktor.client.request.post
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import se.gustavkarlsson.chefgpt.api.chats.v1.CHATS_V1_PATH
 import se.gustavkarlsson.slapshot.junit5.JUnit5SnapshotContext
 import se.gustavkarlsson.slapshot.junit5.SnapshotExtension
 
@@ -21,13 +22,13 @@ class ChatsSnapshotTest {
     @Test
     fun `unauthenticated`() =
         snapshotTestApplication(snapshotContext) { client ->
-            client.post("/chats")
+            client.post(CHATS_V1_PATH)
         }
 
     @Test
     fun `invalid session`() =
         snapshotTestApplication(snapshotContext) { client ->
-            client.post("/chats") {
+            client.post(CHATS_V1_PATH) {
                 header("Session-Id", "invalid-session-id")
             }
         }
@@ -37,7 +38,7 @@ class ChatsSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.post("/chats") {
+            client.post(CHATS_V1_PATH) {
                 header("Session-Id", sessionId)
             }
         }
@@ -48,7 +49,7 @@ class ChatsSnapshotTest {
             val sessionId = registerUser()
             val chat = createChat(sessionId)
 
-            client.delete("/chats/${chat.id}") {
+            client.delete("$CHATS_V1_PATH/${chat.id}") {
                 header("Session-Id", sessionId)
             }
         }
@@ -58,7 +59,7 @@ class ChatsSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.delete("/chats/11111111-1111-1111-1111-111111111111") {
+            client.delete("$CHATS_V1_PATH/11111111-1111-1111-1111-111111111111") {
                 header("Session-Id", sessionId)
             }
         }

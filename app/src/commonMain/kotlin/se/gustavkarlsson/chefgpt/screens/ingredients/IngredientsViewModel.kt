@@ -2,6 +2,7 @@ package se.gustavkarlsson.chefgpt.screens.ingredients
 
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
+import com.github.michaelbull.result.map
 import com.github.michaelbull.result.onErr
 import com.github.michaelbull.result.onOk
 import io.ktor.http.ContentType
@@ -20,8 +21,8 @@ import kotlinx.serialization.builtins.serializer
 import org.kodein.emoji.Emoji
 import org.koin.core.annotation.InjectedParam
 import se.gustavkarlsson.chefgpt.DeviceConfig
-import se.gustavkarlsson.chefgpt.api.ApiIngredient
-import se.gustavkarlsson.chefgpt.api.IngredientId
+import se.gustavkarlsson.chefgpt.api.common.IngredientId
+import se.gustavkarlsson.chefgpt.api.ingredients.v1.ApiIngredient
 import se.gustavkarlsson.chefgpt.ingredients.EmojiAvatarModel
 import se.gustavkarlsson.chefgpt.ingredients.IngredientWords
 import se.gustavkarlsson.chefgpt.ingredients.usecases.CreateIngredient

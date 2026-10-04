@@ -2,9 +2,9 @@ package se.gustavkarlsson.chefgpt.chats
 
 import com.github.michaelbull.result.Result
 import kotlinx.coroutines.flow.Flow
-import se.gustavkarlsson.chefgpt.api.ApiAction
-import se.gustavkarlsson.chefgpt.api.ApiEvent
-import se.gustavkarlsson.chefgpt.api.ChatId
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiAction
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiEvent
+import se.gustavkarlsson.chefgpt.api.common.ChatId
 import se.gustavkarlsson.chefgpt.jobs.AwaitJobError
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 

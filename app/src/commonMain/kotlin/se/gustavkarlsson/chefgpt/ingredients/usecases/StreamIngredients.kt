@@ -2,7 +2,7 @@ package se.gustavkarlsson.chefgpt.ingredients.usecases
 
 import kotlinx.coroutines.flow.Flow
 import se.gustavkarlsson.chefgpt.ChefGptClient
-import se.gustavkarlsson.chefgpt.api.ApiIngredient
+import se.gustavkarlsson.chefgpt.api.ingredients.v1.ApiIngredient
 import se.gustavkarlsson.chefgpt.sessions.SessionId
 
 fun interface StreamIngredients {

@@ -1,7 +1,7 @@
 {
     "request": {
         "method": "POST",
-        "url": "http://localhost/recipes/scan",
+        "url": "http://localhost/api/recipes/v1/scan",
         "headers": {
             "Session-Id": "00000000000000000000000000000000",
             "Accept": "application/json",

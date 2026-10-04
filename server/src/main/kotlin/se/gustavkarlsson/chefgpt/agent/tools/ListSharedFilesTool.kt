@@ -5,7 +5,7 @@ import ai.koog.agents.core.tools.annotations.Tool
 import ai.koog.agents.core.tools.reflect.ToolSet
 import se.gustavkarlsson.chefgpt.agent.tools.models.ToolUploadedFile
 import se.gustavkarlsson.chefgpt.agent.tools.models.toTool
-import se.gustavkarlsson.chefgpt.api.ChatId
+import se.gustavkarlsson.chefgpt.api.common.ChatId
 import se.gustavkarlsson.chefgpt.chats.EventRepository
 import se.gustavkarlsson.chefgpt.files.sharedAttachments
 

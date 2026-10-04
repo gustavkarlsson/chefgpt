@@ -7,14 +7,15 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 import org.koin.ktor.ext.get
-import se.gustavkarlsson.chefgpt.api.ApiError
-import se.gustavkarlsson.chefgpt.api.FILE_NAME_HEADER
+import se.gustavkarlsson.chefgpt.api.common.FILE_NAME_HEADER
+import se.gustavkarlsson.chefgpt.api.errors.v1.ApiError
+import se.gustavkarlsson.chefgpt.api.files.v1.FILES_V1_PATH
 import se.gustavkarlsson.chefgpt.files.FileUploader
 import se.gustavkarlsson.chefgpt.files.fileKindOrNull
 import se.gustavkarlsson.chefgpt.files.toApi
 
 fun Route.filesRoute() {
-    post("/files") {
+    post(FILES_V1_PATH) {
         val contentType = call.request.contentType()
         if (fileKindOrNull(contentType) == null) {
             call.respond(

@@ -2,7 +2,7 @@ package se.gustavkarlsson.chefgpt.camera
 
 import kotlinx.io.files.Path
 import kotlinx.serialization.Serializable
-import se.gustavkarlsson.chefgpt.StringValueSerializer
+import se.gustavkarlsson.chefgpt.api.common.StringValueSerializer
 import kotlin.jvm.JvmInline
 
 /**

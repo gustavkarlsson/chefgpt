@@ -1,7 +1,7 @@
 {
     "request": {
         "method": "POST",
-        "url": "http://localhost/chats",
+        "url": "http://localhost/api/chats/v1",
         "headers": {
             "Session-Id": "invalid-session-id",
             "Accept": "application/json",

@@ -1,7 +1,7 @@
 {
     "request": {
         "method": "POST",
-        "url": "http://localhost/chats/not-a-uuid/actions",
+        "url": "http://localhost/api/chats/v1/not-a-uuid/actions",
         "headers": {
             "Session-Id": "00000000000000000000000000000000",
             "Accept": "application/json",

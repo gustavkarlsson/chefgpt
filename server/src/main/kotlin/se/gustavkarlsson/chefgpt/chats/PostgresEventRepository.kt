@@ -3,8 +3,8 @@ package se.gustavkarlsson.chefgpt.chats
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.serialization.json.Json
-import se.gustavkarlsson.chefgpt.api.ChatId
-import se.gustavkarlsson.chefgpt.api.EventId
+import se.gustavkarlsson.chefgpt.api.common.ChatId
+import se.gustavkarlsson.chefgpt.api.common.EventId
 import se.gustavkarlsson.chefgpt.db.SelectByChatIdAfter
 import se.gustavkarlsson.chefgpt.postgres.DatabaseAccess
 import se.gustavkarlsson.chefgpt.util.RepoSyncer

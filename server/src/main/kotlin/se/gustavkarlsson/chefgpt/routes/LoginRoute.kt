@@ -11,7 +11,8 @@ import io.ktor.server.sessions.sessions
 import io.ktor.server.sessions.set
 import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.ResponseData
-import se.gustavkarlsson.chefgpt.api.ApiError
+import se.gustavkarlsson.chefgpt.api.auth.v1.AUTH_V1_PATH
+import se.gustavkarlsson.chefgpt.api.errors.v1.ApiError
 import se.gustavkarlsson.chefgpt.auth.LoginError
 import se.gustavkarlsson.chefgpt.auth.Session
 import se.gustavkarlsson.chefgpt.auth.UserRepository
@@ -20,7 +21,7 @@ import se.gustavkarlsson.chefgpt.getCredentials
 import se.gustavkarlsson.chefgpt.respond
 
 fun Routing.loginRoute() {
-    post("/login") {
+    post("$AUTH_V1_PATH/login") {
         val userRepository = get<UserRepository>()
         call
             .getCredentials()

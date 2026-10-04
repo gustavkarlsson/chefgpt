@@ -6,14 +6,15 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.util.getOrFail
 import org.koin.ktor.ext.get
-import se.gustavkarlsson.chefgpt.api.ApiError
-import se.gustavkarlsson.chefgpt.api.RecipeId
+import se.gustavkarlsson.chefgpt.api.common.RecipeId
+import se.gustavkarlsson.chefgpt.api.errors.v1.ApiError
+import se.gustavkarlsson.chefgpt.api.recipes.v1.RECIPES_V1_PATH
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 import se.gustavkarlsson.chefgpt.recipes.toApi
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.getRecipeRoute() {
-    get("/recipes/{id}") {
+    get("$RECIPES_V1_PATH/{id}") {
         val recipeRepository = get<RecipeRepository>()
         val userId = call.requireSession().user.id
         val id =

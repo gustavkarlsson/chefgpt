@@ -31,3 +31,16 @@ enum class Platform {
     Ios,
     Web,
 }
+
+// Bumped manually with every client release; sent as the Client-Version header.
+const val CLIENT_VERSION = "1.0"
+
+// The value every request sends in the Client-Platform header.
+val Platform.clientHeaderValue: String
+    get() =
+        when (this) {
+            Platform.Android -> "android"
+            Platform.Desktop -> "desktop"
+            Platform.Ios -> "ios"
+            Platform.Web -> "web"
+        }

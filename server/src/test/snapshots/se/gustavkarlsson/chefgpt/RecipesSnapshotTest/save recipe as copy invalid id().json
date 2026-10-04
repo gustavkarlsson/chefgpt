@@ -1,7 +1,7 @@
 {
     "request": {
         "method": "POST",
-        "url": "http://localhost/recipes/not-a-uuid/save-as-copy",
+        "url": "http://localhost/api/recipes/v1/not-a-uuid/save-as-copy",
         "headers": {
             "Session-Id": "00000000000000000000000000000000",
             "Accept": "application/json",

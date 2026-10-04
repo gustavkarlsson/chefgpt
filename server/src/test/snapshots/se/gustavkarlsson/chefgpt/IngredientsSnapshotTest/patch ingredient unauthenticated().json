@@ -1,7 +1,7 @@
 {
     "request": {
         "method": "PATCH",
-        "url": "http://localhost/ingredients/00000000-0000-0000-0000-000000000000",
+        "url": "http://localhost/api/ingredients/v1/00000000-0000-0000-0000-000000000000",
         "headers": {
             "Accept": "application/json",
             "Content-Type": "application/json",

@@ -6,15 +6,16 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 import org.koin.ktor.ext.get
-import se.gustavkarlsson.chefgpt.api.ApiError
-import se.gustavkarlsson.chefgpt.api.ApiSaveSpoonacularRecipe
+import se.gustavkarlsson.chefgpt.api.errors.v1.ApiError
+import se.gustavkarlsson.chefgpt.api.recipes.v1.ApiSaveSpoonacularRecipe
+import se.gustavkarlsson.chefgpt.api.recipes.v1.RECIPES_V1_PATH
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
 import se.gustavkarlsson.chefgpt.recipes.Spoonacular
 import se.gustavkarlsson.chefgpt.recipes.toApi
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.saveRecipeRoute() {
-    post("/recipes") {
+    post(RECIPES_V1_PATH) {
         val recipeRepository = get<RecipeRepository>()
         val spoonacular = get<Spoonacular>()
         val userId = call.requireSession().user.id

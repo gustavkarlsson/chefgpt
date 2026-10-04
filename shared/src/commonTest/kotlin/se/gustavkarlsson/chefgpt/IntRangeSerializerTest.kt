@@ -1,5 +1,6 @@
 package se.gustavkarlsson.chefgpt
 
+import se.gustavkarlsson.chefgpt.api.common.IntRangeSerializer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

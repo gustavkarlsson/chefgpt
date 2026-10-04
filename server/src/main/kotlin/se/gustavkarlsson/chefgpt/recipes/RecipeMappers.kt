@@ -1,10 +1,10 @@
 package se.gustavkarlsson.chefgpt.recipes
 
-import se.gustavkarlsson.chefgpt.api.ApiNutrient
-import se.gustavkarlsson.chefgpt.api.ApiRecipe
-import se.gustavkarlsson.chefgpt.api.ApiRecipeIngredient
-import se.gustavkarlsson.chefgpt.api.ApiRecipeSummary
-import se.gustavkarlsson.chefgpt.api.RecipeId
+import se.gustavkarlsson.chefgpt.api.common.RecipeId
+import se.gustavkarlsson.chefgpt.api.recipes.v1.ApiNutrient
+import se.gustavkarlsson.chefgpt.api.recipes.v1.ApiRecipe
+import se.gustavkarlsson.chefgpt.api.recipes.v1.ApiRecipeIngredient
+import se.gustavkarlsson.chefgpt.api.recipes.v1.ApiRecipeSummary
 
 fun Recipe.toApi(): ApiRecipe =
     ApiRecipe(

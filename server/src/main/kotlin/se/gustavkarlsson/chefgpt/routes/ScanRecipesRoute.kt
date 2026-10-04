@@ -8,15 +8,16 @@ import io.ktor.server.routing.post
 import kotlinx.serialization.builtins.ListSerializer
 import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.agent.saverecipes.SaveRecipesAgent
-import se.gustavkarlsson.chefgpt.api.ApiError
-import se.gustavkarlsson.chefgpt.api.ApiScanRecipe
-import se.gustavkarlsson.chefgpt.api.RecipeId
+import se.gustavkarlsson.chefgpt.api.common.RecipeId
+import se.gustavkarlsson.chefgpt.api.errors.v1.ApiError
+import se.gustavkarlsson.chefgpt.api.recipes.v1.ApiScanRecipe
+import se.gustavkarlsson.chefgpt.api.recipes.v1.RECIPES_V1_PATH
 import se.gustavkarlsson.chefgpt.files.toDomain
 import se.gustavkarlsson.chefgpt.jobs.JobRunner
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.scanRecipesRoute() {
-    post("/recipes/scan") {
+    post("$RECIPES_V1_PATH/scan") {
         val userId = call.requireSession().user.id
         val request = call.receive<ApiScanRecipe>()
         if (request.files.isEmpty()) {

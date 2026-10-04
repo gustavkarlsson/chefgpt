@@ -1,6 +1,6 @@
 package se.gustavkarlsson.chefgpt.files
 
-import se.gustavkarlsson.chefgpt.api.ImageUrl
+import se.gustavkarlsson.chefgpt.api.common.ImageUrl
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

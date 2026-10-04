@@ -1,6 +1,6 @@
 package se.gustavkarlsson.chefgpt.files
 
-import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
+import se.gustavkarlsson.chefgpt.api.files.v1.ApiUploadedFile
 
 fun UploadedFile.toApi(): ApiUploadedFile = ApiUploadedFile(url, mimeType, fileName)
 

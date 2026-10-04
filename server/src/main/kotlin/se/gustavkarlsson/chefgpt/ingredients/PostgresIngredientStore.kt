@@ -3,7 +3,7 @@ package se.gustavkarlsson.chefgpt.ingredients
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import se.gustavkarlsson.chefgpt.api.IngredientId
+import se.gustavkarlsson.chefgpt.api.common.IngredientId
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.postgres.DatabaseAccess
 import se.gustavkarlsson.chefgpt.util.RepoSyncer

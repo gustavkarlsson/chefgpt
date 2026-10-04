@@ -1,7 +1,7 @@
 {
     "request": {
         "method": "GET",
-        "url": "http://localhost/facts",
+        "url": "http://localhost/api/facts/v1",
         "headers": {
             "Accept": "application/json",
             "Content-Length": "0"

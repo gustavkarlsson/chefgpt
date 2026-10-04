@@ -102,14 +102,15 @@ import se.gustavkarlsson.chefgpt.sessions.usecases.Register
 import se.gustavkarlsson.chefgpt.snackbar.SnackbarManager
 import se.gustavkarlsson.chefgpt.snackbar.usecases.RealShowSnackbar
 import se.gustavkarlsson.chefgpt.snackbar.usecases.ShowSnackbar
+import se.gustavkarlsson.chefgpt.updates.UpdateRequiredNotifier
 
 val singletonModule =
     module {
         // Infrastructure
         single<Settings>()
         single<ChefGptClient>()
-        single<Json> { chefGptJson(strict = false) }
-        // TODO Should be activity retained scoped for Android.
+        single<UpdateRequiredNotifier>()
+        single<Json> { chefGptJson(strict = false) } // TODO Should be activity retained scoped for Android.
         single<Navigator>()
         single<LastSessionFileStore>()
         single<EventHistoryStore>()

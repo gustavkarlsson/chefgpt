@@ -1,9 +1,9 @@
 package se.gustavkarlsson.chefgpt.facts
 
-import se.gustavkarlsson.chefgpt.api.ApiTemperatureUnit
-import se.gustavkarlsson.chefgpt.api.ApiUserFacts
-import se.gustavkarlsson.chefgpt.api.ApiVolumeUnits
-import se.gustavkarlsson.chefgpt.api.ApiWeightUnits
+import se.gustavkarlsson.chefgpt.api.facts.v1.ApiTemperatureUnit
+import se.gustavkarlsson.chefgpt.api.facts.v1.ApiUserFacts
+import se.gustavkarlsson.chefgpt.api.facts.v1.ApiVolumeUnits
+import se.gustavkarlsson.chefgpt.api.facts.v1.ApiWeightUnits
 import se.gustavkarlsson.chefgpt.facts.toApi
 import se.gustavkarlsson.chefgpt.facts.toDomain
 import kotlin.test.Test

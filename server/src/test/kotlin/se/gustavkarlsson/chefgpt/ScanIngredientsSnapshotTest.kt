@@ -8,6 +8,7 @@ import io.ktor.http.contentType
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
+import se.gustavkarlsson.chefgpt.api.ingredients.v1.INGREDIENTS_V1_PATH
 import se.gustavkarlsson.slapshot.junit5.JUnit5SnapshotContext
 import se.gustavkarlsson.slapshot.junit5.SnapshotExtension
 
@@ -23,7 +24,7 @@ class ScanIngredientsSnapshotTest {
     @Test
     fun unauthenticated() =
         snapshotTestApplication(snapshotContext) { client ->
-            client.post("/ingredients/scan") {
+            client.post("$INGREDIENTS_V1_PATH/scan") {
                 contentType(ContentType.Image.JPEG)
                 setBody(byteArrayOf())
             }
@@ -34,7 +35,7 @@ class ScanIngredientsSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.post("/ingredients/scan") {
+            client.post("$INGREDIENTS_V1_PATH/scan") {
                 header("Session-Id", sessionId)
                 contentType(ContentType.Image.JPEG)
                 setBody(byteArrayOf(1, 2, 3))
@@ -46,7 +47,7 @@ class ScanIngredientsSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.post("/ingredients/scan") {
+            client.post("$INGREDIENTS_V1_PATH/scan") {
                 header("Session-Id", sessionId)
                 contentType(ContentType.Application.Pdf)
                 setBody(byteArrayOf(1, 2, 3))

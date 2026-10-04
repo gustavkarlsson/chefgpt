@@ -8,7 +8,8 @@ import io.ktor.http.contentType
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import se.gustavkarlsson.chefgpt.api.ApiScrapeRecipe
+import se.gustavkarlsson.chefgpt.api.recipes.v1.ApiScrapeRecipe
+import se.gustavkarlsson.chefgpt.api.recipes.v1.RECIPES_V1_PATH
 import se.gustavkarlsson.slapshot.junit5.JUnit5SnapshotContext
 import se.gustavkarlsson.slapshot.junit5.SnapshotExtension
 
@@ -24,7 +25,7 @@ class ScrapeRecipesSnapshotTest {
     @Test
     fun unauthenticated() =
         snapshotTestApplication(snapshotContext) { client ->
-            client.post("/recipes/scrape") {
+            client.post("$RECIPES_V1_PATH/scrape") {
                 contentType(ContentType.Application.Json)
                 setBody(ApiScrapeRecipe(url = "https://example.com/recipe"))
             }
@@ -35,7 +36,7 @@ class ScrapeRecipesSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.post("/recipes/scrape") {
+            client.post("$RECIPES_V1_PATH/scrape") {
                 header("Session-Id", sessionId)
                 contentType(ContentType.Application.Json)
                 setBody(ApiScrapeRecipe(url = "https://example.com/recipe"))
@@ -47,7 +48,7 @@ class ScrapeRecipesSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.post("/recipes/scrape") {
+            client.post("$RECIPES_V1_PATH/scrape") {
                 header("Session-Id", sessionId)
                 contentType(ContentType.Application.Json)
                 setBody(ApiScrapeRecipe(url = ""))

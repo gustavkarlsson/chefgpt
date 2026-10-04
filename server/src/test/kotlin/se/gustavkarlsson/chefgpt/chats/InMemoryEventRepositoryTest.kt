@@ -3,9 +3,9 @@ package se.gustavkarlsson.chefgpt.chats
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
-import se.gustavkarlsson.chefgpt.api.ChatId
-import se.gustavkarlsson.chefgpt.api.EventId
-import se.gustavkarlsson.chefgpt.api.JoinId
+import se.gustavkarlsson.chefgpt.api.common.ChatId
+import se.gustavkarlsson.chefgpt.api.common.EventId
+import se.gustavkarlsson.chefgpt.api.common.JoinId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

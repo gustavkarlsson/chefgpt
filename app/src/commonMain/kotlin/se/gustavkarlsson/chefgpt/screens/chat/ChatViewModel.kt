@@ -24,19 +24,19 @@ import kotlinx.io.files.Path
 import org.koin.core.annotation.InjectedParam
 import se.gustavkarlsson.chefgpt.ClientError
 import se.gustavkarlsson.chefgpt.DeviceConfig
-import se.gustavkarlsson.chefgpt.api.ApiAgentChatNamed
-import se.gustavkarlsson.chefgpt.api.ApiAgentMessage
-import se.gustavkarlsson.chefgpt.api.ApiAgentMessageChunk
-import se.gustavkarlsson.chefgpt.api.ApiAgentReasoning
-import se.gustavkarlsson.chefgpt.api.ApiEvent
-import se.gustavkarlsson.chefgpt.api.ApiIngredient
-import se.gustavkarlsson.chefgpt.api.ApiSystemEvent
-import se.gustavkarlsson.chefgpt.api.ApiUploadedFile
-import se.gustavkarlsson.chefgpt.api.ApiUserJoined
-import se.gustavkarlsson.chefgpt.api.ApiUserJoinedChat
-import se.gustavkarlsson.chefgpt.api.ApiUserMessage
-import se.gustavkarlsson.chefgpt.api.ApiUserSendsMessage
-import se.gustavkarlsson.chefgpt.api.JoinId
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiAgentChatNamed
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiAgentMessage
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiAgentMessageChunk
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiAgentReasoning
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiEvent
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiSystemEvent
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiUserJoined
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiUserJoinedChat
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiUserMessage
+import se.gustavkarlsson.chefgpt.api.chats.v1.ApiUserSendsMessage
+import se.gustavkarlsson.chefgpt.api.common.JoinId
+import se.gustavkarlsson.chefgpt.api.files.v1.ApiUploadedFile
+import se.gustavkarlsson.chefgpt.api.ingredients.v1.ApiIngredient
 import se.gustavkarlsson.chefgpt.chats.Chat
 import se.gustavkarlsson.chefgpt.chats.Conversation
 import se.gustavkarlsson.chefgpt.chats.displayName
@@ -313,7 +313,10 @@ class ChatViewModel(
                 .uploadAttachments()
                 .map { attachments ->
                     conversation.sendAction(
-                        ApiUserSendsMessage(lastState.userText.ifBlank { null }, attachments),
+                        ApiUserSendsMessage(
+                            lastState.userText.ifBlank { null },
+                            attachments,
+                        ),
                     )
                 }.onErr { error ->
                     log.e { "Failed to send message: $error" }

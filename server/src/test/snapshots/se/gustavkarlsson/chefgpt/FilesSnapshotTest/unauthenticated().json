@@ -1,7 +1,7 @@
 {
     "request": {
         "method": "POST",
-        "url": "http://localhost/files",
+        "url": "http://localhost/api/files/v1",
         "headers": {
             "Accept": "application/json",
             "Content-Type": "image/jpeg",

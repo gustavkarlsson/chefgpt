@@ -8,7 +8,8 @@ import io.ktor.http.contentType
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import se.gustavkarlsson.chefgpt.api.FILE_NAME_HEADER
+import se.gustavkarlsson.chefgpt.api.common.FILE_NAME_HEADER
+import se.gustavkarlsson.chefgpt.api.files.v1.FILES_V1_PATH
 import se.gustavkarlsson.slapshot.junit5.JUnit5SnapshotContext
 import se.gustavkarlsson.slapshot.junit5.SnapshotExtension
 
@@ -24,7 +25,7 @@ class FilesSnapshotTest {
     @Test
     fun unauthenticated() =
         snapshotTestApplication(snapshotContext) { client ->
-            client.post("/files") {
+            client.post(FILES_V1_PATH) {
                 contentType(ContentType.Image.JPEG)
                 setBody(byteArrayOf())
             }
@@ -35,7 +36,7 @@ class FilesSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.post("/files") {
+            client.post(FILES_V1_PATH) {
                 header("Session-Id", sessionId)
                 header(FILE_NAME_HEADER, "dish.jpg")
                 contentType(ContentType.Image.JPEG)
@@ -48,7 +49,7 @@ class FilesSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.post("/files") {
+            client.post(FILES_V1_PATH) {
                 header("Session-Id", sessionId)
                 header(FILE_NAME_HEADER, "recipe.pdf")
                 contentType(ContentType.Application.Pdf)
@@ -61,7 +62,7 @@ class FilesSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.post("/files") {
+            client.post(FILES_V1_PATH) {
                 header("Session-Id", sessionId)
                 header(FILE_NAME_HEADER, "recipe.txt")
                 contentType(ContentType.Text.Plain)
@@ -74,7 +75,7 @@ class FilesSnapshotTest {
         snapshotTestApplication(snapshotContext) { client ->
             val sessionId = registerUser()
 
-            client.post("/files") {
+            client.post(FILES_V1_PATH) {
                 header("Session-Id", sessionId)
                 header(FILE_NAME_HEADER, "recipe.zip")
                 contentType(ContentType.Application.Zip)

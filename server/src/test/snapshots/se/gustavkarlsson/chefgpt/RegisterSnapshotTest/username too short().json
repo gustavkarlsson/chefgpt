@@ -1,7 +1,7 @@
 {
     "request": {
         "method": "POST",
-        "url": "http://localhost/register",
+        "url": "http://localhost/api/auth/v1/register",
         "headers": {
             "Authorization": "Basic YWI6VGVzdDEyMyE=",
             "Accept": "application/json",
