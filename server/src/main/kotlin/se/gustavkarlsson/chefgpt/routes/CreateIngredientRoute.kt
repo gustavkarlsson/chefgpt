@@ -13,8 +13,8 @@ import se.gustavkarlsson.chefgpt.ingredients.toApi
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.createIngredientRoute() {
+    val ingredientStore = get<IngredientStore>()
     post(INGREDIENTS_V1_PATH) {
-        val ingredientStore = get<IngredientStore>()
         val userId = call.requireSession().user.id
         val name = call.receive<ApiNewIngredient>().name
         val added = ingredientStore.createIngredients(userId, listOf(name)).singleOrNull()

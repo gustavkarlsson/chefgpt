@@ -21,8 +21,8 @@ import se.gustavkarlsson.chefgpt.getCredentials
 import se.gustavkarlsson.chefgpt.respond
 
 fun Routing.loginRoute() {
+    val userRepository = get<UserRepository>()
     post("$AUTH_V1_PATH/login") {
-        val userRepository = get<UserRepository>()
         call
             .getCredentials()
             .flatMap { credentials ->

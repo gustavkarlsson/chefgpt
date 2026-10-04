@@ -14,7 +14,6 @@ import io.ktor.server.auth.basicAuthenticationCredentials
 import io.ktor.server.auth.principal
 import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.util.getOrFail
-import org.koin.ktor.ext.get
 import se.gustavkarlsson.chefgpt.api.common.CLIENT_PLATFORM_HEADER
 import se.gustavkarlsson.chefgpt.api.common.CLIENT_VERSION_HEADER
 import se.gustavkarlsson.chefgpt.api.common.ChatId
@@ -53,8 +52,7 @@ fun ApplicationCall.requireSession(): Session =
 
 fun ApplicationCall.sessionOrNull(): Session? = principal<SessionCookie>()?.toSession()
 
-suspend fun ApplicationCall.getChatId(): Result<ChatId, ResponseData<ApiError>> {
-    val chatRepository = get<ChatRepository>()
+suspend fun ApplicationCall.getChatId(chatRepository: ChatRepository): Result<ChatId, ResponseData<ApiError>> {
     val userId = requireSession().user.id
     val rawChatId = parameters.getOrFail("chatId")
     return ChatId

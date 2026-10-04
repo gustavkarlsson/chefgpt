@@ -13,8 +13,8 @@ import se.gustavkarlsson.chefgpt.ingredients.IngredientStore
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.deleteIngredientRoute() {
+    val ingredientStore = get<IngredientStore>()
     delete("$INGREDIENTS_V1_PATH/{id}") {
-        val ingredientStore = get<IngredientStore>()
         val userId = call.requireSession().user.id
         val id =
             IngredientId.parseOrNull(call.parameters.getOrFail("id"))

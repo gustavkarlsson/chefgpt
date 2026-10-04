@@ -12,8 +12,8 @@ import se.gustavkarlsson.chefgpt.util.sse
 
 // TODO Add tests (Not snapshot test, as they are not possible)
 fun Route.streamIngredientsRoute() {
+    val ingredientStore = get<IngredientStore>()
     sse(INGREDIENTS_V1_PATH) {
-        val ingredientStore = get<IngredientStore>()
         val userId = call.requireSession().user.id
 
         ingredientStore

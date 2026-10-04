@@ -13,8 +13,8 @@ import se.gustavkarlsson.chefgpt.chats.ChatRepository
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.deleteChatRoute() {
+    val chatRepository = get<ChatRepository>()
     delete("$CHATS_V1_PATH/{chatId}") {
-        val chatRepository = get<ChatRepository>()
         val userId = call.requireSession().user.id
         val rawChatId = call.parameters.getOrFail("chatId")
         val chatId = ChatId.parseOrNull(rawChatId)

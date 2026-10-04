@@ -16,8 +16,8 @@ import se.gustavkarlsson.chefgpt.ingredients.toApi
 import se.gustavkarlsson.chefgpt.requireSession
 
 fun Route.patchIngredientRoute() {
+    val ingredientStore = get<IngredientStore>()
     patch("$INGREDIENTS_V1_PATH/{id}") {
-        val ingredientStore = get<IngredientStore>()
         val userId = call.requireSession().user.id
         val id =
             IngredientId.parseOrNull(call.parameters.getOrFail("id"))
