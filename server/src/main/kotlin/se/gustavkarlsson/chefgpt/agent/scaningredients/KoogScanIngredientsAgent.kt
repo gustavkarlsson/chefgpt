@@ -3,10 +3,15 @@ package se.gustavkarlsson.chefgpt.agent.scaningredients
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.agent.config.AIAgentConfig
 import ai.koog.agents.core.agent.functionalStrategy
+import ai.koog.agents.core.tools.ToolRegistry
+import ai.koog.agents.core.tools.annotations.LLMDescription
+import ai.koog.agents.core.tools.annotations.Tool
+import ai.koog.agents.core.tools.reflect.ToolSet
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLModel
 import ai.koog.prompt.message.AttachmentSource
+import org.jetbrains.annotations.VisibleForTesting
 import se.gustavkarlsson.chefgpt.agent.chat.toImageAttachmentOrNull
 import se.gustavkarlsson.chefgpt.auth.UserId
 import se.gustavkarlsson.chefgpt.files.UploadedFile
@@ -23,11 +28,10 @@ private val SYSTEM_PROMPT =
     capitalization) to avoid duplicates. For new ingredients, use simple,
     plain-text lowercase names (e.g. "tomatoes", "eggs", "milk", "black pepper").
 
-    Respond with the identified ingredients, one per line, and nothing else —
-    no headings, no explanations, no blank lines.
+    Report the identified ingredients by calling the reportIngredients tool,
+    with an empty list when you find none. Never write the ingredients as
+    plain text — always use the tools.
     """.trimIndent()
-
-private val LIST_ITEM_PREFIX = Regex("""^\s*(?:[-*•+]|\d+[.)])\s+""")
 
 class KoogScanIngredientsAgent(
     private val scanIngredients: ScanIngredients,
@@ -48,18 +52,12 @@ class KoogScanIngredientsAgent(
             return emptyList()
         }
         val existingIngredients = ingredientStore.getIngredients(userId).map { it.name }
-        val scanResult = scanIngredients(imageAttachments, existingIngredients)
-        val scannedIngredients = parseIngredients(scanResult)
+        val scannedIngredients =
+            scanIngredients(imageAttachments, existingIngredients).filter { it.isNotBlank() }
 
         return matchExistingSpelling(scannedIngredients, existingIngredients).distinct()
     }
 }
-
-private fun parseIngredients(scanResult: String): List<String> =
-    scanResult
-        .lines()
-        .map { line -> line.replace(LIST_ITEM_PREFIX, "").trim() }
-        .filter { it.isNotEmpty() }
 
 private fun matchExistingSpelling(
     scanned: List<String>,
@@ -76,7 +74,8 @@ private class AgenticScanIngredients(
     override suspend fun invoke(
         images: List<AttachmentSource.Image>,
         existingIngredients: List<String>,
-    ): String {
+    ): List<String> {
+        val reportTool = ReportIngredientsTool()
         val agent =
             AIAgent(
                 promptExecutor = promptExecutor,
@@ -84,11 +83,13 @@ private class AgenticScanIngredients(
                     AIAgentConfig(
                         prompt = buildPrompt(images, existingIngredients),
                         model = model,
-                        maxAgentIterations = 1,
+                        maxAgentIterations = 5,
                     ),
                 strategy = scanIngredientsStrategy(),
+                toolRegistry = ToolRegistry { tools(reportTool) },
             )
-        return agent.run("Scan these images for ingredients and list the ones you find.")
+        agent.run("Scan these images for ingredients and report the ones you find.")
+        return reportTool.ingredients
     }
 }
 
@@ -113,6 +114,36 @@ private fun existingIngredientsText(existingIngredients: List<String>): String =
     }
 
 private fun scanIngredientsStrategy() =
-    functionalStrategy<String, String>("scan-ingredients") { input ->
-        getTextParts(requestLLM(input)).joinToString("\n") { it.text }
+    functionalStrategy<String, Unit>("scan-ingredients") { input ->
+        var message = requestLLM(input)
+        repeat(config.maxAgentIterations) {
+            val toolCalls = getToolCalls(message)
+            if (toolCalls.isEmpty()) {
+                return@repeat
+            }
+            val toolResults = executeTools(toolCalls)
+            message = sendToolResults(toolResults)
+        }
     }
+
+/**
+ * Receives the ingredients the scan agent's LLM identified in the photos.
+ */
+@VisibleForTesting
+class ReportIngredientsTool : ToolSet {
+    var ingredients: List<String> = emptyList()
+        private set
+
+    @Tool
+    @LLMDescription(
+        "Report the ingredients you identified in the photos. Call this once, " +
+            "with an empty list when you find none.",
+    )
+    suspend fun reportIngredients(
+        @LLMDescription("The names of the identified ingredients.")
+        ingredients: List<String>,
+    ): String {
+        this.ingredients = ingredients
+        return "Saved the reported ingredients."
+    }
+}

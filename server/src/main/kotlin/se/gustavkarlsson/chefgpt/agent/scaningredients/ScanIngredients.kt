@@ -6,5 +6,5 @@ fun interface ScanIngredients {
     suspend operator fun invoke(
         images: List<AttachmentSource.Image>,
         existingIngredients: List<String>,
-    ): String
+    ): List<String>
 }
