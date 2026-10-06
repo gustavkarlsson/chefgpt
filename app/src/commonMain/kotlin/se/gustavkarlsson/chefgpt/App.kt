@@ -22,7 +22,11 @@ import coil3.key.Keyer
 import coil3.map.Mapper
 import kotlinx.io.files.Path
 import org.koin.compose.koinInject
+import org.koin.compose.scope.UnboundKoinScope
+import org.koin.core.annotation.KoinDelicateAPI
+import org.koin.core.annotation.KoinExperimentalAPI
 import se.gustavkarlsson.chefgpt.api.common.ImageUrl
+import se.gustavkarlsson.chefgpt.di.LocalSessionScope
 import se.gustavkarlsson.chefgpt.navigation.BottomSheetSceneStrategy
 import se.gustavkarlsson.chefgpt.navigation.NavigationTransitions
 import se.gustavkarlsson.chefgpt.navigation.Navigator
@@ -34,6 +38,7 @@ import se.gustavkarlsson.chefgpt.snackbar.rememberSnackbarHostState
 import se.gustavkarlsson.chefgpt.theme.ChefGptTheme
 import se.gustavkarlsson.chefgpt.updates.UpdateRequiredNotifier
 
+@OptIn(KoinDelicateAPI::class, KoinExperimentalAPI::class)
 @Composable
 fun App() {
     // TODO Extract this
@@ -51,48 +56,53 @@ fun App() {
         }
         initializedImageLoader = true
     }
-    val navigator = koinInject<Navigator>()
-    val snackbarManager = koinInject<SnackbarManager>()
-    val snackbarHostState = rememberSnackbarHostState(snackbarManager.messages)
-    val updateRequiredNotifier = koinInject<UpdateRequiredNotifier>()
-    LaunchedEffect(updateRequiredNotifier) {
-        updateRequiredNotifier.updateRequired.collect { updateRequired ->
-            if (updateRequired) {
-                navigator.replaceAll(UpdateRequiredScreen())
+    // The session scope: the activity's retained scope on Android — which survives
+    // configuration changes and is recreated after the activity truly finishes — and
+    // the root scope on the other platforms.
+    UnboundKoinScope(LocalSessionScope.current) {
+        val navigator = koinInject<Navigator>()
+        val snackbarManager = koinInject<SnackbarManager>()
+        val snackbarHostState = rememberSnackbarHostState(snackbarManager.messages)
+        val updateRequiredNotifier = koinInject<UpdateRequiredNotifier>()
+        LaunchedEffect(updateRequiredNotifier) {
+            updateRequiredNotifier.updateRequired.collect { updateRequired ->
+                if (updateRequired) {
+                    navigator.replaceAll(UpdateRequiredScreen())
+                }
             }
         }
-    }
-    ChefGptTheme {
-        Box(modifier = Modifier.fillMaxSize()) {
-            NavDisplay(
-                backStack = navigator.backStack.collectAsState().value,
-                onBack = navigator::pop,
-                entryDecorators =
-                    listOf(
-                        rememberSaveableStateHolderNavEntryDecorator(),
-                        rememberViewModelStoreNavEntryDecorator(),
-                    ),
-                sceneStrategies = listOf(BottomSheetSceneStrategy()),
-                transitionSpec = NavigationTransitions.transitionSpec,
-                popTransitionSpec = NavigationTransitions.popTransitionSpec,
-                predictivePopTransitionSpec = NavigationTransitions.predictivePopTransitionSpec,
-                entryProvider = { screen ->
-                    NavEntry(
-                        key = screen,
-                        contentKey = screen.id.value,
-                        metadata =
-                            if (screen is Screen.BottomSheet) {
-                                BottomSheetSceneStrategy.bottomSheetMetadata()
-                            } else {
-                                emptyMap()
-                            },
-                    ) { screen.Content() }
-                },
-            )
-            SnackbarMessageHost(
-                hostState = snackbarHostState,
-                modifier = Modifier.align(Alignment.BottomCenter).safeDrawingPadding(),
-            )
+        ChefGptTheme {
+            Box(modifier = Modifier.fillMaxSize()) {
+                NavDisplay(
+                    backStack = navigator.backStack.collectAsState().value,
+                    onBack = navigator::pop,
+                    entryDecorators =
+                        listOf(
+                            rememberSaveableStateHolderNavEntryDecorator(),
+                            rememberViewModelStoreNavEntryDecorator(),
+                        ),
+                    sceneStrategies = listOf(BottomSheetSceneStrategy()),
+                    transitionSpec = NavigationTransitions.transitionSpec,
+                    popTransitionSpec = NavigationTransitions.popTransitionSpec,
+                    predictivePopTransitionSpec = NavigationTransitions.predictivePopTransitionSpec,
+                    entryProvider = { screen ->
+                        NavEntry(
+                            key = screen,
+                            contentKey = screen.id.value,
+                            metadata =
+                                if (screen is Screen.BottomSheet) {
+                                    BottomSheetSceneStrategy.bottomSheetMetadata()
+                                } else {
+                                    emptyMap()
+                                },
+                        ) { screen.Content() }
+                    },
+                )
+                SnackbarMessageHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier.align(Alignment.BottomCenter).safeDrawingPadding(),
+                )
+            }
         }
     }
 }

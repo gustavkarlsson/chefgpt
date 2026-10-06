@@ -71,6 +71,7 @@ navigationEventCompose = { module = "androidx.navigationevent:navigationevent-co
 # Koin
 koinCore = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koinAnnotations = { module = "io.insert-koin:koin-annotations", version.ref = "koin" }
+koinAndroid = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 koinCompose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
 koinComposeViewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
 koinComposeNavigation3 = { module = "io.insert-koin:koin-compose-navigation3", version.ref = "koin" }

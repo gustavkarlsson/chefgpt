@@ -111,6 +111,8 @@ val singletonModule =
         single<ChefGptClient>()
         single<UpdateRequiredNotifier>()
         single<Json> { chefGptJson(strict = false) } // TODO Should be activity retained scoped for Android.
+        // Session bindings — see SessionScopeProvider. On Android, androidSessionModule
+        // overrides these with retained-scoped versions.
         single<Navigator>()
         single<LastSessionFileStore>()
         single<EventHistoryStore>()
