@@ -2,20 +2,16 @@ package se.gustavkarlsson.chefgpt.di
 
 import kotlinx.io.files.FileSystem
 import kotlinx.io.files.SystemFileSystem
-import kotlinx.serialization.json.Json
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
 import org.koin.dsl.KoinAppDeclaration
 import org.koin.dsl.includes
 import org.koin.dsl.module
+import org.koin.plugin.module.dsl.factory
 import org.koin.plugin.module.dsl.single
 import org.koin.plugin.module.dsl.viewModel
-import se.gustavkarlsson.chefgpt.DeviceConfig
-import se.gustavkarlsson.chefgpt.chats.EventHistoryStore
-import se.gustavkarlsson.chefgpt.chefGptJson
 import se.gustavkarlsson.chefgpt.debug.Settings
 import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
-import se.gustavkarlsson.chefgpt.readDeviceConfig
 import se.gustavkarlsson.chefgpt.screens.chat.ChatViewModel
 import se.gustavkarlsson.chefgpt.screens.debug.DebugViewModel
 import se.gustavkarlsson.chefgpt.screens.home.HomeViewModel
@@ -26,19 +22,15 @@ import se.gustavkarlsson.chefgpt.screens.onboarding.OnboardingViewModel
 import se.gustavkarlsson.chefgpt.screens.recipe.RecipeDetailViewModel
 import se.gustavkarlsson.chefgpt.screens.recipescan.RecipeScanSheetViewModel
 import se.gustavkarlsson.chefgpt.screens.recipescrape.RecipeScrapeSheetViewModel
-import se.gustavkarlsson.chefgpt.sessions.LastSessionFileStore
 
-// Process-lifetime infrastructure and stateless singletons. Everything that talks to the
-// network or holds session state lives in activityRetainedScopeModule instead.
+// Process-lifetime bindings. Only stateful or expensive-to-produce things belong here;
+// everything stateless is a factory in activityRetainedScopeModule, and everything that
+// talks to the network or holds session state is scoped there.
 val singletonModule =
     module {
         single<Settings>()
-        single<Json> { chefGptJson(strict = false) }
-        single<LastSessionFileStore>()
-        single<EventHistoryStore>()
         single<IngredientEmojiResolver.Factory>()
         single<FileSystem> { SystemFileSystem }
-        single<DeviceConfig> { readDeviceConfig() }
     }
 
 // TODO Consider adding a viewModelScope and providing more VM-scoped dependencies
@@ -58,7 +50,7 @@ val viewModelModule =
 
 val nativeModule =
     module {
-        single<NativeComponent>()
+        factory<NativeComponent>()
     }
 
 val appModule =

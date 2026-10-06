@@ -44,16 +44,21 @@ import se.gustavkarlsson.chefgpt.updates.UpdateRequiredNotifier
 import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertNotNull
+import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 
 class ActivityRetainedScopeTest {
-    private val retainedBindings: List<KClass<*>> =
+    private val scopedBindings: List<KClass<*>> =
         listOf(
             Navigator::class,
             SnackbarManager::class,
             UpdateRequiredNotifier::class,
             JobManager::class,
             ChefGptClient::class,
+        )
+
+    private val factoryBindings: List<KClass<*>> =
+        listOf(
             SessionRepository::class,
             ChatRepository::class,
             RecipeRepository::class,
@@ -92,21 +97,35 @@ class ActivityRetainedScopeTest {
         )
 
     @Test
-    fun `resolves retained bindings within the activity retained scope`() {
+    fun `resolves scoped bindings within the activity retained scope`() {
         val koin = koinApplication { modules(appModule) }.koin
         val scope = koin.getOrCreateScope(ACTIVITY_RETAINED_SCOPE_ID, activityRetainedScopeQualifier)
 
-        for (binding in retainedBindings) {
-            assertNotNull(scope.getOrNull(binding), "Missing retained binding: $binding")
+        for (binding in scopedBindings) {
+            assertNotNull(scope.getOrNull(binding), "Missing scoped binding: $binding")
         }
     }
 
     @Test
-    fun `does not resolve retained bindings from the root scope`() {
+    fun `does not resolve any binding from the root scope`() {
         val koin = koinApplication { modules(appModule) }.koin
 
-        for (binding in retainedBindings) {
+        for (binding in scopedBindings + factoryBindings) {
             assertNull(koin.getOrNull(binding), "Binding leaked to the root scope: $binding")
+        }
+    }
+
+    @Test
+    fun `creates a fresh instance for every factory resolution`() {
+        val koin = koinApplication { modules(appModule) }.koin
+        val scope = koin.getOrCreateScope(ACTIVITY_RETAINED_SCOPE_ID, activityRetainedScopeQualifier)
+
+        for (binding in factoryBindings) {
+            assertNotSame(
+                scope.get<Any>(binding),
+                scope.get<Any>(binding),
+                "Factory retained an instance: $binding",
+            )
         }
     }
 }
