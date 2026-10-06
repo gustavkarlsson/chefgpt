@@ -6,9 +6,17 @@ import org.koin.core.module.Module
 import org.koin.core.qualifier.Qualifier
 import org.koin.core.scope.Scope
 import org.koin.core.scope.ScopeID
+import org.koin.dsl.bind
 import org.koin.dsl.module
 import org.koin.plugin.module.dsl.scoped
+import se.gustavkarlsson.chefgpt.jobs.usecases.HttpScanRecipes
+import se.gustavkarlsson.chefgpt.jobs.usecases.HttpScrapeRecipe
+import se.gustavkarlsson.chefgpt.jobs.usecases.ScanRecipes
+import se.gustavkarlsson.chefgpt.jobs.usecases.ScrapeRecipe
 import se.gustavkarlsson.chefgpt.navigation.Navigator
+import se.gustavkarlsson.chefgpt.snackbar.SnackbarManager
+import se.gustavkarlsson.chefgpt.snackbar.usecases.RealShowSnackbar
+import se.gustavkarlsson.chefgpt.snackbar.usecases.ShowSnackbar
 
 /**
  * Marker type used as the qualifier of [activityRetainedScopeModule] on non-Android
@@ -33,6 +41,10 @@ val activityRetainedScopeModule: Module =
     module {
         scope(activityRetainedScopeQualifier) {
             scoped<Navigator>()
+            scoped<SnackbarManager>()
+            scoped<RealShowSnackbar>() bind ShowSnackbar::class
+            scoped<HttpScanRecipes>() bind ScanRecipes::class
+            scoped<HttpScrapeRecipe>() bind ScrapeRecipe::class
         }
     }
 

@@ -54,12 +54,8 @@ import se.gustavkarlsson.chefgpt.ingredients.usecases.StreamIngredients
 import se.gustavkarlsson.chefgpt.jobs.JobManager
 import se.gustavkarlsson.chefgpt.jobs.usecases.AwaitJob
 import se.gustavkarlsson.chefgpt.jobs.usecases.HttpAwaitJob
-import se.gustavkarlsson.chefgpt.jobs.usecases.HttpScanRecipes
-import se.gustavkarlsson.chefgpt.jobs.usecases.HttpScrapeRecipe
 import se.gustavkarlsson.chefgpt.jobs.usecases.RealStreamScanState
 import se.gustavkarlsson.chefgpt.jobs.usecases.RealStreamScrapeState
-import se.gustavkarlsson.chefgpt.jobs.usecases.ScanRecipes
-import se.gustavkarlsson.chefgpt.jobs.usecases.ScrapeRecipe
 import se.gustavkarlsson.chefgpt.jobs.usecases.StreamScanState
 import se.gustavkarlsson.chefgpt.jobs.usecases.StreamScrapeState
 import se.gustavkarlsson.chefgpt.readDeviceConfig
@@ -98,9 +94,6 @@ import se.gustavkarlsson.chefgpt.sessions.usecases.HttpRegister
 import se.gustavkarlsson.chefgpt.sessions.usecases.LogIn
 import se.gustavkarlsson.chefgpt.sessions.usecases.LogOut
 import se.gustavkarlsson.chefgpt.sessions.usecases.Register
-import se.gustavkarlsson.chefgpt.snackbar.SnackbarManager
-import se.gustavkarlsson.chefgpt.snackbar.usecases.RealShowSnackbar
-import se.gustavkarlsson.chefgpt.snackbar.usecases.ShowSnackbar
 import se.gustavkarlsson.chefgpt.updates.UpdateRequiredNotifier
 
 val singletonModule =
@@ -113,7 +106,6 @@ val singletonModule =
         single<LastSessionFileStore>()
         single<EventHistoryStore>()
         single<JobManager>()
-        single<SnackbarManager>()
         single<IngredientEmojiResolver.Factory>()
         single<FileSystem> { SystemFileSystem }
         single<DeviceConfig> { readDeviceConfig() }
@@ -159,17 +151,12 @@ val singletonModule =
 
         // Use cases — jobs
         single<HttpAwaitJob>() bind AwaitJob::class
-        single<HttpScanRecipes>() bind ScanRecipes::class
-        single<HttpScrapeRecipe>() bind ScrapeRecipe::class
         single<RealStreamScanState>() bind StreamScanState::class
         single<RealStreamScrapeState>() bind StreamScrapeState::class
 
         // Use cases — files
         single<HttpUploadFile>() bind UploadFile::class
         single<RealDeleteFile>() bind DeleteFile::class
-
-        // Use cases — snackbar
-        single<RealShowSnackbar>() bind ShowSnackbar::class
     }
 
 // TODO Consider adding a viewModelScope and providing more VM-scoped dependencies
