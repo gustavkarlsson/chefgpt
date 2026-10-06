@@ -194,7 +194,7 @@ val nativeModule =
 
 val appModule =
     module {
-        includes(singletonModule, sessionScopeModule, viewModelModule, nativeModule)
+        includes(singletonModule, activityRetainedScopeModule, viewModelModule, nativeModule)
     }
 
 fun initKoin(configuration: KoinAppDeclaration? = null): KoinApplication =

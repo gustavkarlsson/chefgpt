@@ -6,11 +6,11 @@ import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-class SessionScopeTest {
+class ActivityRetainedScopeTest {
     @Test
-    fun `resolves session bindings within the session scope`() {
+    fun `resolves retained bindings within the activity retained scope`() {
         val koin = koinApplication { modules(appModule) }.koin
-        val scope = koin.getOrCreateScope(SESSION_SCOPE_ID, sessionScopeQualifier)
+        val scope = koin.getOrCreateScope(ACTIVITY_RETAINED_SCOPE_ID, activityRetainedScopeQualifier)
 
         val navigator = scope.getOrNull<Navigator>()
 
@@ -18,7 +18,7 @@ class SessionScopeTest {
     }
 
     @Test
-    fun `does not resolve session bindings from the root scope`() {
+    fun `does not resolve retained bindings from the root scope`() {
         val koin = koinApplication { modules(appModule) }.koin
 
         val navigator = koin.getOrNull<Navigator>()

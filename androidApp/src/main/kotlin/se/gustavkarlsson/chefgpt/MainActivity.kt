@@ -8,7 +8,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import org.koin.android.scope.AndroidScopeComponent
 import org.koin.androidx.scope.activityRetainedScope
 import org.koin.core.scope.Scope
-import se.gustavkarlsson.chefgpt.di.LocalSessionScope
+import se.gustavkarlsson.chefgpt.di.LocalActivityRetainedScope
 
 class MainActivity :
     ComponentActivity(),
@@ -21,7 +21,7 @@ class MainActivity :
         super.onCreate(savedInstanceState)
 
         setContent {
-            CompositionLocalProvider(LocalSessionScope provides scope) {
+            CompositionLocalProvider(LocalActivityRetainedScope provides scope) {
                 App()
             }
         }
