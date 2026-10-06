@@ -3,16 +3,23 @@ package se.gustavkarlsson.chefgpt.di
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
 import org.koin.core.module.Module
+import org.koin.core.module.dsl.onClose
+import org.koin.core.module.dsl.withOptions
 import org.koin.core.qualifier.Qualifier
 import org.koin.core.scope.Scope
 import org.koin.core.scope.ScopeID
 import org.koin.dsl.bind
 import org.koin.dsl.module
 import org.koin.plugin.module.dsl.scoped
+import se.gustavkarlsson.chefgpt.jobs.JobManager
 import se.gustavkarlsson.chefgpt.jobs.usecases.HttpScanRecipes
 import se.gustavkarlsson.chefgpt.jobs.usecases.HttpScrapeRecipe
+import se.gustavkarlsson.chefgpt.jobs.usecases.RealStreamScanState
+import se.gustavkarlsson.chefgpt.jobs.usecases.RealStreamScrapeState
 import se.gustavkarlsson.chefgpt.jobs.usecases.ScanRecipes
 import se.gustavkarlsson.chefgpt.jobs.usecases.ScrapeRecipe
+import se.gustavkarlsson.chefgpt.jobs.usecases.StreamScanState
+import se.gustavkarlsson.chefgpt.jobs.usecases.StreamScrapeState
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.snackbar.SnackbarManager
 import se.gustavkarlsson.chefgpt.snackbar.usecases.RealShowSnackbar
@@ -42,9 +49,14 @@ val activityRetainedScopeModule: Module =
         scope(activityRetainedScopeQualifier) {
             scoped<Navigator>()
             scoped<SnackbarManager>()
+            scoped<JobManager>() withOptions {
+                onClose { it?.cancel() }
+            }
             scoped<RealShowSnackbar>() bind ShowSnackbar::class
             scoped<HttpScanRecipes>() bind ScanRecipes::class
             scoped<HttpScrapeRecipe>() bind ScrapeRecipe::class
+            scoped<RealStreamScanState>() bind StreamScanState::class
+            scoped<RealStreamScrapeState>() bind StreamScrapeState::class
         }
     }
 

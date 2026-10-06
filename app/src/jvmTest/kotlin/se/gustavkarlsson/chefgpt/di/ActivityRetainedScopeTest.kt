@@ -1,8 +1,11 @@
 package se.gustavkarlsson.chefgpt.di
 
 import org.koin.dsl.koinApplication
+import se.gustavkarlsson.chefgpt.jobs.JobManager
 import se.gustavkarlsson.chefgpt.jobs.usecases.ScanRecipes
 import se.gustavkarlsson.chefgpt.jobs.usecases.ScrapeRecipe
+import se.gustavkarlsson.chefgpt.jobs.usecases.StreamScanState
+import se.gustavkarlsson.chefgpt.jobs.usecases.StreamScrapeState
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.snackbar.SnackbarManager
 import se.gustavkarlsson.chefgpt.snackbar.usecases.ShowSnackbar
@@ -19,8 +22,11 @@ class ActivityRetainedScopeTest {
         assertNotNull(scope.getOrNull<Navigator>())
         assertNotNull(scope.getOrNull<SnackbarManager>())
         assertNotNull(scope.getOrNull<ShowSnackbar>())
+        assertNotNull(scope.getOrNull<JobManager>())
         assertNotNull(scope.getOrNull<ScanRecipes>())
         assertNotNull(scope.getOrNull<ScrapeRecipe>())
+        assertNotNull(scope.getOrNull<StreamScanState>())
+        assertNotNull(scope.getOrNull<StreamScrapeState>())
     }
 
     @Test
@@ -30,7 +36,10 @@ class ActivityRetainedScopeTest {
         assertNull(koin.getOrNull<Navigator>())
         assertNull(koin.getOrNull<SnackbarManager>())
         assertNull(koin.getOrNull<ShowSnackbar>())
+        assertNull(koin.getOrNull<JobManager>())
         assertNull(koin.getOrNull<ScanRecipes>())
         assertNull(koin.getOrNull<ScrapeRecipe>())
+        assertNull(koin.getOrNull<StreamScanState>())
+        assertNull(koin.getOrNull<StreamScrapeState>())
     }
 }

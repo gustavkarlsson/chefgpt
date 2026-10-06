@@ -51,13 +51,8 @@ import se.gustavkarlsson.chefgpt.ingredients.usecases.ResolveEmojiAlias
 import se.gustavkarlsson.chefgpt.ingredients.usecases.ScanIngredients
 import se.gustavkarlsson.chefgpt.ingredients.usecases.SetIngredientInventory
 import se.gustavkarlsson.chefgpt.ingredients.usecases.StreamIngredients
-import se.gustavkarlsson.chefgpt.jobs.JobManager
 import se.gustavkarlsson.chefgpt.jobs.usecases.AwaitJob
 import se.gustavkarlsson.chefgpt.jobs.usecases.HttpAwaitJob
-import se.gustavkarlsson.chefgpt.jobs.usecases.RealStreamScanState
-import se.gustavkarlsson.chefgpt.jobs.usecases.RealStreamScrapeState
-import se.gustavkarlsson.chefgpt.jobs.usecases.StreamScanState
-import se.gustavkarlsson.chefgpt.jobs.usecases.StreamScrapeState
 import se.gustavkarlsson.chefgpt.readDeviceConfig
 import se.gustavkarlsson.chefgpt.recipes.HttpRecipeRepository
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
@@ -105,7 +100,6 @@ val singletonModule =
         single<Json> { chefGptJson(strict = false) } // TODO Should be activity retained scoped for Android.
         single<LastSessionFileStore>()
         single<EventHistoryStore>()
-        single<JobManager>()
         single<IngredientEmojiResolver.Factory>()
         single<FileSystem> { SystemFileSystem }
         single<DeviceConfig> { readDeviceConfig() }
@@ -151,8 +145,6 @@ val singletonModule =
 
         // Use cases — jobs
         single<HttpAwaitJob>() bind AwaitJob::class
-        single<RealStreamScanState>() bind StreamScanState::class
-        single<RealStreamScrapeState>() bind StreamScrapeState::class
 
         // Use cases — files
         single<HttpUploadFile>() bind UploadFile::class
