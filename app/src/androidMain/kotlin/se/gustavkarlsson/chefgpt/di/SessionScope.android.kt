@@ -1,17 +1,15 @@
 package se.gustavkarlsson.chefgpt.di
 
-import org.koin.androidx.scope.dsl.activityRetainedScope
-import org.koin.core.module.Module
-import org.koin.dsl.module
-import org.koin.plugin.module.dsl.scoped
-import se.gustavkarlsson.chefgpt.navigation.Navigator
+import org.koin.androidx.scope.RetainedScopeActivity
+import org.koin.core.qualifier.Qualifier
+import org.koin.core.qualifier.TypeQualifier
+import org.koin.core.scope.Scope
 
-// The session bindings, in koin-android's activityRetainedScope: within the activity's scope
-// these win over the root singletons declared in singletonModule, and they are closed when
-// the activity truly finishes — not on configuration changes.
-val androidSessionModule: Module =
-    module {
-        activityRetainedScope {
-            scoped<Navigator>()
-        }
-    }
+// The qualifier of koin-android's activity retained scope archetype, which
+// activityRetainedScope() attaches to the activity's scope. Built from the public marker
+// class because the archetype getter itself is internal.
+actual val sessionScopeQualifier: Qualifier = TypeQualifier(RetainedScopeActivity::class)
+
+// MainActivity provides the activity's retained scope; outside it there is no session
+// scope, and resolution must fail rather than silently fall back.
+actual fun defaultSessionScope(): Scope = error("No session scope in this composition; MainActivity provides it")

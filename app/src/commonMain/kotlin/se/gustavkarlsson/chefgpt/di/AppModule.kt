@@ -62,7 +62,6 @@ import se.gustavkarlsson.chefgpt.jobs.usecases.ScanRecipes
 import se.gustavkarlsson.chefgpt.jobs.usecases.ScrapeRecipe
 import se.gustavkarlsson.chefgpt.jobs.usecases.StreamScanState
 import se.gustavkarlsson.chefgpt.jobs.usecases.StreamScrapeState
-import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.readDeviceConfig
 import se.gustavkarlsson.chefgpt.recipes.HttpRecipeRepository
 import se.gustavkarlsson.chefgpt.recipes.RecipeRepository
@@ -111,9 +110,6 @@ val singletonModule =
         single<ChefGptClient>()
         single<UpdateRequiredNotifier>()
         single<Json> { chefGptJson(strict = false) } // TODO Should be activity retained scoped for Android.
-        // Session bindings — see SessionScopeProvider. On Android, androidSessionModule
-        // overrides these with retained-scoped versions.
-        single<Navigator>()
         single<LastSessionFileStore>()
         single<EventHistoryStore>()
         single<JobManager>()
@@ -198,7 +194,7 @@ val nativeModule =
 
 val appModule =
     module {
-        includes(singletonModule, viewModelModule, nativeModule)
+        includes(singletonModule, sessionScopeModule, viewModelModule, nativeModule)
     }
 
 fun initKoin(configuration: KoinAppDeclaration? = null): KoinApplication =
