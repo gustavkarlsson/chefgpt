@@ -6,18 +6,9 @@ import org.koin.core.module.Module
 import org.koin.core.qualifier.Qualifier
 import org.koin.core.scope.Scope
 import org.koin.core.scope.ScopeID
-import org.koin.dsl.bind
 import org.koin.dsl.module
-import org.koin.plugin.module.dsl.factory
 import org.koin.plugin.module.dsl.scoped
-import se.gustavkarlsson.chefgpt.jobs.usecases.HttpScanRecipes
-import se.gustavkarlsson.chefgpt.jobs.usecases.HttpScrapeRecipe
-import se.gustavkarlsson.chefgpt.jobs.usecases.ScanRecipes
-import se.gustavkarlsson.chefgpt.jobs.usecases.ScrapeRecipe
 import se.gustavkarlsson.chefgpt.navigation.Navigator
-import se.gustavkarlsson.chefgpt.snackbar.SnackbarManager
-import se.gustavkarlsson.chefgpt.snackbar.usecases.RealShowSnackbar
-import se.gustavkarlsson.chefgpt.snackbar.usecases.ShowSnackbar
 
 /**
  * Marker type used as the qualifier of [activityRetainedScopeModule] on non-Android
@@ -39,14 +30,6 @@ val activityRetainedScopeModule: Module =
         scope(activityRetainedScopeQualifier) {
             // ActivityRetained scoped on Android. Singletons on other platforms
             scoped<Navigator>()
-            scoped<SnackbarManager>()
-
-            // TODO Consider moving below to the singleton scope.
-            // On-demand factories — stateless
-            factory<RealShowSnackbar>() bind ShowSnackbar::class
-            // Depends on the scoped ShowSnackbar, so these live in the scope too
-            factory<HttpScanRecipes>() bind ScanRecipes::class
-            factory<HttpScrapeRecipe>() bind ScrapeRecipe::class
         }
     }
 

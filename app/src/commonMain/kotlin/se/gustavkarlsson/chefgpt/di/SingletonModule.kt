@@ -50,8 +50,12 @@ import se.gustavkarlsson.chefgpt.ingredients.usecases.StreamIngredients
 import se.gustavkarlsson.chefgpt.jobs.JobManager
 import se.gustavkarlsson.chefgpt.jobs.usecases.AwaitJob
 import se.gustavkarlsson.chefgpt.jobs.usecases.HttpAwaitJob
+import se.gustavkarlsson.chefgpt.jobs.usecases.HttpScanRecipes
+import se.gustavkarlsson.chefgpt.jobs.usecases.HttpScrapeRecipe
 import se.gustavkarlsson.chefgpt.jobs.usecases.RealStreamScanState
 import se.gustavkarlsson.chefgpt.jobs.usecases.RealStreamScrapeState
+import se.gustavkarlsson.chefgpt.jobs.usecases.ScanRecipes
+import se.gustavkarlsson.chefgpt.jobs.usecases.ScrapeRecipe
 import se.gustavkarlsson.chefgpt.jobs.usecases.StreamScanState
 import se.gustavkarlsson.chefgpt.jobs.usecases.StreamScrapeState
 import se.gustavkarlsson.chefgpt.readDeviceConfig
@@ -80,7 +84,11 @@ import se.gustavkarlsson.chefgpt.sessions.usecases.HttpRegister
 import se.gustavkarlsson.chefgpt.sessions.usecases.LogIn
 import se.gustavkarlsson.chefgpt.sessions.usecases.LogOut
 import se.gustavkarlsson.chefgpt.sessions.usecases.Register
+import se.gustavkarlsson.chefgpt.snackbar.SnackbarManager
+import se.gustavkarlsson.chefgpt.snackbar.usecases.RealShowSnackbar
+import se.gustavkarlsson.chefgpt.snackbar.usecases.ShowSnackbar
 import se.gustavkarlsson.chefgpt.updates.UpdateRequiredNotifier
+import kotlin.time.TimeSource
 
 val singletonModule =
     module {
@@ -91,6 +99,7 @@ val singletonModule =
         single<JobManager>()
         single<ChefGptClient>()
         single<DeviceConfig> { readDeviceConfig() }
+        single<SnackbarManager> { SnackbarManager(TimeSource.Monotonic) }
 
         // On-demand factories — stateless
         factory<EventHistoryStore>()
@@ -132,9 +141,12 @@ val singletonModule =
         factory<RealResolveEmojiAlias>() bind ResolveEmojiAlias::class
 
         factory<HttpAwaitJob>() bind AwaitJob::class
+        factory<HttpScanRecipes>() bind ScanRecipes::class
+        factory<HttpScrapeRecipe>() bind ScrapeRecipe::class
         factory<RealStreamScanState>() bind StreamScanState::class
         factory<RealStreamScrapeState>() bind StreamScrapeState::class
 
         factory<HttpUploadFile>() bind UploadFile::class
         factory<RealDeleteFile>() bind DeleteFile::class
+        factory<RealShowSnackbar>() bind ShowSnackbar::class
     }

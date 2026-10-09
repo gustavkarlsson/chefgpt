@@ -58,10 +58,6 @@ class ActivityRetainedScopeTest {
     private val scopeBindings: List<KClass<*>> =
         listOf(
             Navigator::class,
-            SnackbarManager::class,
-            ShowSnackbar::class,
-            ScanRecipes::class,
-            ScrapeRecipe::class,
         )
 
     private val rootBindings: List<KClass<*>> =
@@ -96,11 +92,15 @@ class ActivityRetainedScopeTest {
             DeleteRecipe::class,
             OverwriteOriginalRecipe::class,
             SaveRecipeAsCopy::class,
+            ShowSnackbar::class,
+            SnackbarManager::class,
             StreamIngredients::class,
             CreateIngredient::class,
             DestroyIngredient::class,
             SetIngredientInventory::class,
             ScanIngredients::class,
+            ScanRecipes::class,
+            ScrapeRecipe::class,
             ResolveEmoji::class,
             ResolveEmojiAlias::class,
             AwaitJob::class,
