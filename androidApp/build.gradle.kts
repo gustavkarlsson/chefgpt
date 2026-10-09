@@ -66,4 +66,5 @@ dependencies {
     implementation(libs.androidxActivityCompose)
     implementation(libs.composeRuntime)
     implementation(libs.composeUiToolingPreview)
+    implementation(libs.koinAndroid)
 }

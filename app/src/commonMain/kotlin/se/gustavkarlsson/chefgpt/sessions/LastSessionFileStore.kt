@@ -13,6 +13,7 @@ import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.writeString
 import se.gustavkarlsson.chefgpt.APP_STORAGE_DIR
 import se.gustavkarlsson.chefgpt.IoOrDefault
+import kotlin.coroutines.cancellation.CancellationException
 
 private val log = Logger.withTag("${LastSessionFileStore::class.simpleName}")
 
@@ -57,6 +58,8 @@ class LastSessionFileStore(
                 }
                 log.i { "Saved session for ${credentials.username} to $file" }
                 true
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 log.e(e) { "Failed to save session to $file" }
                 false

@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -51,4 +52,9 @@ class JobManager(
 
     /** True while at least one job of [type] is running. */
     fun isRunning(type: JobType): Flow<Boolean> = runningCounts.map { (it[type] ?: 0) > 0 }
+
+    /** Cancels the scope and with it all running jobs. */
+    fun cancel() {
+        scope.cancel()
+    }
 }
