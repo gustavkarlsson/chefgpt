@@ -9,10 +9,10 @@ import kotlinx.coroutines.flow.asStateFlow
  * retired. App() watches it and replaces the whole back stack with the update-required screen.
  */
 class UpdateRequiredNotifier {
-    private val _updateRequired = MutableStateFlow(false)
-    val updateRequired: StateFlow<Boolean> = _updateRequired.asStateFlow()
+    val updateRequired: StateFlow<Boolean>
+        field = MutableStateFlow(false)
 
     fun notifyUpdateRequired() {
-        _updateRequired.value = true
+        updateRequired.value = true
     }
 }

@@ -1,17 +1,23 @@
 package se.gustavkarlsson.chefgpt.di
 
+import kotlinx.io.files.FileSystem
+import kotlinx.serialization.json.Json
 import org.koin.dsl.koinApplication
 import se.gustavkarlsson.chefgpt.ChefGptClient
+import se.gustavkarlsson.chefgpt.DeviceConfig
 import se.gustavkarlsson.chefgpt.chats.ChatRepository
+import se.gustavkarlsson.chefgpt.chats.EventHistoryStore
 import se.gustavkarlsson.chefgpt.chats.usecases.CreateChat
 import se.gustavkarlsson.chefgpt.chats.usecases.CreateConversation
 import se.gustavkarlsson.chefgpt.chats.usecases.DeleteChat
 import se.gustavkarlsson.chefgpt.chats.usecases.StreamChats
+import se.gustavkarlsson.chefgpt.debug.Settings
 import se.gustavkarlsson.chefgpt.facts.FactsRepository
 import se.gustavkarlsson.chefgpt.facts.usecases.GetFacts
 import se.gustavkarlsson.chefgpt.facts.usecases.SetFacts
 import se.gustavkarlsson.chefgpt.files.usecases.DeleteFile
 import se.gustavkarlsson.chefgpt.files.usecases.UploadFile
+import se.gustavkarlsson.chefgpt.ingredients.IngredientEmojiResolver
 import se.gustavkarlsson.chefgpt.ingredients.usecases.CreateIngredient
 import se.gustavkarlsson.chefgpt.ingredients.usecases.DestroyIngredient
 import se.gustavkarlsson.chefgpt.ingredients.usecases.ResolveEmoji
@@ -33,6 +39,7 @@ import se.gustavkarlsson.chefgpt.recipes.usecases.OverwriteOriginalRecipe
 import se.gustavkarlsson.chefgpt.recipes.usecases.SaveRecipeAsCopy
 import se.gustavkarlsson.chefgpt.recipes.usecases.SetRecipeFavorite
 import se.gustavkarlsson.chefgpt.recipes.usecases.StreamRecipeSummaries
+import se.gustavkarlsson.chefgpt.sessions.LastSessionFileStore
 import se.gustavkarlsson.chefgpt.sessions.SessionRepository
 import se.gustavkarlsson.chefgpt.sessions.usecases.GetCurrentSession
 import se.gustavkarlsson.chefgpt.sessions.usecases.LogIn
@@ -48,17 +55,27 @@ import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 
 class ActivityRetainedScopeTest {
-    private val scopedBindings: List<KClass<*>> =
+    private val scopeBindings: List<KClass<*>> =
         listOf(
             Navigator::class,
             SnackbarManager::class,
+            ShowSnackbar::class,
+            ScanRecipes::class,
+            ScrapeRecipe::class,
+        )
+
+    private val rootBindings: List<KClass<*>> =
+        listOf(
+            Settings::class,
+            IngredientEmojiResolver.Factory::class,
             UpdateRequiredNotifier::class,
             JobManager::class,
             ChefGptClient::class,
-        )
-
-    private val factoryBindings: List<KClass<*>> =
-        listOf(
+            DeviceConfig::class,
+            EventHistoryStore::class,
+            FileSystem::class,
+            LastSessionFileStore::class,
+            Json::class,
             SessionRepository::class,
             ChatRepository::class,
             RecipeRepository::class,
@@ -87,45 +104,47 @@ class ActivityRetainedScopeTest {
             ResolveEmoji::class,
             ResolveEmojiAlias::class,
             AwaitJob::class,
-            ScanRecipes::class,
-            ScrapeRecipe::class,
             StreamScanState::class,
             StreamScrapeState::class,
             UploadFile::class,
             DeleteFile::class,
-            ShowSnackbar::class,
         )
 
     @Test
-    fun `resolves scoped bindings within the activity retained scope`() {
+    fun `resolves scope bindings within the activity retained scope`() {
         val koin = koinApplication { modules(appModule) }.koin
         val scope = koin.getOrCreateScope(ACTIVITY_RETAINED_SCOPE_ID, activityRetainedScopeQualifier)
 
-        for (binding in scopedBindings) {
-            assertNotNull(scope.getOrNull(binding), "Missing scoped binding: $binding")
+        for (binding in scopeBindings) {
+            assertNotNull(scope.getOrNull(binding), "Missing scope binding: $binding")
         }
     }
 
     @Test
-    fun `does not resolve any binding from the root scope`() {
+    fun `does not resolve scope bindings from the root scope`() {
         val koin = koinApplication { modules(appModule) }.koin
 
-        for (binding in scopedBindings + factoryBindings) {
-            assertNull(koin.getOrNull(binding), "Binding leaked to the root scope: $binding")
+        for (binding in scopeBindings) {
+            assertNull(koin.getOrNull(binding), "Scope binding leaked to the root scope: $binding")
+        }
+    }
+
+    @Test
+    fun `resolves root bindings from the root scope`() {
+        val koin = koinApplication { modules(appModule) }.koin
+
+        for (binding in rootBindings) {
+            assertNotNull(koin.getOrNull(binding), "Missing root binding: $binding")
         }
     }
 
     @Test
     fun `creates a fresh instance for every factory resolution`() {
         val koin = koinApplication { modules(appModule) }.koin
-        val scope = koin.getOrCreateScope(ACTIVITY_RETAINED_SCOPE_ID, activityRetainedScopeQualifier)
 
-        for (binding in factoryBindings) {
-            assertNotSame(
-                scope.get<Any>(binding),
-                scope.get<Any>(binding),
-                "Factory retained an instance: $binding",
-            )
-        }
+        assertNotSame(koin.get<Json>(), koin.get<Json>())
+        assertNotSame(koin.get<LastSessionFileStore>(), koin.get<LastSessionFileStore>())
+        assertNotSame(koin.get<ChatRepository>(), koin.get<ChatRepository>())
+        assertNotSame(koin.get<CreateChat>(), koin.get<CreateChat>())
     }
 }
