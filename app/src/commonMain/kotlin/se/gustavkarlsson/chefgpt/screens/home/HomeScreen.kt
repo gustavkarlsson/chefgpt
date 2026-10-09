@@ -23,14 +23,12 @@ import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Link
@@ -102,16 +100,6 @@ private fun Content(
             when (val content = uiState.content) {
                 UiState.Content.Loading -> Unit
                 is UiState.Content.Loaded -> LoadedContent(state = content)
-            }
-            // Always-available entry point to the debug screen.
-            IconButton(
-                onClick = uiState.onClickDebug,
-                modifier = Modifier.align(Alignment.TopEnd).safeDrawingPadding().padding(8.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Build,
-                    contentDescription = "Debug",
-                )
             }
         }
     }

@@ -10,14 +10,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
@@ -161,16 +159,6 @@ private fun Content(
                         Text("Sign in")
                     }
                 }
-            }
-            // Always-available entry point to the debug screen.
-            IconButton(
-                onClick = uiState.onClickDebug,
-                modifier = Modifier.align(Alignment.TopEnd).safeDrawingPadding().padding(8.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Build,
-                    contentDescription = "Debug",
-                )
             }
         }
     }

@@ -1,5 +1,6 @@
 package se.gustavkarlsson.chefgpt
 
+import android.content.pm.ApplicationInfo
 import android.os.Build
 
 actual val SERVER_BASE_URL: String = guessDevServerBaseUrl()
@@ -8,6 +9,9 @@ actual val APP_STORAGE_DIR: String
     get() = ChefGptApplication.context.filesDir.absolutePath
 
 actual val BASE_URL_HINT: String? = "Physical device? adb reverse tcp:8080 tcp:8080"
+
+actual val IS_DEBUG_BUILD: Boolean
+    get() = (ChefGptApplication.context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
 
 // Best guess for the dev server URL based on whether we run on an emulator.
 // Emulators reach the host machine via the special loopback 10.0.2.2,
