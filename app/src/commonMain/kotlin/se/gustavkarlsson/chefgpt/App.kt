@@ -56,13 +56,15 @@ fun App() {
         }
         initializedImageLoader = true
     }
+    // Snackbar messages are app-wide, so the manager is a Koin singleton injected from
+    // the root context rather than the activity retained scope below.
+    val snackbarManager = koinInject<SnackbarManager>()
+    val snackbarHostState = rememberSnackbarHostState(snackbarManager.messages)
     // The scope retained bindings resolve against: the activity's retained scope on
     // Android — which survives configuration changes and is recreated after the activity
     // truly finishes — and a process-lifetime scope on the other platforms.
     UnboundKoinScope(LocalActivityRetainedScope.current) {
         val navigator = koinInject<Navigator>()
-        val snackbarManager = koinInject<SnackbarManager>()
-        val snackbarHostState = rememberSnackbarHostState(snackbarManager.messages)
         val updateRequiredNotifier = koinInject<UpdateRequiredNotifier>()
         LaunchedEffect(updateRequiredNotifier) {
             updateRequiredNotifier.updateRequired.collect { updateRequired ->
