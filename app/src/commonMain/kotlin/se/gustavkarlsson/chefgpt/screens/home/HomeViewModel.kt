@@ -28,7 +28,6 @@ import se.gustavkarlsson.chefgpt.recipes.usecases.SetRecipeFavorite
 import se.gustavkarlsson.chefgpt.recipes.usecases.StreamRecipeSummaries
 import se.gustavkarlsson.chefgpt.screens.StateViewModel
 import se.gustavkarlsson.chefgpt.screens.chat.ChatScreen
-import se.gustavkarlsson.chefgpt.screens.debug.DebugScreen
 import se.gustavkarlsson.chefgpt.screens.ingredients.IngredientsScreen
 import se.gustavkarlsson.chefgpt.screens.login.LoginScreen
 import se.gustavkarlsson.chefgpt.screens.recipe.RecipeDetailScreen
@@ -70,11 +69,7 @@ class HomeViewModel(
             scrapingRecipe = false,
         )
 
-    override fun State.toUiState(): UiState =
-        UiState(
-            content = toContent(),
-            onClickDebug = ::openDebug,
-        )
+    override fun State.toUiState(): UiState = UiState(content = toContent())
 
     private fun State.toContent(): UiState.Content =
         when {
@@ -194,10 +189,6 @@ class HomeViewModel(
         navigator.push(IngredientsScreen(credentials.sessionId))
     }
 
-    private fun openDebug() {
-        navigator.push(DebugScreen())
-    }
-
     private fun openRecipe(recipeId: RecipeId) {
         val credentials = innerState.value.sessionCredentials ?: return
         navigator.push(RecipeDetailScreen(credentials.sessionId, recipeId))
@@ -299,7 +290,6 @@ data class State(
 
 data class UiState(
     val content: Content,
-    val onClickDebug: () -> Unit,
 ) {
     sealed interface Content {
         data object Loading : Content

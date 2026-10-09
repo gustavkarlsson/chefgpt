@@ -26,11 +26,14 @@ import org.koin.compose.scope.UnboundKoinScope
 import org.koin.core.annotation.KoinDelicateAPI
 import org.koin.core.annotation.KoinExperimentalAPI
 import se.gustavkarlsson.chefgpt.api.common.ImageUrl
+import se.gustavkarlsson.chefgpt.debug.DebugBubbleOverlay
+import se.gustavkarlsson.chefgpt.debug.shouldShowDebugBubble
 import se.gustavkarlsson.chefgpt.di.LocalActivityRetainedScope
 import se.gustavkarlsson.chefgpt.navigation.BottomSheetSceneStrategy
 import se.gustavkarlsson.chefgpt.navigation.NavigationTransitions
 import se.gustavkarlsson.chefgpt.navigation.Navigator
 import se.gustavkarlsson.chefgpt.navigation.Screen
+import se.gustavkarlsson.chefgpt.screens.debug.DebugScreen
 import se.gustavkarlsson.chefgpt.screens.updaterequired.UpdateRequiredScreen
 import se.gustavkarlsson.chefgpt.snackbar.SnackbarManager
 import se.gustavkarlsson.chefgpt.snackbar.SnackbarMessageHost
@@ -66,6 +69,7 @@ fun App() {
     UnboundKoinScope(LocalActivityRetainedScope.current) {
         val navigator = koinInject<Navigator>()
         val updateRequiredNotifier = koinInject<UpdateRequiredNotifier>()
+        val backStack = navigator.backStack.collectAsState().value
         LaunchedEffect(updateRequiredNotifier) {
             updateRequiredNotifier.updateRequired.collect { updateRequired ->
                 if (updateRequired) {
@@ -76,7 +80,7 @@ fun App() {
         ChefGptTheme {
             Box(modifier = Modifier.fillMaxSize()) {
                 NavDisplay(
-                    backStack = navigator.backStack.collectAsState().value,
+                    backStack = backStack,
                     onBack = navigator::pop,
                     entryDecorators =
                         listOf(
@@ -104,6 +108,12 @@ fun App() {
                     hostState = snackbarHostState,
                     modifier = Modifier.align(Alignment.BottomCenter).safeDrawingPadding(),
                 )
+                if (IS_DEBUG_BUILD) {
+                    DebugBubbleOverlay(
+                        visible = shouldShowDebugBubble(backStack),
+                        onClick = { navigator.push(DebugScreen()) },
+                    )
+                }
             }
         }
     }
