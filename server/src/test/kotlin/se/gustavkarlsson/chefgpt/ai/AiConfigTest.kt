@@ -27,10 +27,11 @@ class AiConfigTest {
 
     @Test
     fun `loads agent models from config`() {
+        registerCustomAnthropicModels()
         val config =
             MapApplicationConfig(
                 "ai.agents.chat.provider" to "anthropic",
-                "ai.agents.chat.model" to "claude-sonnet-4-6",
+                "ai.agents.chat.model" to "claude-sonnet-5-5",
                 "ai.agents.ingredientScan.provider" to "deepseek",
                 "ai.agents.ingredientScan.model" to "deepseek-v4-flash",
             )
@@ -38,7 +39,7 @@ class AiConfigTest {
         val aiConfig = config.loadAiConfig()
 
         assertEquals(
-            mapOf("chat" to "claude-sonnet-4-6", "ingredientScan" to "deepseek-v4-flash"),
+            mapOf("chat" to "claude-sonnet-5-5", "ingredientScan" to "deepseek-v4-flash"),
             aiConfig.modelsByAgentId.mapValues { it.value.model.id },
         )
         assertEquals(
