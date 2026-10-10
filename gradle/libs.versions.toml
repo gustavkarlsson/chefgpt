@@ -17,9 +17,9 @@ jvmToolchain = "25" # Must stay within what the Jetbrains Hot-Reload JBR support
 kermit = "2.1.0"
 koin = "4.2.2"
 koinPlugin = "1.1.0"
-koogAgents = "1.2.0"
+koogAgents = "1.3.0"
 # The DeepSeek versions are not 100% in sync with koogAgents
-koogDeepseekClient = "1.2.0-beta"
+koogDeepseekClient = "1.3.0-beta"
 kotlin = "2.4.10"
 kotlinResult = "2.3.1"
 kotlinxCoroutines = "1.11.0"

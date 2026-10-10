@@ -45,15 +45,15 @@ private val testConfig =
         "ai.providers.anthropic.apiKey" to "test-key",
         "ai.providers.deepseek.apiKey" to "test-key",
         "ai.agents.chat.provider" to "anthropic",
-        "ai.agents.chat.model" to "claude-sonnet-4-6",
+        "ai.agents.chat.model" to "claude-sonnet-5-5",
         "ai.agents.ingredientScan.provider" to "anthropic",
-        "ai.agents.ingredientScan.model" to "claude-sonnet-4-6",
+        "ai.agents.ingredientScan.model" to "claude-sonnet-5-5",
         "ai.agents.recipeScan.provider" to "anthropic",
-        "ai.agents.recipeScan.model" to "claude-sonnet-4-6",
+        "ai.agents.recipeScan.model" to "claude-sonnet-5-5",
         "ai.agents.describeImage.provider" to "anthropic",
-        "ai.agents.describeImage.model" to "claude-sonnet-4-6",
+        "ai.agents.describeImage.model" to "claude-sonnet-5-5",
         "ai.agents.convertRecipeUnits.provider" to "anthropic",
-        "ai.agents.convertRecipeUnits.model" to "claude-sonnet-4-6",
+        "ai.agents.convertRecipeUnits.model" to "claude-sonnet-5-5",
     )
 
 fun snapshotTestApplication(

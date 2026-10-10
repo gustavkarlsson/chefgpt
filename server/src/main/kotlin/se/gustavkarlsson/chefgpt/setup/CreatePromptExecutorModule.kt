@@ -8,12 +8,17 @@ import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLMProvider
 import io.ktor.client.HttpClient
 import io.ktor.server.application.Application
+import org.koin.core.module.Module
 import org.koin.dsl.module
 import se.gustavkarlsson.chefgpt.ai.AiProvider
+import se.gustavkarlsson.chefgpt.ai.anthropicClientSettings
 import se.gustavkarlsson.chefgpt.ai.loadAiConfig
+import se.gustavkarlsson.chefgpt.ai.registerCustomAnthropicModels
 
-fun Application.createPromptExecutorModule() =
-    module {
+fun Application.createPromptExecutorModule(): Module {
+    // Must run before loadAiConfig() validates the configured model IDs against the registry.
+    registerCustomAnthropicModels()
+    return module {
         val aiConfig = environment.config.loadAiConfig()
         single<PromptExecutor> {
             val llmClients =
@@ -25,6 +30,7 @@ fun Application.createPromptExecutorModule() =
                                     LLMProvider.Anthropic,
                                     AnthropicLLMClient(
                                         apiKey = apiKey.value,
+                                        settings = anthropicClientSettings(),
                                         httpClientFactory = KtorKoogHttpClient.Factory(HttpClient()),
                                     ),
                                 )
@@ -45,3 +51,4 @@ fun Application.createPromptExecutorModule() =
             MultiLLMPromptExecutor(llmClients)
         }
     }
+}
